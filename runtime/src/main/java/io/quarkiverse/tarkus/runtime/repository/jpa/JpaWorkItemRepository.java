@@ -42,14 +42,14 @@ public class JpaWorkItemRepository implements WorkItemRepository {
         final Map<String, Object> params = new HashMap<>();
 
         if (assignee != null) {
-            assignment.append(" OR wi.assigneeId = :assignee OR wi.candidateUsers LIKE :assigneeLike");
+            assignment.append(" OR assigneeId = :assignee OR candidateUsers LIKE :assigneeLike");
             params.put("assignee", assignee);
             params.put("assigneeLike", "%" + assignee + "%");
         }
         if (candidateGroups != null) {
             for (int i = 0; i < candidateGroups.size(); i++) {
                 final String key = "group" + i;
-                assignment.append(" OR wi.candidateGroups LIKE :").append(key);
+                assignment.append(" OR candidateGroups LIKE :").append(key);
                 params.put(key, "%" + candidateGroups.get(i) + "%");
             }
         }
@@ -57,19 +57,19 @@ public class JpaWorkItemRepository implements WorkItemRepository {
 
         final StringBuilder filters = new StringBuilder();
         if (status != null) {
-            filters.append(" AND wi.status = :status");
+            filters.append(" AND status = :status");
             params.put("status", status);
         }
         if (priority != null) {
-            filters.append(" AND wi.priority = :priority");
+            filters.append(" AND priority = :priority");
             params.put("priority", priority);
         }
         if (category != null) {
-            filters.append(" AND wi.category = :category");
+            filters.append(" AND category = :category");
             params.put("category", category);
         }
         if (followUpBefore != null) {
-            filters.append(" AND wi.followUpDate <= :followUpBefore");
+            filters.append(" AND followUpDate <= :followUpBefore");
             params.put("followUpBefore", followUpBefore);
         }
 

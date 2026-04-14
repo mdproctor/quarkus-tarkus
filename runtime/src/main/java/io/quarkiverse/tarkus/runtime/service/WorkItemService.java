@@ -13,6 +13,7 @@ import io.quarkiverse.tarkus.runtime.model.AuditEntry;
 import io.quarkiverse.tarkus.runtime.model.DelegationState;
 import io.quarkiverse.tarkus.runtime.model.WorkItem;
 import io.quarkiverse.tarkus.runtime.model.WorkItemCreateRequest;
+import io.quarkiverse.tarkus.runtime.model.WorkItemPriority;
 import io.quarkiverse.tarkus.runtime.model.WorkItemStatus;
 import io.quarkiverse.tarkus.runtime.repository.AuditEntryRepository;
 import io.quarkiverse.tarkus.runtime.repository.WorkItemRepository;
@@ -41,7 +42,7 @@ public class WorkItemService {
         item.description = request.description();
         item.category = request.category();
         item.formKey = request.formKey();
-        item.priority = request.priority();
+        item.priority = request.priority() != null ? request.priority() : WorkItemPriority.NORMAL;
         item.assigneeId = request.assigneeId();
         item.candidateGroups = request.candidateGroups();
         item.candidateUsers = request.candidateUsers();
