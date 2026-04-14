@@ -1,7 +1,9 @@
 package io.quarkiverse.tarkus.ledger.repository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import io.quarkiverse.tarkus.ledger.model.LedgerAttestation;
@@ -63,4 +65,19 @@ public interface LedgerEntryRepository {
      * @return the persisted attestation (same instance, post-{@code @PrePersist})
      */
     LedgerAttestation saveAttestation(LedgerAttestation attestation);
+
+    /**
+     * Return all EVENT-type ledger entries across all WorkItems (for trust score computation).
+     *
+     * @return list of all EVENT entries; empty if none exist
+     */
+    List<LedgerEntry> findAllEvents();
+
+    /**
+     * Return all attestations for the given set of ledger entry IDs.
+     *
+     * @param entryIds the set of ledger entry UUIDs to look up attestations for
+     * @return map from ledger entry ID to the list of its attestations; empty map if {@code entryIds} is empty
+     */
+    Map<UUID, List<LedgerAttestation>> findAttestationsForEntries(Set<UUID> entryIds);
 }

@@ -1,13 +1,18 @@
 package io.quarkiverse.tarkus.ledger.repository.jpa;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
 import io.quarkiverse.tarkus.ledger.model.LedgerAttestation;
 import io.quarkiverse.tarkus.ledger.model.LedgerEntry;
+import io.quarkiverse.tarkus.ledger.model.LedgerEntryType;
 import io.quarkiverse.tarkus.ledger.repository.LedgerEntryRepository;
 
 /**
@@ -53,5 +58,21 @@ public class JpaLedgerEntryRepository implements LedgerEntryRepository {
     public LedgerAttestation saveAttestation(final LedgerAttestation attestation) {
         attestation.persist();
         return attestation;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public List<LedgerEntry> findAllEvents() {
+        return LedgerEntry.find("entryType = ?1", LedgerEntryType.EVENT).list();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Map<UUID, List<LedgerAttestation>> findAttestationsForEntries(final Set<UUID> entryIds) {
+        if (entryIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        final List<LedgerAttestation> all = LedgerAttestation.list("ledgerEntryId IN ?1", entryIds);
+        return all.stream().collect(Collectors.groupingBy(a -> a.ledgerEntryId));
     }
 }
