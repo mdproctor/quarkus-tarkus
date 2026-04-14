@@ -1,7 +1,5 @@
 package io.quarkiverse.tarkus.flow;
 
-import java.util.concurrent.CompletableFuture;
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -9,14 +7,15 @@ import io.quarkiverse.tarkus.runtime.model.WorkItem;
 import io.quarkiverse.tarkus.runtime.model.WorkItemCreateRequest;
 import io.quarkiverse.tarkus.runtime.model.WorkItemPriority;
 import io.quarkiverse.tarkus.runtime.service.WorkItemService;
+import io.smallrye.mutiny.Uni;
 
 /**
  * CDI bridge for integrating Tarkus human task inbox with Quarkus Flow workflows.
  *
  * <p>
- * Workflow developers inject this bean and call {@link #requestApproval} from a
- * flow task function. The method creates a WorkItem and returns a CompletableFuture
- * that completes when a human resolves the WorkItem via the Tarkus REST API.
+ * Workflow developers inject this bean and call {@link #requestApproval} from a flow task function.
+ * The method creates a WorkItem and returns a {@link Uni} that completes when a human resolves the
+ * WorkItem via the Tarkus REST API. Quarkus Flow suspends the workflow while the Uni is pending.
  *
  * <p>
  * Example usage in a Flow definition:
@@ -25,9 +24,12 @@ import io.quarkiverse.tarkus.runtime.service.WorkItemService;
  * &#64;Inject HumanTaskFlowBridge humanTask;
  *
  * tasks.function("get-approval", ctx ->
- *     humanTask.requestApproval("Review document", "alice", WorkItemPriority.HIGH, null)
+ *     humanTask.requestApproval("Review document", null, "alice", WorkItemPriority.HIGH, null)
  * )
  * }</pre>
+ *
+ * <p>
+ * Prefer {@link TarkusFlow} with the {@code tarkus()} DSL builder for a more concise syntax.
  */
 @ApplicationScoped
 public class HumanTaskFlowBridge {
@@ -47,10 +49,10 @@ public class HumanTaskFlowBridge {
      * @param assigneeId who should act on it (nullable — use candidateGroups instead if routing)
      * @param priority task priority (null defaults to NORMAL)
      * @param payload JSON context for the human to act on (nullable)
-     * @return a future that completes with the resolution JSON when the human acts,
-     *         or completes exceptionally if the WorkItem is rejected or cancelled
+     * @return a Uni that completes with the resolution JSON when the human acts,
+     *         or fails with {@link WorkItemResolutionException} if the WorkItem is rejected or cancelled
      */
-    public CompletableFuture<String> requestApproval(
+    public Uni<String> requestApproval(
             final String title,
             final String description,
             final String assigneeId,
@@ -65,7 +67,7 @@ public class HumanTaskFlowBridge {
                 payload, null, null, null);
 
         final WorkItem workItem = workItemService.create(request);
-        return registry.register(workItem.id);
+        return Uni.createFrom().completionStage(registry.register(workItem.id));
     }
 
     /**
@@ -76,9 +78,10 @@ public class HumanTaskFlowBridge {
      * @param candidateGroups comma-separated group names (e.g. "finance-team,managers")
      * @param priority task priority (null defaults to NORMAL)
      * @param payload JSON context for the human (nullable)
-     * @return a future that completes with the resolution JSON when a group member acts
+     * @return a Uni that completes with the resolution JSON when a group member acts,
+     *         or fails with {@link WorkItemResolutionException} if the WorkItem is rejected or cancelled
      */
-    public CompletableFuture<String> requestGroupApproval(
+    public Uni<String> requestGroupApproval(
             final String title,
             final String description,
             final String candidateGroups,
@@ -93,6 +96,6 @@ public class HumanTaskFlowBridge {
                 payload, null, null, null);
 
         final WorkItem workItem = workItemService.create(request);
-        return registry.register(workItem.id);
+        return Uni.createFrom().completionStage(registry.register(workItem.id));
     }
 }
