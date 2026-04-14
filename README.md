@@ -1,6 +1,33 @@
 # Quarkus Tarkus
 
-Quarkus Tarkus is a standalone Quarkiverse extension that gives any Quarkus application a human task inbox. It manages WorkItems — units of work requiring human judgment — with expiry, delegation, escalation, priority, candidate groups, and a full audit trail. Add one dependency and your application gets a REST API, lifecycle engine, and CDI event stream for human task management.
+Quarkus Tarkus is a standalone Quarkiverse extension that manages WorkItems — units of work that require asynchronous resolution, whether by a human or an AI agent — with expiry, delegation, escalation, priority, candidate groups, and a full audit trail. Add one dependency and your application gets a REST API, lifecycle engine, and CDI event stream for WorkItem lifecycle management.
+
+---
+
+## For humans and agents alike
+
+The "human task" framing is accurate but incomplete. Tarkus is a WorkItem lifecycle manager that doesn't care whether the resolver is human or agent. The `assigneeId` is a string — it could be `"alice"`, `"agent-007"`, or any AI agent identity. Nothing in the model enforces humanity.
+
+**Where a human interacts:**
+- Calls `PUT /claim`, `PUT /complete` directly or via a dashboard
+- Takes minutes to days to respond
+- May delegate, reject, or request suspension
+- Resolution is a judgment call — structured or unstructured JSON
+
+**Where an agent interacts:**
+- An AI agent creates a WorkItem that needs human input, then polls or observes CDI events for completion
+- An AI agent can also *resolve* a WorkItem — `assigneeId: "my-agent"` calling `PUT /complete` is fully supported
+- `candidateGroups` routing can include `"ai-agents"` alongside `"human-reviewers"` in the same pool
+
+**The real value is the boundary layer between deterministic machines and non-deterministic actors — human or agent:**
+
+- **Expiry and escalation** — if an agent doesn't resolve by `expiresAt`, Tarkus escalates automatically
+- **Audit trail** — every action logged regardless of who or what performed it; essential for compliance when agents are in the loop
+- **Delegation** — an agent can delegate to a human when it lacks confidence; the chain records every handoff
+- **Suspension** — an agent can suspend a WorkItem when blocked, then resume when unblocked
+- **CDI events** — every lifecycle transition fires a `WorkItemLifecycleEvent`; any Quarkus bean — or another agent — can react
+
+The meaningful distinction is not human vs agent. It is **synchronous vs asynchronous resolution**. A machine task in Quarkus-Flow executes in milliseconds. A WorkItem waits — minutes, hours, days — and the waiting infrastructure (deadlines, escalation, audit, delegation) is exactly what Tarkus provides.
 
 ---
 
@@ -12,9 +39,9 @@ Three systems in the Quarkus ecosystem use the word "task" to mean different thi
 |---|---|---|
 | `Task` | CNCF Serverless Workflow / Quarkus-Flow | Machine-executed workflow step — milliseconds, no assignee, no expiry |
 | `Task` | CaseHub | CMMN case work unit — assigned to any worker (human or agent) via capabilities |
-| `WorkItem` | Quarkus Tarkus | Human-resolved unit of work — minutes to days, has assignee, expiry, delegation, audit |
+| `WorkItem` | Quarkus Tarkus | Asynchronous unit of work awaiting resolution — minutes to days, has assignee, expiry, delegation, audit |
 
-**Rule:** A `Task` is controlled by a machine. A `WorkItem` waits for a human.
+**Rule:** A `Task` is controlled by a machine. A `WorkItem` waits for resolution.
 
 ---
 
