@@ -3,9 +3,9 @@ package io.quarkiverse.tarkus.flow;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.Map;
 
 import jakarta.inject.Inject;
 
@@ -18,6 +18,7 @@ import io.quarkiverse.tarkus.runtime.model.WorkItemStatus;
 import io.quarkiverse.tarkus.runtime.service.WorkItemService;
 import io.quarkus.test.TestTransaction;
 import io.quarkus.test.junit.QuarkusTest;
+import io.smallrye.mutiny.Uni;
 
 @QuarkusTest
 @TestTransaction
@@ -32,28 +33,34 @@ class HumanTaskIntegrationTest {
     @Inject
     WorkItemService service;
 
+    @Inject
+    TestTarkusWorkflow testWorkflow;
+
     @Test
-    void requestApproval_createsWorkItemAndReturnsPendingFuture() {
-        CompletableFuture<String> future = bridge.requestApproval(
+    void requestApproval_createsWorkItemAndReturnsPendingUni() {
+        Uni<String> result = bridge.requestApproval(
                 "Review document", "Please review and approve", "alice",
                 WorkItemPriority.HIGH, "{\"docId\":\"123\"}");
 
-        assertThat(future).isNotNull();
-        assertThat(future.isDone()).isFalse();
+        assertThat(result).isNotNull();
+        // Uni is pending — awaiting it should time out
+        assertThatThrownBy(() -> result.await().atMost(Duration.ofMillis(50)))
+                .isInstanceOf(Exception.class);
     }
 
     @Test
     void requestApproval_workItemIsCreatedAndPending() {
-        CompletableFuture<String> future = bridge.requestApproval(
+        Uni<String> result = bridge.requestApproval(
                 "Sign off report", null, "bob", WorkItemPriority.NORMAL, null);
 
         assertThat(registry.pendingCount()).isGreaterThanOrEqualTo(1);
-        assertThat(future.isDone()).isFalse();
+        assertThatThrownBy(() -> result.await().atMost(Duration.ofMillis(50)))
+                .isInstanceOf(Exception.class);
     }
 
     @Test
-    void completeWorkItem_futureResolvesWithResolution() throws Exception {
-        CompletableFuture<String> future = bridge.requestApproval(
+    void completeWorkItem_uniResolvesWithResolution() {
+        Uni<String> result = bridge.requestApproval(
                 "Approve budget", null, "alice", WorkItemPriority.HIGH, null);
 
         List<WorkItem> all = WorkItem.listAll();
@@ -62,18 +69,18 @@ class HumanTaskIntegrationTest {
                 .findFirst()
                 .orElseThrow();
 
-        // Claim → start → complete (CDI event fires, listener completes future)
+        // Claim → start → complete (CDI event fires, listener completes the underlying future)
         service.claim(workItem.id, "alice");
         service.start(workItem.id, "alice");
         service.complete(workItem.id, "alice", "{\"approved\":true}");
 
-        assertThat(future.isDone()).isTrue();
-        assertThat(future.get()).isEqualTo("{\"approved\":true}");
+        String resolution = result.await().atMost(Duration.ofSeconds(5));
+        assertThat(resolution).isEqualTo("{\"approved\":true}");
     }
 
     @Test
-    void rejectWorkItem_futureCompletesExceptionally() {
-        CompletableFuture<String> future = bridge.requestApproval(
+    void rejectWorkItem_uniFailsWithException() {
+        Uni<String> result = bridge.requestApproval(
                 "Budget rejection test", null, "carol", WorkItemPriority.LOW, null);
 
         List<WorkItem> all = WorkItem.listAll();
@@ -85,16 +92,14 @@ class HumanTaskIntegrationTest {
         service.claim(workItem.id, "carol");
         service.reject(workItem.id, "carol", "out of budget");
 
-        assertThat(future.isCompletedExceptionally()).isTrue();
-        assertThatThrownBy(future::get)
-                .isInstanceOf(ExecutionException.class)
-                .hasCauseInstanceOf(WorkItemResolutionException.class)
+        assertThatThrownBy(() -> result.await().atMost(Duration.ofSeconds(5)))
+                .isInstanceOf(WorkItemResolutionException.class)
                 .hasMessageContaining("out of budget");
     }
 
     @Test
-    void cancelWorkItem_futureCompletesExceptionally() {
-        CompletableFuture<String> future = bridge.requestApproval(
+    void cancelWorkItem_uniFailsWithException() {
+        Uni<String> result = bridge.requestApproval(
                 "Cancel test", null, "dave", WorkItemPriority.NORMAL, null);
 
         List<WorkItem> all = WorkItem.listAll();
@@ -105,16 +110,18 @@ class HumanTaskIntegrationTest {
 
         service.cancel(workItem.id, "admin", "project cancelled");
 
-        assertThat(future.isCompletedExceptionally()).isTrue();
+        assertThatThrownBy(() -> result.await().atMost(Duration.ofSeconds(5)))
+                .isInstanceOf(WorkItemResolutionException.class);
     }
 
     @Test
     void requestGroupApproval_createsWorkItemWithCandidateGroups() {
-        CompletableFuture<String> future = bridge.requestGroupApproval(
+        Uni<String> result = bridge.requestGroupApproval(
                 "Team approval", "Needs team sign-off", "finance-team,leads",
                 WorkItemPriority.HIGH, null);
 
-        assertThat(future.isDone()).isFalse();
+        assertThatThrownBy(() -> result.await().atMost(Duration.ofMillis(50)))
+                .isInstanceOf(Exception.class);
         List<WorkItem> all = WorkItem.listAll();
         WorkItem workItem = all.stream()
                 .filter(wi -> "Team approval".equals(wi.title))
@@ -125,8 +132,8 @@ class HumanTaskIntegrationTest {
     }
 
     @Test
-    void unrelatedWorkItemCompletion_doesNotAffectPendingFuture() throws Exception {
-        CompletableFuture<String> future = bridge.requestApproval(
+    void unrelatedWorkItemCompletion_doesNotAffectPendingUni() {
+        Uni<String> result = bridge.requestApproval(
                 "Unrelated test", null, "eve", WorkItemPriority.NORMAL, null);
 
         // Create and complete a DIFFERENT WorkItem (not registered in registry)
@@ -138,7 +145,86 @@ class HumanTaskIntegrationTest {
         service.start(other.id, "frank");
         service.complete(other.id, "frank", "{\"other\":true}");
 
-        // The bridge's future should still be pending
-        assertThat(future.isDone()).isFalse();
+        // The bridge's Uni should still be pending
+        assertThatThrownBy(() -> result.await().atMost(Duration.ofMillis(50)))
+                .isInstanceOf(Exception.class);
+    }
+
+    // -- Uni<String> API tests --
+
+    @Test
+    void requestApproval_returnsUniThatResolvesWithResolution() {
+        Uni<String> result = bridge.requestApproval(
+                "Uni test", null, "alice", WorkItemPriority.NORMAL, null);
+
+        assertThat(result).isNotNull();
+
+        List<WorkItem> all = WorkItem.listAll();
+        WorkItem wi = all.stream()
+                .filter(w -> "Uni test".equals(w.title))
+                .findFirst().orElseThrow();
+
+        service.claim(wi.id, "alice");
+        service.start(wi.id, "alice");
+        service.complete(wi.id, "alice", "{\"approved\":true}");
+
+        String resolution = result.await().atMost(Duration.ofSeconds(5));
+        assertThat(resolution).isEqualTo("{\"approved\":true}");
+    }
+
+    @Test
+    void requestApproval_rejectCausesUniFailure() {
+        Uni<String> result = bridge.requestApproval(
+                "Uni reject test", null, "bob", WorkItemPriority.NORMAL, null);
+
+        List<WorkItem> all = WorkItem.listAll();
+        WorkItem wi = all.stream()
+                .filter(w -> "Uni reject test".equals(w.title))
+                .findFirst().orElseThrow();
+
+        service.claim(wi.id, "bob");
+        service.reject(wi.id, "bob", "not applicable");
+
+        assertThatThrownBy(() -> result.await().atMost(Duration.ofSeconds(5)))
+                .isInstanceOf(WorkItemResolutionException.class);
+    }
+
+    @Test
+    void requestGroupApproval_returnsUni() {
+        Uni<String> result = bridge.requestGroupApproval(
+                "Group uni test", null, "finance-team", WorkItemPriority.HIGH, null);
+        assertThat(result).isNotNull();
+        // Uni is pending — times out since no one resolves it
+        assertThatThrownBy(() -> result.await().atMost(Duration.ofMillis(100)))
+                .isInstanceOf(Exception.class);
+    }
+
+    // -- TarkusFlow DSL integration test --
+
+    @Test
+    void tarkusDslFlow_createsWorkItemAndSuspends() {
+        List<WorkItem> before = WorkItem.listAll();
+
+        // Start the workflow asynchronously — it suspends on the WorkItem creation
+        testWorkflow.startInstance(Map.of("docTitle", "My Document"))
+                .subscribe().with(__ -> {
+                }, __ -> {
+                });
+
+        // Give it a moment to create the WorkItem
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        List<WorkItem> after = WorkItem.listAll();
+
+        // A WorkItem should have been created by the workflow
+        assertThat(after.size()).isGreaterThan(before.size());
+        WorkItem wi = after.stream()
+                .filter(w -> "legal-team".equals(w.candidateGroups))
+                .findFirst().orElseThrow();
+        assertThat(wi.status).isEqualTo(WorkItemStatus.PENDING);
     }
 }
