@@ -1,0 +1,16 @@
+---
+artifact: ${project.groupId}:${project.artifactId}:${project.version}
+name: "Quarkus Tarkus"
+description: "Human-scale WorkItem lifecycle management — expiry, delegation, escalation, audit trail"
+metadata:
+  keywords:
+    - "human-in-the-loop"
+    - "task-inbox"
+    - "workitem"
+    - "workflow"
+    - "delegation"
+  categories:
+    - "business-automation"
+  status: "preview"
+  config:
+    - "quarkus.tarkus.*"

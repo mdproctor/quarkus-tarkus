@@ -1,0 +1,158 @@
+# Quarkus Tarkus — Claude Code Project Guide
+
+## Project Type
+
+type: java
+
+**Stack:** Java 21 (on Java 26 JVM), Quarkus 3.32.2, GraalVM 25 (native image target)
+
+---
+
+## What This Project Is
+
+Quarkus Tarkus is a standalone Quarkiverse extension providing **human-scale WorkItem lifecycle management**. It gives any Quarkus application a human task inbox with expiry, delegation, escalation, priority, and audit trail — usable independently or with optional integrations for Quarkus-Flow, CaseHub, and Qhorus.
+
+**The core concept — WorkItem (not Task):**
+A `WorkItem` is a unit of work requiring human attention or judgment. It is deliberately NOT called `Task` because:
+- The CNCF Serverless Workflow SDK (used by Quarkus-Flow) has its own `Task` class (`io.serverlessworkflow.api.types.Task`) — a machine-executed workflow step
+- CaseHub has its own `Task` class — a CMMN-style case work unit
+Using `WorkItem` avoids naming conflicts and accurately describes what Tarkus manages: work that waits for a person.
+
+**See the full glossary:** `docs/DESIGN.md` § Glossary
+
+---
+
+## Quarkiverse Naming
+
+| Element | Value |
+|---|---|
+| GitHub repo | `mdproctor/quarkus-tarkus` (→ `quarkiverse/quarkus-tarkus` when submitted) |
+| groupId | `io.quarkiverse.tarkus` |
+| Parent artifactId | `quarkus-tarkus-parent` |
+| Runtime artifactId | `quarkus-tarkus` |
+| Deployment artifactId | `quarkus-tarkus-deployment` |
+| Root Java package | `io.quarkiverse.tarkus` |
+| Runtime subpackage | `io.quarkiverse.tarkus.runtime` |
+| Deployment subpackage | `io.quarkiverse.tarkus.deployment` |
+| Config prefix | `quarkus.tarkus` |
+| Feature name | `tarkus` |
+
+---
+
+## Ecosystem Context
+
+Tarkus is part of the Quarkus Native AI Agent Ecosystem:
+
+```
+CaseHub (case orchestration)   Quarkus-Flow (workflow execution)   Qhorus (agent mesh)
+         │                              │                               │
+         └──────────────────────────────┼───────────────────────────────┘
+                                        │
+                              Quarkus Tarkus (WorkItem inbox)
+                                        │
+                              quarkus-tarkus-casehub   (optional adapter)
+                              quarkus-tarkus-flow      (optional adapter)
+                              quarkus-tarkus-qhorus    (optional adapter)
+```
+
+Tarkus has **no dependency on CaseHub, Quarkus-Flow, or Qhorus** — it is the independent human task layer. The integration modules (future) depend on Tarkus, not vice versa.
+
+**Related projects (read only, for context):**
+- `~/claude/quarkus-qhorus` — agent communication mesh (Qhorus integration target)
+- `~/claude/casehub` — case orchestration engine (CaseHub integration target)
+- `~/dev/quarkus-flow` — workflow engine (Quarkus-Flow integration target; uses CNCF Serverless Workflow SDK)
+- `~/claude/claudony` — integration layer; will surface Tarkus inbox in its dashboard
+
+---
+
+## Project Structure
+
+```
+quarkus-tarkus/
+├── runtime/                               — Extension runtime module
+│   └── src/main/java/io/quarkiverse/tarkus/runtime/
+│       ├── config/TarkusConfig.java       — @ConfigMapping(prefix = "quarkus.tarkus")
+│       ├── model/
+│       │   ├── WorkItem.java              — PanacheEntity (the core concept)
+│       │   ├── WorkItemStatus.java        — enum: PENDING|ASSIGNED|IN_PROGRESS|...
+│       │   ├── WorkItemPriority.java      — enum: LOW|NORMAL|HIGH|CRITICAL
+│       │   └── AuditEntry.java            — PanacheEntity (append-only audit log)
+│       ├── service/
+│       │   ├── WorkItemService.java       — lifecycle management, expiry, delegation
+│       │   └── EscalationPolicy.java      — SPI interface for escalation strategies
+│       └── api/
+│           └── WorkItemResource.java      — REST API at /tarkus/workitems
+├── deployment/                            — Extension deployment (build-time) module
+│   └── src/main/java/io/quarkiverse/tarkus/deployment/
+│       └── TarkusProcessor.java           — @BuildStep: FeatureBuildItem
+├── docs/
+│   ├── DESIGN.md                          — Implementation-tracking design document
+│   └── specs/
+│       └── 2026-04-14-tarkus-design.md   — Primary design specification
+└── HANDOFF.md                             — Session context for resumption
+```
+
+**Future integration modules (not yet scaffolded):**
+- `tarkus-flow/` — Quarkus-Flow `TaskExecutorFactory` SPI implementation
+- `tarkus-casehub/` — CaseHub `WorkerRegistry` adapter
+- `tarkus-qhorus/` — Qhorus MCP tools (`request_approval`, `check_approval`, `wait_for_approval`)
+
+---
+
+## Build and Test
+
+```bash
+# Build all modules
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn clean install
+
+# Run tests (runtime module)
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl runtime
+
+# Run specific test
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -Dtest=ClassName -pl runtime
+
+# Native image build (requires GraalVM)
+JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home \
+  mvn package -Pnative -DskipTests
+```
+
+**Use `mvn` not `./mvnw`** — maven wrapper not configured on this machine.
+
+**Quarkiverse format check:** CI runs `mvn -Dno-format` to skip the enforced formatter. Run `mvn` locally to apply formatting.
+
+**Known Quarkiverse gotchas (from quarkus-qhorus experience):**
+- `quarkus-extension-processor` requires **Javadoc on every method** in `@ConfigMapping` interfaces, including group accessors — missing one causes a compile-time error
+- The `extension-descriptor` goal validates that the deployment POM declares **all transitive deployment JARs** — run `mvn install -DskipTests` first after modifying the deployment POM
+- `key` is a reserved word in H2 — avoid it as a column name in Flyway migrations
+
+---
+
+## Java and GraalVM on This Machine
+
+```bash
+# Java 26 (Oracle, system default) — use for dev and tests
+JAVA_HOME=$(/usr/libexec/java_home -v 26)
+
+# GraalVM 25 — use for native image builds only
+JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home
+```
+
+---
+
+## Design Document
+
+`docs/specs/2026-04-14-tarkus-design.md` is the primary design specification.
+`docs/DESIGN.md` is the implementation-tracking document (updated as phases complete).
+
+---
+
+## Work Tracking
+
+**Issue tracking:** enabled
+**GitHub repo:** mdproctor/quarkus-tarkus
+
+**Automatic behaviours (Claude follows these at all times in this project):**
+- **Before implementation begins** — check if an active issue exists. If not, run issue-workflow Phase 1 before writing any code.
+- **Before any commit** — run issue-workflow Phase 3 to confirm issue linkage.
+- **All commits should reference an issue** — `Refs #N` (ongoing) or `Closes #N` (done).
+- **Code review fix commits** — when committing fixes found during a code review, create or reuse an issue for that review work **before** committing. Use `Refs #N` on the relevant epic even if it is already closed.
