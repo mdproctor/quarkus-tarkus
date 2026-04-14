@@ -37,7 +37,7 @@ class WorkItemFlowEventListenerTest {
     private WorkItemLifecycleEvent event(final String type, final UUID workItemId, final String detail) {
         return new WorkItemLifecycleEvent(type, "/tarkus/workitems/" + workItemId,
                 workItemId.toString(), workItemId, WorkItemStatus.COMPLETED,
-                Instant.now(), "actor", detail);
+                Instant.now(), "actor", detail, null, null);
     }
 
     @Test
