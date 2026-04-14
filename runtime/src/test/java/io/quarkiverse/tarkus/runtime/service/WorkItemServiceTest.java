@@ -764,4 +764,120 @@ class WorkItemServiceTest {
         List<WorkItem> inbox = repo.findInbox("alice", null, WorkItemStatus.PENDING, null, null, null);
         assertThat(inbox).extracting(w -> w.id).doesNotContain(wi.id);
     }
+
+    // -------------------------------------------------------------------------
+    // Gap-filling: transitions not previously tested
+    // -------------------------------------------------------------------------
+
+    // delegate from IN_PROGRESS is valid
+    @Test
+    void delegate_fromInProgress_isValid() {
+        WorkItem wi = service.create(basicRequest());
+        service.claim(wi.id, "alice");
+        service.start(wi.id, "alice");
+        wi = service.delegate(wi.id, "alice", "bob");
+        assertThat(wi.status).isEqualTo(WorkItemStatus.PENDING);
+        assertThat(wi.assigneeId).isEqualTo("bob");
+    }
+
+    // release from IN_PROGRESS is invalid
+    @Test
+    void release_fromInProgress_throwsIllegalStateException() {
+        WorkItem wi = service.create(basicRequest());
+        service.claim(wi.id, "alice");
+        service.start(wi.id, "alice");
+        assertThatThrownBy(() -> service.release(wi.id, "alice"))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    // reject from PENDING is invalid
+    @Test
+    void reject_fromPending_throwsIllegalStateException() {
+        WorkItem wi = service.create(basicRequest());
+        assertThatThrownBy(() -> service.reject(wi.id, "alice", "reason"))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    // start from IN_PROGRESS is invalid
+    @Test
+    void start_fromInProgress_throwsIllegalStateException() {
+        WorkItem wi = service.create(basicRequest());
+        service.claim(wi.id, "alice");
+        service.start(wi.id, "alice");
+        assertThatThrownBy(() -> service.start(wi.id, "alice"))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    // suspend from PENDING is invalid
+    @Test
+    void suspend_fromPending_throwsIllegalStateException() {
+        WorkItem wi = service.create(basicRequest());
+        assertThatThrownBy(() -> service.suspend(wi.id, "alice", "reason"))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    // resume from IN_PROGRESS (non-SUSPENDED) is invalid
+    @Test
+    void resume_fromInProgress_throwsIllegalStateException() {
+        WorkItem wi = service.create(basicRequest());
+        service.claim(wi.id, "alice");
+        service.start(wi.id, "alice");
+        assertThatThrownBy(() -> service.resume(wi.id, "alice"))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    // cancel on terminal state is invalid
+    @Test
+    void cancel_completedItem_throwsIllegalStateException() {
+        WorkItem wi = service.create(basicRequest());
+        service.claim(wi.id, "alice");
+        service.start(wi.id, "alice");
+        service.complete(wi.id, "alice", "done");
+        assertThatThrownBy(() -> service.cancel(wi.id, "admin", "reason"))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    // default claimDeadline applied
+    @Test
+    void create_setsClaimDeadlineFromConfigDefault() {
+        WorkItem wi = service.create(basicRequest());
+        assertThat(wi.claimDeadline).isNotNull();
+        Instant expectedApprox = Instant.now().plus(4, ChronoUnit.HOURS);
+        assertThat(wi.claimDeadline).isAfter(expectedApprox.minus(5, ChronoUnit.MINUTES));
+        assertThat(wi.claimDeadline).isBefore(expectedApprox.plus(5, ChronoUnit.MINUTES));
+    }
+
+    // when defaultClaimHours=0, no claimDeadline set
+    @Test
+    void create_withZeroDefaultClaimHours_noClaimDeadlineSet() {
+        TarkusConfig noClaimConfig = new TarkusConfig() {
+            @Override
+            public int defaultExpiryHours() {
+                return 24;
+            }
+
+            @Override
+            public int defaultClaimHours() {
+                return 0;
+            }
+
+            @Override
+            public String escalationPolicy() {
+                return "notify";
+            }
+
+            @Override
+            public String claimEscalationPolicy() {
+                return "notify";
+            }
+
+            @Override
+            public CleanupConfig cleanup() {
+                return () -> 60;
+            }
+        };
+        WorkItemService svc = new WorkItemService(repo, auditRepo, noClaimConfig);
+        WorkItem wi = svc.create(basicRequest());
+        assertThat(wi.claimDeadline).isNull();
+    }
 }

@@ -10,6 +10,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
@@ -606,5 +607,93 @@ class WorkItemResourceTest {
                 .extract().jsonPath().getList("auditTrail.event");
 
         assertThat(events).containsExactly("CREATED", "ASSIGNED", "STARTED", "COMPLETED");
+    }
+
+    // -------------------------------------------------------------------------
+    // Gap-filling: error response bodies, priority/category filtering
+    // -------------------------------------------------------------------------
+
+    // Error response body format
+    @Test
+    void getById_notFound_responseBodyHasErrorMessage() {
+        given()
+                .when().get("/tarkus/workitems/{id}", UUID.randomUUID())
+                .then().statusCode(404)
+                .body("error", notNullValue())
+                .body("error", containsString("not found"));
+    }
+
+    @Test
+    void claim_alreadyAssigned_responseBodyHasConflictMessage() {
+        String id = createWorkItem();
+        given().queryParam("claimant", "alice")
+                .when().put("/tarkus/workitems/{id}/claim", id);
+        given().queryParam("claimant", "bob")
+                .when().put("/tarkus/workitems/{id}/claim", id)
+                .then().statusCode(409)
+                .body("error", notNullValue());
+    }
+
+    // Priority and category filtering
+    @Test
+    void inbox_filterByPriority() {
+        // Create HIGH priority item
+        given().contentType(ContentType.JSON)
+                .body("""
+                        {"title":"High","priority":"HIGH","createdBy":"system"}
+                        """)
+                .when().post("/tarkus/workitems")
+                .then().statusCode(201);
+        // Create LOW priority item
+        String lowId = given().contentType(ContentType.JSON)
+                .body("""
+                        {"title":"Low","priority":"LOW","createdBy":"system"}
+                        """)
+                .when().post("/tarkus/workitems")
+                .then().statusCode(201)
+                .extract().path("id");
+
+        List<String> ids = given()
+                .queryParam("priority", "HIGH")
+                .when().get("/tarkus/workitems/inbox")
+                .then().statusCode(200)
+                .extract().jsonPath().getList("id");
+        assertThat(ids).doesNotContain(lowId);
+    }
+
+    @Test
+    void inbox_filterByCategory() {
+        given().contentType(ContentType.JSON)
+                .body("""
+                        {"title":"Finance task","category":"finance","priority":"NORMAL","createdBy":"system"}
+                        """)
+                .when().post("/tarkus/workitems")
+                .then().statusCode(201);
+        String legalId = given().contentType(ContentType.JSON)
+                .body("""
+                        {"title":"Legal task","category":"legal","priority":"NORMAL","createdBy":"system"}
+                        """)
+                .when().post("/tarkus/workitems")
+                .then().statusCode(201)
+                .extract().path("id");
+
+        List<String> ids = given()
+                .queryParam("category", "finance")
+                .when().get("/tarkus/workitems/inbox")
+                .then().statusCode(200)
+                .extract().jsonPath().getList("id");
+        assertThat(ids).doesNotContain(legalId);
+    }
+
+    @Test
+    void inbox_filterByFollowUp() {
+        // This test requires creating an item with a past followUpDate directly.
+        // We can't easily do this via REST since followUpDate would need to be in the past.
+        // Skip: followUp filter is tested at the repository level (InMemoryRepositoryTest).
+        // Confirm the endpoint accepts the parameter without error.
+        given()
+                .queryParam("followUp", "true")
+                .when().get("/tarkus/workitems/inbox")
+                .then().statusCode(200);
     }
 }

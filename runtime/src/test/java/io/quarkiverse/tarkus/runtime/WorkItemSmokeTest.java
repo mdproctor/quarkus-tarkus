@@ -3,6 +3,8 @@ package io.quarkiverse.tarkus.runtime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,6 +18,7 @@ import io.quarkiverse.tarkus.runtime.model.WorkItemCreateRequest;
 import io.quarkiverse.tarkus.runtime.model.WorkItemPriority;
 import io.quarkiverse.tarkus.runtime.model.WorkItemStatus;
 import io.quarkiverse.tarkus.runtime.repository.AuditEntryRepository;
+import io.quarkiverse.tarkus.runtime.repository.WorkItemRepository;
 import io.quarkiverse.tarkus.runtime.service.WorkItemNotFoundException;
 import io.quarkiverse.tarkus.runtime.service.WorkItemService;
 import io.quarkus.test.TestTransaction;
@@ -30,6 +33,9 @@ class WorkItemSmokeTest {
 
     @Inject
     AuditEntryRepository auditRepo;
+
+    @Inject
+    WorkItemRepository workItemRepo;
 
     // -------------------------------------------------------------------------
     // Helper
@@ -146,5 +152,62 @@ class WorkItemSmokeTest {
                 "system", null, null, null, null);
         WorkItem wi = service.create(req);
         assertThat(wi.expiresAt).isNotNull();
+    }
+
+    // -------------------------------------------------------------------------
+    // Gap-filling: repository query smoke tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    void findExpiredQuery_returnsExpiredItem() {
+        WorkItem wi = new WorkItem();
+        wi.title = "Expired item";
+        wi.status = WorkItemStatus.PENDING;
+        wi.priority = WorkItemPriority.NORMAL;
+        wi.createdAt = Instant.now();
+        wi.updatedAt = Instant.now();
+        wi.expiresAt = Instant.now().minus(2, ChronoUnit.HOURS);
+        workItemRepo.save(wi);
+
+        List<WorkItem> expired = workItemRepo.findExpired(Instant.now());
+        assertThat(expired).extracting(w -> w.id).contains(wi.id);
+    }
+
+    @Test
+    void findExpiredQuery_doesNotReturnActiveItem() {
+        WorkItem wi = service.create(basicRequest()); // expiresAt = now + 24h
+        List<WorkItem> expired = workItemRepo.findExpired(Instant.now());
+        assertThat(expired).extracting(w -> w.id).doesNotContain(wi.id);
+    }
+
+    @Test
+    void findUnclaimedPastDeadlineQuery_returnsPastDeadlinePendingItem() {
+        WorkItem wi = new WorkItem();
+        wi.title = "Past deadline";
+        wi.status = WorkItemStatus.PENDING;
+        wi.priority = WorkItemPriority.NORMAL;
+        wi.createdAt = Instant.now();
+        wi.updatedAt = Instant.now();
+        wi.claimDeadline = Instant.now().minus(1, ChronoUnit.HOURS);
+        workItemRepo.save(wi);
+
+        List<WorkItem> unclaimed = workItemRepo.findUnclaimedPastDeadline(Instant.now());
+        assertThat(unclaimed).extracting(w -> w.id).contains(wi.id);
+    }
+
+    @Test
+    void claimDeadlineStoredAndRetrievable() {
+        Instant deadline = Instant.now().plus(2, ChronoUnit.HOURS)
+                .truncatedTo(ChronoUnit.SECONDS);
+        WorkItemCreateRequest req = new WorkItemCreateRequest(
+                "Test", null, null, null, WorkItemPriority.NORMAL,
+                null, null, null, null, "system", null,
+                deadline, null, null);
+        WorkItem wi = service.create(req);
+        assertThat(wi.claimDeadline).isNotNull();
+        // verify it round-trips through JPA
+        WorkItem reloaded = workItemRepo.findById(wi.id).orElseThrow();
+        assertThat(reloaded.claimDeadline.truncatedTo(ChronoUnit.SECONDS))
+                .isEqualTo(deadline);
     }
 }
