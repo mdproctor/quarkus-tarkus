@@ -1,193 +1,217 @@
 # Quarkus Tarkus — Ledger, Audit, and Provenance Design
 
 > *This document covers the full accountability stack: from simple audit trails to
-> causal provenance graphs, peer attestation, and EigenTrust reputation. Each
-> capability is independently configurable.*
+> causal provenance graphs, peer attestation, and EigenTrust reputation.*
 
 ---
 
-## Why This Exists
+## Design Principle: Complexity Must Not Leak
 
-Every BPM system records what happened. Tarkus records why, how confidently, under
-what policy, with what information visible at the time, and whether peers validated
-the decision. Together these answer questions no current human task system can:
+The ledger is an **optional, separate Maven module** — `quarkus-tarkus-ledger`.
 
-- *Was this approval justified given what was known at the time?*
-- *Which actors — human or AI agent — have the best track record on this category of decision?*
-- *Prove that the AI did not make the final call on this regulated decision.*
-- *Reconstruct the full causal chain from case creation to human sign-off.*
+If you don't add it as a dependency, your application is identical to using
+`quarkus-tarkus` today. No extra tables, no extra config keys, no overhead. The
+core extension doesn't know the ledger exists.
+
+This is possible because Phase 4 already established the right seam:
+`WorkItemService` fires `WorkItemLifecycleEvent` CDI events on every transition.
+The ledger module is a CDI observer of those events. Observer with no implementation
+= event fires into the void.
 
 ---
 
-## What This Is Not
+## Module Architecture
 
-**AuditEntry** (existing) — a simple per-transition log: event, actor, timestamp.
-Fast, always-on, sufficient for operational "who did what when" queries.
+```
+quarkus-tarkus-parent
+├── quarkus-tarkus                  ← core (unchanged)
+├── quarkus-tarkus-deployment       ← core deployment
+├── quarkus-tarkus-testing          ← InMemory impls for unit tests
+├── quarkus-tarkus-flow             ← Quarkus-Flow CDI bridge
+├── quarkus-tarkus-ledger           ← NEW: fully optional ledger module
+│   └── (no separate deployment needed — pure runtime CDI)
+└── integration-tests               ← native image validation
+```
 
-**LedgerEntry** (new) — a richer accountability record capturing intent, context,
-evidence, causal links, and a tamper-evident hash chain. Optional capabilities
-are individually configurable.
+**How the separation works at runtime:**
 
-The two coexist. `AuditEntry` remains unchanged. `LedgerEntry` is additive.
+```
+quarkus-tarkus (core)                        quarkus-tarkus-ledger (optional)
+─────────────────────────────────────────    ─────────────────────────────────────────
+WorkItem entity                              LedgerEntry entity
+AuditEntry entity                            LedgerAttestation entity
+WorkItemService                              ActorTrustScore entity
+  └─ fires WorkItemLifecycleEvent ────────►  LedgerEventCapture (@Observes)
+WorkItemResource (/tarkus/workitems)           └─ writes LedgerEntry
+WorkItemLifecycleEvent (+ 2 new fields)        └─ queries WorkItemRepo for snapshot
+TarkusConfig (stays clean)                   LedgerResource (/tarkus/.../ledger)
+                                             LedgerConfig (@ConfigMapping)
+                                             db/ledger-migration/ (own migration path)
+```
+
+If `quarkus-tarkus-ledger` is absent: CDI events fire into the void. No ledger
+tables. No config. No overhead. Zero core changes required.
+
+---
+
+## The Extension Point: WorkItemLifecycleEvent
+
+`WorkItemLifecycleEvent` (Phase 4) is the clean seam. Two nullable fields added
+to support richer context — useful to any observer, not just the ledger:
+
+```java
+public record WorkItemLifecycleEvent(
+    String type,        // "io.quarkiverse.tarkus.workitem.completed"
+    String source,      // "/tarkus/workitems/{id}"
+    String subject,     // workItemId.toString()
+    UUID workItemId,
+    WorkItemStatus status,
+    Instant occurredAt,
+    String actor,
+    String detail,      // existing — delegation target, rejection reason, etc.
+    String rationale,   // NEW nullable — actor's stated basis for the decision
+    String planRef      // NEW nullable — policy/procedure version that governed this
+) {}
+```
+
+The ledger module reads `rationale` and `planRef` from the event. Non-ledger
+observers ignore them. The core provides them when available (e.g., from a REST
+request body field), null otherwise.
+
+---
+
+## sourceEntityRef: Separate Ledger Endpoint
+
+Provenance information (which Flow workflow, CaseHub case, or Qhorus agent created
+this WorkItem) is **not added to `WorkItemCreateRequest`** — that would leak ledger
+concepts into the core REST API.
+
+Instead, the creating system calls a ledger-specific endpoint after WorkItem creation:
+
+```
+POST /tarkus/workitems/{id}/ledger/provenance
+{
+  "sourceEntityId":     "workflow-instance-abc123",
+  "sourceEntityType":   "Flow:WorkflowInstance",
+  "sourceEntitySystem": "quarkus-flow"
+}
+```
+
+This endpoint is on `LedgerResource` in `quarkus-tarkus-ledger`. If the module
+isn't present, the endpoint doesn't exist. No impact on the core API.
+
+---
+
+## Database Migrations
+
+`quarkus-tarkus-ledger` registers its own Flyway migration path
+(`db/ledger-migration/`) via a Quarkus `@BuildStep` in its deployment processor.
+Core's `db/migration/` (V1__initial_schema.sql) is untouched.
+
+If the ledger module is absent, the `ledger_entry`, `ledger_attestation`, and
+`actor_trust_score` tables are never created.
+
+---
+
+## Configuration
+
+`LedgerConfig` is a `@ConfigMapping(prefix = "quarkus.tarkus.ledger")` interface
+in `quarkus-tarkus-ledger`. These config keys are invisible unless the module is
+on the classpath.
+
+| Property | Default | Meaning |
+|---|---|---|
+| `quarkus.tarkus.ledger.enabled` | `true` | Master switch when module is present |
+| `quarkus.tarkus.ledger.hash-chain.enabled` | `true` | SHA-256 tamper-evidence chain |
+| `quarkus.tarkus.ledger.decision-context.enabled` | `true` | WorkItem snapshot at each transition |
+| `quarkus.tarkus.ledger.evidence.enabled` | `false` | Structured evidence capture (opt-in) |
+| `quarkus.tarkus.ledger.attestations.enabled` | `true` | Stamp/attestation REST endpoints |
+| `quarkus.tarkus.ledger.trust-score.enabled` | `false` | Nightly EigenTrust batch computation |
+| `quarkus.tarkus.ledger.trust-score.decay-half-life-days` | `90` | Score decay rate |
+| `quarkus.tarkus.ledger.trust-routing.enabled` | `false` | Trust-score-based routing |
+
+**Rationale for defaults:** hash-chain and decision-context default ON — low
+overhead, high compliance value (GDPR, EU AI Act). evidence, trust-score, and
+trust-routing default OFF — require either caller cooperation or accumulated
+history before being useful, and trust-routing changes WorkItem routing behaviour.
 
 ---
 
 ## The Six Capabilities
 
-### Capability 1: Command/Event Separation (Intent vs. Fact)
+### 1. Command/Event Separation (Intent vs. Fact)
 
-**What it captures that audit logs miss:** The actor's declared intent alongside
-the system-recorded fact.
+`LedgerEventCapture` observes the CDI event and writes a `LedgerEntry` with both
+`commandType` ("ApproveWorkItem") and `eventType` ("WorkItemApproved"), plus
+`rationale` from the event and `actorRole` derived from the event type.
 
-Every transition produces a `LedgerEntry` with both a `commandType` (the intent:
-`ApproveWorkItem`) and an `eventType` (the fact: `WorkItemApproved`). The rationale
-field carries the actor's stated basis — why they believed this was the right action.
+**Always on when module is present and `ledger.enabled=true`.**
 
-```
-commandType: "ApproveWorkItem"
-eventType:   "WorkItemApproved"
-rationale:   "All compliance criteria met; medical history reviewed; physician licensed"
-actorRole:   "PrimaryReviewer"
-planRef:     "MedicalReviewProtocol-2026-Q1"
-```
+### 2. Decision Context Snapshot
 
-**Configuration:** Always on when `quarkus.tarkus.ledger.enabled=true`.
-
----
-
-### Capability 2: Decision Context Snapshot (Read-Set Capture)
-
-**What it captures:** A point-in-time snapshot of the information that was visible
-to the decision-maker at the moment of the transition.
-
-Required by GDPR Article 22 (right to explanation), EU AI Act Article 12 (automatic
-logging of inputs), and MiFID II. No current BPM system does this.
+When `decision-context.enabled=true`, `LedgerEventCapture` loads the full
+`WorkItem` from `WorkItemRepository` at observation time (synchronous, same
+transaction as the CDI event delivery) and snapshots its state as JSON into
+`decisionContext`. This is the point-in-time record required by GDPR Article 22
+and EU AI Act Article 12.
 
 ```json
 {
-  "workItemStatus": "IN_PROGRESS",
-  "workItemPriority": "HIGH",
+  "status": "IN_PROGRESS",
+  "priority": "HIGH",
   "assigneeId": "alice",
   "expiresAt": "2026-04-15T12:00:00Z",
-  "auditEntriesCount": 3,
-  "lastAuditEvent": "STARTED",
-  "agentRecommendation": { "score": 0.87, "verdict": "approve" }
+  "auditEntriesCount": 3
 }
 ```
 
-The snapshot is captured at call time, not reconstructed later. Three months after
-an approval, you can show exactly what was displayed to the reviewer.
+**Configurable:** `quarkus.tarkus.ledger.decision-context.enabled`
 
-**Configuration:** `quarkus.tarkus.ledger.decision-context.enabled` (default: `true`).
-Disable for high-throughput systems where snapshot storage is prohibitive.
+### 3. Plan Reference
 
----
+`planRef` is taken from `WorkItemLifecycleEvent.planRef()` (new nullable field).
+Set by calling systems when they know which policy governed the action. Null when
+not provided — no overhead, no empty field writes beyond the nullable column.
 
-### Capability 3: Plan Reference (Which Procedure Governed This?)
+**Always on when module is present. Simply null when not provided.**
 
-**What it captures:** Which policy, procedure, or workflow version governed the
-action — not just who did it.
+### 4. Evidence as First-Class Object
 
-```
-planRef: "EscalationPolicy-v3"
-planRef: "MedicalReviewProtocol-2026-Q1"
-planRef: "DefaultApprovalFlow"
-```
+When `evidence.enabled=true`, the REST endpoints for WorkItem lifecycle operations
+accept an optional `evidence` JSON body field. The ledger stores it as structured
+evidence alongside the `LedgerEntry`.
 
-Enables compliance queries like: *"Every WorkItem processed under
-MedicalReviewProtocol before Q2 — were they all handled correctly?"*
+**Configurable — off by default.** Requires callers to supply structured evidence;
+enabling without caller support produces null evidence fields.
 
-`planRef` is nullable. When set, it comes from:
-- The calling system (Flow, CaseHub) via `WorkItemCreateRequest`
-- The escalation policy that triggered the transition
-- Manually set by the actor's client
+### 5. Hash Chain (Tamper Evidence)
 
-**Configuration:** Always on when `quarkus.tarkus.ledger.enabled=true`. Simply null
-when not provided.
+When `hash-chain.enabled=true`, each `LedgerEntry` carries:
+- `previousHash` — the `digest` of the prior entry for this WorkItem
+  (`"GENESIS"` for the first entry)
+- `digest` — `SHA-256(previousHash + "|" + canonicalContent)`
 
----
+Canonical content: `workItemId|seqNum|entryType|commandType|eventType|actorId|actorRole|planRef|occurredAt`
 
-### Capability 4: Evidence as First-Class Object
+Certificate Transparency pattern — no blockchain, just a hash-chained append-only
+table. An auditor recomputes digests and detects any tampering.
 
-**What it captures:** Structured evidence supporting the decision — what was
-checked, what criteria were met, what documents were reviewed.
+**Configurable.** Default on; disable only in development environments.
 
-Inspired by W3C Verifiable Credentials' `evidence` property. An approval with
-evidence is audit-defensible; a bare approval is a timestamp.
+### 6. EigenTrust Reputation
 
-```json
-{
-  "criteriaRef": "financial-approval-criteria-v2",
-  "itemsReviewed": ["invoice-221", "purchase-order-88", "budget-auth-Q1"],
-  "checksPerformed": ["amount-within-budget", "vendor-approved", "category-allowed"],
-  "externalRef": "approval-system-ref-9921"
-}
-```
+When `trust-score.enabled=true`, a nightly `@Scheduled` job computes per-actor
+trust scores from `LedgerEntry` outcomes using a simplified EigenTrust model:
+localTrust = upheld/total, weighted by recency (exponential decay with configurable
+half-life), propagated transitively through delegation chains.
 
-**Configuration:** `quarkus.tarkus.ledger.evidence.enabled` (default: `false`).
-Opt-in because callers must actively provide structured evidence data — enabling
-it without caller support produces empty evidence fields.
+Scores are stored in `ActorTrustScore`. When `trust-routing.enabled=true`,
+`WorkItemService` (core) is not modified — instead, `LedgerEventCapture` posts
+a routing suggestion via a CDI event that the consuming application can observe.
+The core routing (`candidateGroups`) is unchanged.
 
----
-
-### Capability 5: Hash Chain (Tamper Evidence)
-
-**What it captures:** Cryptographic proof that the ledger has not been tampered
-with after the fact. No blockchain required.
-
-Each entry's `digest` is `SHA-256(previousHash + "|" + canonicalContent)`. The
-first entry uses `"GENESIS"` as `previousHash`. Any entry modification, insertion,
-or deletion breaks the chain verification.
-
-This is the same pattern used by Certificate Transparency logs and git's object
-model. A standard Postgres append-only table with a `@PrePersist` hash computation
-provides the same tamper-evidence as a blockchain at 1% of the operational cost.
-
-**Verification:** A scheduled job can re-verify the chain on demand, or an auditor
-can recompute digests from the canonical content fields and compare.
-
-```
-entry[0]: previousHash=GENESIS, digest=sha256("GENESIS|workItemId|1|EVENT|...")
-entry[1]: previousHash=entry[0].digest, digest=sha256(entry[0].digest+"|workItemId|2|EVENT|...")
-entry[2]: previousHash=entry[1].digest, digest=sha256(entry[1].digest+"|workItemId|3|EVENT|...")
-```
-
-**Configuration:** `quarkus.tarkus.ledger.hash-chain.enabled` (default: `true`).
-Disable only for development environments where audit tamper-evidence is not
-required and the computation overhead (negligible) is still undesired.
-
----
-
-### Capability 6: EigenTrust Reputation (Actor Trust Scores)
-
-**What it captures:** How reliable each actor — human or AI agent — has proven
-to be over time, computed from decision outcomes and propagated transitively
-through delegation chains.
-
-Inspired by the EigenTrust algorithm (used in peer-to-peer systems). Core idea:
-- **Local trust**: `localTrust(actor) = upheld / total`, weighted by recency
-- **Transitivity**: delegating to a high-trust actor reflects on the delegator
-- **Decay**: recent outcomes weighted more than historical ones
-- **Convergence**: nightly batch computation produces stable global scores
-
-```
-alice:     trustScore=0.94, decisions=47, overturned=3, appeals=1
-agent-007: trustScore=0.89, decisions=312, overturned=35, appeals=12
-```
-
-**Use in routing:** When `candidateGroups` contains multiple eligible actors,
-WorkItemService can sort by trust score. Configurable separately from computation.
-
-**Use in attestation weighting:** Stamps from high-trust actors carry more weight
-in aggregate confidence calculations.
-
-**Configuration:**
-- `quarkus.tarkus.ledger.trust-score.enabled` (default: `false`) — nightly batch computation
-- `quarkus.tarkus.ledger.trust-routing.enabled` (default: `false`) — use scores in routing
-
-Both default off because: computation requires ledger history (which takes time
-to accumulate), routing behavior changes are significant, and early scores based
-on small samples are unreliable.
+**Both off by default.** Trust scores need accumulated history to be meaningful;
+enabling on a new deployment produces unreliable early scores.
 
 ---
 
@@ -198,48 +222,41 @@ on small samples are unreliable.
 ```
 ledger_entry
 ├── id                    UUID PK
-├── work_item_id          UUID FK → work_item
-├── sequence_number       INT (monotonic per WorkItem, managed by service)
-│
-├── entry_type            VARCHAR(20)  — COMMAND | EVENT | ATTESTATION
-├── command_type          VARCHAR(100) — "ApproveWorkItem" etc. (nullable)
-├── event_type            VARCHAR(100) — "WorkItemApproved" etc. (nullable)
-│
+├── work_item_id          UUID NOT NULL
+├── sequence_number       INT NOT NULL
+├── entry_type            VARCHAR(20) NOT NULL   — COMMAND | EVENT | ATTESTATION
+├── command_type          VARCHAR(100)           — nullable
+├── event_type            VARCHAR(100)           — nullable
 ├── actor_id              VARCHAR(255)
-├── actor_type            VARCHAR(20)  — HUMAN | AGENT | SYSTEM
-├── actor_role            VARCHAR(100) — "PrimaryReviewer", "Delegator" etc. (nullable)
-│
-├── plan_ref              VARCHAR(500) — policy/procedure version (nullable)
-├── rationale             TEXT         — actor's stated basis (nullable)
-├── decision_context      TEXT         — JSONB snapshot at transition time (nullable)
-├── evidence              TEXT         — JSONB structured evidence (nullable)
-│
-├── caused_by_entry_id    UUID         — FK → ledger_entry (nullable)
-├── correlation_id        VARCHAR(255) — OTEL trace ID (nullable)
-│
-├── source_entity_id      VARCHAR(255) — upstream trigger ID (nullable)
-├── source_entity_type    VARCHAR(255) — "CaseHub:Case", "Flow:WorkflowInstance" (nullable)
-├── source_entity_system  VARCHAR(100) — "casehub", "quarkus-flow", "qhorus" (nullable)
-│
-├── previous_hash         VARCHAR(64)  — SHA-256 of prior entry (nullable if first)
-├── digest                VARCHAR(64)  — SHA-256 chain digest (nullable if hash chain disabled)
-│
+├── actor_type            VARCHAR(20)            — HUMAN | AGENT | SYSTEM
+├── actor_role            VARCHAR(100)           — nullable
+├── plan_ref              VARCHAR(500)           — nullable
+├── rationale             TEXT                   — nullable
+├── decision_context      TEXT                   — JSONB snapshot, nullable
+├── evidence              TEXT                   — JSONB, nullable
+├── caused_by_entry_id    UUID                   — FK → ledger_entry, nullable
+├── correlation_id        VARCHAR(255)           — OTEL trace ID, nullable
+├── source_entity_id      VARCHAR(255)           — nullable
+├── source_entity_type    VARCHAR(255)           — nullable
+├── source_entity_system  VARCHAR(100)           — nullable
+├── previous_hash         VARCHAR(64)            — nullable (GENESIS for first)
+├── digest                VARCHAR(64)            — nullable (when chain disabled)
 └── occurred_at           TIMESTAMP NOT NULL
 ```
 
-### LedgerAttestation (Stamps)
+### LedgerAttestation
 
 ```
 ledger_attestation
 ├── id                    UUID PK
-├── ledger_entry_id       UUID FK → ledger_entry
-├── work_item_id          UUID        — denormalized for query convenience
-├── attestor_id           VARCHAR(255)
-├── attestor_type         VARCHAR(20)  — HUMAN | AGENT
-├── attestor_role         VARCHAR(100) — (nullable)
-├── verdict               VARCHAR(20)  — SOUND | FLAGGED | ENDORSED | CHALLENGED
-├── evidence              TEXT         — what the attestor reviewed (nullable)
-├── confidence            DOUBLE       — 0.0–1.0
+├── ledger_entry_id       UUID NOT NULL FK → ledger_entry
+├── work_item_id          UUID NOT NULL          — denormalized for queries
+├── attestor_id           VARCHAR(255) NOT NULL
+├── attestor_type         VARCHAR(20) NOT NULL   — HUMAN | AGENT
+├── attestor_role         VARCHAR(100)           — nullable
+├── verdict               VARCHAR(20) NOT NULL   — SOUND | FLAGGED | ENDORSED | CHALLENGED
+├── evidence              TEXT                   — nullable
+├── confidence            DOUBLE NOT NULL        — 0.0–1.0
 └── occurred_at           TIMESTAMP NOT NULL
 ```
 
@@ -248,117 +265,78 @@ ledger_attestation
 ```
 actor_trust_score
 ├── actor_id              VARCHAR(255) PK
-├── actor_type            VARCHAR(20)
-├── trust_score           DOUBLE       — 0.0–1.0
-├── decision_count        INT
-├── overturned_count      INT
-├── appeal_count          INT
-├── attestation_positive  INT          — SOUND/ENDORSED attestations received
-├── attestation_negative  INT          — FLAGGED/CHALLENGED attestations received
-└── last_computed_at      TIMESTAMP
+├── actor_type            VARCHAR(20) NOT NULL
+├── trust_score           DOUBLE NOT NULL        — 0.0–1.0
+├── decision_count        INT NOT NULL DEFAULT 0
+├── overturned_count      INT NOT NULL DEFAULT 0
+├── appeal_count          INT NOT NULL DEFAULT 0
+├── attestation_positive  INT NOT NULL DEFAULT 0
+├── attestation_negative  INT NOT NULL DEFAULT 0
+└── last_computed_at      TIMESTAMP NOT NULL
 ```
 
 ---
 
-## REST API Extensions
+## REST API (in quarkus-tarkus-ledger)
 
-### GET /tarkus/workitems/{id}/ledger
+All endpoints are on `LedgerResource`. **None of these exist if the module is absent.**
 
-Returns `List<LedgerEntryWithAttestationsResponse>` — all ledger entries for this
-WorkItem in sequence order, each with embedded attestations.
-
-### POST /tarkus/workitems/{id}/ledger/{entryId}/attestations
-
-Post a stamp on a ledger entry. Body: `{attestorId, attestorType, verdict, evidence, confidence}`.
-Returns 201 + `LedgerAttestationResponse`.
-
-### GET /tarkus/actors/{actorId}/trust
-
-Returns `ActorTrustScoreResponse` when trust scoring is enabled. 404 when disabled
-or no score computed yet.
-
----
-
-## Configuration Reference
-
-All under `quarkus.tarkus.ledger`:
-
-| Property | Default | Meaning |
+| Method | Path | Description |
 |---|---|---|
-| `enabled` | `true` | Master switch — disabling skips all ledger writes |
-| `hash-chain.enabled` | `true` | SHA-256 tamper-evidence chain |
-| `decision-context.enabled` | `true` | Snapshot of WorkItem state at each transition |
-| `evidence.enabled` | `false` | Structured evidence capture (opt-in — callers must supply) |
-| `attestations.enabled` | `true` | Stamp/attestation REST endpoints |
-| `trust-score.enabled` | `false` | Nightly EigenTrust batch computation |
-| `trust-score.decay-half-life-days` | `90` | Exponential decay for historical outcomes |
-| `trust-routing.enabled` | `false` | Use trust scores in candidateGroup routing |
-
-**Design principle:** Default on for capabilities with low overhead and high
-compliance value (hash chain, decision context). Default off for capabilities
-that change behavior (routing) or require caller cooperation (evidence) or
-accumulate significant history before being useful (trust scores).
+| `GET` | `/tarkus/workitems/{id}/ledger` | All ledger entries with attestations |
+| `POST` | `/tarkus/workitems/{id}/ledger/provenance` | Set source entity reference |
+| `POST` | `/tarkus/workitems/{id}/ledger/{entryId}/attestations` | Post a stamp |
+| `GET` | `/tarkus/actors/{actorId}/trust` | Get actor trust score (when enabled) |
 
 ---
 
-## Optionality Implementation
+## Implementation Order
 
-WorkItemService uses a single guard pattern:
-
-```java
-if (ledgerConfig.enabled()) {
-    LedgerEntry entry = ledgerEntryBuilder
-        .command(commandType, eventType, actorId, actorType, actorRole)
-        .rationale(rationale)
-        .decisionContext(ledgerConfig.decisionContext().enabled()
-            ? captureContext(workItem) : null)
-        .evidence(ledgerConfig.evidence().enabled() ? evidence : null)
-        .planRef(planRef)
-        .sourceEntity(sourceEntityId, sourceEntityType, sourceEntitySystem)
-        .build(workItem, ledgerRepo);     // handles hash chain and sequenceNumber
-
-    ledgerRepo.save(entry);
-}
-```
-
-Each optional field is null when its capability is disabled — no separate code
-paths, just nullable fields.
-
----
-
-## Provenance Link (Future — Issue #39)
-
-Once CaseHub and Qhorus integrations ship and have been populating the
-`sourceEntityRef` fields for 3+ months, the lightweight three-field model
-can be promoted to a full `ProvenanceLink` typed-edge graph modelling PROV-O
-relationships (GENERATED_BY, USED, DERIVED_FROM, INFORMED_BY). See issue #39.
-
----
-
-## Implementation Phases
-
-| Issue | Capability | Depends On |
+| Issue | What | Depends on |
 |---|---|---|
-| #46 | LedgerConfig @ConfigMapping | — |
-| #41 | LedgerEntry entity + SPI + migration | #46 |
-| #42 | WorkItemService integration | #41 |
-| #43 | LedgerAttestation entity + endpoint | #41 |
-| #44 | REST endpoints + full tests | #41, #42, #43 |
+| #41 | LedgerEntry entity + repository SPI + migration | — |
+| #42 | LedgerEventCapture observer + LedgerConfig + WorkItemLifecycleEvent enrichment | #41 |
+| #43 | LedgerAttestation entity + POST endpoint | #41 |
+| #44 | GET /ledger endpoint + provenance endpoint + full tests | #41, #42, #43 |
 | #45 | ActorTrustScore + EigenTrust batch | #42 |
-| #39 | ProvenanceLink typed graph | CaseHub + Qhorus integrations |
+| #46 | LedgerConfig @ConfigMapping | merged into #42 |
+| #39 | ProvenanceLink typed graph | Future — after CaseHub/Qhorus ship |
+
+---
+
+## What the Core Does NOT Change
+
+- `WorkItemService` — no ledger injection, no `if (ledgerConfig...)` guards
+- `WorkItemCreateRequest` — no sourceEntityRef fields
+- `TarkusConfig` — no ledger config section
+- `AuditEntry` — unchanged, still written as today
+- V1 migration — untouched
+- All existing tests — unaffected
+
+The only core change: `WorkItemLifecycleEvent` gains two nullable fields
+(`rationale`, `planRef`) — backward compatible, ignored by any observer that
+doesn't use them.
+
+---
+
+## ProvenanceLink (Future — Issue #39)
+
+Once CaseHub and Qhorus integrations ship, the lightweight `sourceEntityRef` fields
+on `LedgerEntry` can be promoted to a full `ProvenanceLink` typed-edge graph
+modelling W3C PROV-O relationships (GENERATED_BY, USED, DERIVED_FROM, INFORMED_BY).
+See issue #39. The `quarkus-tarkus-ledger` module is the natural home for this.
 
 ---
 
 ## Research Basis
 
-Design informed by:
-- W3C PROV-O (`wasGeneratedBy`, `used`, `wasDerivedFrom`, `hadPlan`, `hadRole`)
-- W3C Verifiable Credentials (`evidence`, `credentialStatus`, selective disclosure)
-- EigenTrust algorithm (transitive trust propagation in P2P networks)
-- EU AI Act Articles 12, 19 (automatic logging, 6-month retention)
-- GDPR Article 22 / Recital 71 (right to explanation, point-in-time context)
-- Event sourcing patterns (command vs. event separation, compensating events)
-- Gastown (`stamps`, propulsion principle, agent CVs as reputation)
-- Hyperledger Fabric (read-set capture, endorsement signatures)
-- LangSmith / OTel GenAI SemConv (OTEL `gen_ai.conversation.id` for agent tracing)
-- Certificate Transparency (hash chain without blockchain)
+- W3C PROV-O — causal graph model, Plan/Role/qualified associations
+- W3C Verifiable Credentials — evidence as first-class object, selective disclosure
+- EigenTrust — transitive trust propagation in peer networks
+- EU AI Act Articles 12, 19 — automatic logging, 6-month retention
+- GDPR Article 22 / Recital 71 — right to explanation, point-in-time context
+- Event sourcing — command/event separation, compensating events
+- Gastown — stamps/attestation model, agent CVs as reputation
+- Hyperledger Fabric — read-set capture, endorsement signatures
+- OTel GenAI SemConv — `gen_ai.conversation.id` for agent tracing
+- Certificate Transparency — hash chain without blockchain
