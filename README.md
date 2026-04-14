@@ -177,6 +177,15 @@ Quarkus Tarkus is part of the Quarkus Native AI Agent Ecosystem, which also incl
 
 ---
 
+## Documentation
+
+- [**API Reference**](docs/api-reference.md) — all 13 REST endpoints, request/response schemas, status enums, error formats, CDI event types, inbox query parameters
+- [**Integration Guide**](docs/integration-guide.md) — standalone REST, Quarkus-Flow workflow suspension, CDI event observation, custom escalation policies, unit testing without a datasource
+- [**Design Specification**](docs/specs/2026-04-14-tarkus-design.md) — full data model, storage SPI, lifecycle engine, future considerations
+- [**Implementation Tracker**](docs/DESIGN.md) — component structure, domain model, services, build roadmap
+
+---
+
 ## License
 
 Apache 2.0
