@@ -147,7 +147,17 @@ curl -X PUT "http://localhost:8080/tarkus/workitems/{id}/complete?actor=alice" \
 - **Pluggable escalation policies** — `notify`, `reassign`, or `auto-reject` on deadline breach; implement `EscalationPolicy` for custom behaviour (Slack alerts, PagerDuty, etc.).
 - **CDI event emission** — `WorkItemLifecycleEvent` fired on every transition; any CDI bean can observe without coupling to Tarkus internals.
 - **Quarkus-Flow DSL (`TarkusFlow`)** — extend `TarkusFlow` instead of `Flow` to get the `tarkus()` DSL method alongside `function()`, `agent()`, and other quarkus-flow task types. The `tarkus()` builder creates a WorkItem and returns a `Uni<String>` that resolves when a human or agent acts on it via REST.
-- **Ledger module (`quarkus-tarkus-ledger`)** — optional accountability module. Add it as a dependency to activate: decision context snapshots at every transition, a tamper-evident SHA-256 hash chain, peer attestation stamps, and EigenTrust reputation scoring. The core extension is completely unchanged when the module is absent.
+- **Ledger module (`quarkus-tarkus-ledger`)** — optional accountability module. Add it as a dependency and every WorkItem lifecycle transition is recorded in a rich, immutable ledger. The core extension is completely unchanged when the module is absent. Capabilities:
+  - **Command/event separation** — each entry records both the intent (`commandType`, e.g. `CompleteWorkItem`) and the observable fact (`eventType`, e.g. `WorkItemCompleted`) for full CQRS auditability
+  - **Decision context snapshots** — a JSON snapshot of WorkItem state is captured at every transition, satisfying GDPR Article 22 and EU AI Act Article 12 point-in-time auditability requirements
+  - **SHA-256 hash chain** — each entry carries a digest chained to the previous entry's digest (Certificate Transparency pattern), making ledger tampering detectable
+  - **Rationale and plan reference** — actors can record the stated basis for their decision (`rationale`) and the policy version that governed it (`planRef`)
+  - **Structured evidence capture** — supporting evidence (confidence scores, model outputs, document references) stored as structured JSON per entry; opt-in via config
+  - **Provenance linking** — records which external system or entity originated the WorkItem (`sourceEntityId`, `sourceEntityType`, `sourceEntitySystem`); used by Quarkus-Flow, CaseHub, and Qhorus integrations
+  - **Actor type tracking** — entries distinguish `HUMAN`, `AGENT`, and `SYSTEM` actors; AI agents are identified by the `agent:` prefix convention on `actorId`
+  - **Peer attestations** — any actor (human reviewer, audit agent, automated compliance check) can stamp a formal verdict (`SOUND`, `FLAGGED`, `ENDORSED`, `CHALLENGED`) with a confidence score onto any ledger entry
+  - **Causal linking** — `causedByEntryId` links entries to the entry that caused them (e.g. a delegation entry linked back to the preceding resume)
+  - **EigenTrust reputation scoring** — a nightly batch computes actor trust scores from ledger history using exponential time-decay weighting; trust scores influence routing suggestions and are queryable via `GET /tarkus/actors/{actorId}/trust`
 - **Storage SPI** — `WorkItemRepository` and `AuditEntryRepository` interfaces; default JPA (PostgreSQL/H2) implementations, overridable via `@Alternative @Priority(1)`.
 - **Native image support** — target: GraalVM 25 native image (validation in Phase 8).
 
