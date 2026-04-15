@@ -35,7 +35,9 @@ Maven multi-module layout following Quarkiverse conventions:
 | Deployment | `quarkus-tarkus-deployment` | Build-time processor — feature registration, native config |
 | Testing | `quarkus-tarkus-testing` | `InMemoryWorkItemRepository` — no datasource needed for unit tests |
 | Flow | `quarkus-tarkus-flow` | Quarkus-Flow integration — `TarkusFlow` DSL base class, `HumanTaskFlowBridge`, `WorkItemFlowEventListener` |
-| Ledger | `quarkus-tarkus-ledger` | Optional accountability module — command/event ledger, SHA-256 hash chain, peer attestation, EigenTrust reputation. Zero core impact when absent. |
+| Ledger | `quarkus-tarkus-ledger` | Optional accountability module — command/event ledger, SHA-256 hash chain, peer attestation, EigenTrust reputation. Extends `io.quarkiverse.ledger:quarkus-ledger` (shared base library — see ADR-0001). Zero core impact when absent. |
+| Examples | `quarkus-tarkus-examples` | Runnable scenario demos — 4 `@QuarkusTest` scenarios covering every ledger/audit capability via `POST /examples/{name}/run` |
+| Flow Examples | `quarkus-tarkus-flow-examples` | TarkusFlow DSL showcase — contract review workflow mixing automated `function()` and human `tarkus()` steps |
 | Integration Tests | `integration-tests` | Black-box `@QuarkusIntegrationTest` suite and native image validation |
 | *(future)* | `quarkus-tarkus-casehub` | CaseHub `WorkerRegistry` adapter (blocked: CaseHub not ready) |
 | *(future)* | `quarkus-tarkus-qhorus` | Qhorus MCP tools (blocked: Qhorus not ready) |
@@ -149,9 +151,44 @@ enabling plain unit tests without `@QuarkusTest`.
 
 | Service | Package | Responsibilities |
 |---|---|---|
-| `WorkItemService` | `runtime.service` | Create, assign, claim, complete, reject, delegate; enforces status transitions |
+| `WorkItemService` | `runtime.service` | Create, assign, claim, complete, reject, delegate; enforces status transitions. Overloaded `complete(+rationale, +planRef)` and `reject(+rationale)` pass through to ledger for GDPR Article 22 compliance. |
 | `ExpiryCleanupJob` | `runtime.service` | `@Scheduled` — marks expired WorkItems, fires EscalationPolicy |
 | `EscalationPolicy` | `runtime.service` | SPI — pluggable: notify, reassign, auto-reject |
+
+---
+
+## Ledger Module
+
+The optional `quarkus-tarkus-ledger` module records every WorkItem lifecycle transition as an
+immutable `WorkItemLedgerEntry`. It is activated by adding the module to the classpath — the
+core extension is completely unchanged whether the module is present or not.
+
+### Dependency on quarkus-ledger (ADR-0001)
+
+`quarkus-tarkus-ledger` depends on `io.quarkiverse.ledger:quarkus-ledger` — a domain-agnostic
+shared library providing `LedgerEntry`, `LedgerAttestation`, `ActorTrustScore`,
+`TrustScoreComputer`, `LedgerHashChain`, and their repositories. This allows CaseHub and
+Qhorus to adopt the same ledger infrastructure without depending on Tarkus.
+
+`WorkItemLedgerEntry` extends `LedgerEntry` via JPA JOINED inheritance, adding only
+`commandType` and `eventType`. All common fields live in the `ledger_entry` base table.
+
+### actorType derivation
+
+`LedgerEventCapture` derives `actorType` from the `actorId` prefix convention:
+
+| Prefix | ActorType |
+|---|---|
+| `agent:` | `AGENT` |
+| `system:` | `SYSTEM` |
+| *(anything else)* | `HUMAN` |
+
+This allows AI agents and scheduled jobs to be identified without a separate API parameter.
+
+### Integration point
+
+`LedgerEventCapture` is an `@Observes WorkItemLifecycleEvent` CDI bean — the sole coupling
+between the core and the ledger module. If the module is absent, events fire into the void.
 
 ---
 
@@ -204,6 +241,7 @@ Consuming app owns all datasource config.
 | **5 — Quarkus-Flow integration** | ✅ Complete | `quarkus-tarkus-flow` — TarkusFlow DSL, HumanTaskFlowBridge, Uni<String> suspension |
 | **6 — Ledger module** | ✅ Complete | `quarkus-tarkus-ledger` — command/event model, hash chain, attestation, EigenTrust; optional, zero core impact |
 | **7 — Native image** | ✅ Complete | GraalVM 25 native build, 19 @QuarkusIntegrationTest tests, 0.084s startup |
+| **Examples** | ✅ Complete | `quarkus-tarkus-examples` (4 scenarios, all ledger capabilities) + `quarkus-tarkus-flow-examples` (TarkusFlow DSL showcase) |
 | **8 — CaseHub integration** | ⏸ Blocked | `quarkus-tarkus-casehub` — CaseHub WorkerRegistry adapter (awaiting CaseHub stable API) |
 | **9 — Qhorus integration** | ⏸ Blocked | `quarkus-tarkus-qhorus` — MCP tools (awaiting Qhorus stable API) |
 | **10 — ProvenanceLink** | ⏸ Blocked | Typed PROV-O causal graph — awaiting CaseHub + Qhorus integrations (issue #39) |
