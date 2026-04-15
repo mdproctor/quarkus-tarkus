@@ -1,6 +1,6 @@
-# quarkus-tarkus-flow
+# quarkus-workitems-flow
 
-Integrates Quarkus Tarkus with [Quarkus-Flow](https://github.com/quarkiverse/quarkus-flow),
+Integrates Quarkus WorkItems with [Quarkus-Flow](https://github.com/quarkiverse/quarkus-flow),
 allowing workflow definitions to include steps that suspend until a human or AI agent
 acts on a WorkItem.
 
@@ -13,23 +13,23 @@ an approval, a review, an override — before continuing.
 
 ```xml
 <dependency>
-  <groupId>io.quarkiverse.tarkus</groupId>
-  <artifactId>quarkus-tarkus-flow</artifactId>
+  <groupId>io.quarkiverse.workitems</groupId>
+  <artifactId>quarkus-workitems-flow</artifactId>
   <version>1.0.0-SNAPSHOT</version>
 </dependency>
 ```
 
-Also requires `quarkus-tarkus` (the core extension) and a configured datasource.
+Also requires `quarkus-workitems` (the core extension) and a configured datasource.
 
 ---
 
 ## How it works
 
-When a workflow reaches a Tarkus step:
+When a workflow reaches a WorkItems step:
 
-1. A WorkItem is created in the Tarkus inbox via `WorkItemService`
+1. A WorkItem is created in the WorkItems inbox via `WorkItemService`
 2. The workflow suspends — Quarkus-Flow holds the coroutine; no thread is blocked
-3. A human (or agent) acts on the WorkItem via the Tarkus REST API (`PUT /tarkus/workitems/{id}/complete`)
+3. A human (or agent) acts on the WorkItem via the WorkItems REST API (`PUT /workitems/{id}/complete`)
 4. `WorkItemLifecycleEvent` fires; `WorkItemFlowEventListener` picks it up and completes the suspended future
 5. The workflow resumes with the resolution JSON as the step output
 
@@ -38,14 +38,14 @@ which the workflow can catch and handle.
 
 ---
 
-## Usage — TarkusFlow DSL (recommended)
+## Usage — WorkItemsFlow DSL (recommended)
 
-Extend `TarkusFlow` instead of `Flow` to get the `workItem()` builder alongside
+Extend `WorkItemsFlow` instead of `Flow` to get the `workItem()` builder alongside
 `function()`, `agent()`, and other Quarkus-Flow task types:
 
 ```java
 @ApplicationScoped
-public class DocumentApprovalWorkflow extends TarkusFlow {
+public class DocumentApprovalWorkflow extends WorkItemsFlow {
 
     @Override
     public Workflow descriptor() {
@@ -63,14 +63,14 @@ public class DocumentApprovalWorkflow extends TarkusFlow {
 }
 ```
 
-The `workItem()` call creates a `TarkusTaskBuilder`. Calling `.buildTask(InputClass.class)`
+The `workItem()` call creates a `WorkItemTaskBuilder`. Calling `.buildTask(InputClass.class)`
 produces a `FuncTaskConfigurer` that Quarkus-Flow wires into the workflow like any other task.
 
-### TarkusTaskBuilder options
+### WorkItemTaskBuilder options
 
 | Method | Required | Description |
 |---|---|---|
-| `.title(String)` | ✅ | Shown in the Tarkus inbox |
+| `.title(String)` | ✅ | Shown in the WorkItems inbox |
 | `.description(String)` | | Longer context for the reviewer |
 | `.assigneeId(String)` | | Assign directly to a specific user |
 | `.candidateGroups(String)` | | Route to a work queue (comma-separated group names) |
@@ -84,7 +84,7 @@ work-queue routing — any eligible member can claim the WorkItem from the inbox
 
 ## Usage — HumanTaskFlowBridge (lower-level)
 
-Inject `HumanTaskFlowBridge` directly if you prefer not to extend `TarkusFlow`,
+Inject `HumanTaskFlowBridge` directly if you prefer not to extend `WorkItemsFlow`,
 or when you need more control over WorkItem creation:
 
 ```java
@@ -116,8 +116,8 @@ or a failed Uni with `WorkItemResolutionException` if rejected or cancelled.
 
 | Class | Role |
 |---|---|
-| `TarkusFlow` | Base class — extend instead of `Flow` to access the `workItem()` DSL method |
-| `TarkusTaskBuilder` | Fluent builder returned by `workItem()` — configures the WorkItem and produces a `FuncTaskConfigurer` |
+| `WorkItemsFlow` | Base class — extend instead of `Flow` to access the `workItem()` DSL method |
+| `WorkItemTaskBuilder` | Fluent builder returned by `workItem()` — configures the WorkItem and produces a `FuncTaskConfigurer` |
 | `HumanTaskFlowBridge` | CDI bean — creates WorkItems and registers their futures; inject directly for lower-level control |
 | `PendingWorkItemRegistry` | Internal — holds `CompletableFuture<String>` per pending WorkItem; resolved when the human acts |
 | `WorkItemFlowEventListener` | Internal — observes `WorkItemLifecycleEvent` CDI events and completes or fails pending futures |
@@ -145,8 +145,8 @@ The exception carries `.workItemId()` and `.reason()` for logging or compensatio
 
 ---
 
-## Relationship to quarkus-tarkus
+## Relationship to quarkus-workitems
 
-`quarkus-tarkus-flow` depends on `quarkus-tarkus` — it does not modify the core extension.
+`quarkus-workitems-flow` depends on `quarkus-workitems` — it does not modify the core extension.
 `WorkItemService` and the CDI event infrastructure come from the core. If you use
-`quarkus-tarkus` without this module, none of these classes are on the classpath.
+`quarkus-workitems` without this module, none of these classes are on the classpath.

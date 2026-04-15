@@ -1,4 +1,4 @@
-# Quarkus Tarkus — Ledger, Audit, and Provenance Design
+# Quarkus WorkItems — Ledger, Audit, and Provenance Design
 
 > *This document covers the full accountability stack: from simple audit trails to
 > causal provenance graphs, peer attestation, and EigenTrust reputation.*
@@ -7,10 +7,10 @@
 
 ## Design Principle: Complexity Must Not Leak
 
-The ledger is an **optional, separate Maven module** — `quarkus-tarkus-ledger`.
+The ledger is an **optional, separate Maven module** — `quarkus-workitems-ledger`.
 
 If you don't add it as a dependency, your application is identical to using
-`quarkus-tarkus` today. No extra tables, no extra config keys, no overhead. The
+`quarkus-workitems` today. No extra tables, no extra config keys, no overhead. The
 core extension doesn't know the ledger exists.
 
 This is possible because Phase 4 already established the right seam:
@@ -23,12 +23,12 @@ The ledger module is a CDI observer of those events. Observer with no implementa
 ## Module Architecture
 
 ```
-quarkus-tarkus-parent
-├── quarkus-tarkus                  ← core (unchanged)
-├── quarkus-tarkus-deployment       ← core deployment
-├── quarkus-tarkus-testing          ← InMemory impls for unit tests
-├── quarkus-tarkus-flow             ← Quarkus-Flow CDI bridge
-├── quarkus-tarkus-ledger           ← NEW: fully optional ledger module
+quarkus-workitems-parent
+├── quarkus-workitems                  ← core (unchanged)
+├── quarkus-workitems-deployment       ← core deployment
+├── quarkus-workitems-testing          ← InMemory impls for unit tests
+├── quarkus-workitems-flow             ← Quarkus-Flow CDI bridge
+├── quarkus-workitems-ledger           ← NEW: fully optional ledger module
 │   └── (no separate deployment needed — pure runtime CDI)
 └── integration-tests               ← native image validation
 ```
@@ -36,20 +36,20 @@ quarkus-tarkus-parent
 **How the separation works at runtime:**
 
 ```
-quarkus-tarkus (core)                        quarkus-tarkus-ledger (optional)
+quarkus-workitems (core)                        quarkus-workitems-ledger (optional)
 ─────────────────────────────────────────    ─────────────────────────────────────────
 WorkItem entity                              LedgerEntry entity
 AuditEntry entity                            LedgerAttestation entity
 WorkItemService                              ActorTrustScore entity
   └─ fires WorkItemLifecycleEvent ────────►  LedgerEventCapture (@Observes)
-WorkItemResource (/tarkus/workitems)           └─ writes LedgerEntry
+WorkItemResource (/workitems)           └─ writes LedgerEntry
 WorkItemLifecycleEvent (+ 2 new fields)        └─ queries WorkItemRepo for snapshot
-TarkusConfig (stays clean)                   LedgerResource (/tarkus/.../ledger)
+WorkItemsConfig (stays clean)                   LedgerResource (/workitems/.../ledger)
                                              LedgerConfig (@ConfigMapping)
                                              db/ledger-migration/ (own migration path)
 ```
 
-If `quarkus-tarkus-ledger` is absent: CDI events fire into the void. No ledger
+If `quarkus-workitems-ledger` is absent: CDI events fire into the void. No ledger
 tables. No config. No overhead. Zero core changes required.
 
 ---
@@ -61,8 +61,8 @@ to support richer context — useful to any observer, not just the ledger:
 
 ```java
 public record WorkItemLifecycleEvent(
-    String type,        // "io.quarkiverse.tarkus.workitem.completed"
-    String source,      // "/tarkus/workitems/{id}"
+    String type,        // "io.quarkiverse.workitems.workitem.completed"
+    String source,      // "/workitems/{id}"
     String subject,     // workItemId.toString()
     UUID workItemId,
     WorkItemStatus status,
@@ -89,7 +89,7 @@ concepts into the core REST API.
 Instead, the creating system calls a ledger-specific endpoint after WorkItem creation:
 
 ```
-POST /tarkus/workitems/{id}/ledger/provenance
+POST /workitems/{id}/ledger/provenance
 {
   "sourceEntityId":     "workflow-instance-abc123",
   "sourceEntityType":   "Flow:WorkflowInstance",
@@ -97,14 +97,14 @@ POST /tarkus/workitems/{id}/ledger/provenance
 }
 ```
 
-This endpoint is on `LedgerResource` in `quarkus-tarkus-ledger`. If the module
+This endpoint is on `LedgerResource` in `quarkus-workitems-ledger`. If the module
 isn't present, the endpoint doesn't exist. No impact on the core API.
 
 ---
 
 ## Database Migrations
 
-`quarkus-tarkus-ledger` registers its own Flyway migration path
+`quarkus-workitems-ledger` registers its own Flyway migration path
 (`db/ledger-migration/`) via a Quarkus `@BuildStep` in its deployment processor.
 Core's `db/migration/` (V1__initial_schema.sql) is untouched.
 
@@ -115,20 +115,20 @@ If the ledger module is absent, the `ledger_entry`, `ledger_attestation`, and
 
 ## Configuration
 
-`LedgerConfig` is a `@ConfigMapping(prefix = "quarkus.tarkus.ledger")` interface
-in `quarkus-tarkus-ledger`. These config keys are invisible unless the module is
+`LedgerConfig` is a `@ConfigMapping(prefix = "quarkus.workitems.ledger")` interface
+in `quarkus-workitems-ledger`. These config keys are invisible unless the module is
 on the classpath.
 
 | Property | Default | Meaning |
 |---|---|---|
-| `quarkus.tarkus.ledger.enabled` | `true` | Master switch when module is present |
-| `quarkus.tarkus.ledger.hash-chain.enabled` | `true` | SHA-256 tamper-evidence chain |
-| `quarkus.tarkus.ledger.decision-context.enabled` | `true` | WorkItem snapshot at each transition |
-| `quarkus.tarkus.ledger.evidence.enabled` | `false` | Structured evidence capture (opt-in) |
-| `quarkus.tarkus.ledger.attestations.enabled` | `true` | Stamp/attestation REST endpoints |
-| `quarkus.tarkus.ledger.trust-score.enabled` | `false` | Nightly EigenTrust batch computation |
-| `quarkus.tarkus.ledger.trust-score.decay-half-life-days` | `90` | Score decay rate |
-| `quarkus.tarkus.ledger.trust-routing.enabled` | `false` | Trust-score-based routing |
+| `quarkus.workitems.ledger.enabled` | `true` | Master switch when module is present |
+| `quarkus.workitems.ledger.hash-chain.enabled` | `true` | SHA-256 tamper-evidence chain |
+| `quarkus.workitems.ledger.decision-context.enabled` | `true` | WorkItem snapshot at each transition |
+| `quarkus.workitems.ledger.evidence.enabled` | `false` | Structured evidence capture (opt-in) |
+| `quarkus.workitems.ledger.attestations.enabled` | `true` | Stamp/attestation REST endpoints |
+| `quarkus.workitems.ledger.trust-score.enabled` | `false` | Nightly EigenTrust batch computation |
+| `quarkus.workitems.ledger.trust-score.decay-half-life-days` | `90` | Score decay rate |
+| `quarkus.workitems.ledger.trust-routing.enabled` | `false` | Trust-score-based routing |
 
 **Rationale for defaults:** hash-chain and decision-context default ON — low
 overhead, high compliance value (GDPR, EU AI Act). evidence, trust-score, and
@@ -165,7 +165,7 @@ and EU AI Act Article 12.
 }
 ```
 
-**Configurable:** `quarkus.tarkus.ledger.decision-context.enabled`
+**Configurable:** `quarkus.workitems.ledger.decision-context.enabled`
 
 ### 3. Plan Reference
 
@@ -277,16 +277,16 @@ actor_trust_score
 
 ---
 
-## REST API (in quarkus-tarkus-ledger)
+## REST API (in quarkus-workitems-ledger)
 
 All endpoints are on `LedgerResource`. **None of these exist if the module is absent.**
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/tarkus/workitems/{id}/ledger` | All ledger entries with attestations |
-| `POST` | `/tarkus/workitems/{id}/ledger/provenance` | Set source entity reference |
-| `POST` | `/tarkus/workitems/{id}/ledger/{entryId}/attestations` | Post a stamp |
-| `GET` | `/tarkus/actors/{actorId}/trust` | Get actor trust score (when enabled) |
+| `GET` | `/workitems/{id}/ledger` | All ledger entries with attestations |
+| `POST` | `/workitems/{id}/ledger/provenance` | Set source entity reference |
+| `POST` | `/workitems/{id}/ledger/{entryId}/attestations` | Post a stamp |
+| `GET` | `/workitems/actors/{actorId}/trust` | Get actor trust score (when enabled) |
 
 ---
 
@@ -308,7 +308,7 @@ All endpoints are on `LedgerResource`. **None of these exist if the module is ab
 
 - `WorkItemService` — no ledger injection, no `if (ledgerConfig...)` guards
 - `WorkItemCreateRequest` — no sourceEntityRef fields
-- `TarkusConfig` — no ledger config section
+- `WorkItemsConfig` — no ledger config section
 - `AuditEntry` — unchanged, still written as today
 - V1 migration — untouched
 - All existing tests — unaffected
@@ -324,7 +324,7 @@ doesn't use them.
 Once CaseHub and Qhorus integrations ship, the lightweight `sourceEntityRef` fields
 on `LedgerEntry` can be promoted to a full `ProvenanceLink` typed-edge graph
 modelling W3C PROV-O relationships (GENERATED_BY, USED, DERIVED_FROM, INFORMED_BY).
-See issue #39. The `quarkus-tarkus-ledger` module is the natural home for this.
+See issue #39. The `quarkus-workitems-ledger` module is the natural home for this.
 
 ---
 

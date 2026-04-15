@@ -1,7 +1,7 @@
-# quarkus-tarkus-examples
+# quarkus-workitems-examples
 
 Runnable scenario demonstrations for every ledger, audit, and lifecycle capability
-of `quarkus-tarkus`. Each scenario runs in one HTTP call, logs a narrative to
+of `quarkus-workitems`. Each scenario runs in one HTTP call, logs a narrative to
 stdout, and returns the full ledger trail as JSON.
 
 ## Capability Coverage
@@ -36,7 +36,7 @@ stdout, and returns the full ledger trail as JSON.
 
 ```bash
 # Start in dev mode (H2 in-memory, auto-restart)
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn quarkus:dev -pl quarkus-tarkus-examples
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn quarkus:dev -pl quarkus-workitems-examples
 ```
 
 Quarkus starts on `http://localhost:8080`. All four scenarios are ready immediately.
@@ -123,7 +123,7 @@ curl -s -X POST http://localhost:8080/examples/queue/run | jq .
 
 **Query a trust score directly:**
 ```bash
-curl -s http://localhost:8080/tarkus/actors/reviewer-bob/trust | jq .
+curl -s http://localhost:8080/workitems/actors/reviewer-bob/trust | jq .
 ```
 
 ## Running All Four in Sequence
@@ -142,15 +142,15 @@ the standard WorkItem REST API:
 
 ```bash
 # Create and immediately cancel a WorkItem
-ID=$(curl -s -X POST http://localhost:8080/tarkus/workitems \
+ID=$(curl -s -X POST http://localhost:8080/workitems \
   -H 'Content-Type: application/json' \
   -d '{"title":"Test cancel","createdBy":"demo"}' | jq -r '.id')
-curl -s -X PUT "http://localhost:8080/tarkus/workitems/$ID/cancel?actor=admin" \
+curl -s -X PUT "http://localhost:8080/workitems/$ID/cancel?actor=admin" \
   -H 'Content-Type: application/json' \
   -d '{"reason":"No longer needed"}' | jq .
 ```
 
-Expiry + escalation: set `quarkus.tarkus.default-expiry-hours=0` in
+Expiry + escalation: set `quarkus.workitems.default-expiry-hours=0` in
 `application.properties` and wait for the scheduler. The ledger records
 `WorkItemExpired`/`WorkItemEscalated` entries with `actorType=SYSTEM` (via the
 `system:` prefix convention).
@@ -158,7 +158,7 @@ Expiry + escalation: set `quarkus.tarkus.default-expiry-hours=0` in
 ## Running the Tests
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-tarkus-examples
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-examples
 ```
 
 Expected: 4 tests, 0 failures.

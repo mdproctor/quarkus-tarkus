@@ -1,9 +1,9 @@
-# Quarkus Tarkus — Design Document
+# Quarkus WorkItems — Design Document
 
 ## Overview
 
-Quarkus Tarkus provides human-scale WorkItem lifecycle management for the Quarkus
-ecosystem. Any Quarkus application adds `quarkus-tarkus` as a dependency and gets a
+Quarkus WorkItems provides human-scale WorkItem lifecycle management for the Quarkus
+ecosystem. Any Quarkus application adds `quarkus-workitems` as a dependency and gets a
 human task inbox — WorkItems with expiry, delegation, escalation, priority, and audit
 trail — usable standalone or via optional integrations with Quarkus-Flow, CaseHub,
 and Qhorus.
@@ -18,7 +18,7 @@ Primary design specification: `docs/specs/2026-04-14-tarkus-design.md`
 |---|---|---|
 | `Task` | CNCF Serverless Workflow / Quarkus-Flow | Machine-executed workflow step — milliseconds, no assignee, no expiry |
 | `Task` | CaseHub | CMMN case work unit — assigned to any worker (human or agent) via capabilities |
-| `WorkItem` | Quarkus Tarkus | Human-resolved unit of work — minutes/days, has assignee, expiry, delegation, audit |
+| `WorkItem` | Quarkus WorkItems | Human-resolved unit of work — minutes/days, has assignee, expiry, delegation, audit |
 
 **Rule:** A `Task` is controlled by a machine. A `WorkItem` waits for a human.
 
@@ -30,19 +30,19 @@ Maven multi-module layout following Quarkiverse conventions:
 
 | Module | Artifact | Purpose |
 |---|---|---|
-| Parent | `quarkus-tarkus-parent` | BOM, version management |
-| Runtime | `quarkus-tarkus` | Core — WorkItem model, storage SPI, JPA defaults, service, REST API, lifecycle engine |
-| Deployment | `quarkus-tarkus-deployment` | Build-time processor — feature registration, native config |
-| Testing | `quarkus-tarkus-testing` | `InMemoryWorkItemRepository` — no datasource needed for unit tests |
-| Flow | `quarkus-tarkus-flow` | Quarkus-Flow integration — `TarkusFlow` DSL base class, `HumanTaskFlowBridge`, `WorkItemFlowEventListener` |
-| Ledger | `quarkus-tarkus-ledger` | Optional accountability module — command/event ledger, SHA-256 hash chain, peer attestation, EigenTrust reputation. Extends `io.quarkiverse.ledger:quarkus-ledger` (shared base library — see ADR-0001). Zero core impact when absent. |
-| Examples | `quarkus-tarkus-examples` | Runnable scenario demos — 4 `@QuarkusTest` scenarios covering every ledger/audit capability via `POST /examples/{name}/run` |
-| Flow Examples | `quarkus-tarkus-flow-examples` | TarkusFlow DSL showcase — contract review workflow mixing automated `function()` and human `tarkus()` steps |
+| Parent | `quarkus-workitems-parent` | BOM, version management |
+| Runtime | `quarkus-workitems` | Core — WorkItem model, storage SPI, JPA defaults, service, REST API, lifecycle engine |
+| Deployment | `quarkus-workitems-deployment` | Build-time processor — feature registration, native config |
+| Testing | `quarkus-workitems-testing` | `InMemoryWorkItemRepository` — no datasource needed for unit tests |
+| Flow | `quarkus-workitems-flow` | Quarkus-Flow integration — `WorkItemsFlow` DSL base class, `HumanTaskFlowBridge`, `WorkItemFlowEventListener` |
+| Ledger | `quarkus-workitems-ledger` | Optional accountability module — command/event ledger, SHA-256 hash chain, peer attestation, EigenTrust reputation. Extends `io.quarkiverse.ledger:quarkus-ledger` (shared base library — see ADR-0001). Zero core impact when absent. |
+| Examples | `quarkus-workitems-examples` | Runnable scenario demos — 4 `@QuarkusTest` scenarios covering every ledger/audit capability via `POST /examples/{name}/run` |
+| Flow Examples | `quarkus-workitems-flow-examples` | WorkItemsFlow DSL showcase — contract review workflow mixing automated `function()` and human `workItem()` steps |
 | Integration Tests | `integration-tests` | Black-box `@QuarkusIntegrationTest` suite and native image validation |
-| *(future)* | `quarkus-tarkus-casehub` | CaseHub `WorkerRegistry` adapter (blocked: CaseHub not ready) |
-| *(future)* | `quarkus-tarkus-qhorus` | Qhorus MCP tools (blocked: Qhorus not ready) |
-| *(future)* | `quarkus-tarkus-mongodb` | MongoDB-backed `WorkItemRepository` |
-| *(future)* | `quarkus-tarkus-redis` | Redis-backed `WorkItemRepository` |
+| *(future)* | `quarkus-workitems-casehub` | CaseHub `WorkerRegistry` adapter (blocked: CaseHub not ready) |
+| *(future)* | `quarkus-workitems-qhorus` | Qhorus MCP tools (blocked: Qhorus not ready) |
+| *(future)* | `quarkus-workitems-mongodb` | MongoDB-backed `WorkItemRepository` |
+| *(future)* | `quarkus-workitems-redis` | Redis-backed `WorkItemRepository` |
 
 ---
 
@@ -141,7 +141,7 @@ Two interfaces in `runtime.repository` allow pluggable persistence:
 | `AuditEntryRepository` | `JpaAuditEntryRepository` | append, findByWorkItemId |
 
 Default JPA implementations are `@ApplicationScoped`. Alternatives (in-memory, MongoDB, Redis)
-override via `@Alternative @Priority(1)`. The `quarkus-tarkus-testing` module provides
+override via `@Alternative @Priority(1)`. The `quarkus-workitems-testing` module provides
 `InMemoryWorkItemRepository` + `InMemoryAuditEntryRepository` — no datasource required,
 enabling plain unit tests without `@QuarkusTest`.
 
@@ -159,16 +159,16 @@ enabling plain unit tests without `@QuarkusTest`.
 
 ## Ledger Module
 
-The optional `quarkus-tarkus-ledger` module records every WorkItem lifecycle transition as an
+The optional `quarkus-workitems-ledger` module records every WorkItem lifecycle transition as an
 immutable `WorkItemLedgerEntry`. It is activated by adding the module to the classpath — the
 core extension is completely unchanged whether the module is present or not.
 
 ### Dependency on quarkus-ledger (ADR-0001)
 
-`quarkus-tarkus-ledger` depends on `io.quarkiverse.ledger:quarkus-ledger` — a domain-agnostic
+`quarkus-workitems-ledger` depends on `io.quarkiverse.ledger:quarkus-ledger` — a domain-agnostic
 shared library providing `LedgerEntry`, `LedgerAttestation`, `ActorTrustScore`,
 `TrustScoreComputer`, `LedgerHashChain`, and their repositories. This allows CaseHub and
-Qhorus to adopt the same ledger infrastructure without depending on Tarkus.
+Qhorus to adopt the same ledger infrastructure without depending on WorkItems.
 
 `WorkItemLedgerEntry` extends `LedgerEntry` via JPA JOINED inheritance, adding only
 `commandType` and `eventType`. All common fields live in the `ledger_entry` base table.
@@ -194,7 +194,7 @@ between the core and the ledger module. If the module is absent, events fire int
 
 ## REST API Surface
 
-`WorkItemResource` at `/tarkus/workitems`:
+`WorkItemResource` at `/workitems`:
 
 | Endpoint | Transition | Notes |
 |---|---|---|
@@ -216,15 +216,15 @@ between the core and the ledger module. If the module is absent, events fire int
 
 ## Configuration
 
-`TarkusConfig` — `@ConfigMapping(prefix = "quarkus.tarkus")`:
+`WorkItemsConfig` — `@ConfigMapping(prefix = "quarkus.workitems")`:
 
 | Property | Default | Meaning |
 |---|---|---|
-| `quarkus.tarkus.default-expiry-hours` | 24 | Default completion deadline |
-| `quarkus.tarkus.default-claim-hours` | 4 | Default claim deadline (0 = no claim deadline) |
-| `quarkus.tarkus.escalation-policy` | notify | Completion expiry: `notify`, `reassign`, `auto-reject` |
-| `quarkus.tarkus.claim-escalation-policy` | notify | Claim deadline breach: `notify`, `reassign` |
-| `quarkus.tarkus.cleanup.expiry-check-seconds` | 60 | Expiry/claim-deadline job interval |
+| `quarkus.workitems.default-expiry-hours` | 24 | Default completion deadline |
+| `quarkus.workitems.default-claim-hours` | 4 | Default claim deadline (0 = no claim deadline) |
+| `quarkus.workitems.escalation-policy` | notify | Completion expiry: `notify`, `reassign`, `auto-reject` |
+| `quarkus.workitems.claim-escalation-policy` | notify | Claim deadline breach: `notify`, `reassign` |
+| `quarkus.workitems.cleanup.expiry-check-seconds` | 60 | Expiry/claim-deadline job interval |
 
 Consuming app owns all datasource config.
 
@@ -234,16 +234,16 @@ Consuming app owns all datasource config.
 
 | Phase | Status | What |
 |---|---|---|
-| **1 — Core data model** | ✅ Complete | Storage SPI, JPA defaults, InMemory (testing module), WorkItem + AuditEntry entities, Flyway V1, WorkItemService, TarkusConfig |
+| **1 — Core data model** | ✅ Complete | Storage SPI, JPA defaults, InMemory (testing module), WorkItem + AuditEntry entities, Flyway V1, WorkItemService, WorkItemsConfig |
 | **2 — REST API** | ✅ Complete | WorkItemResource — 13 endpoints, DTOs, exception mappers |
 | **3 — Lifecycle engine** | ✅ Complete | ExpiryCleanupJob, ClaimDeadlineJob, EscalationPolicy SPI + 3 implementations |
 | **4 — CDI events** | ✅ Complete | WorkItemLifecycleEvent on all transitions; rationale + planRef fields |
-| **5 — Quarkus-Flow integration** | ✅ Complete | `quarkus-tarkus-flow` — TarkusFlow DSL, HumanTaskFlowBridge, Uni<String> suspension |
-| **6 — Ledger module** | ✅ Complete | `quarkus-tarkus-ledger` — command/event model, hash chain, attestation, EigenTrust; optional, zero core impact |
+| **5 — Quarkus-Flow integration** | ✅ Complete | `quarkus-workitems-flow` — WorkItemsFlow DSL, HumanTaskFlowBridge, Uni<String> suspension |
+| **6 — Ledger module** | ✅ Complete | `quarkus-workitems-ledger` — command/event model, hash chain, attestation, EigenTrust; optional, zero core impact |
 | **7 — Native image** | ✅ Complete | GraalVM 25 native build, 19 @QuarkusIntegrationTest tests, 0.084s startup |
-| **Examples** | ✅ Complete | `quarkus-tarkus-examples` (4 scenarios, all ledger capabilities) + `quarkus-tarkus-flow-examples` (TarkusFlow DSL showcase) |
-| **8 — CaseHub integration** | ⏸ Blocked | `quarkus-tarkus-casehub` — CaseHub WorkerRegistry adapter (awaiting CaseHub stable API) |
-| **9 — Qhorus integration** | ⏸ Blocked | `quarkus-tarkus-qhorus` — MCP tools (awaiting Qhorus stable API) |
+| **Examples** | ✅ Complete | `quarkus-workitems-examples` (4 scenarios, all ledger capabilities) + `quarkus-workitems-flow-examples` (WorkItemsFlow DSL showcase) |
+| **8 — CaseHub integration** | ⏸ Blocked | `quarkus-workitems-casehub` — CaseHub WorkerRegistry adapter (awaiting CaseHub stable API) |
+| **9 — Qhorus integration** | ⏸ Blocked | `quarkus-workitems-qhorus` — MCP tools (awaiting Qhorus stable API) |
 | **10 — ProvenanceLink** | ⏸ Blocked | Typed PROV-O causal graph — awaiting CaseHub + Qhorus integrations (issue #39) |
 
 ---
@@ -253,7 +253,7 @@ Consuming app owns all datasource config.
 Two tiers:
 
 **Unit tests** (no Quarkus boot):
-- Use `InMemoryWorkItemRepository` from `quarkus-tarkus-testing`
+- Use `InMemoryWorkItemRepository` from `quarkus-workitems-testing`
 - No datasource, no Flyway, instant execution
 - Exercise `WorkItemService` logic in isolation
 
