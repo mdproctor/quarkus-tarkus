@@ -143,6 +143,60 @@ public class WorkItemService {
         return saved;
     }
 
+    /**
+     * Complete a WorkItem with an explicit rationale and policy reference for ledger capture.
+     *
+     * @param id the WorkItem UUID
+     * @param actorId who completed it
+     * @param resolution the resolution payload
+     * @param rationale the actor's stated basis for the decision (GDPR Art. 22 compliance)
+     * @param planRef the policy/procedure version that governed this decision
+     */
+    @Transactional
+    public WorkItem complete(final UUID id, final String actorId, final String resolution,
+            final String rationale, final String planRef) {
+        final WorkItem item = requireWorkItem(id);
+        if (item.status != WorkItemStatus.IN_PROGRESS) {
+            throw new IllegalStateException("Cannot complete WorkItem in status: " + item.status);
+        }
+        item.status = WorkItemStatus.COMPLETED;
+        item.completedAt = Instant.now();
+        item.resolution = resolution;
+        final WorkItem saved = workItemRepo.save(item);
+        audit(saved.id, "COMPLETED", actorId, null);
+        if (lifecycleEvent != null) {
+            lifecycleEvent.fire(WorkItemLifecycleEvent.of(
+                    "COMPLETED", saved.id, saved.status, actorId, resolution, rationale, planRef));
+        }
+        return saved;
+    }
+
+    /**
+     * Reject a WorkItem with an explicit rationale for ledger capture.
+     *
+     * @param id the WorkItem UUID
+     * @param actorId who rejected it
+     * @param reason the rejection reason (stored as event detail)
+     * @param rationale the actor's formal stated basis (stored as ledger rationale)
+     */
+    @Transactional
+    public WorkItem reject(final UUID id, final String actorId, final String reason,
+            final String rationale) {
+        final WorkItem item = requireWorkItem(id);
+        if (item.status != WorkItemStatus.ASSIGNED && item.status != WorkItemStatus.IN_PROGRESS) {
+            throw new IllegalStateException("Cannot reject WorkItem in status: " + item.status);
+        }
+        item.status = WorkItemStatus.REJECTED;
+        item.completedAt = Instant.now();
+        final WorkItem saved = workItemRepo.save(item);
+        audit(saved.id, "REJECTED", actorId, reason);
+        if (lifecycleEvent != null) {
+            lifecycleEvent.fire(WorkItemLifecycleEvent.of(
+                    "REJECTED", saved.id, saved.status, actorId, reason, rationale, null));
+        }
+        return saved;
+    }
+
     @Transactional
     public WorkItem delegate(final UUID id, final String actorId, final String toAssigneeId) {
         final WorkItem item = requireWorkItem(id);

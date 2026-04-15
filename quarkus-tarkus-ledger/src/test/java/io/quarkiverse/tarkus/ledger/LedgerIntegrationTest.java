@@ -352,4 +352,54 @@ class LedgerIntegrationTest {
         assertThat(results.stream().map(a -> a.attestorId).toList())
                 .containsExactlyInAnyOrder("alice", "audit-agent");
     }
+
+    // -------------------------------------------------------------------------
+    // rationale and planRef captured via overloaded complete()
+    // -------------------------------------------------------------------------
+
+    @Test
+    void complete_withRationaleAndPlanRef_capturedInLedger() {
+        final var item = workItemService.create(new WorkItemCreateRequest(
+                "Rationale complete test", null, null, null,
+                WorkItemPriority.NORMAL, null, null, null, null,
+                "system", null, null, null, null));
+        workItemService.claim(item.id, "alice");
+        workItemService.start(item.id, "alice");
+
+        workItemService.complete(item.id, "alice",
+                "{\"decision\":\"approved\"}",
+                "Income verified against payslips",
+                "credit-policy-v2.1");
+
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
+        final WorkItemLedgerEntry completionEntry = entries.stream()
+                .filter(e -> "WorkItemCompleted".equals(e.eventType))
+                .findFirst().orElseThrow();
+        assertThat(completionEntry.rationale).isEqualTo("Income verified against payslips");
+        assertThat(completionEntry.planRef).isEqualTo("credit-policy-v2.1");
+    }
+
+    // -------------------------------------------------------------------------
+    // rationale captured via overloaded reject()
+    // -------------------------------------------------------------------------
+
+    @Test
+    void reject_withRationale_capturedInLedger() {
+        final var item = workItemService.create(new WorkItemCreateRequest(
+                "Rationale reject test", null, null, null,
+                WorkItemPriority.NORMAL, null, null, null, null,
+                "system", null, null, null, null));
+        workItemService.claim(item.id, "alice");
+
+        workItemService.reject(item.id, "alice",
+                "Content violates guidelines",
+                "Context review: satire, not hate speech");
+
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
+        final WorkItemLedgerEntry rejectionEntry = entries.stream()
+                .filter(e -> "WorkItemRejected".equals(e.eventType))
+                .findFirst().orElseThrow();
+        assertThat(rejectionEntry.rationale).isEqualTo("Context review: satire, not hate speech");
+        assertThat(rejectionEntry.detail).isEqualTo("Content violates guidelines");
+    }
 }
