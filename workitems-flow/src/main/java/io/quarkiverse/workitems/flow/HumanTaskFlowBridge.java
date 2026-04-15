@@ -10,12 +10,12 @@ import io.quarkiverse.workitems.runtime.service.WorkItemService;
 import io.smallrye.mutiny.Uni;
 
 /**
- * CDI bridge for integrating Tarkus human task inbox with Quarkus Flow workflows.
+ * CDI bridge for integrating human task inbox with Quarkus Flow workflows.
  *
  * <p>
  * Workflow developers inject this bean and call {@link #requestApproval} from a flow task function.
  * The method creates a WorkItem and returns a {@link Uni} that completes when a human resolves the
- * WorkItem via the Tarkus REST API. Quarkus Flow suspends the workflow while the Uni is pending.
+ * WorkItem via the WorkItems REST API. Quarkus Flow suspends the workflow while the Uni is pending.
  *
  * <p>
  * Example usage in a Flow definition:
@@ -41,7 +41,7 @@ public class HumanTaskFlowBridge {
     PendingWorkItemRegistry registry;
 
     /**
-     * Request human approval by creating a Tarkus WorkItem and suspending
+     * Request human approval by creating a WorkItem and suspending
      * until the item is completed or rejected.
      *
      * @param title human-readable task name (required)

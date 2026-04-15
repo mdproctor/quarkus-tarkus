@@ -19,7 +19,7 @@ import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
 
 /**
  * In-memory implementation of {@link WorkItemRepository} for use in tests of
- * applications that embed Quarkus Tarkus. No datasource or Flyway configuration
+ * applications that embed Quarkus WorkItems. No datasource or Flyway configuration
  * is required.
  *
  * <p>

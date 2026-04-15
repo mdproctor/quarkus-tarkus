@@ -8,7 +8,7 @@ import io.serverlessworkflow.fluent.func.dsl.FuncDSL;
 import io.smallrye.mutiny.Uni;
 
 /**
- * Fluent builder for creating Tarkus WorkItem suspension tasks
+ * Fluent builder for creating WorkItem suspension tasks
  * within Quarkus-Flow workflow definitions.
  *
  * <p>
@@ -43,7 +43,7 @@ public class WorkItemTaskBuilder {
     }
 
     /**
-     * Human-readable task name shown in the Tarkus inbox (required).
+     * Human-readable task name shown in the WorkItems inbox (required).
      *
      * @param title the task title
      * @return this builder
@@ -141,7 +141,7 @@ public class WorkItemTaskBuilder {
     }
 
     /**
-     * Builds a Quarkus-Flow compatible task that creates a Tarkus WorkItem
+     * Builds a Quarkus-Flow compatible task that creates a WorkItem
      * and suspends the workflow until a human or agent resolves it.
      *
      * <p>

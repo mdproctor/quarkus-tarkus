@@ -22,7 +22,7 @@ import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
  * CDI observer that writes a {@link WorkItemLedgerEntry} for every WorkItem lifecycle transition.
  *
  * <p>
- * This bean is the sole integration point between the core Tarkus extension and the ledger
+ * This bean is the sole integration point between the core WorkItems extension and the ledger
  * module. The core fires {@link WorkItemLifecycleEvent} CDI events on every transition; this
  * observer captures them and appends an immutable record to the ledger. The core has no
  * knowledge of this observer — if the ledger module is absent, events fire into the void.

@@ -7,7 +7,7 @@ import jakarta.inject.Inject;
 import io.quarkiverse.workitems.runtime.event.WorkItemLifecycleEvent;
 
 /**
- * Observes Tarkus WorkItem lifecycle CDI events and completes pending
+ * Observes WorkItem lifecycle CDI events and completes pending
  * CompletableFutures in {@link PendingWorkItemRegistry} so suspended
  * Quarkus Flow workflows can resume.
  */
