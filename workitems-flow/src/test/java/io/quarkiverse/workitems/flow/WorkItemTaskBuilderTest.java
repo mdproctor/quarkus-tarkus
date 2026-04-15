@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
 import io.smallrye.mutiny.Uni;
 
-class TarkusTaskBuilderTest {
+class WorkItemTaskBuilderTest {
 
     private HumanTaskFlowBridge bridge;
 
@@ -27,7 +27,7 @@ class TarkusTaskBuilderTest {
 
     @Test
     void builder_withAssigneeId_callsRequestApproval() {
-        TarkusTaskBuilder builder = new TarkusTaskBuilder("review", bridge)
+        WorkItemTaskBuilder builder = new WorkItemTaskBuilder("review", bridge)
                 .title("Review document")
                 .assigneeId("alice")
                 .priority(WorkItemPriority.HIGH);
@@ -40,7 +40,7 @@ class TarkusTaskBuilderTest {
 
     @Test
     void builder_withCandidateGroups_usesGroupApproval() {
-        TarkusTaskBuilder builder = new TarkusTaskBuilder("review", bridge)
+        WorkItemTaskBuilder builder = new WorkItemTaskBuilder("review", bridge)
                 .title("Group review")
                 .candidateGroups("legal-team,managers");
 
@@ -50,7 +50,7 @@ class TarkusTaskBuilderTest {
 
     @Test
     void builder_requiresTitle() {
-        TarkusTaskBuilder builder = new TarkusTaskBuilder("review", bridge);
+        WorkItemTaskBuilder builder = new WorkItemTaskBuilder("review", bridge);
         assertThatThrownBy(() -> builder.buildTask(String.class))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("title");
@@ -58,7 +58,7 @@ class TarkusTaskBuilderTest {
 
     @Test
     void builder_payloadFrom_extractsPayloadAtExecutionTime() {
-        TarkusTaskBuilder builder = new TarkusTaskBuilder("review", bridge)
+        WorkItemTaskBuilder builder = new WorkItemTaskBuilder("review", bridge)
                 .title("Review")
                 .assigneeId("alice")
                 .payloadFrom((String input) -> "{\"doc\":\"" + input + "\"}");
@@ -68,7 +68,7 @@ class TarkusTaskBuilderTest {
 
     @Test
     void builder_defaultPriorityIsNormal() {
-        TarkusTaskBuilder builder = new TarkusTaskBuilder("review", bridge)
+        WorkItemTaskBuilder builder = new WorkItemTaskBuilder("review", bridge)
                 .title("Review")
                 .assigneeId("alice");
         assertThat(builder.getPriority()).isEqualTo(WorkItemPriority.NORMAL);

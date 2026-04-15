@@ -12,7 +12,7 @@ import io.smallrye.mutiny.Uni;
  * within Quarkus-Flow workflow definitions.
  *
  * <p>
- * Obtained via {@link TarkusFlow#workItem(String)}.
+ * Obtained via {@link WorkItemsFlow#workItem(String)}.
  *
  * <pre>{@code
  * return workflow("document-approval")
@@ -26,7 +26,7 @@ import io.smallrye.mutiny.Uni;
  *         .build();
  * }</pre>
  */
-public class TarkusTaskBuilder {
+public class WorkItemTaskBuilder {
 
     private final String name;
     private final HumanTaskFlowBridge bridge;
@@ -37,7 +37,7 @@ public class TarkusTaskBuilder {
     private WorkItemPriority priority = WorkItemPriority.NORMAL;
     private Function<Object, String> payloadExtractor;
 
-    TarkusTaskBuilder(final String name, final HumanTaskFlowBridge bridge) {
+    WorkItemTaskBuilder(final String name, final HumanTaskFlowBridge bridge) {
         this.name = name;
         this.bridge = bridge;
     }
@@ -48,7 +48,7 @@ public class TarkusTaskBuilder {
      * @param title the task title
      * @return this builder
      */
-    public TarkusTaskBuilder title(final String title) {
+    public WorkItemTaskBuilder title(final String title) {
         this.title = title;
         return this;
     }
@@ -59,7 +59,7 @@ public class TarkusTaskBuilder {
      * @param description the task description
      * @return this builder
      */
-    public TarkusTaskBuilder description(final String description) {
+    public WorkItemTaskBuilder description(final String description) {
         this.description = description;
         return this;
     }
@@ -71,7 +71,7 @@ public class TarkusTaskBuilder {
      * @param assigneeId the user ID to assign to
      * @return this builder
      */
-    public TarkusTaskBuilder assigneeId(final String assigneeId) {
+    public WorkItemTaskBuilder assigneeId(final String assigneeId) {
         this.assigneeId = assigneeId;
         return this;
     }
@@ -83,7 +83,7 @@ public class TarkusTaskBuilder {
      * @param candidateGroups comma-separated group names
      * @return this builder
      */
-    public TarkusTaskBuilder candidateGroups(final String candidateGroups) {
+    public WorkItemTaskBuilder candidateGroups(final String candidateGroups) {
         this.candidateGroups = candidateGroups;
         return this;
     }
@@ -94,7 +94,7 @@ public class TarkusTaskBuilder {
      * @param priority the priority level
      * @return this builder
      */
-    public TarkusTaskBuilder priority(final WorkItemPriority priority) {
+    public WorkItemTaskBuilder priority(final WorkItemPriority priority) {
         this.priority = priority;
         return this;
     }
@@ -108,7 +108,7 @@ public class TarkusTaskBuilder {
      * @return this builder
      */
     @SuppressWarnings("unchecked")
-    public <T> TarkusTaskBuilder payloadFrom(final Function<T, String> extractor) {
+    public <T> WorkItemTaskBuilder payloadFrom(final Function<T, String> extractor) {
         this.payloadExtractor = (Function<Object, String>) extractor;
         return this;
     }
@@ -155,7 +155,7 @@ public class TarkusTaskBuilder {
      */
     public <T> FuncTaskConfigurer buildTask(final Class<T> inputClass) {
         if (title == null || title.isBlank()) {
-            throw new IllegalStateException("TarkusTaskBuilder requires a title");
+            throw new IllegalStateException("WorkItemTaskBuilder requires a title");
         }
         final String taskName = name;
         final String taskTitle = title;

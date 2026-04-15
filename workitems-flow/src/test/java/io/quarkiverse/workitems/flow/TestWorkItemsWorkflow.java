@@ -10,11 +10,11 @@ import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
 import io.serverlessworkflow.api.types.Workflow;
 
 /**
- * Test workflow that exercises the TarkusFlow DSL.
+ * Test workflow that exercises the WorkItemsFlow DSL.
  * Used by HumanTaskIntegrationTest to verify WorkItem creation via workItem() DSL.
  */
 @ApplicationScoped
-public class TestTarkusWorkflow extends TarkusFlow {
+public class TestWorkItemsWorkflow extends WorkItemsFlow {
 
     @Override
     public Workflow descriptor() {

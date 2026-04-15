@@ -4,13 +4,13 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 
-import io.quarkiverse.workitems.runtime.config.TarkusConfig;
+import io.quarkiverse.workitems.runtime.config.WorkItemsConfig;
 
 @ApplicationScoped
 public class EscalationPolicyProducer {
 
     @Inject
-    TarkusConfig config;
+    WorkItemsConfig config;
 
     @Inject
     NotifyEscalationPolicy notifyPolicy;

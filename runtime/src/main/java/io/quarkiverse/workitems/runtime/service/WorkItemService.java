@@ -9,7 +9,7 @@ import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
-import io.quarkiverse.workitems.runtime.config.TarkusConfig;
+import io.quarkiverse.workitems.runtime.config.WorkItemsConfig;
 import io.quarkiverse.workitems.runtime.event.WorkItemLifecycleEvent;
 import io.quarkiverse.workitems.runtime.model.AuditEntry;
 import io.quarkiverse.workitems.runtime.model.DelegationState;
@@ -25,7 +25,7 @@ public class WorkItemService {
 
     private final WorkItemRepository workItemRepo;
     private final AuditEntryRepository auditRepo;
-    private final TarkusConfig config;
+    private final WorkItemsConfig config;
 
     @Inject
     Event<WorkItemLifecycleEvent> lifecycleEvent;
@@ -33,7 +33,7 @@ public class WorkItemService {
     @Inject
     public WorkItemService(final WorkItemRepository workItemRepo,
             final AuditEntryRepository auditRepo,
-            final TarkusConfig config) {
+            final WorkItemsConfig config) {
         this.workItemRepo = workItemRepo;
         this.auditRepo = auditRepo;
         this.config = config;

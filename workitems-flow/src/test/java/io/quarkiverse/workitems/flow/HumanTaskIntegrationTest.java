@@ -34,7 +34,7 @@ class HumanTaskIntegrationTest {
     WorkItemService service;
 
     @Inject
-    TestTarkusWorkflow testWorkflow;
+    TestWorkItemsWorkflow testWorkflow;
 
     @Test
     void requestApproval_createsWorkItemAndReturnsPendingUni() {
@@ -199,7 +199,7 @@ class HumanTaskIntegrationTest {
                 .isInstanceOf(Exception.class);
     }
 
-    // -- TarkusFlow DSL integration test --
+    // -- WorkItemsFlow DSL integration test --
 
     @Test
     void tarkusDslFlow_createsWorkItemAndSuspends() {

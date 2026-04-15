@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.workitems.runtime.config.TarkusConfig;
+import io.quarkiverse.workitems.runtime.config.WorkItemsConfig;
 import io.quarkiverse.workitems.runtime.model.AuditEntry;
 import io.quarkiverse.workitems.runtime.model.DelegationState;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
@@ -135,8 +135,8 @@ class WorkItemServiceTest {
     // Config helper
     // -------------------------------------------------------------------------
 
-    static TarkusConfig testConfig() {
-        return new TarkusConfig() {
+    static WorkItemsConfig testConfig() {
+        return new WorkItemsConfig() {
             @Override
             public int defaultExpiryHours() {
                 return 24;
@@ -850,7 +850,7 @@ class WorkItemServiceTest {
     // when defaultClaimHours=0, no claimDeadline set
     @Test
     void create_withZeroDefaultClaimHours_noClaimDeadlineSet() {
-        TarkusConfig noClaimConfig = new TarkusConfig() {
+        WorkItemsConfig noClaimConfig = new WorkItemsConfig() {
             @Override
             public int defaultExpiryHours() {
                 return 24;

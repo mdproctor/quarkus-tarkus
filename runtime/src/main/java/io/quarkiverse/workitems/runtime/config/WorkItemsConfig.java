@@ -17,7 +17,7 @@ import io.smallrye.config.WithDefault;
  * </pre>
  */
 @ConfigMapping(prefix = "quarkus.tarkus")
-public interface TarkusConfig {
+public interface WorkItemsConfig {
 
     /**
      * Default number of hours before a WorkItem's completion deadline ({@code expiresAt})
