@@ -24,10 +24,10 @@ Standalone Quarkiverse extension with optional integrations for Quarkus-Flow, Ca
     <module>runtime</module>
     <module>deployment</module>
     <module>testing</module>
-    <module>tarkus-flow</module>
-    <module>quarkus-tarkus-ledger</module>
-    <module>quarkus-tarkus-examples</module>
-    <module>quarkus-tarkus-flow-examples</module>
+    <module>workitems-flow</module>
+    <module>quarkus-workitems-ledger</module>
+    <module>quarkus-workitems-examples</module>
+    <module>quarkus-workitems-flow-examples</module>
 
     <module>integration-tests</module>
   </modules>
