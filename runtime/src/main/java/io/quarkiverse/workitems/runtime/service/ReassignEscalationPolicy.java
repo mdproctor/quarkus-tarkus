@@ -1,11 +1,11 @@
-package io.quarkiverse.tarkus.runtime.service;
+package io.quarkiverse.workitems.runtime.service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import io.quarkiverse.tarkus.runtime.model.WorkItem;
-import io.quarkiverse.tarkus.runtime.model.WorkItemStatus;
-import io.quarkiverse.tarkus.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
+import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
 
 @ApplicationScoped
 public class ReassignEscalationPolicy implements EscalationPolicy {

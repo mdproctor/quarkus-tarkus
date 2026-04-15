@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.ledger.api.dto;
+package io.quarkiverse.workitems.ledger.api.dto;
 
 import java.time.Instant;
 

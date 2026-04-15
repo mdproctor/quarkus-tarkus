@@ -1,12 +1,12 @@
-package io.quarkiverse.tarkus.flow;
+package io.quarkiverse.workitems.flow;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import io.quarkiverse.tarkus.runtime.model.WorkItem;
-import io.quarkiverse.tarkus.runtime.model.WorkItemCreateRequest;
-import io.quarkiverse.tarkus.runtime.model.WorkItemPriority;
-import io.quarkiverse.tarkus.runtime.service.WorkItemService;
+import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.workitems.runtime.model.WorkItemCreateRequest;
+import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
+import io.quarkiverse.workitems.runtime.service.WorkItemService;
 import io.smallrye.mutiny.Uni;
 
 /**

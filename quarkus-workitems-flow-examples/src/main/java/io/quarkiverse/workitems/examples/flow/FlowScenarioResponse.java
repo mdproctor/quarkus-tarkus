@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.examples.flow;
+package io.quarkiverse.workitems.examples.flow;
 
 import java.util.List;
 import java.util.UUID;

@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.runtime.model;
+package io.quarkiverse.workitems.runtime.model;
 
 /**
  * Lifecycle status of a {@link WorkItem}.

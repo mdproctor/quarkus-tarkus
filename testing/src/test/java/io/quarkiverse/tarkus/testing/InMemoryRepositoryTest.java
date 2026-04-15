@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.testing;
+package io.quarkiverse.workitems.testing;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -10,10 +10,10 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.tarkus.runtime.model.AuditEntry;
-import io.quarkiverse.tarkus.runtime.model.WorkItem;
-import io.quarkiverse.tarkus.runtime.model.WorkItemPriority;
-import io.quarkiverse.tarkus.runtime.model.WorkItemStatus;
+import io.quarkiverse.workitems.runtime.model.AuditEntry;
+import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
+import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
 
 /**
  * Pure JUnit 5 tests for the in-memory repository implementations.

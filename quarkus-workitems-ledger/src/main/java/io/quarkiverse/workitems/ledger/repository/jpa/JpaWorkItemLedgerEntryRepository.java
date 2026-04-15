@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.ledger.repository.jpa;
+package io.quarkiverse.workitems.ledger.repository.jpa;
 
 import java.util.Collections;
 import java.util.List;
@@ -13,8 +13,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import io.quarkiverse.ledger.runtime.model.LedgerAttestation;
 import io.quarkiverse.ledger.runtime.model.LedgerEntry;
 import io.quarkiverse.ledger.runtime.model.LedgerEntryType;
-import io.quarkiverse.tarkus.ledger.model.WorkItemLedgerEntry;
-import io.quarkiverse.tarkus.ledger.repository.WorkItemLedgerEntryRepository;
+import io.quarkiverse.workitems.ledger.model.WorkItemLedgerEntry;
+import io.quarkiverse.workitems.ledger.repository.WorkItemLedgerEntryRepository;
 
 /**
  * Hibernate ORM / Panache implementation of {@link WorkItemLedgerEntryRepository}.

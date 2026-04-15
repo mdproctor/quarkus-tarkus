@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.flow;
+package io.quarkiverse.workitems.flow;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -11,11 +11,11 @@ import jakarta.inject.Inject;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.tarkus.runtime.model.WorkItem;
-import io.quarkiverse.tarkus.runtime.model.WorkItemCreateRequest;
-import io.quarkiverse.tarkus.runtime.model.WorkItemPriority;
-import io.quarkiverse.tarkus.runtime.model.WorkItemStatus;
-import io.quarkiverse.tarkus.runtime.service.WorkItemService;
+import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.workitems.runtime.model.WorkItemCreateRequest;
+import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
+import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
+import io.quarkiverse.workitems.runtime.service.WorkItemService;
 import io.quarkus.test.TestTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.mutiny.Uni;

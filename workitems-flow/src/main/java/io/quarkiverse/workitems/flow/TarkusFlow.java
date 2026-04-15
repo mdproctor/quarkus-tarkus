@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.flow;
+package io.quarkiverse.workitems.flow;
 
 import java.util.function.Function;
 

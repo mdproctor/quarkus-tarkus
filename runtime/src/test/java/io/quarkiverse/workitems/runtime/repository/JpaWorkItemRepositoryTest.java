@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.runtime.repository;
+package io.quarkiverse.workitems.runtime.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -9,9 +9,9 @@ import jakarta.inject.Inject;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.tarkus.runtime.model.WorkItem;
-import io.quarkiverse.tarkus.runtime.model.WorkItemPriority;
-import io.quarkiverse.tarkus.runtime.model.WorkItemStatus;
+import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
+import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
 import io.quarkus.test.TestTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 
@@ -24,7 +24,7 @@ import io.quarkus.test.junit.QuarkusTest;
  * operations.
  *
  * <p>
- * {@link io.quarkiverse.tarkus.runtime.scheduler.ExpiryCleanupJob} depends on
+ * {@link io.quarkiverse.workitems.runtime.scheduler.ExpiryCleanupJob} depends on
  * {@link WorkItemRepository#findExpired} and
  * {@link WorkItemRepository#findUnclaimedPastDeadline} — correctness here is critical.
  */

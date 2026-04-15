@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.runtime.api;
+package io.quarkiverse.workitems.runtime.api;
 
 import java.net.URI;
 import java.time.Instant;
@@ -18,14 +18,14 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import io.quarkiverse.tarkus.runtime.model.AuditEntry;
-import io.quarkiverse.tarkus.runtime.model.WorkItem;
-import io.quarkiverse.tarkus.runtime.model.WorkItemPriority;
-import io.quarkiverse.tarkus.runtime.model.WorkItemStatus;
-import io.quarkiverse.tarkus.runtime.repository.AuditEntryRepository;
-import io.quarkiverse.tarkus.runtime.repository.WorkItemRepository;
-import io.quarkiverse.tarkus.runtime.service.WorkItemNotFoundException;
-import io.quarkiverse.tarkus.runtime.service.WorkItemService;
+import io.quarkiverse.workitems.runtime.model.AuditEntry;
+import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
+import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
+import io.quarkiverse.workitems.runtime.repository.AuditEntryRepository;
+import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.service.WorkItemNotFoundException;
+import io.quarkiverse.workitems.runtime.service.WorkItemService;
 
 @Path("/tarkus/workitems")
 @Produces(MediaType.APPLICATION_JSON)

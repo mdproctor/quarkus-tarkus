@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.testing;
+package io.quarkiverse.workitems.testing;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -10,8 +10,8 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
 
-import io.quarkiverse.tarkus.runtime.model.AuditEntry;
-import io.quarkiverse.tarkus.runtime.repository.AuditEntryRepository;
+import io.quarkiverse.workitems.runtime.model.AuditEntry;
+import io.quarkiverse.workitems.runtime.repository.AuditEntryRepository;
 
 /**
  * In-memory implementation of {@link AuditEntryRepository} for use in tests of

@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.deployment;
+package io.quarkiverse.workitems.deployment;
 
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.FeatureBuildItem;

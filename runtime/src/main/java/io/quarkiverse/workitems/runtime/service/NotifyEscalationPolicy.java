@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.runtime.service;
+package io.quarkiverse.workitems.runtime.service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
@@ -6,7 +6,7 @@ import jakarta.inject.Inject;
 
 import org.jboss.logging.Logger;
 
-import io.quarkiverse.tarkus.runtime.model.WorkItem;
+import io.quarkiverse.workitems.runtime.model.WorkItem;
 
 @ApplicationScoped
 public class NotifyEscalationPolicy implements EscalationPolicy {

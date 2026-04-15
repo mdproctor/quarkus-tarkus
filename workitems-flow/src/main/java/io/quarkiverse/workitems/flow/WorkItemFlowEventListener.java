@@ -1,10 +1,10 @@
-package io.quarkiverse.tarkus.flow;
+package io.quarkiverse.workitems.flow;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 
-import io.quarkiverse.tarkus.runtime.event.WorkItemLifecycleEvent;
+import io.quarkiverse.workitems.runtime.event.WorkItemLifecycleEvent;
 
 /**
  * Observes Tarkus WorkItem lifecycle CDI events and completes pending
@@ -19,11 +19,11 @@ public class WorkItemFlowEventListener {
 
     void onWorkItemEvent(@Observes final WorkItemLifecycleEvent event) {
         switch (event.type()) {
-            case "io.quarkiverse.tarkus.workitem.completed" ->
+            case "io.quarkiverse.workitems.workitem.completed" ->
                 registry.complete(event.workItemId(), event.detail());
-            case "io.quarkiverse.tarkus.workitem.rejected" ->
+            case "io.quarkiverse.workitems.workitem.rejected" ->
                 registry.fail(event.workItemId(), event.detail() != null ? event.detail() : "rejected");
-            case "io.quarkiverse.tarkus.workitem.cancelled" ->
+            case "io.quarkiverse.workitems.workitem.cancelled" ->
                 registry.fail(event.workItemId(), "cancelled");
             default -> {
                 /* ignore all other event types */ }

@@ -1,8 +1,8 @@
-package io.quarkiverse.tarkus.flow;
+package io.quarkiverse.workitems.flow;
 
 import java.util.function.Function;
 
-import io.quarkiverse.tarkus.runtime.model.WorkItemPriority;
+import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
 import io.serverlessworkflow.fluent.func.configurers.FuncTaskConfigurer;
 import io.serverlessworkflow.fluent.func.dsl.FuncDSL;
 import io.smallrye.mutiny.Uni;

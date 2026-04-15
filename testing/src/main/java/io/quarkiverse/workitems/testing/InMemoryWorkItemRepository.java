@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.testing;
+package io.quarkiverse.workitems.testing;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -12,10 +12,10 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
 
-import io.quarkiverse.tarkus.runtime.model.WorkItem;
-import io.quarkiverse.tarkus.runtime.model.WorkItemPriority;
-import io.quarkiverse.tarkus.runtime.model.WorkItemStatus;
-import io.quarkiverse.tarkus.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
+import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
+import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
 
 /**
  * In-memory implementation of {@link WorkItemRepository} for use in tests of

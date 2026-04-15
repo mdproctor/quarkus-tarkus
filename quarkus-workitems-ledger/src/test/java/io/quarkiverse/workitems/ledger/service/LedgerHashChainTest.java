@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.ledger.service;
+package io.quarkiverse.workitems.ledger.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import io.quarkiverse.ledger.runtime.model.LedgerEntry;
 import io.quarkiverse.ledger.runtime.model.LedgerEntryType;
 import io.quarkiverse.ledger.runtime.service.LedgerHashChain;
-import io.quarkiverse.tarkus.ledger.model.WorkItemLedgerEntry;
+import io.quarkiverse.workitems.ledger.model.WorkItemLedgerEntry;
 
 /**
  * Pure JUnit 5 unit tests for {@link LedgerHashChain} using Tarkus's

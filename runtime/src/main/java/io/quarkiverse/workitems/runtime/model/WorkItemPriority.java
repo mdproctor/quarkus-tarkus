@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.runtime.model;
+package io.quarkiverse.workitems.runtime.model;
 
 /**
  * Priority level of a {@link WorkItem}, used to drive inbox ordering and

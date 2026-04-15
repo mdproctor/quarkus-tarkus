@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.runtime.service;
+package io.quarkiverse.workitems.runtime.service;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

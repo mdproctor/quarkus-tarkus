@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.examples.flow;
+package io.quarkiverse.workitems.examples.flow;
 
 import static io.serverlessworkflow.fluent.func.FuncWorkflowBuilder.workflow;
 
@@ -6,8 +6,8 @@ import java.util.Map;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.quarkiverse.tarkus.flow.TarkusFlow;
-import io.quarkiverse.tarkus.runtime.model.WorkItemPriority;
+import io.quarkiverse.workitems.flow.TarkusFlow;
+import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
 import io.serverlessworkflow.api.types.Workflow;
 
 /**
@@ -29,12 +29,12 @@ import io.serverlessworkflow.api.types.Workflow;
  *
  * <h2>DSL features demonstrated</h2>
  * <ul>
- * <li>{@link io.quarkiverse.tarkus.flow.TarkusTaskBuilder#title(String)} — inbox display name</li>
- * <li>{@link io.quarkiverse.tarkus.flow.TarkusTaskBuilder#description(String)} — reviewer context</li>
- * <li>{@link io.quarkiverse.tarkus.flow.TarkusTaskBuilder#candidateGroups(String)} — work-queue routing</li>
- * <li>{@link io.quarkiverse.tarkus.flow.TarkusTaskBuilder#assigneeId(String)} — direct assignment</li>
- * <li>{@link io.quarkiverse.tarkus.flow.TarkusTaskBuilder#priority(WorkItemPriority)} — HIGH vs CRITICAL</li>
- * <li>{@link io.quarkiverse.tarkus.flow.TarkusTaskBuilder#payloadFrom} — extract JSON context from input</li>
+ * <li>{@link io.quarkiverse.workitems.flow.TarkusTaskBuilder#title(String)} — inbox display name</li>
+ * <li>{@link io.quarkiverse.workitems.flow.TarkusTaskBuilder#description(String)} — reviewer context</li>
+ * <li>{@link io.quarkiverse.workitems.flow.TarkusTaskBuilder#candidateGroups(String)} — work-queue routing</li>
+ * <li>{@link io.quarkiverse.workitems.flow.TarkusTaskBuilder#assigneeId(String)} — direct assignment</li>
+ * <li>{@link io.quarkiverse.workitems.flow.TarkusTaskBuilder#priority(WorkItemPriority)} — HIGH vs CRITICAL</li>
+ * <li>{@link io.quarkiverse.workitems.flow.TarkusTaskBuilder#payloadFrom} — extract JSON context from input</li>
  * </ul>
  *
  * <h2>Starting the workflow</h2>

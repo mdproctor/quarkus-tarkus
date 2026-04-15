@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.ledger.service;
+package io.quarkiverse.workitems.ledger.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -16,7 +16,7 @@ import io.quarkiverse.ledger.runtime.model.AttestationVerdict;
 import io.quarkiverse.ledger.runtime.model.LedgerAttestation;
 import io.quarkiverse.ledger.runtime.model.LedgerEntryType;
 import io.quarkiverse.ledger.runtime.service.TrustScoreComputer;
-import io.quarkiverse.tarkus.ledger.model.WorkItemLedgerEntry;
+import io.quarkiverse.workitems.ledger.model.WorkItemLedgerEntry;
 
 /**
  * Pure unit tests for {@link TrustScoreComputer} using Tarkus's concrete

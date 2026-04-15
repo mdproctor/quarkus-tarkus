@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.flow;
+package io.quarkiverse.workitems.flow;
 
 import static io.serverlessworkflow.fluent.func.FuncWorkflowBuilder.workflow;
 
@@ -6,7 +6,7 @@ import java.util.Map;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.quarkiverse.tarkus.runtime.model.WorkItemPriority;
+import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
 import io.serverlessworkflow.api.types.Workflow;
 
 /**

@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.runtime.model;
+package io.quarkiverse.workitems.runtime.model;
 
 /**
  * Tracks whether a delegated {@link WorkItem} has been picked up by the

@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.runtime.model;
+package io.quarkiverse.workitems.runtime.model;
 
 import java.time.Instant;
 import java.util.UUID;

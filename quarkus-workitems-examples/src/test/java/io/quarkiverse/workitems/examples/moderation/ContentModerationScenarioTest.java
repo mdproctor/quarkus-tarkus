@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.examples.moderation;
+package io.quarkiverse.workitems.examples.moderation;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;

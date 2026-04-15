@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.runtime.repository.jpa;
+package io.quarkiverse.workitems.runtime.repository.jpa;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -9,10 +9,10 @@ import java.util.UUID;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.quarkiverse.tarkus.runtime.model.WorkItem;
-import io.quarkiverse.tarkus.runtime.model.WorkItemPriority;
-import io.quarkiverse.tarkus.runtime.model.WorkItemStatus;
-import io.quarkiverse.tarkus.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
+import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
+import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
 
 @ApplicationScoped
 public class JpaWorkItemRepository implements WorkItemRepository {

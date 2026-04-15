@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.ledger.model;
+package io.quarkiverse.workitems.ledger.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;

@@ -1,11 +1,11 @@
-package io.quarkiverse.tarkus.examples;
+package io.quarkiverse.workitems.examples;
 
 import java.util.List;
 import java.util.UUID;
 
-import io.quarkiverse.tarkus.ledger.api.dto.ActorTrustScoreResponse;
-import io.quarkiverse.tarkus.ledger.api.dto.LedgerEntryResponse;
-import io.quarkiverse.tarkus.runtime.api.AuditEntryResponse;
+import io.quarkiverse.workitems.ledger.api.dto.ActorTrustScoreResponse;
+import io.quarkiverse.workitems.ledger.api.dto.LedgerEntryResponse;
+import io.quarkiverse.workitems.runtime.api.AuditEntryResponse;
 
 /**
  * Response returned by the Document Queue scenario (Scenario 4).

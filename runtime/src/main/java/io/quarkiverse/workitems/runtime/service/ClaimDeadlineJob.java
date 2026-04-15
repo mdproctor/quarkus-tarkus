@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.runtime.service;
+package io.quarkiverse.workitems.runtime.service;
 
 import java.time.Instant;
 import java.util.List;
@@ -8,9 +8,9 @@ import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
-import io.quarkiverse.tarkus.runtime.event.WorkItemLifecycleEvent;
-import io.quarkiverse.tarkus.runtime.model.WorkItem;
-import io.quarkiverse.tarkus.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.event.WorkItemLifecycleEvent;
+import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
 import io.quarkus.scheduler.Scheduled;
 
 @ApplicationScoped

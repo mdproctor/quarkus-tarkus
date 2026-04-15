@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.examples.flow;
+package io.quarkiverse.workitems.examples.flow;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;

@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.examples.queue;
+package io.quarkiverse.workitems.examples.queue;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;

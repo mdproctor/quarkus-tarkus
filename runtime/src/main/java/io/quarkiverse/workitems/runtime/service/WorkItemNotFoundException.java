@@ -1,9 +1,9 @@
-package io.quarkiverse.tarkus.runtime.service;
+package io.quarkiverse.workitems.runtime.service;
 
 import java.util.UUID;
 
 /**
- * Thrown when a requested {@link io.quarkiverse.tarkus.runtime.model.WorkItem}
+ * Thrown when a requested {@link io.quarkiverse.workitems.runtime.model.WorkItem}
  * cannot be found by its UUID primary key.
  *
  * <p>

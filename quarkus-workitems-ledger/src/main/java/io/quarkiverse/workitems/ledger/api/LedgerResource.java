@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.ledger.api;
+package io.quarkiverse.workitems.ledger.api;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
@@ -19,13 +19,13 @@ import jakarta.ws.rs.core.Response;
 
 import io.quarkiverse.ledger.runtime.config.LedgerConfig;
 import io.quarkiverse.ledger.runtime.model.LedgerAttestation;
-import io.quarkiverse.tarkus.ledger.api.dto.LedgerAttestationRequest;
-import io.quarkiverse.tarkus.ledger.api.dto.LedgerEntryResponse;
-import io.quarkiverse.tarkus.ledger.api.dto.ProvenanceRequest;
-import io.quarkiverse.tarkus.ledger.model.WorkItemLedgerEntry;
-import io.quarkiverse.tarkus.ledger.repository.WorkItemLedgerEntryRepository;
-import io.quarkiverse.tarkus.runtime.repository.WorkItemRepository;
-import io.quarkiverse.tarkus.runtime.service.WorkItemNotFoundException;
+import io.quarkiverse.workitems.ledger.api.dto.LedgerAttestationRequest;
+import io.quarkiverse.workitems.ledger.api.dto.LedgerEntryResponse;
+import io.quarkiverse.workitems.ledger.api.dto.ProvenanceRequest;
+import io.quarkiverse.workitems.ledger.model.WorkItemLedgerEntry;
+import io.quarkiverse.workitems.ledger.repository.WorkItemLedgerEntryRepository;
+import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.service.WorkItemNotFoundException;
 
 /**
  * REST endpoints for the WorkItem ledger.

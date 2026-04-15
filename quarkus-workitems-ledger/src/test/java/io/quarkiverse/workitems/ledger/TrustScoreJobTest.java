@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.ledger;
+package io.quarkiverse.workitems.ledger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -17,12 +17,12 @@ import io.quarkiverse.ledger.runtime.model.AttestationVerdict;
 import io.quarkiverse.ledger.runtime.model.LedgerAttestation;
 import io.quarkiverse.ledger.runtime.repository.ActorTrustScoreRepository;
 import io.quarkiverse.ledger.runtime.service.TrustScoreJob;
-import io.quarkiverse.tarkus.ledger.model.WorkItemLedgerEntry;
-import io.quarkiverse.tarkus.ledger.repository.WorkItemLedgerEntryRepository;
-import io.quarkiverse.tarkus.runtime.model.WorkItem;
-import io.quarkiverse.tarkus.runtime.model.WorkItemCreateRequest;
-import io.quarkiverse.tarkus.runtime.model.WorkItemPriority;
-import io.quarkiverse.tarkus.runtime.service.WorkItemService;
+import io.quarkiverse.workitems.ledger.model.WorkItemLedgerEntry;
+import io.quarkiverse.workitems.ledger.repository.WorkItemLedgerEntryRepository;
+import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.workitems.runtime.model.WorkItemCreateRequest;
+import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
+import io.quarkiverse.workitems.runtime.service.WorkItemService;
 import io.quarkus.test.TestTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 

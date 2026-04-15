@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.ledger.api.dto;
+package io.quarkiverse.workitems.ledger.api.dto;
 
 /**
  * Request body for setting the source entity provenance on the creation ledger entry.
