@@ -53,13 +53,13 @@ class WorkItemResourceTest {
                             "createdBy": "system"
                         }
                         """)
-                .when().post("/tarkus/workitems")
+                .when().post("/workitems")
                 .then().statusCode(201)
                 .extract().path("id");
     }
 
     // -------------------------------------------------------------------------
-    // POST /tarkus/workitems — create
+    // POST /workitems — create
     // -------------------------------------------------------------------------
 
     @Test
@@ -74,10 +74,10 @@ class WorkItemResourceTest {
                             "createdBy": "system"
                         }
                         """)
-                .when().post("/tarkus/workitems")
+                .when().post("/workitems")
                 .then()
                 .statusCode(201)
-                .header("Location", containsString("/tarkus/workitems/"))
+                .header("Location", containsString("/workitems/"))
                 .extract().path("id");
 
         assertThat(id).isNotNull();
@@ -95,7 +95,7 @@ class WorkItemResourceTest {
                             "createdBy": "system"
                         }
                         """)
-                .when().post("/tarkus/workitems")
+                .when().post("/workitems")
                 .then()
                 .statusCode(201)
                 .body("id", notNullValue())
@@ -114,7 +114,7 @@ class WorkItemResourceTest {
                             "createdBy": "system"
                         }
                         """)
-                .when().post("/tarkus/workitems")
+                .when().post("/workitems")
                 .then()
                 .statusCode(201)
                 .extract().path("candidateGroups");
@@ -132,7 +132,7 @@ class WorkItemResourceTest {
                             "createdBy": "system"
                         }
                         """)
-                .when().post("/tarkus/workitems")
+                .when().post("/workitems")
                 .then()
                 .statusCode(201)
                 .body("expiresAt", notNullValue());
@@ -149,14 +149,14 @@ class WorkItemResourceTest {
                             "expiresAt": "2026-12-31T00:00:00Z"
                         }
                         """)
-                .when().post("/tarkus/workitems")
+                .when().post("/workitems")
                 .then()
                 .statusCode(201)
                 .body("expiresAt", equalTo("2026-12-31T00:00:00Z"));
     }
 
     // -------------------------------------------------------------------------
-    // GET /tarkus/workitems — list all
+    // GET /workitems — list all
     // -------------------------------------------------------------------------
 
     @Test
@@ -164,14 +164,14 @@ class WorkItemResourceTest {
         createWorkItem();
 
         given()
-                .when().get("/tarkus/workitems")
+                .when().get("/workitems")
                 .then()
                 .statusCode(200)
                 .body("size()", greaterThanOrEqualTo(1));
     }
 
     // -------------------------------------------------------------------------
-    // GET /tarkus/workitems/{id} — get with audit trail
+    // GET /workitems/{id} — get with audit trail
     // -------------------------------------------------------------------------
 
     @Test
@@ -179,7 +179,7 @@ class WorkItemResourceTest {
         String id = createWorkItem();
 
         given()
-                .when().get("/tarkus/workitems/" + id)
+                .when().get("/workitems/" + id)
                 .then()
                 .statusCode(200)
                 .body("id", equalTo(id))
@@ -191,13 +191,13 @@ class WorkItemResourceTest {
     @Test
     void getById_unknownId_returns404() {
         given()
-                .when().get("/tarkus/workitems/00000000-0000-0000-0000-000000000000")
+                .when().get("/workitems/00000000-0000-0000-0000-000000000000")
                 .then()
                 .statusCode(404);
     }
 
     // -------------------------------------------------------------------------
-    // GET /tarkus/workitems/inbox — inbox query
+    // GET /workitems/inbox — inbox query
     // -------------------------------------------------------------------------
 
     @Test
@@ -205,7 +205,7 @@ class WorkItemResourceTest {
         createWorkItem();
 
         given()
-                .when().get("/tarkus/workitems/inbox")
+                .when().get("/workitems/inbox")
                 .then()
                 .statusCode(200)
                 .body("$", notNullValue());
@@ -217,12 +217,12 @@ class WorkItemResourceTest {
 
         given()
                 .contentType(ContentType.JSON)
-                .when().put("/tarkus/workitems/" + id + "/claim?claimant=alice")
+                .when().put("/workitems/" + id + "/claim?claimant=alice")
                 .then().statusCode(200);
 
         List<String> ids = given()
                 .queryParam("assignee", "alice")
-                .when().get("/tarkus/workitems/inbox")
+                .when().get("/workitems/inbox")
                 .then()
                 .statusCode(200)
                 .extract().jsonPath().getList("id");
@@ -241,13 +241,13 @@ class WorkItemResourceTest {
                             "createdBy": "system"
                         }
                         """)
-                .when().post("/tarkus/workitems")
+                .when().post("/workitems")
                 .then().statusCode(201)
                 .extract().path("id");
 
         List<String> ids = given()
                 .queryParam("candidateGroup", "team-a")
-                .when().get("/tarkus/workitems/inbox")
+                .when().get("/workitems/inbox")
                 .then()
                 .statusCode(200)
                 .extract().jsonPath().getList("id");
@@ -261,7 +261,7 @@ class WorkItemResourceTest {
 
         List<String> ids = given()
                 .queryParam("status", "PENDING")
-                .when().get("/tarkus/workitems/inbox")
+                .when().get("/workitems/inbox")
                 .then()
                 .statusCode(200)
                 .extract().jsonPath().getList("id");
@@ -276,23 +276,23 @@ class WorkItemResourceTest {
         // claim → start → complete
         given()
                 .contentType(ContentType.JSON)
-                .when().put("/tarkus/workitems/" + id + "/claim?claimant=alice")
+                .when().put("/workitems/" + id + "/claim?claimant=alice")
                 .then().statusCode(200);
         given()
                 .contentType(ContentType.JSON)
-                .when().put("/tarkus/workitems/" + id + "/start?actor=alice")
+                .when().put("/workitems/" + id + "/start?actor=alice")
                 .then().statusCode(200);
         given()
                 .contentType(ContentType.JSON)
                 .body("""
                         { "resolution": "All done" }
                         """)
-                .when().put("/tarkus/workitems/" + id + "/complete?actor=alice")
+                .when().put("/workitems/" + id + "/complete?actor=alice")
                 .then().statusCode(200);
 
         List<String> ids = given()
                 .queryParam("status", "PENDING")
-                .when().get("/tarkus/workitems/inbox")
+                .when().get("/workitems/inbox")
                 .then()
                 .statusCode(200)
                 .extract().jsonPath().getList("id");
@@ -310,7 +310,7 @@ class WorkItemResourceTest {
 
         given()
                 .contentType(ContentType.JSON)
-                .when().put("/tarkus/workitems/" + id + "/claim?claimant=alice")
+                .when().put("/workitems/" + id + "/claim?claimant=alice")
                 .then()
                 .statusCode(200)
                 .body("status", equalTo("ASSIGNED"))
@@ -323,12 +323,12 @@ class WorkItemResourceTest {
 
         given()
                 .contentType(ContentType.JSON)
-                .when().put("/tarkus/workitems/" + id + "/claim?claimant=alice")
+                .when().put("/workitems/" + id + "/claim?claimant=alice")
                 .then().statusCode(200);
 
         given()
                 .contentType(ContentType.JSON)
-                .when().put("/tarkus/workitems/" + id + "/claim?claimant=bob")
+                .when().put("/workitems/" + id + "/claim?claimant=bob")
                 .then().statusCode(409);
     }
 
@@ -336,7 +336,7 @@ class WorkItemResourceTest {
     void claim_unknownId_returns404() {
         given()
                 .contentType(ContentType.JSON)
-                .when().put("/tarkus/workitems/00000000-0000-0000-0000-000000000000/claim?claimant=alice")
+                .when().put("/workitems/00000000-0000-0000-0000-000000000000/claim?claimant=alice")
                 .then().statusCode(404);
     }
 
@@ -350,12 +350,12 @@ class WorkItemResourceTest {
 
         given()
                 .contentType(ContentType.JSON)
-                .when().put("/tarkus/workitems/" + id + "/claim?claimant=alice")
+                .when().put("/workitems/" + id + "/claim?claimant=alice")
                 .then().statusCode(200);
 
         given()
                 .contentType(ContentType.JSON)
-                .when().put("/tarkus/workitems/" + id + "/start?actor=alice")
+                .when().put("/workitems/" + id + "/start?actor=alice")
                 .then()
                 .statusCode(200)
                 .body("status", equalTo("IN_PROGRESS"));
@@ -367,7 +367,7 @@ class WorkItemResourceTest {
 
         given()
                 .contentType(ContentType.JSON)
-                .when().put("/tarkus/workitems/" + id + "/start?actor=alice")
+                .when().put("/workitems/" + id + "/start?actor=alice")
                 .then().statusCode(409);
     }
 
@@ -381,11 +381,11 @@ class WorkItemResourceTest {
 
         given()
                 .contentType(ContentType.JSON)
-                .when().put("/tarkus/workitems/" + id + "/claim?claimant=alice")
+                .when().put("/workitems/" + id + "/claim?claimant=alice")
                 .then().statusCode(200);
         given()
                 .contentType(ContentType.JSON)
-                .when().put("/tarkus/workitems/" + id + "/start?actor=alice")
+                .when().put("/workitems/" + id + "/start?actor=alice")
                 .then().statusCode(200);
 
         given()
@@ -393,7 +393,7 @@ class WorkItemResourceTest {
                 .body("""
                         { "resolution": "Fixed it" }
                         """)
-                .when().put("/tarkus/workitems/" + id + "/complete?actor=alice")
+                .when().put("/workitems/" + id + "/complete?actor=alice")
                 .then()
                 .statusCode(200)
                 .body("status", equalTo("COMPLETED"))
@@ -409,7 +409,7 @@ class WorkItemResourceTest {
                 .body("""
                         { "resolution": "Premature" }
                         """)
-                .when().put("/tarkus/workitems/" + id + "/complete?actor=alice")
+                .when().put("/workitems/" + id + "/complete?actor=alice")
                 .then().statusCode(409);
     }
 
@@ -423,7 +423,7 @@ class WorkItemResourceTest {
 
         given()
                 .contentType(ContentType.JSON)
-                .when().put("/tarkus/workitems/" + id + "/claim?claimant=alice")
+                .when().put("/workitems/" + id + "/claim?claimant=alice")
                 .then().statusCode(200);
 
         given()
@@ -431,7 +431,7 @@ class WorkItemResourceTest {
                 .body("""
                         { "reason": "Not my responsibility" }
                         """)
-                .when().put("/tarkus/workitems/" + id + "/reject?actor=alice")
+                .when().put("/workitems/" + id + "/reject?actor=alice")
                 .then()
                 .statusCode(200)
                 .body("status", equalTo("REJECTED"));
@@ -447,7 +447,7 @@ class WorkItemResourceTest {
 
         given()
                 .contentType(ContentType.JSON)
-                .when().put("/tarkus/workitems/" + id + "/claim?claimant=alice")
+                .when().put("/workitems/" + id + "/claim?claimant=alice")
                 .then().statusCode(200);
 
         given()
@@ -455,7 +455,7 @@ class WorkItemResourceTest {
                 .body("""
                         { "to": "bob" }
                         """)
-                .when().put("/tarkus/workitems/" + id + "/delegate?actor=alice")
+                .when().put("/workitems/" + id + "/delegate?actor=alice")
                 .then()
                 .statusCode(200)
                 .body("assigneeId", equalTo("bob"))
@@ -472,12 +472,12 @@ class WorkItemResourceTest {
 
         given()
                 .contentType(ContentType.JSON)
-                .when().put("/tarkus/workitems/" + id + "/claim?claimant=alice")
+                .when().put("/workitems/" + id + "/claim?claimant=alice")
                 .then().statusCode(200);
 
         given()
                 .contentType(ContentType.JSON)
-                .when().put("/tarkus/workitems/" + id + "/release?actor=alice")
+                .when().put("/workitems/" + id + "/release?actor=alice")
                 .then()
                 .statusCode(200)
                 .body("status", equalTo("PENDING"))
@@ -494,7 +494,7 @@ class WorkItemResourceTest {
 
         given()
                 .contentType(ContentType.JSON)
-                .when().put("/tarkus/workitems/" + id + "/claim?claimant=alice")
+                .when().put("/workitems/" + id + "/claim?claimant=alice")
                 .then().statusCode(200);
 
         given()
@@ -502,7 +502,7 @@ class WorkItemResourceTest {
                 .body("""
                         { "reason": "Waiting for external input" }
                         """)
-                .when().put("/tarkus/workitems/" + id + "/suspend?actor=alice")
+                .when().put("/workitems/" + id + "/suspend?actor=alice")
                 .then()
                 .statusCode(200)
                 .body("status", equalTo("SUSPENDED"));
@@ -518,19 +518,19 @@ class WorkItemResourceTest {
 
         given()
                 .contentType(ContentType.JSON)
-                .when().put("/tarkus/workitems/" + id + "/claim?claimant=alice")
+                .when().put("/workitems/" + id + "/claim?claimant=alice")
                 .then().statusCode(200);
         given()
                 .contentType(ContentType.JSON)
                 .body("""
                         { "reason": "Blocked" }
                         """)
-                .when().put("/tarkus/workitems/" + id + "/suspend?actor=alice")
+                .when().put("/workitems/" + id + "/suspend?actor=alice")
                 .then().statusCode(200);
 
         given()
                 .contentType(ContentType.JSON)
-                .when().put("/tarkus/workitems/" + id + "/resume?actor=alice")
+                .when().put("/workitems/" + id + "/resume?actor=alice")
                 .then()
                 .statusCode(200)
                 .body("status", equalTo("ASSIGNED"));
@@ -549,7 +549,7 @@ class WorkItemResourceTest {
                 .body("""
                         { "reason": "No longer needed" }
                         """)
-                .when().put("/tarkus/workitems/" + id + "/cancel?actor=admin")
+                .when().put("/workitems/" + id + "/cancel?actor=admin")
                 .then()
                 .statusCode(200)
                 .body("status", equalTo("CANCELLED"));
@@ -561,7 +561,7 @@ class WorkItemResourceTest {
 
         given()
                 .contentType(ContentType.JSON)
-                .when().put("/tarkus/workitems/" + id + "/claim?claimant=alice")
+                .when().put("/workitems/" + id + "/claim?claimant=alice")
                 .then().statusCode(200);
 
         given()
@@ -569,7 +569,7 @@ class WorkItemResourceTest {
                 .body("""
                         { "reason": "Revoked" }
                         """)
-                .when().put("/tarkus/workitems/" + id + "/cancel?actor=admin")
+                .when().put("/workitems/" + id + "/cancel?actor=admin")
                 .then()
                 .statusCode(200)
                 .body("status", equalTo("CANCELLED"));
@@ -585,22 +585,22 @@ class WorkItemResourceTest {
 
         given()
                 .contentType(ContentType.JSON)
-                .when().put("/tarkus/workitems/" + id + "/claim?claimant=alice")
+                .when().put("/workitems/" + id + "/claim?claimant=alice")
                 .then().statusCode(200);
         given()
                 .contentType(ContentType.JSON)
-                .when().put("/tarkus/workitems/" + id + "/start?actor=alice")
+                .when().put("/workitems/" + id + "/start?actor=alice")
                 .then().statusCode(200);
         given()
                 .contentType(ContentType.JSON)
                 .body("""
                         { "resolution": "Done" }
                         """)
-                .when().put("/tarkus/workitems/" + id + "/complete?actor=alice")
+                .when().put("/workitems/" + id + "/complete?actor=alice")
                 .then().statusCode(200);
 
         List<String> events = given()
-                .when().get("/tarkus/workitems/" + id)
+                .when().get("/workitems/" + id)
                 .then()
                 .statusCode(200)
                 .body("auditTrail", hasSize(4))
@@ -617,7 +617,7 @@ class WorkItemResourceTest {
     @Test
     void getById_notFound_responseBodyHasErrorMessage() {
         given()
-                .when().get("/tarkus/workitems/{id}", UUID.randomUUID())
+                .when().get("/workitems/{id}", UUID.randomUUID())
                 .then().statusCode(404)
                 .body("error", notNullValue())
                 .body("error", containsString("not found"));
@@ -627,9 +627,9 @@ class WorkItemResourceTest {
     void claim_alreadyAssigned_responseBodyHasConflictMessage() {
         String id = createWorkItem();
         given().queryParam("claimant", "alice")
-                .when().put("/tarkus/workitems/{id}/claim", id);
+                .when().put("/workitems/{id}/claim", id);
         given().queryParam("claimant", "bob")
-                .when().put("/tarkus/workitems/{id}/claim", id)
+                .when().put("/workitems/{id}/claim", id)
                 .then().statusCode(409)
                 .body("error", notNullValue());
     }
@@ -642,20 +642,20 @@ class WorkItemResourceTest {
                 .body("""
                         {"title":"High","priority":"HIGH","createdBy":"system"}
                         """)
-                .when().post("/tarkus/workitems")
+                .when().post("/workitems")
                 .then().statusCode(201);
         // Create LOW priority item
         String lowId = given().contentType(ContentType.JSON)
                 .body("""
                         {"title":"Low","priority":"LOW","createdBy":"system"}
                         """)
-                .when().post("/tarkus/workitems")
+                .when().post("/workitems")
                 .then().statusCode(201)
                 .extract().path("id");
 
         List<String> ids = given()
                 .queryParam("priority", "HIGH")
-                .when().get("/tarkus/workitems/inbox")
+                .when().get("/workitems/inbox")
                 .then().statusCode(200)
                 .extract().jsonPath().getList("id");
         assertThat(ids).doesNotContain(lowId);
@@ -667,19 +667,19 @@ class WorkItemResourceTest {
                 .body("""
                         {"title":"Finance task","category":"finance","priority":"NORMAL","createdBy":"system"}
                         """)
-                .when().post("/tarkus/workitems")
+                .when().post("/workitems")
                 .then().statusCode(201);
         String legalId = given().contentType(ContentType.JSON)
                 .body("""
                         {"title":"Legal task","category":"legal","priority":"NORMAL","createdBy":"system"}
                         """)
-                .when().post("/tarkus/workitems")
+                .when().post("/workitems")
                 .then().statusCode(201)
                 .extract().path("id");
 
         List<String> ids = given()
                 .queryParam("category", "finance")
-                .when().get("/tarkus/workitems/inbox")
+                .when().get("/workitems/inbox")
                 .then().statusCode(200)
                 .extract().jsonPath().getList("id");
         assertThat(ids).doesNotContain(legalId);
@@ -693,7 +693,7 @@ class WorkItemResourceTest {
         // Confirm the endpoint accepts the parameter without error.
         given()
                 .queryParam("followUp", "true")
-                .when().get("/tarkus/workitems/inbox")
+                .when().get("/workitems/inbox")
                 .then().statusCode(200);
     }
 }

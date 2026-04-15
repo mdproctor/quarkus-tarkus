@@ -41,7 +41,7 @@ import io.serverlessworkflow.fluent.func.dsl.FuncDSL;
 public abstract class WorkItemsFlow extends Flow {
 
     @Inject
-    HumanTaskFlowBridge tarkusBridge;
+    HumanTaskFlowBridge workItemsBridge;
 
     /**
      * Creates a Tarkus WorkItem suspension task for use inside {@code .tasks()}.
@@ -50,7 +50,7 @@ public abstract class WorkItemsFlow extends Flow {
      * @return a builder for configuring the WorkItem parameters
      */
     protected WorkItemTaskBuilder workItem(final String name) {
-        return new WorkItemTaskBuilder(name, tarkusBridge);
+        return new WorkItemTaskBuilder(name, workItemsBridge);
     }
 
     /**

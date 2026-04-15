@@ -4,19 +4,19 @@ import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 
 /**
- * Configuration properties for the Quarkus Tarkus extension.
- * All properties are prefixed with {@code quarkus.tarkus}.
+ * Configuration properties for the Quarkus WorkItems extension.
+ * All properties are prefixed with {@code quarkus.workitems}.
  *
  * <p>
  * Example {@code application.properties} overrides:
  *
  * <pre>
- * quarkus.tarkus.default-expiry-hours=48
- * quarkus.tarkus.escalation-policy=reassign
- * quarkus.tarkus.cleanup.expiry-check-seconds=30
+ * quarkus.workitems.default-expiry-hours=48
+ * quarkus.workitems.escalation-policy=reassign
+ * quarkus.workitems.cleanup.expiry-check-seconds=30
  * </pre>
  */
-@ConfigMapping(prefix = "quarkus.tarkus")
+@ConfigMapping(prefix = "quarkus.workitems")
 public interface WorkItemsConfig {
 
     /**

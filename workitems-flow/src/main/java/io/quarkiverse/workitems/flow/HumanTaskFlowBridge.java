@@ -63,7 +63,7 @@ public class HumanTaskFlowBridge {
                 title, description, null, null,
                 priority != null ? priority : WorkItemPriority.NORMAL,
                 assigneeId, null, null, null,
-                "tarkus-flow",
+                "workitems-flow",
                 payload, null, null, null);
 
         final WorkItem workItem = workItemService.create(request);
@@ -92,7 +92,7 @@ public class HumanTaskFlowBridge {
                 title, description, null, null,
                 priority != null ? priority : WorkItemPriority.NORMAL,
                 null, candidateGroups, null, null,
-                "tarkus-flow",
+                "workitems-flow",
                 payload, null, null, null);
 
         final WorkItem workItem = workItemService.create(request);

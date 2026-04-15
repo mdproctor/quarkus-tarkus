@@ -31,11 +31,11 @@ import io.quarkiverse.workitems.runtime.service.WorkItemNotFoundException;
  * REST endpoints for the WorkItem ledger.
  *
  * <p>
- * All endpoints are under {@code /tarkus/workitems/{id}} and are only present when the
- * {@code quarkus-tarkus-ledger} module is on the classpath. The core extension provides none
+ * All endpoints are under {@code /workitems/{id}} and are only present when the
+ * {@code quarkus-workitems-ledger} module is on the classpath. The core extension provides none
  * of these — adding the module activates them automatically via CDI.
  */
-@Path("/tarkus/workitems/{id}")
+@Path("/workitems/{id}")
 @Produces(APPLICATION_JSON)
 @ApplicationScoped
 public class LedgerResource {
