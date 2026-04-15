@@ -12,8 +12,8 @@
 
   <artifactId>quarkus-workitems-flow-examples</artifactId>
   <name>Quarkus WorkItems - Quarkus Flow Examples</name>
-  <description>Runnable example showing TarkusFlow DSL integration: a contract review workflow
-that mixes automated function() steps with human tarkus() steps, demonstrating candidateGroups,
+  <description>Runnable example showing WorkItemsFlow DSL integration: a contract review workflow
+that mixes automated function() steps with human workItem() steps, demonstrating candidateGroups,
 assigneeId, priority, payloadFrom, and the full workflow suspension/resume cycle.</description>
 
   <dependencies>
@@ -25,7 +25,7 @@ assigneeId, priority, payloadFrom, and the full workflow suspension/resume cycle
       <version>${project.version}</version>
     </dependency>
 
-    <!-- Quarkus-Flow integration — TarkusFlow, TarkusTaskBuilder, HumanTaskFlowBridge -->
+    <!-- Quarkus-Flow integration — WorkItemsFlow, WorkItemTaskBuilder, HumanTaskFlowBridge -->
     <dependency>
       <groupId>io.quarkiverse.workitems</groupId>
       <artifactId>quarkus-workitems-flow</artifactId>
@@ -71,7 +71,7 @@ assigneeId, priority, payloadFrom, and the full workflow suspension/resume cycle
       <scope>test</scope>
     </dependency>
 
-    <!-- Required for @QuarkusTest to activate Tarkus CDI beans -->
+    <!-- Required for @QuarkusTest to activate WorkItems CDI beans -->
     <dependency>
       <groupId>io.quarkiverse.workitems</groupId>
       <artifactId>quarkus-workitems-deployment</artifactId>
@@ -79,7 +79,7 @@ assigneeId, priority, payloadFrom, and the full workflow suspension/resume cycle
       <scope>test</scope>
     </dependency>
 
-    <!-- Required for @QuarkusTest to activate TarkusFlow workflow beans -->
+    <!-- Required for @QuarkusTest to activate WorkItemsFlow workflow beans -->
     <dependency>
       <groupId>io.quarkiverse.flow</groupId>
       <artifactId>quarkus-flow-deployment</artifactId>

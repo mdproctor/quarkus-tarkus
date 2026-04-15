@@ -1,4 +1,4 @@
--- Quarkus Tarkus V1 schema: work_item and audit_entry tables
+-- Quarkus WorkItems V1 schema: work_item and audit_entry tables
 -- Compatible with H2 (dev/test) and PostgreSQL (production)
 
 CREATE TABLE work_item (
