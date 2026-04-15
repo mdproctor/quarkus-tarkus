@@ -40,7 +40,7 @@ class WorkItemNativeIT {
                           "createdBy": "native-test"
                         }
                         """.formatted(title))
-                .when().post("/tarkus/workitems")
+                .when().post("/workitems")
                 .then().statusCode(201)
                 .extract().path("id");
     }
@@ -60,10 +60,10 @@ class WorkItemNativeIT {
                           "createdBy": "system"
                         }
                         """)
-                .when().post("/tarkus/workitems")
+                .when().post("/workitems")
                 .then()
                 .statusCode(201)
-                .header("Location", containsString("/tarkus/workitems/"))
+                .header("Location", containsString("/workitems/"))
                 .body("id", notNullValue())
                 .body("status", equalTo("PENDING"))
                 .body("priority", equalTo("HIGH"))
@@ -80,7 +80,7 @@ class WorkItemNativeIT {
                 .body("""
                         {"title":"Default expiry test","priority":"NORMAL","createdBy":"system"}
                         """)
-                .when().post("/tarkus/workitems")
+                .when().post("/workitems")
                 .then()
                 .statusCode(201)
                 .body("expiresAt", notNullValue());
@@ -98,7 +98,7 @@ class WorkItemNativeIT {
                           "createdBy": "system"
                         }
                         """)
-                .when().post("/tarkus/workitems")
+                .when().post("/workitems")
                 .then()
                 .statusCode(201)
                 .body("candidateGroups", equalTo("finance,leads"));
@@ -112,7 +112,7 @@ class WorkItemNativeIT {
     void listAll_returnsNonNullArray() {
         createWorkItem("List test native");
         given()
-                .when().get("/tarkus/workitems")
+                .when().get("/workitems")
                 .then()
                 .statusCode(200)
                 .body("size()", greaterThanOrEqualTo(1));
@@ -122,7 +122,7 @@ class WorkItemNativeIT {
     void getById_returnsWorkItemWithAuditTrail() {
         String id = createWorkItem("Get by id native");
         given()
-                .when().get("/tarkus/workitems/{id}", id)
+                .when().get("/workitems/{id}", id)
                 .then()
                 .statusCode(200)
                 .body("id", equalTo(id))
@@ -135,7 +135,7 @@ class WorkItemNativeIT {
     @Test
     void getById_unknownId_returns404WithErrorBody() {
         given()
-                .when().get("/tarkus/workitems/{id}", "00000000-0000-0000-0000-000000000000")
+                .when().get("/workitems/{id}", "00000000-0000-0000-0000-000000000000")
                 .then()
                 .statusCode(404)
                 .body("error", notNullValue())
@@ -152,19 +152,19 @@ class WorkItemNativeIT {
 
         // claim
         given().queryParam("claimant", "alice")
-                .when().put("/tarkus/workitems/{id}/claim", id)
+                .when().put("/workitems/{id}/claim", id)
                 .then().statusCode(200).body("status", equalTo("ASSIGNED"));
 
         // start
         given().queryParam("actor", "alice")
-                .when().put("/tarkus/workitems/{id}/start", id)
+                .when().put("/workitems/{id}/start", id)
                 .then().statusCode(200).body("status", equalTo("IN_PROGRESS"));
 
         // complete
         given().contentType(ContentType.JSON)
                 .queryParam("actor", "alice")
                 .body("{\"resolution\":\"{\\\"approved\\\":true}\"}")
-                .when().put("/tarkus/workitems/{id}/complete", id)
+                .when().put("/workitems/{id}/complete", id)
                 .then().statusCode(200)
                 .body("status", equalTo("COMPLETED"))
                 .body("resolution", notNullValue());
@@ -174,11 +174,11 @@ class WorkItemNativeIT {
     void rejectPath_claimThenReject() {
         String id = createWorkItem("Reject native");
         given().queryParam("claimant", "bob")
-                .when().put("/tarkus/workitems/{id}/claim", id);
+                .when().put("/workitems/{id}/claim", id);
         given().contentType(ContentType.JSON)
                 .queryParam("actor", "bob")
                 .body("{\"reason\":\"out of scope\"}")
-                .when().put("/tarkus/workitems/{id}/reject", id)
+                .when().put("/workitems/{id}/reject", id)
                 .then().statusCode(200).body("status", equalTo("REJECTED"));
     }
 
@@ -186,11 +186,11 @@ class WorkItemNativeIT {
     void delegatePath_claimThenDelegate() {
         String id = createWorkItem("Delegate native");
         given().queryParam("claimant", "alice")
-                .when().put("/tarkus/workitems/{id}/claim", id);
+                .when().put("/workitems/{id}/claim", id);
         given().contentType(ContentType.JSON)
                 .queryParam("actor", "alice")
                 .body("{\"to\":\"bob\"}")
-                .when().put("/tarkus/workitems/{id}/delegate", id)
+                .when().put("/workitems/{id}/delegate", id)
                 .then().statusCode(200)
                 .body("status", equalTo("PENDING"))
                 .body("assigneeId", equalTo("bob"));
@@ -200,9 +200,9 @@ class WorkItemNativeIT {
     void releasePath_claimThenRelease() {
         String id = createWorkItem("Release native");
         given().queryParam("claimant", "alice")
-                .when().put("/tarkus/workitems/{id}/claim", id);
+                .when().put("/workitems/{id}/claim", id);
         given().queryParam("actor", "alice")
-                .when().put("/tarkus/workitems/{id}/release", id)
+                .when().put("/workitems/{id}/release", id)
                 .then().statusCode(200)
                 .body("status", equalTo("PENDING"))
                 .body("assigneeId", nullValue());
@@ -212,17 +212,17 @@ class WorkItemNativeIT {
     void suspendResumePath_fullCycle() {
         String id = createWorkItem("Suspend resume native");
         given().queryParam("claimant", "alice")
-                .when().put("/tarkus/workitems/{id}/claim", id);
+                .when().put("/workitems/{id}/claim", id);
         given().queryParam("actor", "alice")
-                .when().put("/tarkus/workitems/{id}/start", id);
+                .when().put("/workitems/{id}/start", id);
         given().contentType(ContentType.JSON)
                 .queryParam("actor", "alice")
                 .body("{\"reason\":\"blocked\"}")
-                .when().put("/tarkus/workitems/{id}/suspend", id)
+                .when().put("/workitems/{id}/suspend", id)
                 .then().statusCode(200).body("status", equalTo("SUSPENDED"));
 
         given().queryParam("actor", "alice")
-                .when().put("/tarkus/workitems/{id}/resume", id)
+                .when().put("/workitems/{id}/resume", id)
                 .then().statusCode(200).body("status", equalTo("IN_PROGRESS"));
     }
 
@@ -232,7 +232,7 @@ class WorkItemNativeIT {
         given().contentType(ContentType.JSON)
                 .queryParam("actor", "admin")
                 .body("{\"reason\":\"no longer needed\"}")
-                .when().put("/tarkus/workitems/{id}/cancel", id)
+                .when().put("/workitems/{id}/cancel", id)
                 .then().statusCode(200).body("status", equalTo("CANCELLED"));
     }
 
@@ -244,7 +244,7 @@ class WorkItemNativeIT {
     void inbox_noParams_returns200() {
         createWorkItem("Inbox native");
         given()
-                .when().get("/tarkus/workitems/inbox")
+                .when().get("/workitems/inbox")
                 .then().statusCode(200);
     }
 
@@ -260,11 +260,11 @@ class WorkItemNativeIT {
                           "createdBy": "system"
                         }
                         """)
-                .when().post("/tarkus/workitems");
+                .when().post("/workitems");
 
         List<String> ids = given()
                 .queryParam("candidateGroup", "native-team")
-                .when().get("/tarkus/workitems/inbox")
+                .when().get("/workitems/inbox")
                 .then().statusCode(200)
                 .extract().jsonPath().getList("id");
 
@@ -276,7 +276,7 @@ class WorkItemNativeIT {
         createWorkItem("Inbox status native");
         given()
                 .queryParam("status", "PENDING")
-                .when().get("/tarkus/workitems/inbox")
+                .when().get("/workitems/inbox")
                 .then().statusCode(200);
     }
 
@@ -285,11 +285,11 @@ class WorkItemNativeIT {
         given()
                 .contentType(ContentType.JSON)
                 .body("{\"title\":\"High prio native\",\"priority\":\"HIGH\",\"createdBy\":\"system\"}")
-                .when().post("/tarkus/workitems");
+                .when().post("/workitems");
 
         given()
                 .queryParam("priority", "HIGH")
-                .when().get("/tarkus/workitems/inbox")
+                .when().get("/workitems/inbox")
                 .then().statusCode(200);
     }
 
@@ -301,9 +301,9 @@ class WorkItemNativeIT {
     void claimAlreadyAssigned_returns409WithErrorBody() {
         String id = createWorkItem("409 native");
         given().queryParam("claimant", "alice")
-                .when().put("/tarkus/workitems/{id}/claim", id);
+                .when().put("/workitems/{id}/claim", id);
         given().queryParam("claimant", "bob")
-                .when().put("/tarkus/workitems/{id}/claim", id)
+                .when().put("/workitems/{id}/claim", id)
                 .then()
                 .statusCode(409)
                 .body("error", notNullValue());
@@ -315,7 +315,7 @@ class WorkItemNativeIT {
         given().contentType(ContentType.JSON)
                 .queryParam("actor", "alice")
                 .body("{\"resolution\":\"done\"}")
-                .when().put("/tarkus/workitems/{id}/complete", id)
+                .when().put("/workitems/{id}/complete", id)
                 .then().statusCode(409);
     }
 
@@ -326,14 +326,14 @@ class WorkItemNativeIT {
     @Test
     void auditTrailHasFourEntriesAfterFullPath() {
         String id = createWorkItem("Audit native");
-        given().queryParam("claimant", "alice").when().put("/tarkus/workitems/{id}/claim", id);
-        given().queryParam("actor", "alice").when().put("/tarkus/workitems/{id}/start", id);
+        given().queryParam("claimant", "alice").when().put("/workitems/{id}/claim", id);
+        given().queryParam("actor", "alice").when().put("/workitems/{id}/start", id);
         given().contentType(ContentType.JSON).queryParam("actor", "alice")
                 .body("{\"resolution\":\"done\"}")
-                .when().put("/tarkus/workitems/{id}/complete", id);
+                .when().put("/workitems/{id}/complete", id);
 
         given()
-                .when().get("/tarkus/workitems/{id}", id)
+                .when().get("/workitems/{id}", id)
                 .then().statusCode(200)
                 .body("auditTrail.size()", equalTo(4))
                 .body("auditTrail[0].event", equalTo("CREATED"))

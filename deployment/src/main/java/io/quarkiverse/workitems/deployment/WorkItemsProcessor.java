@@ -4,9 +4,9 @@ import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 
 /**
- * Quarkus build-time processor for the Tarkus extension.
- * Registers the "tarkus" feature so it appears in the startup log:
- * INFO features: [agroal, cdi, flyway, hibernate-orm, scheduler, tarkus, ...]
+ * Quarkus build-time processor for the WorkItems extension.
+ * Registers the "workitems" feature so it appears in the startup log:
+ * INFO features: [agroal, cdi, flyway, hibernate-orm, scheduler, workitems, ...]
  *
  * Additional @BuildStep methods to add as the extension matures:
  * - Native image reflection configuration for WorkItem, WorkItemStatus, etc.
@@ -15,7 +15,7 @@ import io.quarkus.deployment.builditem.FeatureBuildItem;
  */
 class WorkItemsProcessor {
 
-    private static final String FEATURE = "tarkus";
+    private static final String FEATURE = "workitems";
 
     @BuildStep
     FeatureBuildItem feature() {

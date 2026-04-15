@@ -21,10 +21,10 @@ import io.quarkiverse.workitems.ledger.api.dto.ActorTrustScoreResponse;
  * REST endpoints for actor trust scores.
  *
  * <p>
- * All endpoints are under {@code /tarkus/actors} and are only active when
+ * All endpoints are under {@code /workitems/actors} and are only active when
  * {@code quarkus.ledger.trust-score.enabled=true}.
  */
-@Path("/tarkus/actors")
+@Path("/workitems/actors")
 @Produces(APPLICATION_JSON)
 @ApplicationScoped
 public class ActorTrustResource {

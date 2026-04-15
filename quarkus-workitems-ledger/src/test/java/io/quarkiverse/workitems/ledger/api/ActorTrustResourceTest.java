@@ -21,7 +21,7 @@ import io.restassured.path.json.JsonPath;
 import io.restassured.response.ValidatableResponse;
 
 /**
- * REST integration tests for {@code GET /tarkus/actors/{actorId}/trust}.
+ * REST integration tests for {@code GET /workitems/actors/{actorId}/trust}.
  *
  * <p>
  * Tests verify that the endpoint returns correct HTTP status codes and response
@@ -76,7 +76,7 @@ class ActorTrustResourceTest {
         trustScoreJob.runComputation();
 
         given()
-                .when().get("/tarkus/actors/alice/trust")
+                .when().get("/workitems/actors/alice/trust")
                 .then()
                 .statusCode(200)
                 .body("actorId", equalTo("alice"))
@@ -85,7 +85,7 @@ class ActorTrustResourceTest {
 
         // Also assert numeric ranges via AssertJ
         final JsonPath json = given()
-                .when().get("/tarkus/actors/alice/trust")
+                .when().get("/workitems/actors/alice/trust")
                 .then()
                 .statusCode(200)
                 .extract().jsonPath();
@@ -105,7 +105,7 @@ class ActorTrustResourceTest {
     @Test
     void getActorTrust_unknownActor_returns404() {
         given()
-                .when().get("/tarkus/actors/nobody/trust")
+                .when().get("/workitems/actors/nobody/trust")
                 .then()
                 .statusCode(404)
                 .body("error", notNullValue());
@@ -123,7 +123,7 @@ class ActorTrustResourceTest {
         trustScoreJob.runComputation();
 
         final ValidatableResponse response = given()
-                .when().get("/tarkus/actors/" + actor + "/trust")
+                .when().get("/workitems/actors/" + actor + "/trust")
                 .then()
                 .statusCode(200);
 
@@ -154,7 +154,7 @@ class ActorTrustResourceTest {
 
         // runComputation() is NOT called — no score row written yet → 404
         given()
-                .when().get("/tarkus/actors/" + actor + "/trust")
+                .when().get("/workitems/actors/" + actor + "/trust")
                 .then()
                 .statusCode(404);
     }
