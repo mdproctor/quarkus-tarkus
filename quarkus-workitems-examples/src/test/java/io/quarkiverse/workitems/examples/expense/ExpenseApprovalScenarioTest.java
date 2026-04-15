@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.examples.expense;
+package io.quarkiverse.workitems.examples.expense;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;

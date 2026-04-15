@@ -1,9 +1,9 @@
-package io.quarkiverse.tarkus.runtime.event;
+package io.quarkiverse.workitems.runtime.event;
 
 import java.time.Instant;
 import java.util.UUID;
 
-import io.quarkiverse.tarkus.runtime.model.WorkItemStatus;
+import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
 
 /**
  * CDI event fired on every WorkItem lifecycle transition.
@@ -39,7 +39,7 @@ public record WorkItemLifecycleEvent(
     public static WorkItemLifecycleEvent of(final String eventName, final UUID workItemId,
             final WorkItemStatus status, final String actor, final String detail) {
         return new WorkItemLifecycleEvent(
-                "io.quarkiverse.tarkus.workitem." + eventName.toLowerCase(),
+                "io.quarkiverse.workitems.workitem." + eventName.toLowerCase(),
                 "/tarkus/workitems/" + workItemId,
                 workItemId.toString(),
                 workItemId,
@@ -67,7 +67,7 @@ public record WorkItemLifecycleEvent(
             final WorkItemStatus status, final String actor, final String detail,
             final String rationale, final String planRef) {
         return new WorkItemLifecycleEvent(
-                "io.quarkiverse.tarkus.workitem." + eventName.toLowerCase(),
+                "io.quarkiverse.workitems.workitem." + eventName.toLowerCase(),
                 "/tarkus/workitems/" + workItemId,
                 workItemId.toString(),
                 workItemId,

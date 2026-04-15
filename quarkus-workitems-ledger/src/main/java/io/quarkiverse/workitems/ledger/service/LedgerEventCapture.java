@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.ledger.service;
+package io.quarkiverse.workitems.ledger.service;
 
 import java.util.Map;
 import java.util.Optional;
@@ -12,11 +12,11 @@ import io.quarkiverse.ledger.runtime.config.LedgerConfig;
 import io.quarkiverse.ledger.runtime.model.ActorType;
 import io.quarkiverse.ledger.runtime.model.LedgerEntryType;
 import io.quarkiverse.ledger.runtime.service.LedgerHashChain;
-import io.quarkiverse.tarkus.ledger.model.WorkItemLedgerEntry;
-import io.quarkiverse.tarkus.ledger.repository.WorkItemLedgerEntryRepository;
-import io.quarkiverse.tarkus.runtime.event.WorkItemLifecycleEvent;
-import io.quarkiverse.tarkus.runtime.model.WorkItem;
-import io.quarkiverse.tarkus.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.ledger.model.WorkItemLedgerEntry;
+import io.quarkiverse.workitems.ledger.repository.WorkItemLedgerEntryRepository;
+import io.quarkiverse.workitems.runtime.event.WorkItemLifecycleEvent;
+import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
 
 /**
  * CDI observer that writes a {@link WorkItemLedgerEntry} for every WorkItem lifecycle transition.

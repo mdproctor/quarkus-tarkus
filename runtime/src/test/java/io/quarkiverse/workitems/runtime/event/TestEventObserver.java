@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.runtime.event;
+package io.quarkiverse.workitems.runtime.event;
 
 import java.util.ArrayList;
 import java.util.List;

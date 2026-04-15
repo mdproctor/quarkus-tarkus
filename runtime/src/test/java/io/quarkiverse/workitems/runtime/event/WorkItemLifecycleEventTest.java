@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.runtime.event;
+package io.quarkiverse.workitems.runtime.event;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -6,7 +6,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.tarkus.runtime.model.WorkItemStatus;
+import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
 
 /**
  * Pure JUnit 5 unit tests for {@link WorkItemLifecycleEvent} — no container needed.
@@ -21,7 +21,7 @@ class WorkItemLifecycleEventTest {
     void of_buildsCorrectTypeString() {
         UUID id = UUID.randomUUID();
         WorkItemLifecycleEvent e = WorkItemLifecycleEvent.of("CREATED", id, WorkItemStatus.PENDING, "system", null);
-        assertThat(e.type()).isEqualTo("io.quarkiverse.tarkus.workitem.created");
+        assertThat(e.type()).isEqualTo("io.quarkiverse.workitems.workitem.created");
     }
 
     @Test
@@ -57,7 +57,7 @@ class WorkItemLifecycleEventTest {
 
     @Test
     void of_typeIsAlwaysLowercase() {
-        // "EXPIRED" → "io.quarkiverse.tarkus.workitem.expired"
+        // "EXPIRED" → "io.quarkiverse.workitems.workitem.expired"
         WorkItemLifecycleEvent e = WorkItemLifecycleEvent.of("EXPIRED",
                 UUID.randomUUID(), WorkItemStatus.EXPIRED, "system", null);
         assertThat(e.type()).doesNotContain("EXPIRED");

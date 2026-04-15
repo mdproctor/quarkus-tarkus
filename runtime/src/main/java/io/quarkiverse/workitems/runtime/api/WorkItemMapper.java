@@ -1,10 +1,10 @@
-package io.quarkiverse.tarkus.runtime.api;
+package io.quarkiverse.workitems.runtime.api;
 
 import java.util.List;
 
-import io.quarkiverse.tarkus.runtime.model.AuditEntry;
-import io.quarkiverse.tarkus.runtime.model.WorkItem;
-import io.quarkiverse.tarkus.runtime.model.WorkItemCreateRequest;
+import io.quarkiverse.workitems.runtime.model.AuditEntry;
+import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.workitems.runtime.model.WorkItemCreateRequest;
 
 public final class WorkItemMapper {
 

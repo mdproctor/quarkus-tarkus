@@ -1,11 +1,11 @@
-package io.quarkiverse.tarkus.ledger.api;
+package io.quarkiverse.workitems.ledger.api;
 
 import java.util.List;
 
 import io.quarkiverse.ledger.runtime.model.LedgerAttestation;
-import io.quarkiverse.tarkus.ledger.api.dto.LedgerAttestationResponse;
-import io.quarkiverse.tarkus.ledger.api.dto.LedgerEntryResponse;
-import io.quarkiverse.tarkus.ledger.model.WorkItemLedgerEntry;
+import io.quarkiverse.workitems.ledger.api.dto.LedgerAttestationResponse;
+import io.quarkiverse.workitems.ledger.api.dto.LedgerEntryResponse;
+import io.quarkiverse.workitems.ledger.model.WorkItemLedgerEntry;
 
 /**
  * Static mapper between ledger JPA entities and REST response records.

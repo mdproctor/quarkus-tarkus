@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.runtime.config;
+package io.quarkiverse.workitems.runtime.config;
 
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;

@@ -1,8 +1,8 @@
-package io.quarkiverse.tarkus.runtime.api;
+package io.quarkiverse.workitems.runtime.api;
 
 import java.time.Instant;
 
-import io.quarkiverse.tarkus.runtime.model.WorkItemPriority;
+import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
 
 public record CreateWorkItemRequest(
         String title,

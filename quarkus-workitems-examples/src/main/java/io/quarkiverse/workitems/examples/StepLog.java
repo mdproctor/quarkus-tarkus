@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.examples;
+package io.quarkiverse.workitems.examples;
 
 import java.util.UUID;
 

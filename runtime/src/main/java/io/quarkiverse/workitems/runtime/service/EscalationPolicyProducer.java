@@ -1,10 +1,10 @@
-package io.quarkiverse.tarkus.runtime.service;
+package io.quarkiverse.workitems.runtime.service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 
-import io.quarkiverse.tarkus.runtime.config.TarkusConfig;
+import io.quarkiverse.workitems.runtime.config.TarkusConfig;
 
 @ApplicationScoped
 public class EscalationPolicyProducer {

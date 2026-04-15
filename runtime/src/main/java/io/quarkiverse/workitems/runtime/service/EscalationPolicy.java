@@ -1,6 +1,6 @@
-package io.quarkiverse.tarkus.runtime.service;
+package io.quarkiverse.workitems.runtime.service;
 
-import io.quarkiverse.tarkus.runtime.model.WorkItem;
+import io.quarkiverse.workitems.runtime.model.WorkItem;
 
 public interface EscalationPolicy {
 

@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.ledger.repository;
+package io.quarkiverse.workitems.ledger.repository;
 
 import java.util.List;
 import java.util.Map;
@@ -8,7 +8,7 @@ import java.util.UUID;
 
 import io.quarkiverse.ledger.runtime.model.LedgerAttestation;
 import io.quarkiverse.ledger.runtime.repository.LedgerEntryRepository;
-import io.quarkiverse.tarkus.ledger.model.WorkItemLedgerEntry;
+import io.quarkiverse.workitems.ledger.model.WorkItemLedgerEntry;
 
 /**
  * Typed repository for {@link WorkItemLedgerEntry} records.

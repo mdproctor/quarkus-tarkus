@@ -1,12 +1,12 @@
-package io.quarkiverse.tarkus.runtime.api;
+package io.quarkiverse.workitems.runtime.api;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import io.quarkiverse.tarkus.runtime.model.DelegationState;
-import io.quarkiverse.tarkus.runtime.model.WorkItemPriority;
-import io.quarkiverse.tarkus.runtime.model.WorkItemStatus;
+import io.quarkiverse.workitems.runtime.model.DelegationState;
+import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
+import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
 
 public record WorkItemWithAuditResponse(
         UUID id,

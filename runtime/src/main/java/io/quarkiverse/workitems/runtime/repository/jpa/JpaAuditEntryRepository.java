@@ -1,12 +1,12 @@
-package io.quarkiverse.tarkus.runtime.repository.jpa;
+package io.quarkiverse.workitems.runtime.repository.jpa;
 
 import java.util.List;
 import java.util.UUID;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.quarkiverse.tarkus.runtime.model.AuditEntry;
-import io.quarkiverse.tarkus.runtime.repository.AuditEntryRepository;
+import io.quarkiverse.workitems.runtime.model.AuditEntry;
+import io.quarkiverse.workitems.runtime.repository.AuditEntryRepository;
 
 @ApplicationScoped
 public class JpaAuditEntryRepository implements AuditEntryRepository {

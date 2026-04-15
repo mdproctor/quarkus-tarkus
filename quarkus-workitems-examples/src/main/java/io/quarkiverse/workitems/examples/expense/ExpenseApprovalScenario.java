@@ -1,4 +1,4 @@
-package io.quarkiverse.tarkus.examples.expense;
+package io.quarkiverse.workitems.examples.expense;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,19 +11,19 @@ import jakarta.ws.rs.core.MediaType;
 
 import org.jboss.logging.Logger;
 
-import io.quarkiverse.tarkus.examples.ScenarioResponse;
-import io.quarkiverse.tarkus.examples.StepLog;
-import io.quarkiverse.tarkus.ledger.api.LedgerMapper;
-import io.quarkiverse.tarkus.ledger.api.dto.LedgerEntryResponse;
-import io.quarkiverse.tarkus.ledger.model.WorkItemLedgerEntry;
-import io.quarkiverse.tarkus.ledger.repository.WorkItemLedgerEntryRepository;
-import io.quarkiverse.tarkus.runtime.api.AuditEntryResponse;
-import io.quarkiverse.tarkus.runtime.model.AuditEntry;
-import io.quarkiverse.tarkus.runtime.model.WorkItem;
-import io.quarkiverse.tarkus.runtime.model.WorkItemCreateRequest;
-import io.quarkiverse.tarkus.runtime.model.WorkItemPriority;
-import io.quarkiverse.tarkus.runtime.repository.AuditEntryRepository;
-import io.quarkiverse.tarkus.runtime.service.WorkItemService;
+import io.quarkiverse.workitems.examples.ScenarioResponse;
+import io.quarkiverse.workitems.examples.StepLog;
+import io.quarkiverse.workitems.ledger.api.LedgerMapper;
+import io.quarkiverse.workitems.ledger.api.dto.LedgerEntryResponse;
+import io.quarkiverse.workitems.ledger.model.WorkItemLedgerEntry;
+import io.quarkiverse.workitems.ledger.repository.WorkItemLedgerEntryRepository;
+import io.quarkiverse.workitems.runtime.api.AuditEntryResponse;
+import io.quarkiverse.workitems.runtime.model.AuditEntry;
+import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.workitems.runtime.model.WorkItemCreateRequest;
+import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
+import io.quarkiverse.workitems.runtime.repository.AuditEntryRepository;
+import io.quarkiverse.workitems.runtime.service.WorkItemService;
 
 /**
  * Scenario 1 — Expense Approval.
