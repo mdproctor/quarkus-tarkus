@@ -9,13 +9,13 @@ import jakarta.inject.Inject;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.tarkus.ledger.model.ActorType;
-import io.quarkiverse.tarkus.ledger.model.AttestationVerdict;
-import io.quarkiverse.tarkus.ledger.model.LedgerAttestation;
-import io.quarkiverse.tarkus.ledger.model.LedgerEntry;
-import io.quarkiverse.tarkus.ledger.model.LedgerEntryType;
-import io.quarkiverse.tarkus.ledger.repository.LedgerEntryRepository;
-import io.quarkiverse.tarkus.ledger.service.LedgerHashChain;
+import io.quarkiverse.ledger.runtime.model.ActorType;
+import io.quarkiverse.ledger.runtime.model.AttestationVerdict;
+import io.quarkiverse.ledger.runtime.model.LedgerAttestation;
+import io.quarkiverse.ledger.runtime.model.LedgerEntryType;
+import io.quarkiverse.ledger.runtime.service.LedgerHashChain;
+import io.quarkiverse.tarkus.ledger.model.WorkItemLedgerEntry;
+import io.quarkiverse.tarkus.ledger.repository.WorkItemLedgerEntryRepository;
 import io.quarkiverse.tarkus.runtime.model.WorkItemCreateRequest;
 import io.quarkiverse.tarkus.runtime.model.WorkItemPriority;
 import io.quarkiverse.tarkus.runtime.service.WorkItemService;
@@ -26,17 +26,13 @@ import io.quarkus.test.junit.QuarkusTest;
  * Integration tests for the Tarkus Ledger module.
  *
  * <p>
- * Verifies that {@code WorkItemLifecycleEvent} CDI events are observed and
- * converted into {@link LedgerEntry} records with correct field values,
- * sequence numbering, hash chain integrity, and attestation storage.
+ * Verifies that {@code WorkItemLifecycleEvent} CDI events are observed and converted
+ * into {@link WorkItemLedgerEntry} records with correct field values, sequence numbering,
+ * hash chain integrity, and attestation storage.
  *
  * <p>
- * {@code @TestTransaction} rolls back after each test — ledger entries never
- * persist across test boundaries.
- *
- * <p>
- * RED-phase: these tests will not compile until the ledger production classes
- * ({@link LedgerEntry}, {@link LedgerEntryRepository}, etc.) are created.
+ * RED-phase: these tests will not compile until {@link WorkItemLedgerEntry} and
+ * {@link WorkItemLedgerEntryRepository} are created as part of the quarkus-ledger migration.
  */
 @QuarkusTest
 @TestTransaction
@@ -46,7 +42,7 @@ class LedgerIntegrationTest {
     WorkItemService workItemService;
 
     @Inject
-    LedgerEntryRepository ledgerRepo;
+    WorkItemLedgerEntryRepository ledgerRepo;
 
     // -------------------------------------------------------------------------
     // Fixture helper
@@ -59,20 +55,21 @@ class LedgerIntegrationTest {
     }
 
     // -------------------------------------------------------------------------
-    // LedgerEntry written for every lifecycle transition
+    // WorkItemLedgerEntry written for every lifecycle transition
     // -------------------------------------------------------------------------
 
     @Test
     void create_writesOneLedgerEntry() {
         final var item = workItemService.create(basicRequest("Create test"));
-        final List<LedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
 
         assertThat(entries).hasSize(1);
-        final LedgerEntry e = entries.get(0);
+        final WorkItemLedgerEntry e = entries.get(0);
         assertThat(e.entryType).isEqualTo(LedgerEntryType.EVENT);
         assertThat(e.eventType).isEqualTo("WorkItemCreated");
         assertThat(e.commandType).isEqualTo("CreateWorkItem");
         assertThat(e.actorId).isEqualTo("system");
+        assertThat(e.subjectId).isEqualTo(item.id);
     }
 
     @Test
@@ -80,11 +77,12 @@ class LedgerIntegrationTest {
         final var item = workItemService.create(basicRequest("Claim test"));
         workItemService.claim(item.id, "alice");
 
-        final List<LedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
         assertThat(entries).hasSize(2);
 
-        final LedgerEntry claim = entries.get(1);
+        final WorkItemLedgerEntry claim = entries.get(1);
         assertThat(claim.eventType).isEqualTo("WorkItemAssigned");
+        assertThat(claim.commandType).isEqualTo("ClaimWorkItem");
         assertThat(claim.actorId).isEqualTo("alice");
         assertThat(claim.actorRole).isEqualTo("Claimant");
     }
@@ -95,10 +93,10 @@ class LedgerIntegrationTest {
         workItemService.claim(item.id, "alice");
         workItemService.start(item.id, "alice");
 
-        final List<LedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
         assertThat(entries).hasSize(3);
 
-        final LedgerEntry start = entries.get(2);
+        final WorkItemLedgerEntry start = entries.get(2);
         assertThat(start.eventType).isEqualTo("WorkItemStarted");
         assertThat(start.commandType).isEqualTo("StartWorkItem");
     }
@@ -110,10 +108,10 @@ class LedgerIntegrationTest {
         workItemService.start(item.id, "alice");
         workItemService.complete(item.id, "alice", "All done");
 
-        final List<LedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
         assertThat(entries).hasSize(4);
 
-        final LedgerEntry complete = entries.get(3);
+        final WorkItemLedgerEntry complete = entries.get(3);
         assertThat(complete.eventType).isEqualTo("WorkItemCompleted");
         assertThat(complete.commandType).isEqualTo("CompleteWorkItem");
     }
@@ -124,11 +122,12 @@ class LedgerIntegrationTest {
         workItemService.claim(item.id, "alice");
         workItemService.reject(item.id, "alice", "Not my responsibility");
 
-        final List<LedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
         assertThat(entries).hasSize(3);
 
-        final LedgerEntry reject = entries.get(2);
+        final WorkItemLedgerEntry reject = entries.get(2);
         assertThat(reject.eventType).isEqualTo("WorkItemRejected");
+        assertThat(reject.commandType).isEqualTo("RejectWorkItem");
     }
 
     @Test
@@ -137,10 +136,10 @@ class LedgerIntegrationTest {
         workItemService.claim(item.id, "alice");
         workItemService.delegate(item.id, "alice", "bob");
 
-        final List<LedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
         assertThat(entries).hasSize(3);
 
-        final LedgerEntry delegate = entries.get(2);
+        final WorkItemLedgerEntry delegate = entries.get(2);
         assertThat(delegate.eventType).isEqualTo("WorkItemDelegated");
         assertThat(delegate.actorRole).isEqualTo("Delegator");
     }
@@ -150,11 +149,24 @@ class LedgerIntegrationTest {
         final var item = workItemService.create(basicRequest("Cancel test"));
         workItemService.cancel(item.id, "admin", "No longer needed");
 
-        final List<LedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
         assertThat(entries).hasSize(2);
 
-        final LedgerEntry cancel = entries.get(1);
+        final WorkItemLedgerEntry cancel = entries.get(1);
         assertThat(cancel.eventType).isEqualTo("WorkItemCancelled");
+    }
+
+    // -------------------------------------------------------------------------
+    // subjectId == workItemId
+    // -------------------------------------------------------------------------
+
+    @Test
+    void subjectId_equalsWorkItemId() {
+        final var item = workItemService.create(basicRequest("SubjectId test"));
+
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
+        assertThat(entries).hasSize(1);
+        assertThat(entries.get(0).subjectId).isEqualTo(item.id);
     }
 
     // -------------------------------------------------------------------------
@@ -168,7 +180,7 @@ class LedgerIntegrationTest {
         workItemService.start(item.id, "alice");
         workItemService.complete(item.id, "alice", "Done");
 
-        final List<LedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
         assertThat(entries).hasSize(4);
         assertThat(entries.get(0).sequenceNumber).isEqualTo(1);
         assertThat(entries.get(1).sequenceNumber).isEqualTo(2);
@@ -181,9 +193,8 @@ class LedgerIntegrationTest {
         final var item1 = workItemService.create(basicRequest("Item 1"));
         final var item2 = workItemService.create(basicRequest("Item 2"));
 
-        // Each item should independently start at sequence 1
-        final List<LedgerEntry> entries1 = ledgerRepo.findByWorkItemId(item1.id);
-        final List<LedgerEntry> entries2 = ledgerRepo.findByWorkItemId(item2.id);
+        final List<WorkItemLedgerEntry> entries1 = ledgerRepo.findByWorkItemId(item1.id);
+        final List<WorkItemLedgerEntry> entries2 = ledgerRepo.findByWorkItemId(item2.id);
 
         assertThat(entries1).hasSize(1);
         assertThat(entries2).hasSize(1);
@@ -199,7 +210,7 @@ class LedgerIntegrationTest {
     void hashChain_firstEntryHasNullPreviousHash() {
         final var item = workItemService.create(basicRequest("Hash test 1"));
 
-        final List<LedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
         assertThat(entries).hasSize(1);
         assertThat(entries.get(0).previousHash).isNull();
     }
@@ -209,7 +220,7 @@ class LedgerIntegrationTest {
         final var item = workItemService.create(basicRequest("Hash test 2"));
         workItemService.claim(item.id, "alice");
 
-        final List<LedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
         assertThat(entries).hasSize(2);
         assertThat(entries.get(1).previousHash).isEqualTo(entries.get(0).digest);
     }
@@ -221,9 +232,18 @@ class LedgerIntegrationTest {
         workItemService.start(item.id, "alice");
         workItemService.complete(item.id, "alice", "Verified");
 
-        final List<LedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
         assertThat(entries).hasSize(4);
         assertThat(LedgerHashChain.verify(entries)).isTrue();
+    }
+
+    @Test
+    void hashChainEnabled_digestIsNotNull() {
+        final var item = workItemService.create(basicRequest("Digest non-null test"));
+
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
+        assertThat(entries).hasSize(1);
+        assertThat(entries.get(0).digest).isNotNull();
     }
 
     // -------------------------------------------------------------------------
@@ -234,12 +254,10 @@ class LedgerIntegrationTest {
     void decisionContext_capturedOnCreate() {
         final var item = workItemService.create(basicRequest("DecisionContext create test"));
 
-        final List<LedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
         assertThat(entries).hasSize(1);
-
-        final LedgerEntry e = entries.get(0);
-        assertThat(e.decisionContext).isNotNull();
-        assertThat(e.decisionContext).containsIgnoringCase("PENDING");
+        assertThat(entries.get(0).decisionContext).isNotNull();
+        assertThat(entries.get(0).decisionContext).containsIgnoringCase("PENDING");
     }
 
     @Test
@@ -249,12 +267,10 @@ class LedgerIntegrationTest {
         workItemService.start(item.id, "alice");
         workItemService.complete(item.id, "alice", "Finished");
 
-        final List<LedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
         assertThat(entries).hasSize(4);
-
-        final LedgerEntry completed = entries.get(3);
-        assertThat(completed.decisionContext).isNotNull();
-        assertThat(completed.decisionContext).containsIgnoringCase("COMPLETED");
+        assertThat(entries.get(3).decisionContext).isNotNull();
+        assertThat(entries.get(3).decisionContext).containsIgnoringCase("COMPLETED");
     }
 
     // -------------------------------------------------------------------------
@@ -266,33 +282,13 @@ class LedgerIntegrationTest {
         final var item = workItemService.create(basicRequest("Mapping test"));
         workItemService.claim(item.id, "bob");
 
-        final List<LedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
         assertThat(entries).hasSize(2);
 
-        // Create entry
-        final LedgerEntry create = entries.get(0);
-        assertThat(create.commandType).isEqualTo("CreateWorkItem");
-        assertThat(create.eventType).isEqualTo("WorkItemCreated");
-
-        // Claim entry
-        final LedgerEntry claim = entries.get(1);
-        assertThat(claim.commandType).isEqualTo("ClaimWorkItem");
-        assertThat(claim.eventType).isEqualTo("WorkItemAssigned");
-    }
-
-    // -------------------------------------------------------------------------
-    // Feature flag: hash chain enabled (disabled case is covered by LedgerHashChainTest)
-    // -------------------------------------------------------------------------
-
-    @Test
-    void hashChainEnabled_digestIsNotNull() {
-        // When hash-chain is enabled (default in test application.properties),
-        // every entry must carry a non-null digest.
-        final var item = workItemService.create(basicRequest("Digest non-null test"));
-
-        final List<LedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
-        assertThat(entries).hasSize(1);
-        assertThat(entries.get(0).digest).isNotNull();
+        assertThat(entries.get(0).commandType).isEqualTo("CreateWorkItem");
+        assertThat(entries.get(0).eventType).isEqualTo("WorkItemCreated");
+        assertThat(entries.get(1).commandType).isEqualTo("ClaimWorkItem");
+        assertThat(entries.get(1).eventType).isEqualTo("WorkItemAssigned");
     }
 
     // -------------------------------------------------------------------------
@@ -302,13 +298,13 @@ class LedgerIntegrationTest {
     @Test
     void attestation_savedAndRetrievable() {
         final var item = workItemService.create(basicRequest("Attestation test"));
-        final List<LedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
         assertThat(entries).hasSize(1);
         final UUID entryId = entries.get(0).id;
 
         final LedgerAttestation attestation = new LedgerAttestation();
         attestation.ledgerEntryId = entryId;
-        attestation.workItemId = item.id;
+        attestation.subjectId = item.id;
         attestation.attestorId = "alice";
         attestation.attestorType = ActorType.HUMAN;
         attestation.verdict = AttestationVerdict.SOUND;
@@ -324,17 +320,18 @@ class LedgerIntegrationTest {
         assertThat(saved.attestorType).isEqualTo(ActorType.HUMAN);
         assertThat(saved.verdict).isEqualTo(AttestationVerdict.SOUND);
         assertThat(saved.confidence).isEqualTo(0.9);
+        assertThat(saved.subjectId).isEqualTo(item.id);
     }
 
     @Test
     void attestation_multipleAttestationsOnSameEntry() {
         final var item = workItemService.create(basicRequest("Multi-attestation test"));
-        final List<LedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
         final UUID entryId = entries.get(0).id;
 
         final LedgerAttestation a1 = new LedgerAttestation();
         a1.ledgerEntryId = entryId;
-        a1.workItemId = item.id;
+        a1.subjectId = item.id;
         a1.attestorId = "alice";
         a1.attestorType = ActorType.HUMAN;
         a1.verdict = AttestationVerdict.SOUND;
@@ -343,7 +340,7 @@ class LedgerIntegrationTest {
 
         final LedgerAttestation a2 = new LedgerAttestation();
         a2.ledgerEntryId = entryId;
-        a2.workItemId = item.id;
+        a2.subjectId = item.id;
         a2.attestorId = "audit-agent";
         a2.attestorType = ActorType.AGENT;
         a2.verdict = AttestationVerdict.ENDORSED;
@@ -352,8 +349,7 @@ class LedgerIntegrationTest {
 
         final List<LedgerAttestation> results = ledgerRepo.findAttestationsByEntryId(entryId);
         assertThat(results).hasSize(2);
-
-        final List<String> attestorIds = results.stream().map(a -> a.attestorId).toList();
-        assertThat(attestorIds).containsExactlyInAnyOrder("alice", "audit-agent");
+        assertThat(results.stream().map(a -> a.attestorId).toList())
+                .containsExactlyInAnyOrder("alice", "audit-agent");
     }
 }

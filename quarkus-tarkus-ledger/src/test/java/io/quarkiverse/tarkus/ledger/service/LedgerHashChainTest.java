@@ -9,16 +9,24 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.tarkus.ledger.model.LedgerEntry;
-import io.quarkiverse.tarkus.ledger.model.LedgerEntryType;
+import io.quarkiverse.ledger.runtime.model.LedgerEntry;
+import io.quarkiverse.ledger.runtime.model.LedgerEntryType;
+import io.quarkiverse.ledger.runtime.service.LedgerHashChain;
+import io.quarkiverse.tarkus.ledger.model.WorkItemLedgerEntry;
 
 /**
- * Pure JUnit 5 unit tests for {@link LedgerHashChain} — no Quarkus runtime, no CDI.
+ * Pure JUnit 5 unit tests for {@link LedgerHashChain} using Tarkus's
+ * {@link WorkItemLedgerEntry} subclass — no Quarkus runtime, no CDI.
  *
  * <p>
- * RED-phase: these tests will not compile until the production classes
- * ({@link LedgerHashChain}, {@link LedgerEntry}, {@link LedgerEntryType}) are created.
- * That is the correct TDD state.
+ * The canonical form covers base-class fields only:
+ * {@code subjectId|seqNum|entryType|actorId|actorRole|planRef|occurredAt}.
+ * WorkItem-specific fields ({@code commandType}, {@code eventType}) are intentionally
+ * excluded from the chain — subclass fields do not participate in tamper detection.
+ * This is verified explicitly in this test suite.
+ *
+ * <p>
+ * RED-phase: these tests will not compile until {@link WorkItemLedgerEntry} is created.
  */
 class LedgerHashChainTest {
 
@@ -26,9 +34,9 @@ class LedgerHashChainTest {
     // Fixture helper
     // -------------------------------------------------------------------------
 
-    private LedgerEntry entry(final UUID workItemId, final int seq) {
-        final LedgerEntry e = new LedgerEntry();
-        e.workItemId = workItemId;
+    private WorkItemLedgerEntry entry(final UUID workItemId, final int seq) {
+        final WorkItemLedgerEntry e = new WorkItemLedgerEntry();
+        e.subjectId = workItemId;
         e.sequenceNumber = seq;
         e.entryType = LedgerEntryType.EVENT;
         e.commandType = "CreateWorkItem";
@@ -36,7 +44,7 @@ class LedgerHashChainTest {
         e.actorId = "system";
         e.actorRole = "Initiator";
         e.planRef = null;
-        e.occurredAt = Instant.now();
+        e.occurredAt = Instant.parse("2026-04-14T10:00:00Z");
         return e;
     }
 
@@ -46,20 +54,14 @@ class LedgerHashChainTest {
 
     @Test
     void compute_returnsNonNullDigest() {
-        final UUID id = UUID.randomUUID();
-        final LedgerEntry e = entry(id, 1);
+        final WorkItemLedgerEntry e = entry(UUID.randomUUID(), 1);
 
-        final String digest = LedgerHashChain.compute(null, e);
-
-        assertThat(digest).isNotNull();
+        assertThat(LedgerHashChain.compute(null, e)).isNotNull();
     }
 
     @Test
-    void compute_withGenesisPrevious_isDeterministic() {
-        final UUID id = UUID.randomUUID();
-        final LedgerEntry e = entry(id, 1);
-        // Fix occurredAt so the entry is identical on both calls
-        e.occurredAt = Instant.parse("2026-04-14T10:00:00Z");
+    void compute_withNullPreviousHash_isDeterministic() {
+        final WorkItemLedgerEntry e = entry(UUID.randomUUID(), 1);
 
         final String first = LedgerHashChain.compute(null, e);
         final String second = LedgerHashChain.compute(null, e);
@@ -69,9 +71,7 @@ class LedgerHashChainTest {
 
     @Test
     void compute_differentPreviousHash_producesDifferentDigest() {
-        final UUID id = UUID.randomUUID();
-        final LedgerEntry e = entry(id, 2);
-        e.occurredAt = Instant.parse("2026-04-14T10:00:00Z");
+        final WorkItemLedgerEntry e = entry(UUID.randomUUID(), 2);
 
         final String withNull = LedgerHashChain.compute(null, e);
         final String withPrev = LedgerHashChain.compute("abc123", e);
@@ -80,17 +80,53 @@ class LedgerHashChainTest {
     }
 
     @Test
-    void compute_mutatingField_changesDifferentDigest() {
-        final UUID id = UUID.randomUUID();
-        final LedgerEntry e = entry(id, 1);
-        e.occurredAt = Instant.parse("2026-04-14T10:00:00Z");
+    void compute_mutatingSubjectId_changesDifferentDigest() {
+        final WorkItemLedgerEntry e = entry(UUID.randomUUID(), 1);
+        final String before = LedgerHashChain.compute(null, e);
 
+        e.subjectId = UUID.randomUUID();
+        final String after = LedgerHashChain.compute(null, e);
+
+        assertThat(before).isNotEqualTo(after);
+    }
+
+    @Test
+    void compute_mutatingActorId_changesDifferentDigest() {
+        final WorkItemLedgerEntry e = entry(UUID.randomUUID(), 1);
         final String before = LedgerHashChain.compute(null, e);
 
         e.actorId = "mutated-actor";
         final String after = LedgerHashChain.compute(null, e);
 
         assertThat(before).isNotEqualTo(after);
+    }
+
+    // -------------------------------------------------------------------------
+    // Subclass fields are excluded from the canonical form (by design)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void compute_mutatingCommandType_doesNotChangeDigest() {
+        // commandType is WorkItemLedgerEntry-specific — not in canonical form
+        final WorkItemLedgerEntry e = entry(UUID.randomUUID(), 1);
+        final String before = LedgerHashChain.compute(null, e);
+
+        e.commandType = "mutated-command";
+        final String after = LedgerHashChain.compute(null, e);
+
+        assertThat(before).isEqualTo(after);
+    }
+
+    @Test
+    void compute_mutatingEventType_doesNotChangeDigest() {
+        // eventType is WorkItemLedgerEntry-specific — not in canonical form
+        final WorkItemLedgerEntry e = entry(UUID.randomUUID(), 1);
+        final String before = LedgerHashChain.compute(null, e);
+
+        e.eventType = "mutated-event";
+        final String after = LedgerHashChain.compute(null, e);
+
+        assertThat(before).isEqualTo(after);
     }
 
     // -------------------------------------------------------------------------
@@ -104,8 +140,7 @@ class LedgerHashChainTest {
 
     @Test
     void verify_singleEntry_withNullPrevious_returnsTrue() {
-        final UUID id = UUID.randomUUID();
-        final LedgerEntry e = entry(id, 1);
+        final WorkItemLedgerEntry e = entry(UUID.randomUUID(), 1);
         e.previousHash = null;
         e.digest = LedgerHashChain.compute(null, e);
 
@@ -113,18 +148,18 @@ class LedgerHashChainTest {
     }
 
     // -------------------------------------------------------------------------
-    // verify — two-entry chains
+    // verify — multi-entry chains
     // -------------------------------------------------------------------------
 
     @Test
     void verify_twoEntries_validChain_returnsTrue() {
         final UUID id = UUID.randomUUID();
 
-        final LedgerEntry e1 = entry(id, 1);
+        final WorkItemLedgerEntry e1 = entry(id, 1);
         e1.previousHash = null;
         e1.digest = LedgerHashChain.compute(null, e1);
 
-        final LedgerEntry e2 = entry(id, 2);
+        final WorkItemLedgerEntry e2 = entry(id, 2);
         e2.commandType = "ClaimWorkItem";
         e2.eventType = "WorkItemAssigned";
         e2.actorId = "alice";
@@ -138,13 +173,11 @@ class LedgerHashChainTest {
     void verify_twoEntries_tamperedSecondEntry_returnsFalse() {
         final UUID id = UUID.randomUUID();
 
-        final LedgerEntry e1 = entry(id, 1);
+        final WorkItemLedgerEntry e1 = entry(id, 1);
         e1.previousHash = null;
         e1.digest = LedgerHashChain.compute(null, e1);
 
-        final LedgerEntry e2 = entry(id, 2);
-        e2.commandType = "ClaimWorkItem";
-        e2.eventType = "WorkItemAssigned";
+        final WorkItemLedgerEntry e2 = entry(id, 2);
         e2.actorId = "alice";
         e2.previousHash = e1.digest;
         e2.digest = LedgerHashChain.compute(e1.digest, e2);
@@ -153,6 +186,42 @@ class LedgerHashChainTest {
         e2.actorId = "mallory";
 
         assertThat(LedgerHashChain.verify(List.of(e1, e2))).isFalse();
+    }
+
+    @Test
+    void verify_fourEntries_fullLifecyclePath_returnsTrue() {
+        final UUID id = UUID.randomUUID();
+
+        final WorkItemLedgerEntry create = entry(id, 1);
+        create.previousHash = null;
+        create.digest = LedgerHashChain.compute(null, create);
+
+        final WorkItemLedgerEntry claim = entry(id, 2);
+        claim.commandType = "ClaimWorkItem";
+        claim.eventType = "WorkItemAssigned";
+        claim.actorId = "alice";
+        claim.actorRole = "Claimant";
+        claim.previousHash = create.digest;
+        claim.digest = LedgerHashChain.compute(create.digest, claim);
+
+        final WorkItemLedgerEntry start = entry(id, 3);
+        start.commandType = "StartWorkItem";
+        start.eventType = "WorkItemStarted";
+        start.actorId = "alice";
+        start.actorRole = "Assignee";
+        start.previousHash = claim.digest;
+        start.digest = LedgerHashChain.compute(claim.digest, start);
+
+        final WorkItemLedgerEntry complete = entry(id, 4);
+        complete.commandType = "CompleteWorkItem";
+        complete.eventType = "WorkItemCompleted";
+        complete.actorId = "alice";
+        complete.actorRole = "Resolver";
+        complete.previousHash = start.digest;
+        complete.digest = LedgerHashChain.compute(start.digest, complete);
+
+        final List<LedgerEntry> entries = List.of(create, claim, start, complete);
+        assertThat(LedgerHashChain.verify(entries)).isTrue();
     }
 
     // -------------------------------------------------------------------------

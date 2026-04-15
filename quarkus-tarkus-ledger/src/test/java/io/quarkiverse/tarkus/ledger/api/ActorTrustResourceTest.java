@@ -11,7 +11,7 @@ import jakarta.inject.Inject;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.tarkus.ledger.service.TrustScoreJob;
+import io.quarkiverse.ledger.runtime.service.TrustScoreJob;
 import io.quarkiverse.tarkus.runtime.model.WorkItem;
 import io.quarkiverse.tarkus.runtime.model.WorkItemCreateRequest;
 import io.quarkiverse.tarkus.runtime.model.WorkItemPriority;

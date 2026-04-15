@@ -12,17 +12,17 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Response;
 
+import io.quarkiverse.ledger.runtime.config.LedgerConfig;
+import io.quarkiverse.ledger.runtime.model.ActorTrustScore;
+import io.quarkiverse.ledger.runtime.repository.ActorTrustScoreRepository;
 import io.quarkiverse.tarkus.ledger.api.dto.ActorTrustScoreResponse;
-import io.quarkiverse.tarkus.ledger.config.LedgerConfig;
-import io.quarkiverse.tarkus.ledger.model.ActorTrustScore;
-import io.quarkiverse.tarkus.ledger.repository.ActorTrustScoreRepository;
 
 /**
  * REST endpoints for actor trust scores.
  *
  * <p>
  * All endpoints are under {@code /tarkus/actors} and are only active when
- * {@code quarkus.tarkus.ledger.trust-score.enabled=true}.
+ * {@code quarkus.ledger.trust-score.enabled=true}.
  */
 @Path("/tarkus/actors")
 @Produces(APPLICATION_JSON)

@@ -26,6 +26,13 @@ extension is unchanged whether this module is present or not.</description>
       <version>${project.version}</version>
     </dependency>
 
+    <!-- Ledger base extension — provides LedgerEntry, LedgerAttestation, repositories, services -->
+    <dependency>
+      <groupId>io.quarkiverse.ledger</groupId>
+      <artifactId>quarkus-ledger</artifactId>
+      <version>1.0.0-SNAPSHOT</version>
+    </dependency>
+
     <!-- CDI, REST, ORM -->
     <dependency>
       <groupId>io.quarkus</groupId>

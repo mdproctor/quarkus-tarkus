@@ -4,15 +4,15 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import io.quarkiverse.tarkus.ledger.model.ActorType;
-import io.quarkiverse.tarkus.ledger.model.LedgerEntryType;
+import io.quarkiverse.ledger.runtime.model.ActorType;
+import io.quarkiverse.ledger.runtime.model.LedgerEntryType;
 
 /**
  * Response body representing a single ledger entry with its attestations.
  *
  * @param id the ledger entry UUID
- * @param workItemId the WorkItem this entry belongs to
- * @param sequenceNumber position in the per-WorkItem ledger sequence (1-based)
+ * @param subjectId the aggregate identifier this entry belongs to (the WorkItem UUID)
+ * @param sequenceNumber position in the per-subject ledger sequence (1-based)
  * @param entryType whether this is a command, event, or attestation record
  * @param commandType the actor's expressed intent; may be {@code null}
  * @param eventType the observable fact after execution; may be {@code null}
@@ -21,7 +21,7 @@ import io.quarkiverse.tarkus.ledger.model.LedgerEntryType;
  * @param actorRole functional role of the actor; may be {@code null}
  * @param planRef policy/procedure reference governing this action; may be {@code null}
  * @param rationale the actor's stated basis for the decision; may be {@code null}
- * @param decisionContext JSON snapshot of WorkItem state at transition time; may be {@code null}
+ * @param decisionContext JSON snapshot of state at transition time; may be {@code null}
  * @param evidence structured evidence; may be {@code null}
  * @param detail free-text or JSON transition detail; may be {@code null}
  * @param causedByEntryId FK to the entry that caused this one; may be {@code null}
@@ -36,7 +36,7 @@ import io.quarkiverse.tarkus.ledger.model.LedgerEntryType;
  */
 public record LedgerEntryResponse(
         UUID id,
-        UUID workItemId,
+        UUID subjectId,
         int sequenceNumber,
         LedgerEntryType entryType,
         String commandType,

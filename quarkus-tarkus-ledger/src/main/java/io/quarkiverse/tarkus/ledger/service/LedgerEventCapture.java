@@ -8,17 +8,18 @@ import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
-import io.quarkiverse.tarkus.ledger.config.LedgerConfig;
-import io.quarkiverse.tarkus.ledger.model.ActorType;
-import io.quarkiverse.tarkus.ledger.model.LedgerEntry;
-import io.quarkiverse.tarkus.ledger.model.LedgerEntryType;
-import io.quarkiverse.tarkus.ledger.repository.LedgerEntryRepository;
+import io.quarkiverse.ledger.runtime.config.LedgerConfig;
+import io.quarkiverse.ledger.runtime.model.ActorType;
+import io.quarkiverse.ledger.runtime.model.LedgerEntryType;
+import io.quarkiverse.ledger.runtime.service.LedgerHashChain;
+import io.quarkiverse.tarkus.ledger.model.WorkItemLedgerEntry;
+import io.quarkiverse.tarkus.ledger.repository.WorkItemLedgerEntryRepository;
 import io.quarkiverse.tarkus.runtime.event.WorkItemLifecycleEvent;
 import io.quarkiverse.tarkus.runtime.model.WorkItem;
 import io.quarkiverse.tarkus.runtime.repository.WorkItemRepository;
 
 /**
- * CDI observer that writes a {@link LedgerEntry} for every WorkItem lifecycle transition.
+ * CDI observer that writes a {@link WorkItemLedgerEntry} for every WorkItem lifecycle transition.
  *
  * <p>
  * This bean is the sole integration point between the core Tarkus extension and the ledger
@@ -34,7 +35,7 @@ import io.quarkiverse.tarkus.runtime.repository.WorkItemRepository;
 public class LedgerEventCapture {
 
     @Inject
-    LedgerEntryRepository ledgerRepo;
+    WorkItemLedgerEntryRepository ledgerRepo;
 
     @Inject
     WorkItemRepository workItemRepo;
@@ -66,8 +67,8 @@ public class LedgerEventCapture {
                 .map(e -> e.digest)
                 .orElse(null);
 
-        final LedgerEntry entry = new LedgerEntry();
-        entry.workItemId = event.workItemId();
+        final WorkItemLedgerEntry entry = new WorkItemLedgerEntry();
+        entry.subjectId = event.workItemId();
         entry.sequenceNumber = seq;
         entry.entryType = LedgerEntryType.EVENT;
         entry.commandType = deriveCommandType(event.type());
@@ -112,7 +113,7 @@ public class LedgerEventCapture {
                 wi.expiresAt != null ? "\"" + wi.expiresAt + "\"" : "null");
     }
 
-    /** Single source of truth for event suffix → (commandType, actorRole) mapping. */
+    /** Single source of truth for event suffix → (commandType, eventType, actorRole) mapping. */
     private static final Map<String, String[]> EVENT_META = Map.ofEntries(
             Map.entry("created", new String[] { "CreateWorkItem", "WorkItemCreated", "Initiator" }),
             Map.entry("assigned", new String[] { "ClaimWorkItem", "WorkItemAssigned", "Claimant" }),

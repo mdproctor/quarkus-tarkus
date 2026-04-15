@@ -1,7 +1,7 @@
 package io.quarkiverse.tarkus.ledger.api.dto;
 
-import io.quarkiverse.tarkus.ledger.model.ActorType;
-import io.quarkiverse.tarkus.ledger.model.AttestationVerdict;
+import io.quarkiverse.ledger.runtime.model.ActorType;
+import io.quarkiverse.ledger.runtime.model.AttestationVerdict;
 
 /**
  * Request body for posting a peer attestation on a ledger entry.

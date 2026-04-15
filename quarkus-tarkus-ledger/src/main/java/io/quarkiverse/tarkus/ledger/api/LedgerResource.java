@@ -17,13 +17,13 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Response;
 
+import io.quarkiverse.ledger.runtime.config.LedgerConfig;
+import io.quarkiverse.ledger.runtime.model.LedgerAttestation;
 import io.quarkiverse.tarkus.ledger.api.dto.LedgerAttestationRequest;
 import io.quarkiverse.tarkus.ledger.api.dto.LedgerEntryResponse;
 import io.quarkiverse.tarkus.ledger.api.dto.ProvenanceRequest;
-import io.quarkiverse.tarkus.ledger.config.LedgerConfig;
-import io.quarkiverse.tarkus.ledger.model.LedgerAttestation;
-import io.quarkiverse.tarkus.ledger.model.LedgerEntry;
-import io.quarkiverse.tarkus.ledger.repository.LedgerEntryRepository;
+import io.quarkiverse.tarkus.ledger.model.WorkItemLedgerEntry;
+import io.quarkiverse.tarkus.ledger.repository.WorkItemLedgerEntryRepository;
 import io.quarkiverse.tarkus.runtime.repository.WorkItemRepository;
 import io.quarkiverse.tarkus.runtime.service.WorkItemNotFoundException;
 
@@ -41,7 +41,7 @@ import io.quarkiverse.tarkus.runtime.service.WorkItemNotFoundException;
 public class LedgerResource {
 
     @Inject
-    LedgerEntryRepository ledgerRepo;
+    WorkItemLedgerEntryRepository ledgerRepo;
 
     @Inject
     WorkItemRepository workItemRepo;
@@ -62,7 +62,7 @@ public class LedgerResource {
         workItemRepo.findById(workItemId)
                 .orElseThrow(() -> new WorkItemNotFoundException(workItemId));
 
-        final List<LedgerEntry> entries = ledgerRepo.findByWorkItemId(workItemId);
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(workItemId);
         return entries.stream()
                 .map(e -> LedgerMapper.toResponse(e, ledgerRepo.findAttestationsByEntryId(e.id)))
                 .toList();
@@ -90,8 +90,8 @@ public class LedgerResource {
                 .orElseThrow(() -> new WorkItemNotFoundException(workItemId));
 
         // Find the creation entry (sequence number 1)
-        final List<LedgerEntry> entries = ledgerRepo.findByWorkItemId(workItemId);
-        final LedgerEntry creationEntry = entries.stream()
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(workItemId);
+        final WorkItemLedgerEntry creationEntry = entries.stream()
                 .filter(e -> e.sequenceNumber == 1)
                 .findFirst()
                 .orElse(null);
@@ -142,8 +142,10 @@ public class LedgerResource {
         }
 
         // Verify the entry exists and belongs to this WorkItem
-        final LedgerEntry entry = ledgerRepo.findById(entryId)
-                .filter(e -> workItemId.equals(e.workItemId))
+        final WorkItemLedgerEntry entry = ledgerRepo.findById(entryId)
+                .filter(e -> e instanceof WorkItemLedgerEntry)
+                .map(e -> (WorkItemLedgerEntry) e)
+                .filter(e -> workItemId.equals(e.subjectId))
                 .orElse(null);
 
         if (entry == null) {
@@ -154,7 +156,7 @@ public class LedgerResource {
 
         final LedgerAttestation attestation = new LedgerAttestation();
         attestation.ledgerEntryId = entryId;
-        attestation.workItemId = workItemId;
+        attestation.subjectId = workItemId;
         attestation.attestorId = request.attestorId();
         attestation.attestorType = request.attestorType();
         attestation.verdict = request.verdict();

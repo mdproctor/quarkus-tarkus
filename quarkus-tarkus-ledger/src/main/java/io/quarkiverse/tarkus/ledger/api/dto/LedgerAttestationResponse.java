@@ -3,15 +3,15 @@ package io.quarkiverse.tarkus.ledger.api.dto;
 import java.time.Instant;
 import java.util.UUID;
 
-import io.quarkiverse.tarkus.ledger.model.ActorType;
-import io.quarkiverse.tarkus.ledger.model.AttestationVerdict;
+import io.quarkiverse.ledger.runtime.model.ActorType;
+import io.quarkiverse.ledger.runtime.model.AttestationVerdict;
 
 /**
  * Response body representing a single peer attestation on a ledger entry.
  *
  * @param id the attestation UUID
  * @param ledgerEntryId the ledger entry this attestation targets
- * @param workItemId the WorkItem this attestation belongs to (denormalized)
+ * @param subjectId the aggregate identifier this attestation belongs to (denormalized)
  * @param attestorId identity of the attestor
  * @param attestorType whether the attestor is a human, agent, or system
  * @param attestorRole functional role of the attestor; may be {@code null}
@@ -23,7 +23,7 @@ import io.quarkiverse.tarkus.ledger.model.AttestationVerdict;
 public record LedgerAttestationResponse(
         UUID id,
         UUID ledgerEntryId,
-        UUID workItemId,
+        UUID subjectId,
         String attestorId,
         ActorType attestorType,
         String attestorRole,
