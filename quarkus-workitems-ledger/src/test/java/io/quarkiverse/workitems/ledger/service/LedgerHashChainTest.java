@@ -15,7 +15,7 @@ import io.quarkiverse.ledger.runtime.service.LedgerHashChain;
 import io.quarkiverse.workitems.ledger.model.WorkItemLedgerEntry;
 
 /**
- * Pure JUnit 5 unit tests for {@link LedgerHashChain} using Tarkus's
+ * Pure JUnit 5 unit tests for {@link LedgerHashChain} using WorkItems's
  * {@link WorkItemLedgerEntry} subclass — no Quarkus runtime, no CDI.
  *
  * <p>

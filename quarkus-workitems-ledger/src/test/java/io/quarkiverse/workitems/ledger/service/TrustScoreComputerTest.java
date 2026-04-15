@@ -19,7 +19,7 @@ import io.quarkiverse.ledger.runtime.service.TrustScoreComputer;
 import io.quarkiverse.workitems.ledger.model.WorkItemLedgerEntry;
 
 /**
- * Pure unit tests for {@link TrustScoreComputer} using Tarkus's concrete
+ * Pure unit tests for {@link TrustScoreComputer} using WorkItems's concrete
  * {@link WorkItemLedgerEntry} subclass — no Quarkus context required.
  *
  * <p>

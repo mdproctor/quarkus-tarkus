@@ -28,7 +28,7 @@ public record WorkItemLifecycleEvent(
         String planRef) {
 
     /**
-     * Creates a lifecycle event with the standard Tarkus type prefix.
+     * Creates a lifecycle event with the standard WorkItems type prefix.
      *
      * @param eventName the audit event name (e.g. "CREATED") — lowercased automatically
      * @param workItemId the affected WorkItem

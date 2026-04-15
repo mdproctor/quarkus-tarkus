@@ -23,7 +23,7 @@ import io.quarkus.test.TestTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 
 /**
- * Integration tests for the Tarkus Ledger module.
+ * Integration tests for the WorkItems Ledger module.
  *
  * <p>
  * Verifies that {@code WorkItemLifecycleEvent} CDI events are observed and converted

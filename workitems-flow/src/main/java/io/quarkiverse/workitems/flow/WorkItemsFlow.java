@@ -9,7 +9,7 @@ import io.serverlessworkflow.fluent.func.dsl.FuncCallStep;
 import io.serverlessworkflow.fluent.func.dsl.FuncDSL;
 
 /**
- * Base class for Quarkus-Flow workflow definitions that include Tarkus WorkItem steps.
+ * Base class for Quarkus-Flow workflow definitions that include WorkItem steps.
  *
  * <p>
  * Extend this instead of {@link Flow} to gain access to the {@link #workItem(String)}
@@ -44,7 +44,7 @@ public abstract class WorkItemsFlow extends Flow {
     HumanTaskFlowBridge workItemsBridge;
 
     /**
-     * Creates a Tarkus WorkItem suspension task for use inside {@code .tasks()}.
+     * Creates a WorkItem suspension task for use inside {@code .tasks()}.
      *
      * @param name unique task name within the workflow definition
      * @return a builder for configuring the WorkItem parameters

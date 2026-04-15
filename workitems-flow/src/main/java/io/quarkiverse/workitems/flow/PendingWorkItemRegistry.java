@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentMap;
 import jakarta.enterprise.context.ApplicationScoped;
 
 /**
- * Tracks CompletableFutures awaiting human resolution of Tarkus WorkItems.
+ * Tracks CompletableFutures awaiting human resolution of WorkItems.
  * Thread-safe. When a WorkItem is completed or rejected, the corresponding
  * future is resolved so the suspended workflow can resume.
  */

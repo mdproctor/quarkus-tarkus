@@ -15,7 +15,7 @@ import io.quarkiverse.workitems.runtime.repository.AuditEntryRepository;
 
 /**
  * In-memory implementation of {@link AuditEntryRepository} for use in tests of
- * applications that embed Quarkus Tarkus. No datasource or Flyway configuration
+ * applications that embed Quarkus WorkItems. No datasource or Flyway configuration
  * is required.
  *
  * <p>
