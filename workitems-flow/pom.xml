@@ -12,11 +12,11 @@
 
   <artifactId>quarkus-workitems-flow</artifactId>
   <name>Quarkus WorkItems - Quarkus Flow Integration</name>
-  <description>CDI bridge for suspending Quarkus-Flow workflows on Tarkus WorkItems and resuming them when a human resolves the item.</description>
+  <description>CDI bridge for suspending Quarkus-Flow workflows on WorkItems and resuming them when a human resolves the item.</description>
 
   <dependencies>
 
-    <!-- Tarkus runtime: WorkItemService, WorkItemLifecycleEvent, model classes -->
+    <!-- WorkItems runtime: WorkItemService, WorkItemLifecycleEvent, model classes -->
     <dependency>
       <groupId>io.quarkiverse.workitems</groupId>
       <artifactId>quarkus-workitems</artifactId>
@@ -61,7 +61,7 @@
       <scope>test</scope>
     </dependency>
 
-    <!-- Integration tests: Tarkus extension deployment needed for @QuarkusTest to activate WorkItemService CDI beans -->
+    <!-- Integration tests: WorkItems extension deployment needed for @QuarkusTest to activate WorkItemService CDI beans -->
     <dependency>
       <groupId>io.quarkiverse.workitems</groupId>
       <artifactId>quarkus-workitems-deployment</artifactId>
@@ -69,7 +69,7 @@
       <scope>test</scope>
     </dependency>
 
-    <!-- Integration tests: Quarkus Flow deployment needed to activate Flow/TarkusFlow workflow beans -->
+    <!-- Integration tests: Quarkus Flow deployment needed to activate Flow/WorkItemsFlow workflow beans -->
     <dependency>
       <groupId>io.quarkiverse.flow</groupId>
       <artifactId>quarkus-flow-deployment</artifactId>
