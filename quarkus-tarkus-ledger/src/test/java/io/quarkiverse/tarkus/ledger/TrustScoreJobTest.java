@@ -11,14 +11,14 @@ import jakarta.inject.Inject;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.tarkus.ledger.model.ActorTrustScore;
-import io.quarkiverse.tarkus.ledger.model.ActorType;
-import io.quarkiverse.tarkus.ledger.model.AttestationVerdict;
-import io.quarkiverse.tarkus.ledger.model.LedgerAttestation;
-import io.quarkiverse.tarkus.ledger.model.LedgerEntry;
-import io.quarkiverse.tarkus.ledger.repository.ActorTrustScoreRepository;
-import io.quarkiverse.tarkus.ledger.repository.LedgerEntryRepository;
-import io.quarkiverse.tarkus.ledger.service.TrustScoreJob;
+import io.quarkiverse.ledger.runtime.model.ActorTrustScore;
+import io.quarkiverse.ledger.runtime.model.ActorType;
+import io.quarkiverse.ledger.runtime.model.AttestationVerdict;
+import io.quarkiverse.ledger.runtime.model.LedgerAttestation;
+import io.quarkiverse.ledger.runtime.repository.ActorTrustScoreRepository;
+import io.quarkiverse.ledger.runtime.service.TrustScoreJob;
+import io.quarkiverse.tarkus.ledger.model.WorkItemLedgerEntry;
+import io.quarkiverse.tarkus.ledger.repository.WorkItemLedgerEntryRepository;
 import io.quarkiverse.tarkus.runtime.model.WorkItem;
 import io.quarkiverse.tarkus.runtime.model.WorkItemCreateRequest;
 import io.quarkiverse.tarkus.runtime.model.WorkItemPriority;
@@ -30,14 +30,8 @@ import io.quarkus.test.junit.QuarkusTest;
  * Integration tests for {@link TrustScoreJob}.
  *
  * <p>
- * Each test drives the full WorkItem lifecycle via {@link WorkItemService} to produce real
- * {@link LedgerEntry} records, then invokes {@link TrustScoreJob#runComputation()} directly
- * (the Quartz scheduler is disabled in test application.properties). Assertions verify the
- * resulting {@link ActorTrustScore} rows through {@link ActorTrustScoreRepository}.
- *
- * <p>
- * {@code @TestTransaction} rolls back after each test — ledger entries and trust score rows
- * never persist across test boundaries.
+ * RED-phase: these tests will not compile until {@link WorkItemLedgerEntry} and
+ * {@link WorkItemLedgerEntryRepository} are created.
  */
 @QuarkusTest
 @TestTransaction
@@ -53,19 +47,12 @@ class TrustScoreJobTest {
     ActorTrustScoreRepository trustScoreRepo;
 
     @Inject
-    LedgerEntryRepository ledgerRepo;
+    WorkItemLedgerEntryRepository ledgerRepo;
 
     // -------------------------------------------------------------------------
     // Fixture helpers
     // -------------------------------------------------------------------------
 
-    /**
-     * Creates a WorkItem and drives it through the full happy-path lifecycle
-     * (create → claim → start → complete), producing four ledger entries.
-     *
-     * @param actor the actor identifier used for claim, start, and complete
-     * @return the UUID of the created and completed WorkItem
-     */
     private UUID createAndCompleteWorkItem(final String actor) {
         final WorkItemCreateRequest req = new WorkItemCreateRequest(
                 "Trust test", null, null, null,
@@ -78,20 +65,13 @@ class TrustScoreJobTest {
         return wi.id;
     }
 
-    /**
-     * Retrieves all ledger entries for the given WorkItem and posts a FLAGGED attestation
-     * on each entry that belongs to the given actor (i.e. completions and starts).
-     *
-     * @param workItemId the WorkItem to flag
-     * @param actor the actor whose entries should be flagged
-     */
     private void flagAllEntriesFor(final UUID workItemId, final String actor) {
-        final List<LedgerEntry> entries = ledgerRepo.findByWorkItemId(workItemId);
-        for (final LedgerEntry entry : entries) {
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(workItemId);
+        for (final WorkItemLedgerEntry entry : entries) {
             if (actor.equals(entry.actorId)) {
                 final LedgerAttestation attestation = new LedgerAttestation();
                 attestation.ledgerEntryId = entry.id;
-                attestation.workItemId = workItemId;
+                attestation.subjectId = workItemId;
                 attestation.attestorId = "audit-agent";
                 attestation.attestorType = ActorType.AGENT;
                 attestation.verdict = AttestationVerdict.FLAGGED;
@@ -101,22 +81,15 @@ class TrustScoreJobTest {
         }
     }
 
-    /**
-     * Posts a SOUND attestation on the most recent ledger entry for the given WorkItem
-     * that belongs to the given actor.
-     *
-     * @param workItemId the WorkItem whose entry is being endorsed
-     * @param actor the actor whose entry should be endorsed
-     */
     private void soundMostRecentEntryFor(final UUID workItemId, final String actor) {
-        final List<LedgerEntry> entries = ledgerRepo.findByWorkItemId(workItemId);
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(workItemId);
         entries.stream()
                 .filter(e -> actor.equals(e.actorId))
-                .reduce((first, second) -> second) // last in list = most recent
+                .reduce((first, second) -> second)
                 .ifPresent(entry -> {
                     final LedgerAttestation attestation = new LedgerAttestation();
                     attestation.ledgerEntryId = entry.id;
-                    attestation.workItemId = workItemId;
+                    attestation.subjectId = workItemId;
                     attestation.attestorId = "audit-agent";
                     attestation.attestorType = ActorType.AGENT;
                     attestation.verdict = AttestationVerdict.SOUND;
@@ -138,7 +111,7 @@ class TrustScoreJobTest {
     }
 
     // -------------------------------------------------------------------------
-    // Single actor — one decision
+    // Single actor
     // -------------------------------------------------------------------------
 
     @Test
@@ -154,10 +127,6 @@ class TrustScoreJobTest {
         assertThat(aliceScore.get().decisionCount).isGreaterThan(0);
     }
 
-    // -------------------------------------------------------------------------
-    // Single actor — clean decisions
-    // -------------------------------------------------------------------------
-
     @Test
     void runComputation_cleanDecisions_highScore() {
         createAndCompleteWorkItem("alice");
@@ -172,15 +141,13 @@ class TrustScoreJobTest {
     }
 
     // -------------------------------------------------------------------------
-    // Single actor — challenged decisions
+    // Challenged decisions
     // -------------------------------------------------------------------------
 
     @Test
     void runComputation_challengedDecisions_lowerScore() {
         final UUID wi1 = createAndCompleteWorkItem("alice");
         final UUID wi2 = createAndCompleteWorkItem("alice");
-
-        // Flag all of alice's entries on both work items
         flagAllEntriesFor(wi1, "alice");
         flagAllEntriesFor(wi2, "alice");
 
@@ -197,12 +164,10 @@ class TrustScoreJobTest {
 
     @Test
     void runComputation_twoActors_scoredIndependently() {
-        // Alice makes 3 clean decisions
         createAndCompleteWorkItem("alice");
         createAndCompleteWorkItem("alice");
         createAndCompleteWorkItem("alice");
 
-        // Bob makes 3 decisions, all flagged
         final UUID bobWi1 = createAndCompleteWorkItem("bob");
         final UUID bobWi2 = createAndCompleteWorkItem("bob");
         final UUID bobWi3 = createAndCompleteWorkItem("bob");
@@ -226,7 +191,6 @@ class TrustScoreJobTest {
 
     @Test
     void runComputation_twice_updatesScore() {
-        // First decision
         createAndCompleteWorkItem("alice");
 
         trustScoreJob.runComputation();
@@ -236,7 +200,6 @@ class TrustScoreJobTest {
         final int firstDecisionCount = firstRun.get().decisionCount;
         final Instant firstComputedAt = firstRun.get().lastComputedAt;
 
-        // Alice makes more decisions
         createAndCompleteWorkItem("alice");
         createAndCompleteWorkItem("alice");
 
@@ -255,7 +218,6 @@ class TrustScoreJobTest {
     @Test
     void runComputation_soundAttestation_improvesCounting() {
         final UUID workItemId = createAndCompleteWorkItem("alice");
-
         soundMostRecentEntryFor(workItemId, "alice");
 
         trustScoreJob.runComputation();

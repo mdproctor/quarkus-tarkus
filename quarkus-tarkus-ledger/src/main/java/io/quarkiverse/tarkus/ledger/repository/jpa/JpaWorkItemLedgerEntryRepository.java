@@ -10,16 +10,24 @@ import java.util.stream.Collectors;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.quarkiverse.tarkus.ledger.model.LedgerAttestation;
-import io.quarkiverse.tarkus.ledger.model.LedgerEntry;
-import io.quarkiverse.tarkus.ledger.model.LedgerEntryType;
-import io.quarkiverse.tarkus.ledger.repository.LedgerEntryRepository;
+import io.quarkiverse.ledger.runtime.model.LedgerAttestation;
+import io.quarkiverse.ledger.runtime.model.LedgerEntry;
+import io.quarkiverse.ledger.runtime.model.LedgerEntryType;
+import io.quarkiverse.tarkus.ledger.model.WorkItemLedgerEntry;
+import io.quarkiverse.tarkus.ledger.repository.WorkItemLedgerEntryRepository;
 
 /**
- * Hibernate ORM / Panache implementation of {@link LedgerEntryRepository}.
+ * Hibernate ORM / Panache implementation of {@link WorkItemLedgerEntryRepository}.
+ *
+ * <p>
+ * This bean does NOT extend {@code JpaLedgerEntryRepository} from quarkus-ledger in order
+ * to avoid CDI ambiguity — both would implement {@code LedgerEntryRepository} and the
+ * container would see two eligible beans. Instead, this class directly implements
+ * {@link WorkItemLedgerEntryRepository} in full, with typed Panache queries for
+ * {@link WorkItemLedgerEntry} where specificity is needed.
  */
 @ApplicationScoped
-public class JpaLedgerEntryRepository implements LedgerEntryRepository {
+public class JpaWorkItemLedgerEntryRepository implements WorkItemLedgerEntryRepository {
 
     /** {@inheritDoc} */
     @Override
@@ -30,14 +38,27 @@ public class JpaLedgerEntryRepository implements LedgerEntryRepository {
 
     /** {@inheritDoc} */
     @Override
-    public List<LedgerEntry> findByWorkItemId(final UUID workItemId) {
-        return LedgerEntry.list("workItemId = ?1 ORDER BY sequenceNumber ASC", workItemId);
+    public List<WorkItemLedgerEntry> findByWorkItemId(final UUID workItemId) {
+        return WorkItemLedgerEntry.list("subjectId = ?1 ORDER BY sequenceNumber ASC", workItemId);
     }
 
     /** {@inheritDoc} */
     @Override
-    public Optional<LedgerEntry> findLatestByWorkItemId(final UUID workItemId) {
-        return LedgerEntry.find("workItemId = ?1 ORDER BY sequenceNumber DESC", workItemId)
+    public Optional<WorkItemLedgerEntry> findLatestByWorkItemId(final UUID workItemId) {
+        return WorkItemLedgerEntry.find("subjectId = ?1 ORDER BY sequenceNumber DESC", workItemId)
+                .firstResultOptional();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public List<LedgerEntry> findBySubjectId(final UUID subjectId) {
+        return LedgerEntry.list("subjectId = ?1 ORDER BY sequenceNumber ASC", subjectId);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Optional<LedgerEntry> findLatestBySubjectId(final UUID subjectId) {
+        return LedgerEntry.find("subjectId = ?1 ORDER BY sequenceNumber DESC", subjectId)
                 .firstResultOptional();
     }
 
