@@ -26,6 +26,7 @@ Standalone Quarkiverse extension with optional integrations for Quarkus-Flow, Ca
     <module>testing</module>
     <module>tarkus-flow</module>
     <module>quarkus-tarkus-ledger</module>
+    <module>quarkus-tarkus-examples</module>
     <module>integration-tests</module>
   </modules>
 
