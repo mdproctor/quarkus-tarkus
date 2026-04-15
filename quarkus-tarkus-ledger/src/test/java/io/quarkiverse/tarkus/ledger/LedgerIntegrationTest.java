@@ -402,4 +402,44 @@ class LedgerIntegrationTest {
         assertThat(rejectionEntry.rationale).isEqualTo("Context review: satire, not hate speech");
         assertThat(rejectionEntry.detail).isEqualTo("Content violates guidelines");
     }
+
+    // -------------------------------------------------------------------------
+    // actorType derivation from actorId prefix convention
+    // -------------------------------------------------------------------------
+
+    @Test
+    void create_humanActor_actorTypeIsHuman() {
+        final var item = workItemService.create(new WorkItemCreateRequest(
+                "Human actor test", null, null, null,
+                WorkItemPriority.NORMAL, null, null, null, null,
+                "alice", null, null, null, null));
+
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
+        assertThat(entries).hasSize(1);
+        assertThat(entries.get(0).actorType).isEqualTo(ActorType.HUMAN);
+    }
+
+    @Test
+    void create_agentPrefixActor_actorTypeIsAgent() {
+        final var item = workItemService.create(new WorkItemCreateRequest(
+                "Agent actor test", null, null, null,
+                WorkItemPriority.NORMAL, null, null, null, null,
+                "agent:content-ai", null, null, null, null));
+
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
+        assertThat(entries).hasSize(1);
+        assertThat(entries.get(0).actorType).isEqualTo(ActorType.AGENT);
+    }
+
+    @Test
+    void create_systemPrefixActor_actorTypeIsSystem() {
+        final var item = workItemService.create(new WorkItemCreateRequest(
+                "System actor test", null, null, null,
+                WorkItemPriority.NORMAL, null, null, null, null,
+                "system:scheduler", null, null, null, null));
+
+        final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
+        assertThat(entries).hasSize(1);
+        assertThat(entries.get(0).actorType).isEqualTo(ActorType.SYSTEM);
+    }
 }

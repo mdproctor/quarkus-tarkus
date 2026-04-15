@@ -74,7 +74,7 @@ public class LedgerEventCapture {
         entry.commandType = deriveCommandType(event.type());
         entry.eventType = deriveEventType(event.type());
         entry.actorId = event.actor();
-        entry.actorType = ActorType.HUMAN; // default; agents identified by actorId prefix convention
+        entry.actorType = deriveActorType(event.actor());
         entry.actorRole = deriveActorRole(event.type());
         entry.rationale = event.rationale();
         entry.planRef = event.planRef();
@@ -152,5 +152,30 @@ public class LedgerEventCapture {
     private String deriveActorRole(final String eventType) {
         final String[] meta = EVENT_META.get(eventSuffix(eventType));
         return meta != null ? meta[META_ROLE] : "Assignee";
+    }
+
+    /**
+     * Derive the actor type from the actorId prefix convention.
+     *
+     * <ul>
+     * <li>{@code "agent:*"} → {@link ActorType#AGENT} — AI agents and automated classifiers</li>
+     * <li>{@code "system:*"} → {@link ActorType#SYSTEM} — schedulers, expiry jobs, platform services</li>
+     * <li>anything else → {@link ActorType#HUMAN} — human actors (default)</li>
+     * </ul>
+     *
+     * @param actorId the raw actor identifier from the lifecycle event; may be {@code null}
+     * @return the derived actor type; never {@code null}
+     */
+    private ActorType deriveActorType(final String actorId) {
+        if (actorId == null) {
+            return ActorType.HUMAN;
+        }
+        if (actorId.startsWith("agent:")) {
+            return ActorType.AGENT;
+        }
+        if (actorId.startsWith("system:")) {
+            return ActorType.SYSTEM;
+        }
+        return ActorType.HUMAN;
     }
 }
