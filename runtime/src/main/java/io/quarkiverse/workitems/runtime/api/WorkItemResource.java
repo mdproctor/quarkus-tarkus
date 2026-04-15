@@ -27,7 +27,7 @@ import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
 import io.quarkiverse.workitems.runtime.service.WorkItemNotFoundException;
 import io.quarkiverse.workitems.runtime.service.WorkItemService;
 
-@Path("/tarkus/workitems")
+@Path("/workitems")
 @Produces(MediaType.APPLICATION_JSON)
 @ApplicationScoped
 public class WorkItemResource {
@@ -45,7 +45,7 @@ public class WorkItemResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response create(final CreateWorkItemRequest request) {
         final WorkItem created = workItemService.create(WorkItemMapper.toServiceRequest(request));
-        final URI location = URI.create("/tarkus/workitems/" + created.id);
+        final URI location = URI.create("/workitems/" + created.id);
         return Response.created(location).entity(WorkItemMapper.toResponse(created)).build();
     }
 

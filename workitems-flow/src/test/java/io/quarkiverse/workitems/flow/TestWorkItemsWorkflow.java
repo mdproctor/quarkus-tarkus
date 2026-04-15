@@ -18,7 +18,7 @@ public class TestWorkItemsWorkflow extends WorkItemsFlow {
 
     @Override
     public Workflow descriptor() {
-        return workflow("test-tarkus-flow")
+        return workflow("test-workitems-flow")
                 .tasks(
                         workItem("legalReview")
                                 .title("Legal review required")

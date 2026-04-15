@@ -23,7 +23,7 @@ import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
  * is required.
  *
  * <p>
- * Activate by including {@code quarkus-tarkus-testing} on the test classpath. CDI
+ * Activate by including {@code quarkus-workitems-testing} on the test classpath. CDI
  * selects this bean over the default Panache implementation via {@code @Alternative}
  * and {@code @Priority(1)}.
  *

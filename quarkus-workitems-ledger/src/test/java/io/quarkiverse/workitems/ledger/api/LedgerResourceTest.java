@@ -20,7 +20,7 @@ import io.restassured.http.ContentType;
  * REST integration tests for the Ledger endpoints.
  *
  * <p>
- * Tests {@code GET /tarkus/workitems/{id}/ledger} and the provenance and
+ * Tests {@code GET /workitems/{id}/ledger} and the provenance and
  * attestation sub-resources.
  *
  * <p>
@@ -54,7 +54,7 @@ class LedgerResourceTest {
                             "createdBy": "system"
                         }
                         """)
-                .when().post("/tarkus/workitems")
+                .when().post("/workitems")
                 .then().statusCode(201)
                 .extract().path("id");
     }
@@ -64,7 +64,7 @@ class LedgerResourceTest {
      */
     private void claimWorkItem(final String id, final String claimant) {
         given()
-                .when().put("/tarkus/workitems/" + id + "/claim?claimant=" + claimant)
+                .when().put("/workitems/" + id + "/claim?claimant=" + claimant)
                 .then().statusCode(200);
     }
 
@@ -73,7 +73,7 @@ class LedgerResourceTest {
      */
     private void startWorkItem(final String id, final String actor) {
         given()
-                .when().put("/tarkus/workitems/" + id + "/start?actor=" + actor)
+                .when().put("/workitems/" + id + "/start?actor=" + actor)
                 .then().statusCode(200);
     }
 
@@ -86,7 +86,7 @@ class LedgerResourceTest {
                 .body("""
                         { "resolution": "Done" }
                         """)
-                .when().put("/tarkus/workitems/" + id + "/complete?actor=" + actor)
+                .when().put("/workitems/" + id + "/complete?actor=" + actor)
                 .then().statusCode(200);
     }
 
@@ -95,7 +95,7 @@ class LedgerResourceTest {
      */
     private String firstLedgerEntryId(final String workItemId) {
         final List<String> ids = given()
-                .when().get("/tarkus/workitems/" + workItemId + "/ledger")
+                .when().get("/workitems/" + workItemId + "/ledger")
                 .then().statusCode(200)
                 .extract().jsonPath().getList("id");
         assertThat(ids).isNotEmpty();
@@ -103,7 +103,7 @@ class LedgerResourceTest {
     }
 
     // -------------------------------------------------------------------------
-    // GET /tarkus/workitems/{id}/ledger
+    // GET /workitems/{id}/ledger
     // -------------------------------------------------------------------------
 
     @Test
@@ -111,7 +111,7 @@ class LedgerResourceTest {
         final String id = createWorkItem();
 
         given()
-                .when().get("/tarkus/workitems/" + id + "/ledger")
+                .when().get("/workitems/" + id + "/ledger")
                 .then()
                 .statusCode(200)
                 .body("$", hasSize(1))
@@ -126,7 +126,7 @@ class LedgerResourceTest {
         completeWorkItem(id, "alice");
 
         final List<String> eventTypes = given()
-                .when().get("/tarkus/workitems/" + id + "/ledger")
+                .when().get("/workitems/" + id + "/ledger")
                 .then()
                 .statusCode(200)
                 .body("$", hasSize(4))
@@ -144,7 +144,7 @@ class LedgerResourceTest {
         final String id = createWorkItem();
 
         given()
-                .when().get("/tarkus/workitems/" + id + "/ledger")
+                .when().get("/workitems/" + id + "/ledger")
                 .then()
                 .statusCode(200)
                 .body("[0].digest", notNullValue());
@@ -156,14 +156,14 @@ class LedgerResourceTest {
         claimWorkItem(id, "alice");
 
         final List<String> digests = given()
-                .when().get("/tarkus/workitems/" + id + "/ledger")
+                .when().get("/workitems/" + id + "/ledger")
                 .then()
                 .statusCode(200)
                 .body("$", hasSize(2))
                 .extract().jsonPath().getList("digest");
 
         final List<String> previousHashes = given()
-                .when().get("/tarkus/workitems/" + id + "/ledger")
+                .when().get("/workitems/" + id + "/ledger")
                 .then()
                 .statusCode(200)
                 .extract().jsonPath().getList("previousHash");
@@ -176,7 +176,7 @@ class LedgerResourceTest {
         final String randomId = UUID.randomUUID().toString();
 
         given()
-                .when().get("/tarkus/workitems/" + randomId + "/ledger")
+                .when().get("/workitems/" + randomId + "/ledger")
                 .then()
                 .statusCode(404);
     }
@@ -186,7 +186,7 @@ class LedgerResourceTest {
         final String id = createWorkItem();
 
         given()
-                .when().get("/tarkus/workitems/" + id + "/ledger")
+                .when().get("/workitems/" + id + "/ledger")
                 .then()
                 .statusCode(200)
                 .body("[0].decisionContext", notNullValue());
@@ -197,14 +197,14 @@ class LedgerResourceTest {
         final String id = createWorkItem();
 
         given()
-                .when().get("/tarkus/workitems/" + id + "/ledger")
+                .when().get("/workitems/" + id + "/ledger")
                 .then()
                 .statusCode(200)
                 .body("[0].previousHash", nullValue());
     }
 
     // -------------------------------------------------------------------------
-    // PUT /tarkus/workitems/{id}/ledger/provenance
+    // PUT /workitems/{id}/ledger/provenance
     // -------------------------------------------------------------------------
 
     @Test
@@ -220,12 +220,12 @@ class LedgerResourceTest {
                             "sourceEntitySystem": "casehub"
                         }
                         """)
-                .when().put("/tarkus/workitems/" + id + "/ledger/provenance")
+                .when().put("/workitems/" + id + "/ledger/provenance")
                 .then()
                 .statusCode(200);
 
         given()
-                .when().get("/tarkus/workitems/" + id + "/ledger")
+                .when().get("/workitems/" + id + "/ledger")
                 .then()
                 .statusCode(200)
                 .body("[0].sourceEntityId", equalTo("case-1"))
@@ -246,13 +246,13 @@ class LedgerResourceTest {
                             "sourceEntitySystem": "s"
                         }
                         """)
-                .when().put("/tarkus/workitems/" + randomId + "/ledger/provenance")
+                .when().put("/workitems/" + randomId + "/ledger/provenance")
                 .then()
                 .statusCode(404);
     }
 
     // -------------------------------------------------------------------------
-    // POST /tarkus/workitems/{id}/ledger/{entryId}/attestations
+    // POST /workitems/{id}/ledger/{entryId}/attestations
     // -------------------------------------------------------------------------
 
     @Test
@@ -270,7 +270,7 @@ class LedgerResourceTest {
                             "confidence": 0.9
                         }
                         """)
-                .when().post("/tarkus/workitems/" + id + "/ledger/" + entryId + "/attestations")
+                .when().post("/workitems/" + id + "/ledger/" + entryId + "/attestations")
                 .then()
                 .statusCode(201);
     }
@@ -290,12 +290,12 @@ class LedgerResourceTest {
                             "confidence": 0.9
                         }
                         """)
-                .when().post("/tarkus/workitems/" + id + "/ledger/" + entryId + "/attestations")
+                .when().post("/workitems/" + id + "/ledger/" + entryId + "/attestations")
                 .then()
                 .statusCode(201);
 
         given()
-                .when().get("/tarkus/workitems/" + id + "/ledger")
+                .when().get("/workitems/" + id + "/ledger")
                 .then()
                 .statusCode(200)
                 .body("[0].attestations", hasSize(1))
@@ -318,7 +318,7 @@ class LedgerResourceTest {
                             "confidence": 0.9
                         }
                         """)
-                .when().post("/tarkus/workitems/" + id + "/ledger/" + randomEntryId + "/attestations")
+                .when().post("/workitems/" + id + "/ledger/" + randomEntryId + "/attestations")
                 .then()
                 .statusCode(404);
     }
@@ -338,7 +338,7 @@ class LedgerResourceTest {
                             "confidence": 0.9
                         }
                         """)
-                .when().post("/tarkus/workitems/" + id + "/ledger/" + entryId + "/attestations")
+                .when().post("/workitems/" + id + "/ledger/" + entryId + "/attestations")
                 .then()
                 .statusCode(400);
     }

@@ -40,7 +40,7 @@ public record WorkItemLifecycleEvent(
             final WorkItemStatus status, final String actor, final String detail) {
         return new WorkItemLifecycleEvent(
                 "io.quarkiverse.workitems.workitem." + eventName.toLowerCase(),
-                "/tarkus/workitems/" + workItemId,
+                "/workitems/" + workItemId,
                 workItemId.toString(),
                 workItemId,
                 status,
@@ -68,7 +68,7 @@ public record WorkItemLifecycleEvent(
             final String rationale, final String planRef) {
         return new WorkItemLifecycleEvent(
                 "io.quarkiverse.workitems.workitem." + eventName.toLowerCase(),
-                "/tarkus/workitems/" + workItemId,
+                "/workitems/" + workItemId,
                 workItemId.toString(),
                 workItemId,
                 status,

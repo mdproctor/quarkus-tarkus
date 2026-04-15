@@ -202,7 +202,7 @@ class HumanTaskIntegrationTest {
     // -- WorkItemsFlow DSL integration test --
 
     @Test
-    void tarkusDslFlow_createsWorkItemAndSuspends() {
+    void workItemsDslFlow_createsWorkItemAndSuspends() {
         List<WorkItem> before = WorkItem.listAll();
 
         // Start the workflow asynchronously — it suspends on the WorkItem creation

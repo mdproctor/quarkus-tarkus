@@ -28,7 +28,7 @@ class WorkItemLifecycleEventTest {
     void of_buildsCorrectSource() {
         UUID id = UUID.randomUUID();
         WorkItemLifecycleEvent e = WorkItemLifecycleEvent.of("ASSIGNED", id, WorkItemStatus.ASSIGNED, "alice", null);
-        assertThat(e.source()).isEqualTo("/tarkus/workitems/" + id);
+        assertThat(e.source()).isEqualTo("/workitems/" + id);
     }
 
     @Test

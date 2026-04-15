@@ -26,7 +26,7 @@ public class ClaimDeadlineJob {
     @Inject
     Event<WorkItemLifecycleEvent> lifecycleEvent;
 
-    @Scheduled(every = "${quarkus.tarkus.cleanup.expiry-check-seconds}s")
+    @Scheduled(every = "${quarkus.workitems.cleanup.expiry-check-seconds}s")
     @Transactional
     public void checkUnclaimedPastDeadline() {
         final Instant now = Instant.now();
