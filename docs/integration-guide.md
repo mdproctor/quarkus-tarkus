@@ -1,12 +1,12 @@
-# Quarkus Tarkus — Integration Guide
+# Quarkus WorkItems — Integration Guide
 
-This guide covers seven integration patterns: standalone REST, Quarkus-Flow workflow suspension, CDI lifecycle event observation, custom escalation policies, unit testing without a datasource, the optional ledger module, and the `TarkusFlow` DSL for embedding WorkItem steps directly in workflow definitions.
+This guide covers seven integration patterns: standalone REST, Quarkus-Flow workflow suspension, CDI lifecycle event observation, custom escalation policies, unit testing without a datasource, the optional ledger module, and the `WorkItemsFlow` DSL for embedding WorkItem steps directly in workflow definitions.
 
 ---
 
 ## Section 1: Standalone REST Integration
 
-Any system that can make HTTP requests integrates with Tarkus through its REST API. This covers curl scripts, frontend applications, other microservices, and non-Quarkus backends.
+Any system that can make HTTP requests integrates with WorkItems through its REST API. This covers curl scripts, frontend applications, other microservices, and non-Quarkus backends.
 
 ### Typical flow
 
@@ -19,7 +19,7 @@ Any system that can make HTTP requests integrates with Tarkus through its REST A
 
 ```bash
 #!/usr/bin/env bash
-BASE=http://localhost:8080/tarkus/workitems
+BASE=http://localhost:8080/workitems
 
 # Step 1: Create
 RESPONSE=$(curl -s -X POST "$BASE" \
@@ -61,10 +61,10 @@ A frontend showing a user's pending work polls the inbox endpoint:
 
 ```bash
 # Show all items for bob (direct assignment or group membership)
-curl "http://localhost:8080/tarkus/workitems/inbox?assignee=bob"
+curl "http://localhost:8080/workitems/inbox?assignee=bob"
 
 # Show only high-priority items for the finance-team group
-curl "http://localhost:8080/tarkus/workitems/inbox?candidateGroup=finance-team&priority=HIGH"
+curl "http://localhost:8080/workitems/inbox?candidateGroup=finance-team&priority=HIGH"
 ```
 
 The response is a `WorkItemResponse[]` ordered by creation time. Frontends use `formKey` to decide which form component to render for each item, and `payload` to prepopulate the form with context.
@@ -73,19 +73,19 @@ The response is a `WorkItemResponse[]` ordered by creation time. Frontends use `
 
 ## Section 2: Quarkus-Flow Integration
 
-The `quarkus-tarkus-flow` module suspends a Quarkus-Flow workflow until a human resolves a WorkItem, then resumes the workflow with the resolution JSON. See [Section 7](#section-7-quarkus-flow-dsl-tarkusflow) for the higher-level `TarkusFlow` DSL, which is the preferred approach for new workflows.
+The `quarkus-workitems-flow` module suspends a Quarkus-Flow workflow until a human resolves a WorkItem, then resumes the workflow with the resolution JSON. See [Section 7](#section-7-quarkus-flow-dsl-workitemsflow) for the higher-level `WorkItemsFlow` DSL, which is the preferred approach for new workflows.
 
 ### Dependency
 
 ```xml
 <dependency>
-  <groupId>io.quarkiverse.tarkus</groupId>
-  <artifactId>quarkus-tarkus-flow</artifactId>
+  <groupId>io.quarkiverse.workitems</groupId>
+  <artifactId>quarkus-workitems-flow</artifactId>
   <version>1.0.0-SNAPSHOT</version>
 </dependency>
 ```
 
-This pulls in `quarkus-tarkus` transitively.
+This pulls in `quarkus-workitems` transitively.
 
 ### How it works
 
@@ -93,7 +93,7 @@ This pulls in `quarkus-tarkus` transitively.
 2. The bridge creates a WorkItem via `WorkItemService` and registers a `CompletableFuture` in `PendingWorkItemRegistry`, keyed by the WorkItem's UUID.
 3. The method returns a `Uni<String>` wrapping that `CompletableFuture`; Quarkus-Flow suspends the workflow on the `Uni`.
 4. A human sees the WorkItem in `GET /inbox`, claims it, and completes it via `PUT /{id}/complete`.
-5. `WorkItemService` fires a `WorkItemLifecycleEvent` with type `io.quarkiverse.tarkus.workitem.completed`.
+5. `WorkItemService` fires a `WorkItemLifecycleEvent` with type `io.quarkiverse.workitems.workitem.completed`.
 6. `WorkItemFlowEventListener` observes the event and calls `PendingWorkItemRegistry.complete()`, resolving the `CompletableFuture` with the resolution JSON.
 7. The `Uni` completes and the flow resumes with the resolution as its output.
 
@@ -129,7 +129,7 @@ public class DocumentApprovalFlow extends Flow {
 The `Uni<String>` resolves with the resolution JSON that `alice` submits when completing the WorkItem:
 
 ```bash
-curl -X PUT "http://localhost:8080/tarkus/workitems/{id}/complete?actor=alice" \
+curl -X PUT "http://localhost:8080/workitems/{id}/complete?actor=alice" \
   -H 'Content-Type: application/json' \
   -d '{"resolution": "{\"approved\": true, \"publishAt\": \"2026-04-15T09:00:00Z\"}"}'
 ```
@@ -200,7 +200,7 @@ public class CompletionNotifier {
     NotificationService notifications;
 
     void onCompleted(@Observes WorkItemLifecycleEvent event) {
-        if (!"io.quarkiverse.tarkus.workitem.completed".equals(event.type())) {
+        if (!"io.quarkiverse.workitems.workitem.completed".equals(event.type())) {
             return;
         }
         notifications.send(event.actor(),
@@ -208,7 +208,7 @@ public class CompletionNotifier {
     }
 
     void onExpired(@Observes WorkItemLifecycleEvent event) {
-        if (!"io.quarkiverse.tarkus.workitem.expired".equals(event.type())) {
+        if (!"io.quarkiverse.workitems.workitem.expired".equals(event.type())) {
             return;
         }
         notifications.alertAdmin("WorkItem " + event.workItemId() + " has expired!");
@@ -218,14 +218,14 @@ public class CompletionNotifier {
 
 ### Event type reference
 
-All event types follow the pattern `io.quarkiverse.tarkus.workitem.{action}` where `{action}` is the lowercase audit event name. See the [API Reference — Lifecycle event types](api-reference.md#lifecycle-event-types) for the full table.
+All event types follow the pattern `io.quarkiverse.workitems.workitem.{action}` where `{action}` is the lowercase audit event name. See the [API Reference — Lifecycle event types](api-reference.md#lifecycle-event-types) for the full table.
 
 ### WorkItemLifecycleEvent fields
 
 | Field | Type | Description |
 |---|---|---|
-| `type` | string | Full event type string (e.g. `io.quarkiverse.tarkus.workitem.completed`) |
-| `source` | string | `/tarkus/workitems/{workItemId}` |
+| `type` | string | Full event type string (e.g. `io.quarkiverse.workitems.workitem.completed`) |
+| `source` | string | `/workitems/{workItemId}` |
 | `subject` | string | WorkItem UUID as string |
 | `workItemId` | UUID | WorkItem UUID |
 | `status` | WorkItemStatus | Status AFTER the transition |
@@ -273,27 +273,27 @@ public class SlackEscalationPolicy implements EscalationPolicy {
 }
 ```
 
-`@Alternative @Priority(1)` causes CDI to select your bean over Tarkus's default implementation. No `application.properties` change is needed for the bean selection itself, but the `quarkus.tarkus.escalation-policy` property is still read by the built-in policies — set it to `notify` (or any value) so the config validation passes if the built-in beans are still on the classpath.
+`@Alternative @Priority(1)` causes CDI to select your bean over WorkItems's default implementation. No `application.properties` change is needed for the bean selection itself, but the `quarkus.workitems.escalation-policy` property is still read by the built-in policies — set it to `notify` (or any value) so the config validation passes if the built-in beans are still on the classpath.
 
 ```properties
-quarkus.tarkus.escalation-policy=notify
-quarkus.tarkus.claim-escalation-policy=notify
+quarkus.workitems.escalation-policy=notify
+quarkus.workitems.claim-escalation-policy=notify
 ```
 
-The expiry cleanup job (`ExpiryCleanupJob`) runs on the schedule configured by `quarkus.tarkus.cleanup.expiry-check-seconds` (default 60s). It calls your `EscalationPolicy` bean once per breached WorkItem per scan.
+The expiry cleanup job (`ExpiryCleanupJob`) runs on the schedule configured by `quarkus.workitems.cleanup.expiry-check-seconds` (default 60s). It calls your `EscalationPolicy` bean once per breached WorkItem per scan.
 
 ---
 
-## Section 5: Unit Testing with quarkus-tarkus-testing
+## Section 5: Unit Testing with quarkus-workitems-testing
 
-The `quarkus-tarkus-testing` module provides in-memory implementations of `WorkItemRepository` and `AuditEntryRepository`. These override the default JPA implementations via `@Alternative @Priority(1)`, so no datasource or Flyway configuration is needed in tests.
+The `quarkus-workitems-testing` module provides in-memory implementations of `WorkItemRepository` and `AuditEntryRepository`. These override the default JPA implementations via `@Alternative @Priority(1)`, so no datasource or Flyway configuration is needed in tests.
 
 ### Dependency
 
 ```xml
 <dependency>
-  <groupId>io.quarkiverse.tarkus</groupId>
-  <artifactId>quarkus-tarkus-testing</artifactId>
+  <groupId>io.quarkiverse.workitems</groupId>
+  <artifactId>quarkus-workitems-testing</artifactId>
   <version>1.0.0-SNAPSHOT</version>
   <scope>test</scope>
 </dependency>
@@ -373,7 +373,7 @@ class WorkItemServiceUnitTest {
 
     InMemoryWorkItemRepository workItemRepo = new InMemoryWorkItemRepository();
     InMemoryAuditEntryRepository auditRepo = new InMemoryAuditEntryRepository();
-    TarkusConfig config = /* mock or test double */;
+    WorkItemsConfig config = /* mock or test double */;
 
     WorkItemService service = new WorkItemService(workItemRepo, auditRepo, config);
 
@@ -400,16 +400,16 @@ This approach gives instant test execution — no Quarkus boot, no H2, no Flyway
 
 ---
 
-## Section 6: Using the Ledger Module (quarkus-tarkus-ledger)
+## Section 6: Using the Ledger Module (quarkus-workitems-ledger)
 
-The ledger module adds an optional accountability layer to Tarkus: a per-WorkItem command/event ledger with a SHA-256 hash chain, decision context snapshots, peer attestations, and EigenTrust reputation scoring. The core extension is completely unchanged when the module is absent.
+The ledger module adds an optional accountability layer to  WorkItems.a per-WorkItem command/event ledger with a SHA-256 hash chain, decision context snapshots, peer attestations, and EigenTrust reputation scoring. The core extension is completely unchanged when the module is absent.
 
 ### Dependency
 
 ```xml
 <dependency>
-  <groupId>io.quarkiverse.tarkus</groupId>
-  <artifactId>quarkus-tarkus-ledger</artifactId>
+  <groupId>io.quarkiverse.workitems</groupId>
+  <artifactId>quarkus-workitems-ledger</artifactId>
   <version>1.0.0-SNAPSHOT</version>
 </dependency>
 ```
@@ -425,45 +425,45 @@ No code changes are needed. The ledger module registers a CDI observer on `WorkI
 
 ```bash
 # Retrieve all ledger entries for a WorkItem (each with its attestations)
-GET /tarkus/workitems/{id}/ledger
+GET /workitems/{id}/ledger
 
 # Record the source entity that created this WorkItem (called by CaseHub, Quarkus-Flow, etc.)
-PUT /tarkus/workitems/{id}/ledger/provenance
+PUT /workitems/{id}/ledger/provenance
 
 # Post a peer attestation on a specific ledger entry
-POST /tarkus/workitems/{id}/ledger/{entryId}/attestations
+POST /workitems/{id}/ledger/{entryId}/attestations
 
 # Get the computed trust score for an actor (requires trust-score.enabled=true)
-GET /tarkus/actors/{actorId}/trust
+GET /workitems/actors/{actorId}/trust
 ```
 
-See the [Ledger API section of the API Reference](api-reference.md#ledger-api-quarkus-tarkus-ledger) for full schemas.
+See the [Ledger API section of the API Reference](api-reference.md#ledger-api-quarkus-workitems-ledger) for full schemas.
 
 ### Configuration
 
-All ledger configuration is under `quarkus.tarkus.ledger`. Defaults when the module is present:
+All ledger configuration is under `quarkus.workitems.ledger`. Defaults when the module is present:
 
 ```properties
 # Master switch — set false to disable all ledger writes (default: true)
-quarkus.tarkus.ledger.enabled=true
+quarkus.workitems.ledger.enabled=true
 
 # SHA-256 hash chain across entries for this WorkItem (default: true)
-quarkus.tarkus.ledger.hash-chain.enabled=true
+quarkus.workitems.ledger.hash-chain.enabled=true
 
 # JSON snapshot of WorkItem state at each transition (default: true)
-quarkus.tarkus.ledger.decision-context.enabled=true
+quarkus.workitems.ledger.decision-context.enabled=true
 
 # Structured evidence fields per entry (default: false — opt-in)
-quarkus.tarkus.ledger.evidence.enabled=false
+quarkus.workitems.ledger.evidence.enabled=false
 
 # Peer attestation endpoint active (default: true)
-quarkus.tarkus.ledger.attestations.enabled=true
+quarkus.workitems.ledger.attestations.enabled=true
 
 # EigenTrust reputation scoring — nightly computation (default: false — opt-in)
-quarkus.tarkus.ledger.trust-score.enabled=false
+quarkus.workitems.ledger.trust-score.enabled=false
 
 # Trust-score-based routing suggestions via CDI events (default: false)
-quarkus.tarkus.ledger.trust-score.routing-enabled=false
+quarkus.workitems.ledger.trust-score.routing-enabled=false
 ```
 
 ### Enabling trust scores
@@ -471,13 +471,13 @@ quarkus.tarkus.ledger.trust-score.routing-enabled=false
 Trust scores require accumulated ledger history to be meaningful. Enable only after the system has been running long enough for scores to stabilise:
 
 ```properties
-quarkus.tarkus.ledger.trust-score.enabled=true
+quarkus.workitems.ledger.trust-score.enabled=true
 ```
 
 A nightly scheduled job then computes EigenTrust-inspired scores from ledger history. After the first computation:
 
 ```bash
-GET /tarkus/actors/alice/trust
+GET /workitems/actors/alice/trust
 ```
 
 Returns the actor's current trust score, decision count, overturned count, and attestation tallies.
@@ -487,7 +487,7 @@ Returns the actor's current trust score, decision count, overturned count, and a
 When an external system (Quarkus-Flow, CaseHub) creates a WorkItem on behalf of a process, call the provenance endpoint immediately after creation to link the WorkItem back to its source:
 
 ```bash
-curl -X PUT "http://localhost:8080/tarkus/workitems/{id}/ledger/provenance" \
+curl -X PUT "http://localhost:8080/workitems/{id}/ledger/provenance" \
   -H 'Content-Type: application/json' \
   -d '{
     "sourceEntityId": "workflow-instance-abc123",
@@ -500,21 +500,21 @@ This sets `sourceEntityId`, `sourceEntityType`, and `sourceEntitySystem` on the 
 
 ---
 
-## Section 7: Quarkus-Flow DSL (TarkusFlow)
+## Section 7: Quarkus-Flow DSL (WorkItemsFlow)
 
-The `quarkus-tarkus-flow` module provides `TarkusFlow` — a base class that extends `Flow` with a `tarkus()` DSL method. This is the preferred way to embed WorkItem suspension steps in a workflow definition, giving a uniform style alongside `function()`, `agent()`, and other quarkus-flow task types.
+The `quarkus-workitems-flow` module provides `WorkItemsFlow` — a base class that extends `Flow` with a `workItem()` DSL method. This is the preferred way to embed WorkItem suspension steps in a workflow definition, giving a uniform style alongside `function()`, `agent()`, and other quarkus-flow task types.
 
-### Extending TarkusFlow
+### Extending WorkItemsFlow
 
 ```java
 @ApplicationScoped
-public class DocumentApprovalWorkflow extends TarkusFlow {
+public class DocumentApprovalWorkflow extends WorkItemsFlow {
 
     @Override
     public Workflow descriptor() {
         return workflow("document-approval")
             .tasks(
-                tarkus("legal-review")
+                workItem("legal-review")
                     .title("Legal review required")
                     .candidateGroups("legal-team")
                     .priority(WorkItemPriority.HIGH)
@@ -526,7 +526,7 @@ public class DocumentApprovalWorkflow extends TarkusFlow {
 }
 ```
 
-`tarkus("legal-review")` returns a `TarkusTaskBuilder`. Call:
+`workItem("legal-review")` returns a `WorkItemTaskBuilder`. Call:
 
 | Method | Required | Description |
 |---|---|---|
@@ -538,8 +538,8 @@ public class DocumentApprovalWorkflow extends TarkusFlow {
 | `.payloadFrom(Function<T, String>)` | no | Extracts JSON context from the step's input |
 | `.buildTask(Class<T>)` | yes | Builds the `FuncTaskConfigurer`; throws if `title` not set |
 
-When the workflow reaches the `tarkus()` step:
-1. Tarkus creates a WorkItem with the configured parameters.
+When the workflow reaches the `workItem()` step:
+1. WorkItems creates a WorkItem with the configured parameters.
 2. The step returns a `Uni<String>` that suspends the workflow.
 3. A human or agent sees the WorkItem in `GET /inbox`, claims it, and completes it via `PUT /{id}/complete`.
 4. The `Uni` resolves with the resolution JSON from the human, which becomes the next task's input.
@@ -548,21 +548,21 @@ If the WorkItem is rejected or cancelled, the `Uni` fails with `WorkItemResoluti
 
 ### Using HumanTaskFlowBridge directly
 
-When you need programmatic control or cannot extend `TarkusFlow`, inject `HumanTaskFlowBridge` into any `Flow` subclass:
+When you need programmatic control or cannot extend `WorkItemsFlow`, inject `HumanTaskFlowBridge` into any `Flow` subclass:
 
 ```java
 @ApplicationScoped
 public class ApprovalWorkflow extends Flow {
 
     @Inject
-    HumanTaskFlowBridge tarkus;
+    HumanTaskFlowBridge workItemsBridge;
 
     @Override
     public Workflow descriptor() {
         return workflow("contract-approval")
             .tasks(
                 function("await-legal-approval", (ContractInput input) ->
-                    tarkus.requestGroupApproval(
+                    workItems.requestGroupApproval(
                         "Legal review required",
                         "Review contract before signing.",
                         "legal-team,senior-managers",

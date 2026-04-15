@@ -1,4 +1,4 @@
-# Quarkus Tarkus — Design Specification v1.0
+# Quarkus WorkItems — Design Specification v1.0
 
 > *Human-scale WorkItem lifecycle management for the Quarkus Native AI Agent Ecosystem.*
 
@@ -19,9 +19,9 @@ A unit of work within a CaseHub case, following CMMN terminology. Assigned to a 
 (human or agent) via capability matching. Has lifecycle: PENDING → ASSIGNED → RUNNING →
 WAITING → COMPLETED / FAULTED / CANCELLED. The task model is unified — human workers
 and agent workers are the same concept in CaseHub. When a CaseHub Task is routed to a
-human worker, the `quarkus-tarkus-casehub` adapter creates a corresponding Tarkus WorkItem.
+human worker, the `quarkus-workitems-casehub` adapter creates a corresponding WorkItems WorkItem.
 
-**WorkItem** *(io.quarkiverse.tarkus.runtime.model.WorkItem — Quarkus Tarkus)*
+**WorkItem** *(io.quarkiverse.workitems.runtime.model.WorkItem — Quarkus WorkItems)*
 A unit of work requiring human attention or judgment. Has lifecycle:
 PENDING → ASSIGNED → IN_PROGRESS → COMPLETED / REJECTED / SUSPENDED / CANCELLED / EXPIRED → ESCALATED.
 Persists minutes to days. Has assignee, candidate groups, priority, deadlines, delegation chain,
@@ -32,13 +32,13 @@ Quarkus-Flow, CaseHub, Qhorus, or a plain REST call. A human resolves it.
 
 ---
 
-## What Tarkus Is
+## What WorkItems Is
 
-Quarkus Tarkus is a standalone Quarkiverse extension providing a **human task inbox** — a place for human workers to see what needs their attention, act on it, delegate it, and have it automatically escalate when it expires.
+Quarkus WorkItems is a standalone Quarkiverse extension providing a **human task inbox** — a place for human workers to see what needs their attention, act on it, delegate it, and have it automatically escalate when it expires.
 
 It is **not** a workflow engine, a case manager, or an agent communication mesh. It is the layer that sits between those systems and the human who needs to make decisions.
 
-Any Quarkus application can embed Tarkus to get:
+Any Quarkus application can embed WorkItems to get:
 - A `WorkItem` entity with full lifecycle management
 - A REST inbox API that any UI (Claudony dashboard, custom frontend) can consume
 - Expiry detection and pluggable escalation policies
@@ -51,9 +51,9 @@ Any Quarkus application can embed Tarkus to get:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  Quarkus Tarkus (standalone)                                    │
+│  Quarkus WorkItems (standalone)                                    │
 │                                                                  │
-│  REST API /tarkus/workitems  ←── Claudony dashboard             │
+│  REST API /workitems  ←── Claudony dashboard             │
 │         │                        (or any UI)                    │
 │         ▼                                                        │
 │  WorkItemService                                                 │
@@ -66,16 +66,16 @@ Any Quarkus application can embed Tarkus to get:
 │  AuditEntryRepository SPI ←── JpaAuditEntryRepository (default) │
 │         │                     (Panache, H2/PostgreSQL)          │
 │         │                                                        │
-│         └── InMemoryWorkItemRepository (quarkus-tarkus-testing) │
+│         └── InMemoryWorkItemRepository (quarkus-workitems-testing) │
 └─────────────────────────────────────────────────────────────────┘
 
 Optional integration modules (separate artifacts, future):
-  quarkus-tarkus-flow      →  TaskExecutorFactory SPI (Quarkus-Flow)
-  quarkus-tarkus-casehub   →  WorkerRegistry adapter (CaseHub)
-  quarkus-tarkus-qhorus    →  MCP tools (Qhorus)
-  quarkus-tarkus-testing   →  InMemoryWorkItemRepository for unit tests
-  quarkus-tarkus-mongodb   →  MongoDB-backed repository (future)
-  quarkus-tarkus-redis     →  Redis-backed repository (future)
+  quarkus-workitems-flow      →  TaskExecutorFactory SPI (Quarkus-Flow)
+  quarkus-workitems-casehub   →  WorkerRegistry adapter (CaseHub)
+  quarkus-workitems-qhorus    →  MCP tools (Qhorus)
+  quarkus-workitems-testing   →  InMemoryWorkItemRepository for unit tests
+  quarkus-workitems-mongodb   →  MongoDB-backed repository (future)
+  quarkus-workitems-redis     →  Redis-backed repository (future)
 ```
 
 ---
@@ -83,7 +83,7 @@ Optional integration modules (separate artifacts, future):
 ## WorkItem Model
 
 ```java
-// io.quarkiverse.tarkus.runtime.model.WorkItem
+// io.quarkiverse.workitems.runtime.model.WorkItem
 @Entity @Table(name = "work_item")
 public class WorkItem extends PanacheEntityBase {
     @Id public UUID id;
@@ -134,13 +134,13 @@ public class WorkItem extends PanacheEntityBase {
     public Instant suspendedAt;          // when SUSPENDED
 }
 
-// io.quarkiverse.tarkus.runtime.model.DelegationState
+// io.quarkiverse.workitems.runtime.model.DelegationState
 public enum DelegationState {
     PENDING,   // delegated to another; they are working it
     RESOLVED   // delegate completed; owner must confirm
 }
 
-// io.quarkiverse.tarkus.runtime.model.AuditEntry
+// io.quarkiverse.workitems.runtime.model.AuditEntry
 @Entity @Table(name = "audit_entry")
 public class AuditEntry extends PanacheEntityBase {
     @Id public UUID id;
@@ -206,7 +206,7 @@ RESOLVED → (null)   (owner confirms; item re-enters normal lifecycle)
 
 ## REST API
 
-Base path: `/tarkus/workitems`
+Base path: `/workitems`
 
 **Inbox and query:**
 
@@ -254,7 +254,7 @@ The inbox query uses OR across `assignee`, `candidateGroup`, `candidateUser` —
   "candidateGroups": "security-team,leads",
   "priority": "HIGH",
   "category": "security-review",
-  "formKey": "tarkus/security-approval/v1",
+  "formKey": "workitems/security-approval/v1",
   "claimDeadline": "2026-04-15T09:00:00Z",
   "expiresAt": "2026-04-15T12:00:00Z",
   "followUpDate": "2026-04-15T08:00:00Z",
@@ -266,15 +266,15 @@ The inbox query uses OR across `assignee`, `candidateGroup`, `candidateUser` —
 
 ## Configuration
 
-`TarkusConfig` — `@ConfigMapping(prefix = "quarkus.tarkus")`:
+`WorkItemsConfig` — `@ConfigMapping(prefix = "quarkus.workitems")`:
 
 | Property | Default | Meaning |
 |---|---|---|
-| `quarkus.tarkus.default-expiry-hours` | 24 | Default completion deadline if no `expiresAt` is set |
-| `quarkus.tarkus.default-claim-hours` | 4 | Default claim deadline if no `claimDeadline` is set (0 = no claim deadline) |
-| `quarkus.tarkus.escalation-policy` | notify | What happens on completion expiry: `notify`, `reassign`, `auto-reject` |
-| `quarkus.tarkus.claim-escalation-policy` | notify | What happens on claim deadline breach: `notify`, `reassign` |
-| `quarkus.tarkus.cleanup.expiry-check-seconds` | 60 | How often the expiry/claim-deadline job runs |
+| `quarkus.workitems.default-expiry-hours` | 24 | Default completion deadline if no `expiresAt` is set |
+| `quarkus.workitems.default-claim-hours` | 4 | Default claim deadline if no `claimDeadline` is set (0 = no claim deadline) |
+| `quarkus.workitems.escalation-policy` | notify | What happens on completion expiry: `notify`, `reassign`, `auto-reject` |
+| `quarkus.workitems.claim-escalation-policy` | notify | What happens on claim deadline breach: `notify`, `reassign` |
+| `quarkus.workitems.cleanup.expiry-check-seconds` | 60 | How often the expiry/claim-deadline job runs |
 
 Consuming app owns datasource config — none in the extension's `application.properties`.
 
@@ -282,7 +282,7 @@ Consuming app owns datasource config — none in the extension's `application.pr
 
 ## Storage SPI
 
-Persistence is pluggable via two CDI interfaces in `io.quarkiverse.tarkus.runtime.repository`:
+Persistence is pluggable via two CDI interfaces in `io.quarkiverse.workitems.runtime.repository`:
 
 ```java
 public interface WorkItemRepository {
@@ -315,7 +315,7 @@ public interface AuditEntryRepository {
 - `JpaWorkItemRepository` — Panache-backed; registered `@ApplicationScoped`
 - `JpaAuditEntryRepository` — Panache-backed; registered `@ApplicationScoped`
 
-**Test implementation** (`quarkus-tarkus-testing` module):
+**Test implementation** (`quarkus-workitems-testing` module):
 - `InMemoryWorkItemRepository` — `ConcurrentHashMap`-backed; no datasource required
 - `InMemoryAuditEntryRepository` — list-backed
 - Register as `@ApplicationScoped @Alternative @Priority(1)` to override the JPA defaults
@@ -328,7 +328,7 @@ public interface AuditEntryRepository {
 public class MyRedisWorkItemRepository implements WorkItemRepository { ... }
 ```
 
-The JPA default requires a datasource. When using `quarkus-tarkus-testing`, no datasource
+The JPA default requires a datasource. When using `quarkus-workitems-testing`, no datasource
 or Flyway migration is needed — making pure unit tests (no `@QuarkusTest`) trivial.
 
 ---
@@ -336,14 +336,14 @@ or Flyway migration is needed — making pure unit tests (no `@QuarkusTest`) tri
 ## Escalation Policy SPI
 
 ```java
-// io.quarkiverse.tarkus.runtime.service.EscalationPolicy
+// io.quarkiverse.workitems.runtime.service.EscalationPolicy
 public interface EscalationPolicy {
     /** Called when a WorkItem's expiresAt passes without resolution. */
     void escalate(WorkItem workItem);
 }
 ```
 
-Default implementations (selectable via `quarkus.tarkus.escalation-policy`):
+Default implementations (selectable via `quarkus.workitems.escalation-policy`):
 - `notify` — emits a `workitem.expired` CloudEvent; human must act
 - `reassign` — moves to next assignee in a capability pool
 - `auto-reject` — auto-rejects and records in audit log
@@ -354,39 +354,39 @@ Custom implementations register as CDI beans with `@Singleton @Alternative @Prio
 
 ## CloudEvent Emission
 
-Tarkus emits CloudEvents for all lifecycle transitions (via Quarkus Messaging):
+WorkItems emits CloudEvents for all lifecycle transitions (via Quarkus Messaging):
 
 | Event type | When |
 |---|---|
-| `io.quarkiverse.tarkus.workitem.created` | WorkItem created |
-| `io.quarkiverse.tarkus.workitem.assigned` | WorkItem claimed or assigned |
-| `io.quarkiverse.tarkus.workitem.completed` | WorkItem completed |
-| `io.quarkiverse.tarkus.workitem.rejected` | WorkItem rejected |
-| `io.quarkiverse.tarkus.workitem.delegated` | WorkItem delegated |
-| `io.quarkiverse.tarkus.workitem.expired` | WorkItem expired |
-| `io.quarkiverse.tarkus.workitem.escalated` | Escalation policy fired |
+| `io.quarkiverse.workitems.workitem.created` | WorkItem created |
+| `io.quarkiverse.workitems.workitem.assigned` | WorkItem claimed or assigned |
+| `io.quarkiverse.workitems.workitem.completed` | WorkItem completed |
+| `io.quarkiverse.workitems.workitem.rejected` | WorkItem rejected |
+| `io.quarkiverse.workitems.workitem.delegated` | WorkItem delegated |
+| `io.quarkiverse.workitems.workitem.expired` | WorkItem expired |
+| `io.quarkiverse.workitems.workitem.escalated` | Escalation policy fired |
 
 ---
 
 ## Integration Modules (Future)
 
-### quarkus-tarkus-flow
+### quarkus-workitems-flow
 Implements `io.serverlessworkflow.impl.executors.TaskExecutorFactory` (Java SPI via
-`META-INF/services`). When a Quarkus-Flow workflow step matches the Tarkus handler
+`META-INF/services`). When a Quarkus-Flow workflow step matches the WorkItems handler
 (e.g., a custom `humanTask` type), the factory:
-1. Creates a Tarkus WorkItem from the step definition
+1. Creates a WorkItems WorkItem from the step definition
 2. Suspends the WorkflowInstance (returns an incomplete CompletableFuture)
 3. Completes the CompletableFuture with the WorkItem resolution when the human acts
 4. Quarkus-Flow resumes the workflow with the resolution as output
 
-### quarkus-tarkus-casehub
+### quarkus-workitems-casehub
 Registers a worker with CaseHub's `WorkerRegistry` claiming `human:*` capability tasks.
 When a CaseHub Task is claimed:
-1. Creates a Tarkus WorkItem with the CaseHub task context as payload
+1. Creates a WorkItems WorkItem with the CaseHub task context as payload
 2. On WorkItem completion, calls `WorkerRegistry.submitResult()` to advance the case
 
-### quarkus-tarkus-qhorus
-Adds MCP tools backed by the Tarkus REST API:
+### quarkus-workitems-qhorus
+Adds MCP tools backed by the WorkItems REST API:
 - `request_approval(title, description, assignee, payload, timeout_s)` → creates WorkItem, returns `workItemId`
 - `check_approval(work_item_id)` → returns status and resolution
 - `wait_for_approval(work_item_id, timeout_s)` → polls until resolved or timeout
@@ -397,13 +397,13 @@ Adds MCP tools backed by the Tarkus REST API:
 
 | Phase | Status | What |
 |---|---|---|
-| **1 — Core data model** | ⬜ Pending | Storage SPI interfaces, JPA defaults, InMemory impl (testing module), WorkItem + AuditEntry entities, Flyway V1, WorkItemService, TarkusConfig |
+| **1 — Core data model** | ⬜ Pending | Storage SPI interfaces, JPA defaults, InMemory impl (testing module), WorkItem + AuditEntry entities, Flyway V1, WorkItemService, WorkItemsConfig |
 | **2 — REST API** | ⬜ Pending | WorkItemResource — all CRUD + inbox + lifecycle endpoints |
 | **3 — Lifecycle engine** | ⬜ Pending | ExpiryCleanupJob, EscalationPolicy SPI, default implementations |
 | **4 — CloudEvents** | ⬜ Pending | Event emission on all lifecycle transitions |
-| **5 — Quarkus-Flow integration** | ⬜ Pending | `quarkus-tarkus-flow` module, TaskExecutorFactory SPI |
-| **6 — CaseHub integration** | ⬜ Pending | `quarkus-tarkus-casehub` module, WorkerRegistry adapter |
-| **7 — Qhorus integration** | ⬜ Pending | `quarkus-tarkus-qhorus` module, MCP tools |
+| **5 — Quarkus-Flow integration** | ⬜ Pending | `quarkus-workitems-flow` module, TaskExecutorFactory SPI |
+| **6 — CaseHub integration** | ⬜ Pending | `quarkus-workitems-casehub` module, WorkerRegistry adapter |
+| **7 — Qhorus integration** | ⬜ Pending | `quarkus-workitems-qhorus` module, MCP tools |
 | **8 — Native image validation** | ⬜ Pending | GraalVM native build, reflection config, native tests |
 
 ---
@@ -431,7 +431,7 @@ integration target currently requires it. CaseHub integration may surface this n
 
 Approval flows where multiple humans must act — all must approve (quorum), any one suffices,
 or a sequential chain. Current model supports this by creating multiple WorkItems and
-coordinating at the calling layer (e.g., Quarkus-Flow workflow). Tarkus could natively
+coordinating at the calling layer (e.g., Quarkus-Flow workflow). WorkItems could natively
 model it with: `approvalType: enum (ANY_OF, ALL_OF, SEQUENTIAL)`, `requiredApprovals: int`,
 and a parent/child relationship. Deferred — the calling-layer composition approach is
 sufficient for v1.

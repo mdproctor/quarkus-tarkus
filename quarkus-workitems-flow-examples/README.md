@@ -1,6 +1,6 @@
-# quarkus-tarkus-flow-examples
+# quarkus-workitems-flow-examples
 
-A runnable example showing the **TarkusFlow DSL** in a multi-step business workflow that
+A runnable example showing the **WorkItemsFlow DSL** in a multi-step business workflow that
 mixes automated machine steps with suspended human task steps.
 
 Run the full scenario in one call:
@@ -13,11 +13,11 @@ curl -s -X POST http://localhost:8080/examples/flow/run | jq .
 
 ## The workflow
 
-`ContractReviewWorkflow` extends `TarkusFlow` and defines a four-step contract approval pipeline:
+`ContractReviewWorkflow` extends `WorkItemsFlow` and defines a four-step contract approval pipeline:
 
 ```java
 @ApplicationScoped
-public class ContractReviewWorkflow extends TarkusFlow {
+public class ContractReviewWorkflow extends WorkItemsFlow {
 
     @Override
     public Workflow descriptor() {
@@ -68,11 +68,11 @@ public class ContractReviewWorkflow extends TarkusFlow {
 When `startInstance()` is called:
 
 1. **validate** runs immediately — validates the contract fields and passes a draft map to the next step
-2. **legalReview** — Quarkus-Flow suspends the workflow; a `WorkItem` appears in the Tarkus inbox with `candidateGroups=legal-team` and `priority=HIGH`; the full contract details are in `payload` via `payloadFrom()`; the workflow waits until a team member claims and completes it
+2. **legalReview** — Quarkus-Flow suspends the workflow; a `WorkItem` appears in the WorkItems inbox with `candidateGroups=legal-team` and `priority=HIGH`; the full contract details are in `payload` via `payloadFrom()`; the workflow waits until a team member claims and completes it
 3. **executiveSignOff** — the workflow suspends again; a `WorkItem` is assigned directly to `exec-officer` with `priority=CRITICAL`; the executive's resolution becomes the input to the next step
 4. **countersign** runs immediately — records the execution with both approvals
 
-No threads are blocked during suspension. The workflow coroutine parks and resumes when a human acts via the Tarkus REST API.
+No threads are blocked during suspension. The workflow coroutine parks and resumes when a human acts via the WorkItems REST API.
 
 ---
 
@@ -101,13 +101,13 @@ No threads are blocked during suspension. The workflow coroutine parks and resum
 export JAVA_HOME=$(/usr/libexec/java_home -v 26)
 
 # Install upstream modules (once)
-mvn install -DskipTests -pl runtime,deployment,testing,tarkus-flow
+mvn install -DskipTests -pl runtime,deployment,testing,workitems-flow
 ```
 
 ### Start in dev mode
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn quarkus:dev -pl quarkus-tarkus-flow-examples
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn quarkus:dev -pl quarkus-workitems-flow-examples
 ```
 
 ### Run the scenario
@@ -153,29 +153,29 @@ completing their WorkItems. **Stdout** shows each step as it executes:
 
 ### Drive the workflow manually (without the scenario runner)
 
-Start the workflow, then act on each WorkItem yourself via the Tarkus REST API:
+Start the workflow, then act on each WorkItem yourself via the WorkItems REST API:
 
 ```bash
 # 1. Start the workflow (returns a workflow instance)
 curl -s -X POST http://localhost:8080/examples/flow/start | jq .
 
 # 2. Check the inbox for the legal-team WorkItem
-curl -s "http://localhost:8080/tarkus/workitems/inbox?candidateGroup=legal-team" | jq .
+curl -s "http://localhost:8080/workitems/inbox?candidateGroup=legal-team" | jq .
 
 # 3. Claim, start, and approve it
-curl -s -X PUT "http://localhost:8080/tarkus/workitems/{id}/claim?claimant=alice"
-curl -s -X PUT "http://localhost:8080/tarkus/workitems/{id}/start?actor=alice"
-curl -s -X PUT "http://localhost:8080/tarkus/workitems/{id}/complete?actor=alice" \
+curl -s -X PUT "http://localhost:8080/workitems/{id}/claim?claimant=alice"
+curl -s -X PUT "http://localhost:8080/workitems/{id}/start?actor=alice"
+curl -s -X PUT "http://localhost:8080/workitems/{id}/complete?actor=alice" \
   -H 'Content-Type: application/json' \
   -d '{"resolution":"{\"approved\":true,\"notes\":\"Terms acceptable\"}"}'
 
 # 4. Check for the executive sign-off WorkItem
-curl -s "http://localhost:8080/tarkus/workitems/inbox?assignee=exec-officer" | jq .
+curl -s "http://localhost:8080/workitems/inbox?assignee=exec-officer" | jq .
 
 # 5. Complete the executive sign-off
-curl -s -X PUT "http://localhost:8080/tarkus/workitems/{id}/claim?claimant=exec-officer"
-curl -s -X PUT "http://localhost:8080/tarkus/workitems/{id}/start?actor=exec-officer"
-curl -s -X PUT "http://localhost:8080/tarkus/workitems/{id}/complete?actor=exec-officer" \
+curl -s -X PUT "http://localhost:8080/workitems/{id}/claim?claimant=exec-officer"
+curl -s -X PUT "http://localhost:8080/workitems/{id}/start?actor=exec-officer"
+curl -s -X PUT "http://localhost:8080/workitems/{id}/complete?actor=exec-officer" \
   -H 'Content-Type: application/json' \
   -d '{"resolution":"{\"signed\":true}"}'
 ```
@@ -187,24 +187,24 @@ After step 5, the workflow resumes automatically and runs the countersign step.
 ## Running the tests
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-tarkus-flow-examples
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-flow-examples
 ```
 
 Expected: 2 tests, 0 failures.
 
 ---
 
-## Using TarkusFlow in your own project
+## Using WorkItemsFlow in your own project
 
 Add the dependency:
 
 ```xml
 <dependency>
-  <groupId>io.quarkiverse.tarkus</groupId>
-  <artifactId>quarkus-tarkus-flow</artifactId>
+  <groupId>io.quarkiverse.workitems</groupId>
+  <artifactId>quarkus-workitems-flow</artifactId>
   <version>1.0.0-SNAPSHOT</version>
 </dependency>
 ```
 
-Extend `TarkusFlow` instead of `Flow`, and use `workItem("stepName")` wherever your workflow
-needs to suspend for a human decision. See `quarkus-tarkus-flow/README.md` for the full API reference.
+Extend `WorkItemsFlow` instead of `Flow`, and use `workItem("stepName")` wherever your workflow
+needs to suspend for a human decision. See `quarkus-workitems-flow/README.md` for the full API reference.

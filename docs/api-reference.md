@@ -1,6 +1,6 @@
-# Quarkus Tarkus — REST API Reference
+# Quarkus WorkItems — REST API Reference
 
-Base path: `/tarkus/workitems`
+Base path: `/workitems`
 
 All responses are `application/json`. All request bodies with a JSON body require `Content-Type: application/json`.
 
@@ -8,9 +8,9 @@ All responses are `application/json`. All request bodies with a JSON body requir
 
 ## Endpoints
 
-### POST /tarkus/workitems
+### POST /workitems
 
-Creates a new WorkItem in `PENDING` status. If no `expiresAt` is supplied, the expiry is set to `now + quarkus.tarkus.default-expiry-hours`. If no `claimDeadline` is supplied and `quarkus.tarkus.default-claim-hours > 0`, the claim deadline is set to `now + quarkus.tarkus.default-claim-hours`.
+Creates a new WorkItem in `PENDING` status. If no `expiresAt` is supplied, the expiry is set to `now + quarkus.workitems.default-expiry-hours`. If no `claimDeadline` is supplied and `quarkus.workitems.default-claim-hours > 0`, the claim deadline is set to `now + quarkus.workitems.default-claim-hours`.
 
 **Request body:**
 
@@ -32,11 +32,11 @@ Creates a new WorkItem in `PENDING` status. If no `expiresAt` is supplied, the e
 | `followUpDate` | ISO-8601 instant | no | Reminder date; surfaces in inbox when `followUp=true` |
 
 **Response:** `201 Created`
-**Headers:** `Location: /tarkus/workitems/{id}`
+**Headers:** `Location: /workitems/{id}`
 **Body:** `WorkItemResponse`
 
 ```bash
-curl -X POST http://localhost:8080/tarkus/workitems \
+curl -X POST http://localhost:8080/workitems \
   -H 'Content-Type: application/json' \
   -d '{
     "title": "Review contract for Acme Corp",
@@ -51,7 +51,7 @@ curl -X POST http://localhost:8080/tarkus/workitems \
 
 ---
 
-### GET /tarkus/workitems
+### GET /workitems
 
 Lists all WorkItems. Intended for admin use. Returns all records regardless of status or assignment.
 
@@ -59,12 +59,12 @@ Lists all WorkItems. Intended for admin use. Returns all records regardless of s
 **Body:** `WorkItemResponse[]`
 
 ```bash
-curl http://localhost:8080/tarkus/workitems
+curl http://localhost:8080/workitems
 ```
 
 ---
 
-### GET /tarkus/workitems/inbox
+### GET /workitems/inbox
 
 Returns WorkItems visible to the requesting user or group. Uses OR logic across `assigneeId`, `candidateGroups`, and `candidateUsers`; all additional filters (status, priority, category, followUp) are applied with AND logic.
 
@@ -77,18 +77,18 @@ If neither `assignee` nor `candidateGroup` is provided, returns all WorkItems fi
 
 ```bash
 # Inbox for alice, showing only high-priority items
-curl "http://localhost:8080/tarkus/workitems/inbox?assignee=alice&priority=HIGH"
+curl "http://localhost:8080/workitems/inbox?assignee=alice&priority=HIGH"
 
 # Group inbox for finance-team
-curl "http://localhost:8080/tarkus/workitems/inbox?candidateGroup=finance-team&candidateGroup=managers"
+curl "http://localhost:8080/workitems/inbox?candidateGroup=finance-team&candidateGroup=managers"
 
 # Items with a follow-up date due now or in the past
-curl "http://localhost:8080/tarkus/workitems/inbox?assignee=alice&followUp=true"
+curl "http://localhost:8080/workitems/inbox?assignee=alice&followUp=true"
 ```
 
 ---
 
-### GET /tarkus/workitems/{id}
+### GET /workitems/{id}
 
 Returns a single WorkItem with its complete audit trail.
 
@@ -100,12 +100,12 @@ Returns a single WorkItem with its complete audit trail.
 **Error:** `404 Not Found` if the WorkItem does not exist.
 
 ```bash
-curl http://localhost:8080/tarkus/workitems/a1b2c3d4-e5f6-7890-abcd-ef1234567890
+curl http://localhost:8080/workitems/a1b2c3d4-e5f6-7890-abcd-ef1234567890
 ```
 
 ---
 
-### PUT /tarkus/workitems/{id}/claim
+### PUT /workitems/{id}/claim
 
 Claims the WorkItem. Transitions `PENDING → ASSIGNED`. Sets `assigneeId` to the claimant and records `assignedAt`.
 
@@ -118,12 +118,12 @@ Claims the WorkItem. Transitions `PENDING → ASSIGNED`. Sets `assigneeId` to th
 **Error:** `409 Conflict` if the WorkItem is not in `PENDING` status.
 
 ```bash
-curl -X PUT "http://localhost:8080/tarkus/workitems/{id}/claim?claimant=alice"
+curl -X PUT "http://localhost:8080/workitems/{id}/claim?claimant=alice"
 ```
 
 ---
 
-### PUT /tarkus/workitems/{id}/start
+### PUT /workitems/{id}/start
 
 Begins work on the WorkItem. Transitions `ASSIGNED → IN_PROGRESS`. Records `startedAt`.
 
@@ -136,14 +136,14 @@ Begins work on the WorkItem. Transitions `ASSIGNED → IN_PROGRESS`. Records `st
 **Error:** `409 Conflict` if the WorkItem is not in `ASSIGNED` status.
 
 ```bash
-curl -X PUT "http://localhost:8080/tarkus/workitems/{id}/start?actor=alice"
+curl -X PUT "http://localhost:8080/workitems/{id}/start?actor=alice"
 ```
 
 ---
 
-### PUT /tarkus/workitems/{id}/complete
+### PUT /workitems/{id}/complete
 
-Completes the WorkItem. Transitions `IN_PROGRESS → COMPLETED`. Stores the resolution JSON and records `completedAt`. Fires `io.quarkiverse.tarkus.workitem.completed` CDI event.
+Completes the WorkItem. Transitions `IN_PROGRESS → COMPLETED`. Stores the resolution JSON and records `completedAt`. Fires `io.quarkiverse.workitems.workitem.completed` CDI event.
 
 **Path parameter:** `id` — UUID
 **Query parameter:** `actor` — the user ID completing the work
@@ -159,16 +159,16 @@ Completes the WorkItem. Transitions `IN_PROGRESS → COMPLETED`. Stores the reso
 **Error:** `409 Conflict` if the WorkItem is not in `IN_PROGRESS` status.
 
 ```bash
-curl -X PUT "http://localhost:8080/tarkus/workitems/{id}/complete?actor=alice" \
+curl -X PUT "http://localhost:8080/workitems/{id}/complete?actor=alice" \
   -H 'Content-Type: application/json' \
   -d '{"resolution": "{\"approved\": true, \"notes\": \"All checks passed\"}"}'
 ```
 
 ---
 
-### PUT /tarkus/workitems/{id}/reject
+### PUT /workitems/{id}/reject
 
-Rejects the WorkItem. Transitions `ASSIGNED|IN_PROGRESS → REJECTED`. Records `completedAt`. Fires `io.quarkiverse.tarkus.workitem.rejected` CDI event.
+Rejects the WorkItem. Transitions `ASSIGNED|IN_PROGRESS → REJECTED`. Records `completedAt`. Fires `io.quarkiverse.workitems.workitem.rejected` CDI event.
 
 **Path parameter:** `id` — UUID
 **Query parameter:** `actor` — the user ID rejecting the work
@@ -184,14 +184,14 @@ Rejects the WorkItem. Transitions `ASSIGNED|IN_PROGRESS → REJECTED`. Records `
 **Error:** `409 Conflict` if the WorkItem is not in `ASSIGNED` or `IN_PROGRESS` status.
 
 ```bash
-curl -X PUT "http://localhost:8080/tarkus/workitems/{id}/reject?actor=alice" \
+curl -X PUT "http://localhost:8080/workitems/{id}/reject?actor=alice" \
   -H 'Content-Type: application/json' \
   -d '{"reason": "Insufficient documentation provided"}'
 ```
 
 ---
 
-### PUT /tarkus/workitems/{id}/delegate
+### PUT /workitems/{id}/delegate
 
 Delegates the WorkItem to another user. Transitions `ASSIGNED|IN_PROGRESS → PENDING` with the new assignee set and `delegationState=PENDING`. On first delegation, the actor becomes the `owner`. The actor's ID is appended to `delegationChain`.
 
@@ -209,14 +209,14 @@ Delegates the WorkItem to another user. Transitions `ASSIGNED|IN_PROGRESS → PE
 **Error:** `409 Conflict` if the WorkItem is not in `ASSIGNED` or `IN_PROGRESS` status.
 
 ```bash
-curl -X PUT "http://localhost:8080/tarkus/workitems/{id}/delegate?actor=alice" \
+curl -X PUT "http://localhost:8080/workitems/{id}/delegate?actor=alice" \
   -H 'Content-Type: application/json' \
   -d '{"to": "bob"}'
 ```
 
 ---
 
-### PUT /tarkus/workitems/{id}/release
+### PUT /workitems/{id}/release
 
 Releases the WorkItem back to the candidate pool. Transitions `ASSIGNED → PENDING`. Clears `assigneeId`.
 
@@ -229,12 +229,12 @@ Releases the WorkItem back to the candidate pool. Transitions `ASSIGNED → PEND
 **Error:** `409 Conflict` if the WorkItem is not in `ASSIGNED` status.
 
 ```bash
-curl -X PUT "http://localhost:8080/tarkus/workitems/{id}/release?actor=alice"
+curl -X PUT "http://localhost:8080/workitems/{id}/release?actor=alice"
 ```
 
 ---
 
-### PUT /tarkus/workitems/{id}/suspend
+### PUT /workitems/{id}/suspend
 
 Suspends the WorkItem. Transitions `ASSIGNED|IN_PROGRESS → SUSPENDED`. Records `suspendedAt` and saves the prior status in `priorStatus` for use by resume.
 
@@ -252,14 +252,14 @@ Suspends the WorkItem. Transitions `ASSIGNED|IN_PROGRESS → SUSPENDED`. Records
 **Error:** `409 Conflict` if the WorkItem is not in `ASSIGNED` or `IN_PROGRESS` status.
 
 ```bash
-curl -X PUT "http://localhost:8080/tarkus/workitems/{id}/suspend?actor=alice" \
+curl -X PUT "http://localhost:8080/workitems/{id}/suspend?actor=alice" \
   -H 'Content-Type: application/json' \
   -d '{"reason": "Waiting for additional input from requester"}'
 ```
 
 ---
 
-### PUT /tarkus/workitems/{id}/resume
+### PUT /workitems/{id}/resume
 
 Resumes a suspended WorkItem. Transitions `SUSPENDED → prior status` (either `ASSIGNED` or `IN_PROGRESS`). Clears `suspendedAt` and `priorStatus`.
 
@@ -272,14 +272,14 @@ Resumes a suspended WorkItem. Transitions `SUSPENDED → prior status` (either `
 **Error:** `409 Conflict` if the WorkItem is not in `SUSPENDED` status.
 
 ```bash
-curl -X PUT "http://localhost:8080/tarkus/workitems/{id}/resume?actor=alice"
+curl -X PUT "http://localhost:8080/workitems/{id}/resume?actor=alice"
 ```
 
 ---
 
-### PUT /tarkus/workitems/{id}/cancel
+### PUT /workitems/{id}/cancel
 
-Cancels the WorkItem. Transitions any non-terminal status → `CANCELLED`. Records `completedAt`. Fires `io.quarkiverse.tarkus.workitem.cancelled` CDI event. Admin operation.
+Cancels the WorkItem. Transitions any non-terminal status → `CANCELLED`. Records `completedAt`. Fires `io.quarkiverse.workitems.workitem.cancelled` CDI event. Admin operation.
 
 **Path parameter:** `id` — UUID
 **Query parameter:** `actor` — the user ID or system cancelling
@@ -295,7 +295,7 @@ Cancels the WorkItem. Transitions any non-terminal status → `CANCELLED`. Recor
 **Error:** `409 Conflict` if the WorkItem is already in a terminal status.
 
 ```bash
-curl -X PUT "http://localhost:8080/tarkus/workitems/{id}/cancel?actor=admin" \
+curl -X PUT "http://localhost:8080/workitems/{id}/cancel?actor=admin" \
   -H 'Content-Type: application/json' \
   -d '{"reason": "Project cancelled by stakeholder"}'
 ```
@@ -342,7 +342,7 @@ Returned by all lifecycle endpoints and list endpoints.
 
 ### WorkItemWithAuditResponse
 
-Returned only by `GET /tarkus/workitems/{id}`. All fields of `WorkItemResponse`, plus:
+Returned only by `GET /workitems/{id}`. All fields of `WorkItemResponse`, plus:
 
 | Field | Type | Description |
 |---|---|---|
@@ -364,7 +364,7 @@ Returned only by `GET /tarkus/workitems/{id}`. All fields of `WorkItemResponse`,
 
 ## Inbox Query Parameters
 
-Used with `GET /tarkus/workitems/inbox`.
+Used with `GET /workitems/inbox`.
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -412,24 +412,24 @@ Note: `REJECTED` and `EXPIRED` are not terminal by the `isTerminal()` definition
 
 ## Lifecycle Event Types
 
-A `WorkItemLifecycleEvent` CDI event is fired on every transition. The `type` field follows the pattern `io.quarkiverse.tarkus.workitem.{action}`.
+A `WorkItemLifecycleEvent` CDI event is fired on every transition. The `type` field follows the pattern `io.quarkiverse.workitems.workitem.{action}`.
 
 | Event type | Audit event | Triggered by |
 |---|---|---|
-| `io.quarkiverse.tarkus.workitem.created` | `CREATED` | `POST /` |
-| `io.quarkiverse.tarkus.workitem.assigned` | `ASSIGNED` | `PUT /{id}/claim` |
-| `io.quarkiverse.tarkus.workitem.started` | `STARTED` | `PUT /{id}/start` |
-| `io.quarkiverse.tarkus.workitem.completed` | `COMPLETED` | `PUT /{id}/complete` |
-| `io.quarkiverse.tarkus.workitem.rejected` | `REJECTED` | `PUT /{id}/reject` |
-| `io.quarkiverse.tarkus.workitem.delegated` | `DELEGATED` | `PUT /{id}/delegate` |
-| `io.quarkiverse.tarkus.workitem.released` | `RELEASED` | `PUT /{id}/release` |
-| `io.quarkiverse.tarkus.workitem.suspended` | `SUSPENDED` | `PUT /{id}/suspend` |
-| `io.quarkiverse.tarkus.workitem.resumed` | `RESUMED` | `PUT /{id}/resume` |
-| `io.quarkiverse.tarkus.workitem.cancelled` | `CANCELLED` | `PUT /{id}/cancel` |
-| `io.quarkiverse.tarkus.workitem.expired` | `EXPIRED` | Expiry cleanup job |
-| `io.quarkiverse.tarkus.workitem.escalated` | `ESCALATED` | Escalation policy |
+| `io.quarkiverse.workitems.workitem.created` | `CREATED` | `POST /` |
+| `io.quarkiverse.workitems.workitem.assigned` | `ASSIGNED` | `PUT /{id}/claim` |
+| `io.quarkiverse.workitems.workitem.started` | `STARTED` | `PUT /{id}/start` |
+| `io.quarkiverse.workitems.workitem.completed` | `COMPLETED` | `PUT /{id}/complete` |
+| `io.quarkiverse.workitems.workitem.rejected` | `REJECTED` | `PUT /{id}/reject` |
+| `io.quarkiverse.workitems.workitem.delegated` | `DELEGATED` | `PUT /{id}/delegate` |
+| `io.quarkiverse.workitems.workitem.released` | `RELEASED` | `PUT /{id}/release` |
+| `io.quarkiverse.workitems.workitem.suspended` | `SUSPENDED` | `PUT /{id}/suspend` |
+| `io.quarkiverse.workitems.workitem.resumed` | `RESUMED` | `PUT /{id}/resume` |
+| `io.quarkiverse.workitems.workitem.cancelled` | `CANCELLED` | `PUT /{id}/cancel` |
+| `io.quarkiverse.workitems.workitem.expired` | `EXPIRED` | Expiry cleanup job |
+| `io.quarkiverse.workitems.workitem.escalated` | `ESCALATED` | Escalation policy |
 
-The `WorkItemLifecycleEvent` record fields: `type`, `source` (`/tarkus/workitems/{id}`), `subject` (UUID string), `workItemId` (UUID), `status` (post-transition), `occurredAt`, `actor`, `detail` (nullable JSON or reason string).
+The `WorkItemLifecycleEvent` record fields: `type`, `source` (`/workitems/{id}`), `subject` (UUID string), `workItemId` (UUID), `status` (post-transition), `occurredAt`, `actor`, `detail` (nullable JSON or reason string).
 
 ---
 
@@ -442,13 +442,13 @@ The `WorkItemLifecycleEvent` record fields: `type`, `source` (`/tarkus/workitems
 
 ---
 
-## Ledger API (quarkus-tarkus-ledger)
+## Ledger API (quarkus-workitems-ledger)
 
-These endpoints are only present when `quarkus-tarkus-ledger` is on the classpath. They activate automatically via CDI — no configuration required beyond adding the dependency.
+These endpoints are only present when `quarkus-workitems-ledger` is on the classpath. They activate automatically via CDI — no configuration required beyond adding the dependency.
 
 ---
 
-### GET /tarkus/workitems/{id}/ledger
+### GET /workitems/{id}/ledger
 
 Returns all ledger entries for a WorkItem in sequence order, each with its peer attestations embedded.
 
@@ -460,12 +460,12 @@ Returns all ledger entries for a WorkItem in sequence order, each with its peer 
 **Error:** `404 Not Found` if the WorkItem does not exist.
 
 ```bash
-curl http://localhost:8080/tarkus/workitems/a1b2c3d4-e5f6-7890-abcd-ef1234567890/ledger
+curl http://localhost:8080/workitems/a1b2c3d4-e5f6-7890-abcd-ef1234567890/ledger
 ```
 
 ---
 
-### PUT /tarkus/workitems/{id}/ledger/provenance
+### PUT /workitems/{id}/ledger/provenance
 
 Sets the source entity provenance on the creation ledger entry (sequence number 1). Call this immediately after creating a WorkItem from an external system (Quarkus-Flow, CaseHub, Qhorus) to record which entity originated the WorkItem.
 
@@ -486,7 +486,7 @@ Sets the source entity provenance on the creation ledger entry (sequence number 
 - `409 Conflict` — Provenance is already set on the creation entry.
 
 ```bash
-curl -X PUT "http://localhost:8080/tarkus/workitems/{id}/ledger/provenance" \
+curl -X PUT "http://localhost:8080/workitems/{id}/ledger/provenance" \
   -H 'Content-Type: application/json' \
   -d '{
     "sourceEntityId": "workflow-instance-abc123",
@@ -497,9 +497,9 @@ curl -X PUT "http://localhost:8080/tarkus/workitems/{id}/ledger/provenance" \
 
 ---
 
-### POST /tarkus/workitems/{id}/ledger/{entryId}/attestations
+### POST /workitems/{id}/ledger/{entryId}/attestations
 
-Posts a peer attestation on a specific ledger entry. Requires `quarkus.tarkus.ledger.attestations.enabled=true` (the default when the module is present).
+Posts a peer attestation on a specific ledger entry. Requires `quarkus.workitems.ledger.attestations.enabled=true` (the default when the module is present).
 
 **Path parameters:**
 - `id` — WorkItem UUID
@@ -528,10 +528,10 @@ Posts a peer attestation on a specific ledger entry. Requires `quarkus.tarkus.le
 
 **Errors:**
 - `404 Not Found` — ledger entry does not exist or does not belong to the given WorkItem.
-- `409 Conflict` — attestations are disabled (`quarkus.tarkus.ledger.attestations.enabled=false`).
+- `409 Conflict` — attestations are disabled (`quarkus.workitems.ledger.attestations.enabled=false`).
 
 ```bash
-curl -X POST "http://localhost:8080/tarkus/workitems/{id}/ledger/{entryId}/attestations" \
+curl -X POST "http://localhost:8080/workitems/{id}/ledger/{entryId}/attestations" \
   -H 'Content-Type: application/json' \
   -d '{
     "attestorId": "alice",
@@ -544,9 +544,9 @@ curl -X POST "http://localhost:8080/tarkus/workitems/{id}/ledger/{entryId}/attes
 
 ---
 
-### GET /tarkus/actors/{actorId}/trust
+### GET /workitems/actors/{actorId}/trust
 
-Returns the computed EigenTrust-inspired trust score for an actor. Requires `quarkus.tarkus.ledger.trust-score.enabled=true`. Scores are computed by a nightly scheduled job; the endpoint returns `404` until the first computation run completes.
+Returns the computed EigenTrust-inspired trust score for an actor. Requires `quarkus.workitems.ledger.trust-score.enabled=true`. Scores are computed by a nightly scheduled job; the endpoint returns `404` until the first computation run completes.
 
 **Path parameter:** `actorId` — the actor's identity string (e.g. `"alice"`, `"agent-007"`)
 
@@ -557,7 +557,7 @@ Returns the computed EigenTrust-inspired trust score for an actor. Requires `qua
 - `404 Not Found` — trust scoring is disabled, or no score has been computed yet for this actor.
 
 ```bash
-curl http://localhost:8080/tarkus/actors/alice/trust
+curl http://localhost:8080/workitems/actors/alice/trust
 ```
 
 ---
@@ -566,7 +566,7 @@ curl http://localhost:8080/tarkus/actors/alice/trust
 
 ### LedgerEntryResponse
 
-Returned by `GET /tarkus/workitems/{id}/ledger` as an array.
+Returned by `GET /workitems/{id}/ledger` as an array.
 
 | Field | Type | Description |
 |---|---|---|
@@ -617,7 +617,7 @@ Embedded in `LedgerEntryResponse.attestations`.
 
 ### ActorTrustScoreResponse
 
-Returned by `GET /tarkus/actors/{actorId}/trust`.
+Returned by `GET /workitems/actors/{actorId}/trust`.
 
 | Field | Type | Description |
 |---|---|---|
