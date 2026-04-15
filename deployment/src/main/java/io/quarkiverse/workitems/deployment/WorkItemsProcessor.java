@@ -13,7 +13,7 @@ import io.quarkus.deployment.builditem.FeatureBuildItem;
  * - Registration of the escalation policy SPI for native
  * - Flyway migration resource registration for native builds
  */
-class TarkusProcessor {
+class WorkItemsProcessor {
 
     private static final String FEATURE = "tarkus";
 

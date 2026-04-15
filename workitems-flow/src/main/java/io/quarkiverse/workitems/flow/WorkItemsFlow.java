@@ -20,7 +20,7 @@ import io.serverlessworkflow.fluent.func.dsl.FuncDSL;
  * {
  *     &#64;code
  *     &#64;ApplicationScoped
- *     public class DocumentApprovalWorkflow extends TarkusFlow {
+ *     public class DocumentApprovalWorkflow extends WorkItemsFlow {
  *
  *         @Override
  *         public Workflow descriptor() {
@@ -38,7 +38,7 @@ import io.serverlessworkflow.fluent.func.dsl.FuncDSL;
  * }
  * </pre>
  */
-public abstract class TarkusFlow extends Flow {
+public abstract class WorkItemsFlow extends Flow {
 
     @Inject
     HumanTaskFlowBridge tarkusBridge;
@@ -49,8 +49,8 @@ public abstract class TarkusFlow extends Flow {
      * @param name unique task name within the workflow definition
      * @return a builder for configuring the WorkItem parameters
      */
-    protected TarkusTaskBuilder workItem(final String name) {
-        return new TarkusTaskBuilder(name, tarkusBridge);
+    protected WorkItemTaskBuilder workItem(final String name) {
+        return new WorkItemTaskBuilder(name, tarkusBridge);
     }
 
     /**

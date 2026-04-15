@@ -9,10 +9,10 @@ import org.junit.jupiter.api.Test;
 import io.quarkus.test.junit.QuarkusTest;
 
 @QuarkusTest
-class TarkusConfigDefaultsTest {
+class WorkItemsConfigDefaultsTest {
 
     @Inject
-    TarkusConfig config;
+    WorkItemsConfig config;
 
     @Test
     void defaultExpiryHoursIs24() {

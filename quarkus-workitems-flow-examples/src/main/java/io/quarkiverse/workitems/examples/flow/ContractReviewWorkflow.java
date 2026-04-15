@@ -6,12 +6,12 @@ import java.util.Map;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.quarkiverse.workitems.flow.TarkusFlow;
+import io.quarkiverse.workitems.flow.WorkItemsFlow;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
 import io.serverlessworkflow.api.types.Workflow;
 
 /**
- * A multi-step contract review workflow demonstrating the TarkusFlow DSL.
+ * A multi-step contract review workflow demonstrating the WorkItemsFlow DSL.
  *
  * <p>
  * This workflow mixes automated {@code function()} steps with human {@code workItem()} steps,
@@ -29,12 +29,12 @@ import io.serverlessworkflow.api.types.Workflow;
  *
  * <h2>DSL features demonstrated</h2>
  * <ul>
- * <li>{@link io.quarkiverse.workitems.flow.TarkusTaskBuilder#title(String)} — inbox display name</li>
- * <li>{@link io.quarkiverse.workitems.flow.TarkusTaskBuilder#description(String)} — reviewer context</li>
- * <li>{@link io.quarkiverse.workitems.flow.TarkusTaskBuilder#candidateGroups(String)} — work-queue routing</li>
- * <li>{@link io.quarkiverse.workitems.flow.TarkusTaskBuilder#assigneeId(String)} — direct assignment</li>
- * <li>{@link io.quarkiverse.workitems.flow.TarkusTaskBuilder#priority(WorkItemPriority)} — HIGH vs CRITICAL</li>
- * <li>{@link io.quarkiverse.workitems.flow.TarkusTaskBuilder#payloadFrom} — extract JSON context from input</li>
+ * <li>{@link io.quarkiverse.workitems.flow.WorkItemTaskBuilder#title(String)} — inbox display name</li>
+ * <li>{@link io.quarkiverse.workitems.flow.WorkItemTaskBuilder#description(String)} — reviewer context</li>
+ * <li>{@link io.quarkiverse.workitems.flow.WorkItemTaskBuilder#candidateGroups(String)} — work-queue routing</li>
+ * <li>{@link io.quarkiverse.workitems.flow.WorkItemTaskBuilder#assigneeId(String)} — direct assignment</li>
+ * <li>{@link io.quarkiverse.workitems.flow.WorkItemTaskBuilder#priority(WorkItemPriority)} — HIGH vs CRITICAL</li>
+ * <li>{@link io.quarkiverse.workitems.flow.WorkItemTaskBuilder#payloadFrom} — extract JSON context from input</li>
  * </ul>
  *
  * <h2>Starting the workflow</h2>
@@ -47,7 +47,7 @@ import io.serverlessworkflow.api.types.Workflow;
  * }</pre>
  */
 @ApplicationScoped
-public class ContractReviewWorkflow extends TarkusFlow {
+public class ContractReviewWorkflow extends WorkItemsFlow {
 
     @Override
     public Workflow descriptor() {
