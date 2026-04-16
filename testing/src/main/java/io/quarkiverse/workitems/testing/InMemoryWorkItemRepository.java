@@ -127,6 +127,22 @@ public class InMemoryWorkItemRepository implements WorkItemRepository {
                 .toList();
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>
+     * Delegates to {@link io.quarkiverse.workitems.runtime.service.LabelVocabularyService#matchesPattern}
+     * for wildcard semantics parity with the JPA implementation.
+     */
+    @Override
+    public List<WorkItem> findByLabelPattern(final String pattern) {
+        return store.values().stream()
+                .filter(wi -> wi.labels != null && wi.labels.stream()
+                        .anyMatch(l -> io.quarkiverse.workitems.runtime.service.LabelVocabularyService
+                                .matchesPattern(pattern, l.path)))
+                .toList();
+    }
+
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------

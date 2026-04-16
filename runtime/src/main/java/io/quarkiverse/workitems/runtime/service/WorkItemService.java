@@ -299,6 +299,30 @@ public class WorkItemService {
         return saved;
     }
 
+    @Transactional
+    public WorkItem addLabel(final UUID workItemId, final String path, final String appliedBy) {
+        final WorkItem item = workItemRepo.findById(workItemId)
+                .orElseThrow(() -> new WorkItemNotFoundException(workItemId));
+        item.labels.add(new WorkItemLabel(path, LabelPersistence.MANUAL, appliedBy));
+        final WorkItem saved = workItemRepo.save(item);
+        if (lifecycleEvent != null) {
+            lifecycleEvent.fire(WorkItemLifecycleEvent.of("LABEL_ADDED", saved.id, saved.status, appliedBy, null));
+        }
+        return saved;
+    }
+
+    @Transactional
+    public WorkItem removeLabel(final UUID workItemId, final String path) {
+        final WorkItem item = workItemRepo.findById(workItemId)
+                .orElseThrow(() -> new WorkItemNotFoundException(workItemId));
+        final boolean removed = item.labels.removeIf(
+                l -> l.path.equals(path) && l.persistence == LabelPersistence.MANUAL);
+        if (!removed) {
+            throw new WorkItemNotFoundException(workItemId);
+        }
+        return workItemRepo.save(item);
+    }
+
     private WorkItem requireWorkItem(final UUID id) {
         return workItemRepo.findById(id)
                 .orElseThrow(() -> new WorkItemNotFoundException(id));

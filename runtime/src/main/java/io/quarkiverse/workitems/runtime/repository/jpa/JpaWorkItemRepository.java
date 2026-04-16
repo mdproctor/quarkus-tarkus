@@ -92,4 +92,24 @@ public class JpaWorkItemRepository implements WorkItemRepository {
                 "claimDeadline <= ?1 AND status = ?2",
                 now, WorkItemStatus.PENDING).list();
     }
+
+    @Override
+    public List<WorkItem> findByLabelPattern(final String pattern) {
+        if (pattern.endsWith("/**")) {
+            final String prefix = pattern.substring(0, pattern.length() - 3) + "/";
+            return WorkItem.<WorkItem> find(
+                    "SELECT DISTINCT wi FROM WorkItem wi JOIN wi.labels l WHERE l.path LIKE ?1",
+                    prefix + "%").list();
+        }
+        if (pattern.endsWith("/*")) {
+            final String prefix = pattern.substring(0, pattern.length() - 2) + "/";
+            return WorkItem.<WorkItem> find(
+                    "SELECT DISTINCT wi FROM WorkItem wi JOIN wi.labels l " +
+                            "WHERE l.path LIKE ?1 AND l.path NOT LIKE ?2",
+                    prefix + "%", prefix + "%/%").list();
+        }
+        return WorkItem.<WorkItem> find(
+                "SELECT DISTINCT wi FROM WorkItem wi JOIN wi.labels l WHERE l.path = ?1",
+                pattern).list();
+    }
 }
