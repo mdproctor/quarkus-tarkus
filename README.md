@@ -188,6 +188,7 @@ All properties are prefixed with `quarkus.workitems`.
 | `quarkus-workitems-flow` | Quarkus-Flow integration — `WorkItemsFlow` base class, `WorkItemTaskBuilder` DSL, `HumanTaskFlowBridge`, `WorkItemFlowEventListener` |
 | `quarkus-workitems-ledger` | Optional accountability module — command/event ledger, SHA-256 hash chain, peer attestation, EigenTrust reputation scoring. Zero impact on the core extension when absent. |
 | `quarkus-workitems-queues` | Optional label-based work queues — saved and ad-hoc filters (JEXL, JQ, Lambda CDI), `FilterChain` derivation graph, `QueueView` named label-pattern queries, soft assignment. Zero impact on the core extension when absent. |
+| `quarkus-workitems-queues-examples` | Runnable queue routing scenarios: support triage cascade, legal compliance routing, finance approval chain, security exec-escalation. Run via `POST /queue-examples/{name}/run`. |
 
 Future modules (not yet released): `quarkus-workitems-casehub`, `quarkus-workitems-qhorus`, `quarkus-workitems-mongodb`, `quarkus-workitems-redis`.
 
