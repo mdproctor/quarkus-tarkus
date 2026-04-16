@@ -70,6 +70,18 @@ public class VocabularyResource {
                     .build();
         }
 
+        // Only GLOBAL vocabulary is currently supported.
+        // ORG/TEAM/PERSONAL require an authentication context and multi-tenant vocabulary creation
+        // which is deferred to a later milestone.
+        if (scope != VocabularyScope.GLOBAL) {
+            return Response.status(501)
+                    .entity(Map.of(
+                            "error", "Only GLOBAL vocabulary is currently supported. " +
+                                    "ORG/TEAM/PERSONAL vocabulary creation requires authentication context " +
+                                    "(deferred milestone)."))
+                    .build();
+        }
+
         final var globalVocab = vocabularyService.findGlobalVocabulary();
         if (globalVocab == null) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -82,7 +94,7 @@ public class VocabularyResource {
                 request.addedBy() != null ? request.addedBy() : "unknown");
 
         return Response.status(Response.Status.CREATED)
-                .entity(Map.of("id", def.id, "path", def.path, "scope", scope))
+                .entity(Map.of("id", def.id, "path", def.path, "scope", VocabularyScope.GLOBAL))
                 .build();
     }
 }

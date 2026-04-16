@@ -128,6 +128,16 @@ class LabelEndpointTest {
     }
 
     @Test
+    void vocabulary_addDefinition_nonGlobalScope_returns501() {
+        given()
+                .contentType(ContentType.JSON)
+                .body("{\"path\": \"my/personal/label\", \"addedBy\": \"alice\"}")
+                .post("/vocabulary/PERSONAL")
+                .then()
+                .statusCode(501);
+    }
+
+    @Test
     void vocabulary_addDefinition_emptyPath_returns400() {
         given()
                 .contentType(ContentType.JSON)
