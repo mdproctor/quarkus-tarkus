@@ -21,6 +21,7 @@ import io.quarkiverse.workitems.queues.model.FilterAction;
 import io.quarkiverse.workitems.queues.model.FilterScope;
 import io.quarkiverse.workitems.queues.model.WorkItemFilter;
 import io.quarkiverse.workitems.queues.service.FilterConditionEvaluator;
+import io.quarkiverse.workitems.queues.service.FilterEngine;
 import io.quarkiverse.workitems.queues.service.FilterEvaluatorRegistry;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
@@ -33,6 +34,9 @@ public class FilterResource {
 
     @Inject
     FilterEvaluatorRegistry registry;
+
+    @Inject
+    FilterEngine filterEngine;
 
     public record CreateFilterRequest(String name, FilterScope scope, String ownerId,
             String conditionLanguage, String conditionExpression, List<FilterAction> actions) {
@@ -106,7 +110,7 @@ public class FilterResource {
         if (f == null) {
             return Response.status(404).entity(Map.of("error", "Not found")).build();
         }
-        // cascade via FilterEngine wired in issue #62
+        filterEngine.cascadeDelete(id);
         f.delete();
         return Response.noContent().build();
     }
