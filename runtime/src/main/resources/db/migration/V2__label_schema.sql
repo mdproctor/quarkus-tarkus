@@ -3,7 +3,7 @@
 -- Compatible with H2 (dev/test) and PostgreSQL (production).
 
 CREATE TABLE work_item_label (
-    work_item_id    UUID            NOT NULL,
+    work_item_id    UUID            NOT NULL REFERENCES work_item(id) ON DELETE CASCADE,
     path            VARCHAR(500)    NOT NULL,
     persistence     VARCHAR(20)     NOT NULL,
     applied_by      VARCHAR(255)

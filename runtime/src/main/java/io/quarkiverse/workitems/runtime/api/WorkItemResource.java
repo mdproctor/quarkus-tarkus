@@ -26,6 +26,7 @@ import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
 import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
 import io.quarkiverse.workitems.runtime.repository.AuditEntryRepository;
 import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.service.LabelNotFoundException;
 import io.quarkiverse.workitems.runtime.service.WorkItemNotFoundException;
 import io.quarkiverse.workitems.runtime.service.WorkItemService;
 
@@ -208,6 +209,9 @@ public class WorkItemResource {
             final WorkItem updated = workItemService.removeLabel(id, path);
             return Response.ok(WorkItemMapper.toResponse(updated)).build();
         } catch (WorkItemNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(Map.of("error", e.getMessage())).build();
+        } catch (LabelNotFoundException e) {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity(Map.of("error", e.getMessage())).build();
         }

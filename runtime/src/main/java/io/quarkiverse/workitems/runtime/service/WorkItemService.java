@@ -318,7 +318,7 @@ public class WorkItemService {
         final boolean removed = item.labels.removeIf(
                 l -> l.path.equals(path) && l.persistence == LabelPersistence.MANUAL);
         if (!removed) {
-            throw new WorkItemNotFoundException(workItemId);
+            throw new LabelNotFoundException(workItemId, path);
         }
         return workItemRepo.save(item);
     }

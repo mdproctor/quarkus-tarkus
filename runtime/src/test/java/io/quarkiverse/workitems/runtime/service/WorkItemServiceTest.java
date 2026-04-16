@@ -919,13 +919,14 @@ class WorkItemServiceTest {
     }
 
     @Test
-    void removeLabel_nonExistentLabel_throwsWorkItemNotFoundException() {
+    void removeLabel_nonExistentLabel_throwsLabelNotFoundException() {
         var created = service.create(new WorkItemCreateRequest(
                 "remove-nonexistent", null, null, null, null, null, null, null, null, "alice",
                 null, null, null, null, null));
 
         assertThatThrownBy(() -> service.removeLabel(created.id, "nonexistent/label"))
-                .isInstanceOf(WorkItemNotFoundException.class);
+                .isInstanceOf(LabelNotFoundException.class)
+                .hasMessageContaining("nonexistent/label");
     }
 
     // when defaultClaimHours=0, no claimDeadline set
