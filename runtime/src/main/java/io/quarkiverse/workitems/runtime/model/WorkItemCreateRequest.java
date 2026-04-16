@@ -1,6 +1,9 @@
 package io.quarkiverse.workitems.runtime.model;
 
 import java.time.Instant;
+import java.util.List;
+
+import io.quarkiverse.workitems.runtime.api.WorkItemLabelResponse;
 
 /**
  * Immutable request object used to create a new {@link WorkItem}.
@@ -21,6 +24,7 @@ import java.time.Instant;
  * @param claimDeadline Absolute instant by which the item must be claimed; null uses default.
  * @param expiresAt Absolute instant by which the item must be completed; null uses default.
  * @param followUpDate Optional follow-up reminder date for inbox filtering.
+ * @param labels Optional list of {@link WorkItemLabelResponse} labels to attach at creation; only MANUAL labels accepted.
  */
 public record WorkItemCreateRequest(
         String title,
@@ -36,5 +40,6 @@ public record WorkItemCreateRequest(
         String payload,
         Instant claimDeadline,
         Instant expiresAt,
-        Instant followUpDate) {
+        Instant followUpDate,
+        List<WorkItemLabelResponse> labels) {
 }

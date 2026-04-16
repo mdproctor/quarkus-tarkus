@@ -46,7 +46,7 @@ class WorkItemSmokeTest {
                 "Test item", "Do something", null, null,
                 WorkItemPriority.NORMAL,
                 null, null, null, null,
-                "system", null, null, null, null);
+                "system", null, null, null, null, null);
     }
 
     // -------------------------------------------------------------------------
@@ -149,7 +149,7 @@ class WorkItemSmokeTest {
                 "Test item", "Do something", null, null,
                 WorkItemPriority.NORMAL,
                 null, null, null, null,
-                "system", null, null, null, null);
+                "system", null, null, null, null, null);
         WorkItem wi = service.create(req);
         assertThat(wi.expiresAt).isNotNull();
     }
@@ -202,7 +202,7 @@ class WorkItemSmokeTest {
         WorkItemCreateRequest req = new WorkItemCreateRequest(
                 "Test", null, null, null, WorkItemPriority.NORMAL,
                 null, null, null, null, "system", null,
-                deadline, null, null);
+                deadline, null, null, null);
         WorkItem wi = service.create(req);
         assertThat(wi.claimDeadline).isNotNull();
         // verify it round-trips through JPA

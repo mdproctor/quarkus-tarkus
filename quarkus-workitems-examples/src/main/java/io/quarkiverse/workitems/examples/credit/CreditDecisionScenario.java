@@ -100,6 +100,7 @@ public class CreditDecisionScenario {
                 "{\"loanId\": \"LOAN-8821\", \"amount\": 25000, \"currency\": \"GBP\"}",
                 null,
                 null,
+                null,
                 null);
 
         final WorkItem wi = workItemService.create(request);

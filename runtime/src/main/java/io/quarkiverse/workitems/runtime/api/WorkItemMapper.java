@@ -5,6 +5,7 @@ import java.util.List;
 import io.quarkiverse.workitems.runtime.model.AuditEntry;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemCreateRequest;
+import io.quarkiverse.workitems.runtime.model.WorkItemLabel;
 
 public final class WorkItemMapper {
 
@@ -20,7 +21,8 @@ public final class WorkItemMapper {
                 wi.priorStatus, wi.payload, wi.resolution,
                 wi.claimDeadline, wi.expiresAt, wi.followUpDate,
                 wi.createdAt, wi.updatedAt, wi.assignedAt, wi.startedAt,
-                wi.completedAt, wi.suspendedAt);
+                wi.completedAt, wi.suspendedAt,
+                wi.labels == null ? List.of() : wi.labels.stream().map(WorkItemMapper::toLabelResponse).toList());
     }
 
     public static AuditEntryResponse toAuditResponse(final AuditEntry e) {
@@ -48,6 +50,11 @@ public final class WorkItemMapper {
                 req.title(), req.description(), req.category(), req.formKey(),
                 req.priority(), req.assigneeId(), req.candidateGroups(),
                 req.candidateUsers(), req.requiredCapabilities(), req.createdBy(),
-                req.payload(), req.claimDeadline(), req.expiresAt(), req.followUpDate());
+                req.payload(), req.claimDeadline(), req.expiresAt(), req.followUpDate(),
+                req.labels());
+    }
+
+    static WorkItemLabelResponse toLabelResponse(final WorkItemLabel label) {
+        return new WorkItemLabelResponse(label.path, label.persistence, label.appliedBy);
     }
 }

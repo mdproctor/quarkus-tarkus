@@ -13,8 +13,10 @@ import io.quarkiverse.workitems.runtime.config.WorkItemsConfig;
 import io.quarkiverse.workitems.runtime.event.WorkItemLifecycleEvent;
 import io.quarkiverse.workitems.runtime.model.AuditEntry;
 import io.quarkiverse.workitems.runtime.model.DelegationState;
+import io.quarkiverse.workitems.runtime.model.LabelPersistence;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemCreateRequest;
+import io.quarkiverse.workitems.runtime.model.WorkItemLabel;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
 import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
 import io.quarkiverse.workitems.runtime.repository.AuditEntryRepository;
@@ -67,6 +69,17 @@ public class WorkItemService {
             item.claimDeadline = request.claimDeadline();
         } else if (config.defaultClaimHours() > 0) {
             item.claimDeadline = now.plus(config.defaultClaimHours(), ChronoUnit.HOURS);
+        }
+
+        // Labels: only MANUAL labels accepted at creation time
+        if (request.labels() != null) {
+            for (var labelReq : request.labels()) {
+                if (labelReq.persistence() == LabelPersistence.INFERRED) {
+                    throw new IllegalArgumentException(
+                            "INFERRED labels cannot be submitted at creation time — they are managed by the filter engine");
+                }
+                item.labels.add(new WorkItemLabel(labelReq.path(), labelReq.persistence(), labelReq.appliedBy()));
+            }
         }
 
         final WorkItem saved = workItemRepo.save(item);

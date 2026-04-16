@@ -3,6 +3,7 @@ package io.quarkiverse.workitems.runtime.api;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -44,9 +45,15 @@ public class WorkItemResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response create(final CreateWorkItemRequest request) {
-        final WorkItem created = workItemService.create(WorkItemMapper.toServiceRequest(request));
-        final URI location = URI.create("/workitems/" + created.id);
-        return Response.created(location).entity(WorkItemMapper.toResponse(created)).build();
+        try {
+            final WorkItem created = workItemService.create(WorkItemMapper.toServiceRequest(request));
+            final URI location = URI.create("/workitems/" + created.id);
+            return Response.created(location).entity(WorkItemMapper.toResponse(created)).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", e.getMessage()))
+                    .build();
+        }
     }
 
     @GET
