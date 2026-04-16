@@ -15,9 +15,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import io.quarkiverse.workitems.runtime.api.WorkItemLabelResponse;
 import io.quarkiverse.workitems.runtime.config.WorkItemsConfig;
 import io.quarkiverse.workitems.runtime.model.AuditEntry;
 import io.quarkiverse.workitems.runtime.model.DelegationState;
+import io.quarkiverse.workitems.runtime.model.LabelPersistence;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemCreateRequest;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
@@ -184,7 +186,7 @@ class WorkItemServiceTest {
                 "Test item", "Do something", null, null,
                 WorkItemPriority.NORMAL,
                 null, null, null, null,
-                "system", null, null, null, null);
+                "system", null, null, null, null, null);
     }
 
     // -------------------------------------------------------------------------
@@ -235,7 +237,7 @@ class WorkItemServiceTest {
                 "Explicit expiry", null, null, null,
                 WorkItemPriority.NORMAL,
                 null, null, null, null,
-                "system", null, null, explicit, null);
+                "system", null, null, explicit, null, null);
         WorkItem wi = service.create(req);
         assertThat(wi.expiresAt).isEqualTo(explicit);
     }
@@ -246,7 +248,7 @@ class WorkItemServiceTest {
                 "Group item", null, null, null,
                 WorkItemPriority.NORMAL,
                 null, "team-a,team-b", null, null,
-                "system", null, null, null, null);
+                "system", null, null, null, null, null);
         WorkItem wi = service.create(req);
         assertThat(wi.candidateGroups).isEqualTo("team-a,team-b");
     }
@@ -734,7 +736,7 @@ class WorkItemServiceTest {
                 "Group task", null, null, null,
                 WorkItemPriority.NORMAL,
                 null, "team-a,team-b", null, null,
-                "system", null, null, null, null);
+                "system", null, null, null, null, null);
         WorkItem wi = service.create(req);
 
         List<WorkItem> inbox = repo.findInbox(null, List.of("team-a"), null, null, null, null);
@@ -747,7 +749,7 @@ class WorkItemServiceTest {
                 "Candidate task", null, null, null,
                 WorkItemPriority.NORMAL,
                 null, null, "bob", null,
-                "system", null, null, null, null);
+                "system", null, null, null, null, null);
         WorkItem wi = service.create(req);
 
         List<WorkItem> inbox = repo.findInbox("bob", null, null, null, null, null);
@@ -845,6 +847,36 @@ class WorkItemServiceTest {
         Instant expectedApprox = Instant.now().plus(4, ChronoUnit.HOURS);
         assertThat(wi.claimDeadline).isAfter(expectedApprox.minus(5, ChronoUnit.MINUTES));
         assertThat(wi.claimDeadline).isBefore(expectedApprox.plus(5, ChronoUnit.MINUTES));
+    }
+
+    // -------------------------------------------------------------------------
+    // Label handling at creation
+    // -------------------------------------------------------------------------
+
+    @Test
+    void create_withInferredLabel_throwsIllegalArgumentException() {
+        var request = new WorkItemCreateRequest(
+                "title", null, null, null, null, null, null, null, null, "alice",
+                null, null, null, null,
+                List.of(new WorkItemLabelResponse("legal", LabelPersistence.INFERRED, null)));
+
+        assertThatThrownBy(() -> service.create(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("INFERRED");
+    }
+
+    @Test
+    void create_withManualLabel_succeeds() {
+        var request = new WorkItemCreateRequest(
+                "title", null, null, null, null, null, null, null, null, "alice",
+                null, null, null, null,
+                List.of(new WorkItemLabelResponse("legal", LabelPersistence.MANUAL, "alice")));
+
+        var result = service.create(request);
+
+        assertThat(result.labels).hasSize(1);
+        assertThat(result.labels.get(0).path).isEqualTo("legal");
+        assertThat(result.labels.get(0).persistence).isEqualTo(LabelPersistence.MANUAL);
     }
 
     // when defaultClaimHours=0, no claimDeadline set

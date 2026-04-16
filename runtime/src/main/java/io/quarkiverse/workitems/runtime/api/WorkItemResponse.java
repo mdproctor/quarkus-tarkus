@@ -1,6 +1,7 @@
 package io.quarkiverse.workitems.runtime.api;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import io.quarkiverse.workitems.runtime.model.DelegationState;
@@ -34,5 +35,6 @@ public record WorkItemResponse(
         Instant assignedAt,
         Instant startedAt,
         Instant completedAt,
-        Instant suspendedAt) {
+        Instant suspendedAt,
+        List<WorkItemLabelResponse> labels) {
 }

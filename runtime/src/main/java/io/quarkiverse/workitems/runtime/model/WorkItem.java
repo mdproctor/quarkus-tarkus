@@ -1,13 +1,19 @@
 package io.quarkiverse.workitems.runtime.model;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -174,6 +180,19 @@ public class WorkItem extends PanacheEntityBase {
     /** When the item transitioned into {@link WorkItemStatus#SUSPENDED}. */
     @Column(name = "suspended_at")
     public Instant suspendedAt;
+
+    // -------------------------------------------------------------------------
+    // Labels
+    // -------------------------------------------------------------------------
+
+    /**
+     * Labels attached to this WorkItem.
+     * {@link LabelPersistence#MANUAL} labels are applied by humans.
+     * {@link LabelPersistence#INFERRED} labels are maintained by the filter engine.
+     */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "work_item_label", joinColumns = @JoinColumn(name = "work_item_id"))
+    public List<WorkItemLabel> labels = new ArrayList<>();
 
     // -------------------------------------------------------------------------
     // JPA lifecycle callbacks

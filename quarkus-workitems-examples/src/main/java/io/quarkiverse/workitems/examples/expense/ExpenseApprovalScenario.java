@@ -87,6 +87,7 @@ public class ExpenseApprovalScenario {
                 "{\"amount\": 450.00, \"currency\": \"GBP\"}",
                 null,
                 null,
+                null,
                 null);
 
         final WorkItem wi = workItemService.create(request);

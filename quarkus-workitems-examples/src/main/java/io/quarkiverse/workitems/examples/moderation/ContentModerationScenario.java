@@ -107,6 +107,7 @@ public class ContentModerationScenario {
                 "{\"postId\": \"POST-9912\", \"flagReason\": \"hate-speech\"}",
                 null,
                 null,
+                null,
                 null);
 
         final WorkItem wi = workItemService.create(request);

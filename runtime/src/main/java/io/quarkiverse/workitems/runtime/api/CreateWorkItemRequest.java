@@ -1,6 +1,7 @@
 package io.quarkiverse.workitems.runtime.api;
 
 import java.time.Instant;
+import java.util.List;
 
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
 
@@ -18,5 +19,6 @@ public record CreateWorkItemRequest(
         String payload,
         Instant claimDeadline,
         Instant expiresAt,
-        Instant followUpDate) {
+        Instant followUpDate,
+        List<WorkItemLabelResponse> labels) {
 }
