@@ -87,4 +87,53 @@ class LabelEndpointTest {
                 .statusCode(201)
                 .body("labels", hasSize(2));
     }
+
+    @Test
+    void vocabulary_listAll_includesSeededGlobalTerms() {
+        given()
+                .get("/vocabulary")
+                .then()
+                .statusCode(200)
+                .body("path", org.hamcrest.Matchers.hasItem("legal/contracts"))
+                .body("path", org.hamcrest.Matchers.hasItem("intake"));
+    }
+
+    @Test
+    void vocabulary_addDefinition_appearsInList() {
+        given()
+                .contentType(ContentType.JSON)
+                .body("""
+                        {"path": "test/unique-vocab-54", "description": "test label", "addedBy": "alice"}
+                        """)
+                .post("/vocabulary/GLOBAL")
+                .then()
+                .statusCode(201)
+                .body("path", equalTo("test/unique-vocab-54"));
+
+        given()
+                .get("/vocabulary")
+                .then()
+                .statusCode(200)
+                .body("path", org.hamcrest.Matchers.hasItem("test/unique-vocab-54"));
+    }
+
+    @Test
+    void vocabulary_addDefinition_invalidScope_returns400() {
+        given()
+                .contentType(ContentType.JSON)
+                .body("{\"path\": \"x/y\", \"addedBy\": \"alice\"}")
+                .post("/vocabulary/INVALID")
+                .then()
+                .statusCode(400);
+    }
+
+    @Test
+    void vocabulary_addDefinition_emptyPath_returns400() {
+        given()
+                .contentType(ContentType.JSON)
+                .body("{\"path\": \"\", \"addedBy\": \"alice\"}")
+                .post("/vocabulary/GLOBAL")
+                .then()
+                .statusCode(400);
+    }
 }
