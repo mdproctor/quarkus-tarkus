@@ -33,6 +33,8 @@ public final class WorkItemMapper {
         final List<AuditEntryResponse> auditResponses = trail.stream()
                 .map(WorkItemMapper::toAuditResponse)
                 .toList();
+        final List<WorkItemLabelResponse> labelResponses = wi.labels == null ? List.of()
+                : wi.labels.stream().map(WorkItemMapper::toLabelResponse).toList();
         return new WorkItemWithAuditResponse(
                 wi.id, wi.title, wi.description, wi.category, wi.formKey,
                 wi.status, wi.priority, wi.assigneeId, wi.owner,
@@ -42,7 +44,7 @@ public final class WorkItemMapper {
                 wi.claimDeadline, wi.expiresAt, wi.followUpDate,
                 wi.createdAt, wi.updatedAt, wi.assignedAt, wi.startedAt,
                 wi.completedAt, wi.suspendedAt,
-                auditResponses);
+                labelResponses, auditResponses);
     }
 
     public static WorkItemCreateRequest toServiceRequest(final CreateWorkItemRequest req) {
