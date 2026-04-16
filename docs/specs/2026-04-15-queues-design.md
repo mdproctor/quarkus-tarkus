@@ -27,6 +27,8 @@ engine that maintains them, one query per queue view.
 | `LabelVocabulary` + `LabelDefinition` | `quarkus-workitems` core |
 | Label REST endpoints (add, remove, query by label) | `quarkus-workitems` core |
 | `WorkItemFilter` (conditions + actions) | `quarkus-workitems-queues` |
+| `FilterChain` (derivation graph + inverse index) | `quarkus-workitems-queues` |
+| `FilterConditionEvaluator` SPI + built-ins | `quarkus-workitems-queues` |
 | Filter evaluation engine | `quarkus-workitems-queues` |
 | `QueueView` (named query over a label) | `quarkus-workitems-queues` |
 | Queue REST endpoints | `quarkus-workitems-queues` |
@@ -43,7 +45,7 @@ quarkus-workitems-parent
 ├── quarkus-workitems-testing
 ├── quarkus-workitems-flow
 ├── quarkus-workitems-ledger
-└── quarkus-workitems-queues           ← optional (filters, queue views)
+└── quarkus-workitems-queues           ← optional (filters, chains, queue views)
 ```
 
 ---
@@ -65,14 +67,19 @@ Each entry:
 |---|---|---|
 | `path` | `String` | The label — a `/`-separated path, e.g. `legal`, `legal/contracts/nda` |
 | `persistence` | `LabelPersistence` | `MANUAL` or `INFERRED` |
-| `appliedBy` | `String` | userId (MANUAL) or filterId (INFERRED) — audit trail |
+| `appliedBy` | `String` | userId — for MANUAL labels only |
+| `supporters` | `Set<UUID>` | chainIds — for INFERRED labels only; label survives while non-empty |
 
 ```java
 public enum LabelPersistence {
     MANUAL,   // human-applied; only a human or explicit API call removes it
-    INFERRED  // filter-applied; retracted and recomputed on every WorkItem mutation
+    INFERRED  // filter-applied; maintained by the FilterChain graph
 }
 ```
+
+**Invariant:** an INFERRED label exists on a WorkItem if and only if its
+`supporters` set is non-empty. When the last supporter is removed, the label
+is removed with it.
 
 ### Label Path Semantics
 
@@ -119,18 +126,96 @@ A future version may unify `category` into the label collection entirely.
 ### INFERRED
 
 - Applied by the filter engine when a filter condition matches.
-- On **any WorkItem mutation** (any field change, including label changes):
-  1. All `INFERRED` entries are removed.
-  2. All active INFERRED filters are evaluated against the WorkItem.
-  3. Matching filters re-apply their labels as `INFERRED`.
-- Result: INFERRED labels always reflect current truth.
+- Maintained by the `FilterChain` graph (see below).
 - No explicit "remove label" action exists in the filter engine. A filter
-  that should no longer apply simply doesn't match — the label is not
-  re-inserted.
+  that should no longer apply simply doesn't match — the label loses that
+  chain as a supporter, and is removed when supporters hits empty.
 
 This eliminates filter conflicts: no two filters can disagree on a label
 because there is no remove-action. A filter either matches (label present) or
 doesn't (label absent).
+
+---
+
+## FilterChain — Derivation Graph
+
+### Purpose
+
+The `FilterChain` is the engine's internal bookkeeping structure. It is not
+exposed directly through the REST API. Users define `WorkItemFilter` objects;
+the engine builds and maintains chains automatically.
+
+A `FilterChain` represents one **derivation path** through the filter graph —
+the ordered sequence of filters that together caused a label to be applied to
+a WorkItem. It also maintains the **inverse index**: which WorkItems have been
+reached via this chain.
+
+### Structure
+
+```java
+FilterChain:
+  id:           UUID
+  filterPath:   List<UUID>          // ordered sequence of filterIds
+  workItems:    Set<UUID>           // inverse index — workItemIds reached via this chain
+```
+
+```java
+WorkItemLabel (INFERRED):
+  path:         String
+  persistence:  INFERRED
+  supporters:   Set<UUID>           // chainIds that justify this label's presence
+```
+
+### Why Templates, Not Execution Records
+
+Each `FilterChain` is a **shared template**: if 500 WorkItems all went through
+`[filterA → filterB → filterC]` to acquire a label, there is one chain object
+with 500 entries in its `workItems` set — not 500 copies of the chain. This
+gives three benefits:
+
+1. **Efficient cascade on filter deletion** — the chain knows exactly which
+   WorkItems to visit without scanning the full WorkItem table.
+2. **Efficient cascade on filter addition** — same inverse index, same
+   targeted reach.
+3. **Natural deduplication** — identical derivation paths are automatically
+   shared.
+
+### Re-evaluation on WorkItem Mutation
+
+When a WorkItem changes (any field, including labels):
+
+1. Strip all `INFERRED` label entries from the WorkItem.
+2. Run all active filters against the WorkItem (strip-and-recompute).
+3. For each matching filter chain, re-insert the label as `INFERRED` with
+   the chain's id in `supporters`.
+
+Strip-and-recompute guarantees correctness and simplicity. The chain inverse
+index (`workItems` set) is updated accordingly.
+
+### Cascade on Filter Deletion
+
+When a `WorkItemFilter` is deleted:
+
+1. Find all `FilterChain` objects whose `filterPath` contains the deleted filterId.
+2. For each such chain:
+   a. For each workItemId in `chain.workItems`:
+      - Remove this chainId from the WorkItem label's `supporters` set.
+      - If `supporters` is now empty → remove the INFERRED label from the WorkItem.
+      - If the label was removed and other filters conditioned on it → their
+        chains on downstream WorkItems may also lose support → recurse.
+   b. Delete the `FilterChain` object.
+
+This is a **graph traversal, not a table scan**. The chain's `workItems` set
+is the directed edge; the recursion follows dependency paths downward.
+
+### Circular Detection
+
+Label propagation can create cycles: filter A watches label X and applies
+label Y; filter B watches label Y and applies label X. During chain
+construction, if extending a chain would introduce a filter already present in
+`filterPath`, the extension is rejected and no label is applied via that path.
+The existing chain terminates. No visited-set tracking is needed at query time
+— the `filterPath` itself is the witness.
 
 ---
 
@@ -191,16 +276,90 @@ Filters live in `quarkus-workitems-queues`. They are evaluated by observing
 | `name` | Human-readable name |
 | `scope` | `PERSONAL`, `TEAM`, or `ORG` |
 | `owner` | userId (PERSONAL) or groupId (TEAM/ORG) |
-| `conditions` | List of predicates over WorkItem fields |
+| `condition` | The predicate — see Filter Conditions below |
 | `actions` | List of label-apply actions |
 | `active` | Whether the filter runs automatically |
 
-### Conditions
+### Filter Conditions
 
-Conditions are predicates over WorkItem fields. Multiple conditions are
-combined with AND by default (OR grouping is a future extension).
+Filter conditions are evaluated by pluggable `FilterConditionEvaluator`
+implementations. Three built-in evaluators are provided:
 
-Filterable fields:
+#### SPI
+
+```java
+public interface FilterConditionEvaluator {
+    /** Language identifier stored alongside the expression. */
+    String language();
+
+    /** Returns true if the WorkItem matches. */
+    boolean evaluate(WorkItem workItem, String expression);
+}
+```
+
+#### Built-in: JEXL
+
+Apache JEXL expressions. Natural Java property access, sandboxed execution,
+native-image friendly. Default evaluator.
+
+```
+// Examples
+priority == 'HIGH' && assigneeId == null
+labels.any(l -> l.path.startsWith('legal/'))
+status == 'PENDING' && category == 'security-review'
+```
+
+Fields exposed in the JEXL context: all `WorkItem` fields, plus a `labels`
+collection supporting `.any()`, `.all()`, `.path` access.
+
+#### Built-in: JQ
+
+JQ expressions evaluated against the WorkItem serialised as JSON. Familiar to
+infrastructure and DevOps practitioners. Backed by `jackson-jq`.
+
+```
+// Examples
+.priority == "HIGH" and .assigneeId == null
+.labels[] | select(.path | startswith("legal/")) | any
+.status == "PENDING"
+```
+
+#### Built-in: Lambda
+
+Programmatic CDI beans. No expression string, no serialisation, full Java
+type safety, native-image clean. The natural choice for complex conditions
+that don't fit neatly in an expression, or when compile-time verification
+matters.
+
+```java
+@ApplicationScoped
+public class HighPriorityUnassignedFilter implements WorkItemFilter {
+
+    @Override
+    public boolean matches(WorkItem wi) {
+        return wi.getPriority() == HIGH && wi.getAssigneeId() == null;
+    }
+
+    @Override
+    public List<FilterAction> actions() {
+        return List.of(ApplyLabel.of("triage/high-priority"));
+    }
+
+    @Override
+    public FilterScope scope() { return FilterScope.ORG; }
+}
+```
+
+Lambda filters are discovered automatically via CDI. They are always `active`
+while deployed; pausing requires undeployment or an `@Alternative` override.
+They are not stored in the database — they are code.
+
+#### Custom evaluators
+
+Any `@ApplicationScoped` bean implementing `FilterConditionEvaluator` is
+discovered automatically and available by its `language()` identifier.
+
+### Filter Condition Fields (JEXL / JQ)
 
 | Field | Match type |
 |---|---|
@@ -219,28 +378,20 @@ For the initial release, one action type:
 
 **`ApplyLabel`**
 - `path` — label path to apply (must exist in an accessible vocabulary)
-- Applied as `INFERRED` (filter-applied, recomputed on change)
+- Applied as `INFERRED` via the FilterChain graph
 
-No remove-label action exists. Removal of INFERRED labels is implicit
-via re-evaluation.
+No remove-label action exists. Removal of INFERRED labels is implicit via the
+chain supporter model.
 
 ### Filter Lifecycle
 
-**Ad-hoc filters** — not persisted. The user constructs a condition set and
-gets a live result set back. Equivalent to a parameterised query. Can be
-promoted to a saved filter.
+**Ad-hoc filters** — not persisted. The user constructs a condition and gets
+a live result set back. Equivalent to a parameterised query. Can be promoted
+to a saved filter.
 
 **Saved filters** — persisted, named, scoped. Run automatically on every
 `WorkItemLifecycleEvent`. The filter's `active` flag can pause it without
 deleting it.
-
-### Evaluation Order
-
-When multiple filters apply labels to the same WorkItem, all matching filters
-apply their labels. There is no conflict because there is no remove-action.
-Filter evaluation order affects nothing for the initial release. If ordering
-becomes significant (e.g. for future action types), filters will gain an
-explicit `priority` field.
 
 ---
 
@@ -280,9 +431,9 @@ sortOrder:          createdAt ASC    (oldest first)
 
 When a user picks a WorkItem from this queue, the existing `claim` endpoint
 is called (`PUT /workitems/{id}/claim`), transitioning it `PENDING → ASSIGNED`.
-Once assigned, a filter with condition `status != PENDING` will no longer match
-the WorkItem, so the `intake/**` INFERRED label is not re-applied — the item
-leaves the queue automatically.
+Once assigned, a filter conditioned on `status == PENDING` no longer matches,
+so the `intake/**` INFERRED label loses its supporter and is removed — the
+item leaves the queue automatically.
 
 ### Soft Assignment
 
@@ -322,9 +473,9 @@ Setting `relinquishable = false` or starting work (`PUT /{id}/start`) clears it.
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/filters` | List filters visible to the caller |
-| `POST` | `/filters` | Create a saved filter |
+| `POST` | `/filters` | Create a saved filter (JEXL or JQ) |
 | `PUT` | `/filters/{id}` | Update a saved filter |
-| `DELETE` | `/filters/{id}` | Delete a saved filter |
+| `DELETE` | `/filters/{id}` | Delete a saved filter (cascades via FilterChain) |
 | `POST` | `/filters/evaluate` | Ad-hoc filter evaluation (not saved) |
 | `GET` | `/queues` | List QueueViews accessible to the caller |
 | `POST` | `/queues` | Create a QueueView |
@@ -347,6 +498,20 @@ Removing explicit remove-actions from the filter engine eliminates filter
 conflicts entirely. If a label should not be present, the filter condition
 simply should not match. This keeps filter semantics predictable and
 composable.
+
+### FilterChain as shared template with inverse index
+
+INFERRED label provenance is tracked via shared `FilterChain` objects rather
+than per-WorkItem execution records. This enables O(affected) cascade on
+filter deletion rather than O(all WorkItems) scans, and naturally deduplicates
+identical derivation paths.
+
+### Three built-in condition evaluators, one SPI
+
+JEXL (Java-native expressions), JQ (JSON queries), and Lambda (CDI beans)
+cover scripted runtime-editable conditions and compiled type-safe conditions
+respectively. The `FilterConditionEvaluator` SPI allows additional languages.
+Lambda filters are code, not data — not stored in the database.
 
 ### Vocabulary is strict but open-contribution
 
@@ -371,4 +536,6 @@ unchanged. The queues module extends pickup behaviour without modifying core.
 | `category` unification | `category` field may eventually be sugar for a `category/**` MANUAL label |
 | Notification actions | Future filter action type: notify a user or group when a filter matches |
 | Webhook / CDI actions | Future: fire external event when filter matches |
+| Lambda filter pause/resume | Lambda filters are always active while deployed; runtime pause requires separate mechanism |
+| FilterChain persistence strategy | Whether chains are persisted to DB or rebuilt on startup needs evaluation |
 | ProvenanceLink labels | PROV-O graph entries (issue #39) may carry labels once CaseHub/Qhorus are ready |
