@@ -9,6 +9,7 @@ import java.util.UUID;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
@@ -56,8 +57,14 @@ public class WorkItemResource {
         }
     }
 
+    public record AddLabelRequest(String path, String appliedBy) {
+    }
+
     @GET
-    public List<WorkItemResponse> listAll() {
+    public List<WorkItemResponse> listAll(@QueryParam("label") final String label) {
+        if (label != null && !label.isBlank()) {
+            return workItemRepo.findByLabelPattern(label).stream().map(WorkItemMapper::toResponse).toList();
+        }
         return workItemRepo.findAll().stream().map(WorkItemMapper::toResponse).toList();
     }
 
@@ -169,5 +176,40 @@ public class WorkItemResource {
             @QueryParam("actor") final String actor,
             final CancelRequest body) {
         return WorkItemMapper.toResponse(workItemService.cancel(id, actor, body != null ? body.reason() : null));
+    }
+
+    @POST
+    @Path("/{id}/labels")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response addLabel(@PathParam("id") final UUID id, final AddLabelRequest request) {
+        if (request == null || request.path() == null || request.path().isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", "path is required")).build();
+        }
+        try {
+            final WorkItem updated = workItemService.addLabel(id, request.path(),
+                    request.appliedBy() != null ? request.appliedBy() : "unknown");
+            return Response.ok(WorkItemMapper.toResponse(updated)).build();
+        } catch (WorkItemNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(Map.of("error", e.getMessage())).build();
+        }
+    }
+
+    @DELETE
+    @Path("/{id}/labels")
+    public Response removeLabel(@PathParam("id") final UUID id,
+            @QueryParam("path") final String path) {
+        if (path == null || path.isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", "path is required")).build();
+        }
+        try {
+            final WorkItem updated = workItemService.removeLabel(id, path);
+            return Response.ok(WorkItemMapper.toResponse(updated)).build();
+        } catch (WorkItemNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(Map.of("error", e.getMessage())).build();
+        }
     }
 }

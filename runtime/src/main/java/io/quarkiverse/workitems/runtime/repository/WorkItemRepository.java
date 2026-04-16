@@ -99,4 +99,20 @@ public interface WorkItemRepository {
      * @return list of pending work items that have passed their claim deadline
      */
     List<WorkItem> findUnclaimedPastDeadline(Instant now);
+
+    /**
+     * Find WorkItems with at least one label matching the given pattern.
+     *
+     * <p>
+     * Pattern semantics:
+     * <ul>
+     * <li>Exact: {@code "legal"} matches only {@code "legal"}</li>
+     * <li>Single wildcard {@code "legal/*"}: one segment below, not multiple</li>
+     * <li>Multi wildcard {@code "legal/**"}: any path below {@code "legal/"}</li>
+     * </ul>
+     *
+     * @param pattern the label pattern; must not be null
+     * @return list of matching WorkItems; may be empty, never null
+     */
+    List<WorkItem> findByLabelPattern(String pattern);
 }

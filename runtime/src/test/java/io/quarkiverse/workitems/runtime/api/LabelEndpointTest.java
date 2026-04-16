@@ -136,4 +136,90 @@ class LabelEndpointTest {
                 .then()
                 .statusCode(400);
     }
+
+    @Test
+    void getWorkItems_byLabelPattern_returnsMatching() {
+        given()
+                .contentType(ContentType.JSON)
+                .body("""
+                        {
+                          "title": "Label query test 55",
+                          "createdBy": "alice",
+                          "labels": [{"path": "legal/contracts", "persistence": "MANUAL", "appliedBy": "alice"}]
+                        }
+                        """)
+                .post("/workitems")
+                .then().statusCode(201);
+
+        given()
+                .queryParam("label", "legal/contracts")
+                .get("/workitems")
+                .then()
+                .statusCode(200)
+                .body("title", org.hamcrest.Matchers.hasItem("Label query test 55"));
+
+        given()
+                .queryParam("label", "legal/**")
+                .get("/workitems")
+                .then()
+                .statusCode(200)
+                .body("title", org.hamcrest.Matchers.hasItem("Label query test 55"));
+    }
+
+    @Test
+    void addManualLabel_toExistingWorkItem_appearsInResponse() {
+        var id = given()
+                .contentType(ContentType.JSON)
+                .body("{\"title\": \"Add label test 55\", \"createdBy\": \"alice\"}")
+                .post("/workitems")
+                .then().statusCode(201)
+                .extract().path("id");
+
+        given()
+                .contentType(ContentType.JSON)
+                .body("{\"path\": \"legal/contracts\", \"appliedBy\": \"alice\"}")
+                .post("/workitems/" + id + "/labels")
+                .then()
+                .statusCode(200)
+                .body("labels.path", org.hamcrest.Matchers.hasItem("legal/contracts"));
+    }
+
+    @Test
+    void removeManualLabel_fromWorkItem_disappearsFromResponse() {
+        var id = given()
+                .contentType(ContentType.JSON)
+                .body("""
+                        {
+                          "title": "Remove label test 55",
+                          "createdBy": "alice",
+                          "labels": [{"path": "legal/contracts", "persistence": "MANUAL", "appliedBy": "alice"}]
+                        }
+                        """)
+                .post("/workitems")
+                .then().statusCode(201)
+                .extract().path("id");
+
+        given()
+                .queryParam("path", "legal/contracts")
+                .delete("/workitems/" + id + "/labels")
+                .then()
+                .statusCode(200)
+                .body("labels", hasSize(0));
+    }
+
+    @Test
+    void removeNonExistentLabel_returns404() {
+        var id = given()
+                .contentType(ContentType.JSON)
+                .body("{\"title\": \"404 label test\", \"createdBy\": \"alice\"}")
+                .post("/workitems")
+                .then().statusCode(201)
+                .extract().path("id");
+
+        given()
+                .queryParam("path", "nonexistent/label")
+                .delete("/workitems/" + id + "/labels")
+                .then()
+                .statusCode(404);
+    }
 }

@@ -73,6 +73,11 @@ class EscalationPolicyTest {
         public List<WorkItem> findUnclaimedPastDeadline(Instant now) {
             return List.of();
         }
+
+        @Override
+        public List<WorkItem> findByLabelPattern(String pattern) {
+            return List.of();
+        }
     }
 
     static class TestAuditRepo implements AuditEntryRepository {

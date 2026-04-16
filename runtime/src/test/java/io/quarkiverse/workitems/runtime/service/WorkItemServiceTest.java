@@ -114,6 +114,15 @@ class WorkItemServiceTest {
                             && wi.status == WorkItemStatus.PENDING)
                     .toList();
         }
+
+        @Override
+        public List<WorkItem> findByLabelPattern(String pattern) {
+            return store.values().stream()
+                    .filter(wi -> wi.labels != null && wi.labels.stream()
+                            .anyMatch(l -> io.quarkiverse.workitems.runtime.service.LabelVocabularyService
+                                    .matchesPattern(pattern, l.path)))
+                    .toList();
+        }
     }
 
     static class TestAuditRepo implements AuditEntryRepository {
@@ -877,6 +886,46 @@ class WorkItemServiceTest {
         assertThat(result.labels).hasSize(1);
         assertThat(result.labels.get(0).path).isEqualTo("legal");
         assertThat(result.labels.get(0).persistence).isEqualTo(LabelPersistence.MANUAL);
+    }
+
+    // -------------------------------------------------------------------------
+    // addLabel / removeLabel
+    // -------------------------------------------------------------------------
+
+    @Test
+    void addLabel_addsManualLabelToWorkItem() {
+        var created = service.create(new WorkItemCreateRequest(
+                "label-add-test", null, null, null, null, null, null, null, null, "alice",
+                null, null, null, null, null));
+
+        var updated = service.addLabel(created.id, "legal/contracts", "alice");
+
+        assertThat(updated.labels).hasSize(1);
+        assertThat(updated.labels.get(0).path).isEqualTo("legal/contracts");
+        assertThat(updated.labels.get(0).persistence).isEqualTo(LabelPersistence.MANUAL);
+        assertThat(updated.labels.get(0).appliedBy).isEqualTo("alice");
+    }
+
+    @Test
+    void removeLabel_removesManualLabel() {
+        var created = service.create(new WorkItemCreateRequest(
+                "label-remove-test", null, null, null, null, null, null, null, null, "alice",
+                null, null, null, null,
+                List.of(new WorkItemLabelResponse("legal/contracts", LabelPersistence.MANUAL, "alice"))));
+
+        var updated = service.removeLabel(created.id, "legal/contracts");
+
+        assertThat(updated.labels).isEmpty();
+    }
+
+    @Test
+    void removeLabel_nonExistentLabel_throwsWorkItemNotFoundException() {
+        var created = service.create(new WorkItemCreateRequest(
+                "remove-nonexistent", null, null, null, null, null, null, null, null, "alice",
+                null, null, null, null, null));
+
+        assertThatThrownBy(() -> service.removeLabel(created.id, "nonexistent/label"))
+                .isInstanceOf(WorkItemNotFoundException.class);
     }
 
     // when defaultClaimHours=0, no claimDeadline set

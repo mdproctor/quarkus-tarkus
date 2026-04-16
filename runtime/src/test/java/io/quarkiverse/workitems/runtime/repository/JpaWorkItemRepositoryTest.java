@@ -9,7 +9,9 @@ import jakarta.inject.Inject;
 
 import org.junit.jupiter.api.Test;
 
+import io.quarkiverse.workitems.runtime.model.LabelPersistence;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.workitems.runtime.model.WorkItemLabel;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
 import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
 import io.quarkus.test.TestTransaction;
@@ -217,5 +219,69 @@ class JpaWorkItemRepositoryTest {
 
         List<WorkItem> result = workItemRepo.findInbox(null, List.of(), null, null, null, null);
         assertThat(result).isEmpty();
+    }
+
+    // -------------------------------------------------------------------------
+    // findByLabelPattern
+    // -------------------------------------------------------------------------
+
+    @Test
+    @jakarta.transaction.Transactional
+    void findByLabelPattern_exactMatch_returnMatchingItems() {
+        var wi = new WorkItem();
+        wi.title = "label-test-exact";
+        wi.status = WorkItemStatus.PENDING;
+        wi.priority = WorkItemPriority.NORMAL;
+        wi.labels.add(new WorkItemLabel("legal/contracts", LabelPersistence.MANUAL, "alice"));
+        workItemRepo.save(wi);
+
+        var results = workItemRepo.findByLabelPattern("legal/contracts");
+
+        assertThat(results).extracting(w -> w.title).contains("label-test-exact");
+    }
+
+    @Test
+    @jakarta.transaction.Transactional
+    void findByLabelPattern_singleWildcard_matchesOneLevel() {
+        var wi = new WorkItem();
+        wi.title = "label-test-wildcard";
+        wi.status = WorkItemStatus.PENDING;
+        wi.priority = WorkItemPriority.NORMAL;
+        wi.labels.add(new WorkItemLabel("legal/contracts", LabelPersistence.MANUAL, "alice"));
+        workItemRepo.save(wi);
+
+        assertThat(workItemRepo.findByLabelPattern("legal/*"))
+                .extracting(w -> w.title).contains("label-test-wildcard");
+
+        assertThat(workItemRepo.findByLabelPattern("legal/contracts/*"))
+                .extracting(w -> w.title).doesNotContain("label-test-wildcard");
+    }
+
+    @Test
+    @jakarta.transaction.Transactional
+    void findByLabelPattern_multiWildcard_matchesAllDepths() {
+        var wi1 = new WorkItem();
+        wi1.title = "label-test-multi-1";
+        wi1.status = WorkItemStatus.PENDING;
+        wi1.priority = WorkItemPriority.NORMAL;
+        wi1.labels.add(new WorkItemLabel("legal/contracts", LabelPersistence.MANUAL, "alice"));
+        workItemRepo.save(wi1);
+
+        var wi2 = new WorkItem();
+        wi2.title = "label-test-multi-2";
+        wi2.status = WorkItemStatus.PENDING;
+        wi2.priority = WorkItemPriority.NORMAL;
+        wi2.labels.add(new WorkItemLabel("legal/contracts/nda", LabelPersistence.MANUAL, "alice"));
+        workItemRepo.save(wi2);
+
+        assertThat(workItemRepo.findByLabelPattern("legal/**"))
+                .extracting(w -> w.title)
+                .contains("label-test-multi-1", "label-test-multi-2");
+    }
+
+    @Test
+    @jakarta.transaction.Transactional
+    void findByLabelPattern_noMatch_returnsEmpty() {
+        assertThat(workItemRepo.findByLabelPattern("nonexistent/path")).isEmpty();
     }
 }
