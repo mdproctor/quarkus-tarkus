@@ -100,7 +100,8 @@ public class QueueDashboard {
         }
     }
 
-    private boolean handleEvent(final Event event, final TuiRunner runner) {
+    /** Package-private so Pilot tests can pass this as EventHandler to TuiTestRunner. */
+    boolean handleEvent(final Event event, final TuiRunner runner) {
         if (event instanceof KeyEvent k) {
             if (k.isQuit()) {
                 runner.quit();
@@ -153,7 +154,8 @@ public class QueueDashboard {
         }
     }
 
-    private void renderBoard(final dev.tamboui.terminal.Frame frame) {
+    /** Package-private so Pilot tests can pass this as Renderer to TuiTestRunner. */
+    void renderBoard(final dev.tamboui.terminal.Frame frame) {
         final List<WorkItem> items = latestItems.get();
         final Rect area = frame.area();
 
