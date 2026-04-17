@@ -1,8 +1,10 @@
 package io.quarkiverse.workitems.queues.api;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
+import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
@@ -10,11 +12,16 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import io.quarkiverse.workitems.queues.model.WorkItemQueueState;
+import io.quarkiverse.workitems.runtime.api.WorkItemMapper;
+import io.quarkiverse.workitems.runtime.event.WorkItemLifecycleEvent;
+import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
 import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.service.WorkItemService;
 
 /**
  * REST resource for managing WorkItem soft-assignment (queue state) flags.
@@ -30,6 +37,12 @@ public class QueueStateResource {
 
     @Inject
     WorkItemRepository workItemRepo;
+
+    @Inject
+    WorkItemService workItemService;
+
+    @Inject
+    Event<WorkItemLifecycleEvent> lifecycleEvent;
 
     /**
      * Request body for setting the relinquishable flag.
@@ -51,6 +64,71 @@ public class QueueStateResource {
      * @param req the new flag value
      * @return 200 with workItemId and relinquishable, or 404 if the WorkItem is not found
      */
+    /**
+     * Queue pickup — claims a WorkItem from a queue.
+     *
+     * <p>
+     * Two cases are handled:
+     * <ul>
+     * <li><b>PENDING</b> — standard claim; delegates to {@link WorkItemService#claim}.</li>
+     * <li><b>ASSIGNED + relinquishable</b> — soft pickup; the current assignee has signalled
+     * willingness to release. Ownership transfers to {@code claimant} and the
+     * relinquishable flag is cleared automatically.</li>
+     * </ul>
+     *
+     * <p>
+     * Returns {@code 409 Conflict} if the WorkItem is {@code ASSIGNED} but <em>not</em>
+     * marked as relinquishable — use the standard {@code PUT /workitems/{id}/claim} path
+     * after the current assignee explicitly releases or delegates.
+     *
+     * @param id the WorkItem UUID
+     * @param claimant the user taking ownership
+     * @return 200 with the updated WorkItemResponse, 404 if not found, 409 if not claimable
+     */
+    @PUT
+    @Path("/{id}/pickup")
+    @Transactional
+    public Response pickup(@PathParam("id") final UUID id,
+            @QueryParam("claimant") final String claimant) {
+        final var wi = workItemRepo.findById(id)
+                .orElse(null);
+        if (wi == null) {
+            return Response.status(404).entity(Map.of("error", "WorkItem not found: " + id)).build();
+        }
+
+        if (wi.status == WorkItemStatus.PENDING) {
+            // Standard claim path
+            final var claimed = workItemService.claim(id, claimant);
+            return Response.ok(WorkItemMapper.toResponse(claimed)).build();
+        }
+
+        if (wi.status == WorkItemStatus.ASSIGNED) {
+            // Soft pickup — only allowed when assignee has flagged relinquishable
+            final var state = WorkItemQueueState.<WorkItemQueueState> findByIdOptional(id).orElse(null);
+            if (state == null || !state.relinquishable) {
+                return Response.status(409)
+                        .entity(Map.of("error",
+                                "WorkItem is ASSIGNED but not marked as relinquishable. "
+                                        + "Current assignee must call PUT /workitems/{id}/relinquishable first."))
+                        .build();
+            }
+            // Transfer ownership
+            wi.assigneeId = claimant;
+            wi.assignedAt = Instant.now();
+            final var saved = workItemRepo.save(wi);
+            // Clear the flag — the signal is consumed on first pickup
+            state.relinquishable = false;
+            // Fire lifecycle event so ledger, filter engine, and dashboard observers react
+            lifecycleEvent.fire(WorkItemLifecycleEvent.of("ASSIGNED", saved.id, saved.status, claimant,
+                    "Queue pickup (relinquishable takeover)"));
+            return Response.ok(WorkItemMapper.toResponse(saved)).build();
+        }
+
+        return Response.status(409)
+                .entity(Map.of("error", "Cannot pick up WorkItem in status: " + wi.status))
+                .build();
+    }
+
     @PUT
     @Path("/{id}/relinquishable")
     @Transactional

@@ -18,6 +18,7 @@ import jakarta.ws.rs.core.Response;
 
 import io.quarkiverse.workitems.queues.model.FilterScope;
 import io.quarkiverse.workitems.queues.model.QueueView;
+import io.quarkiverse.workitems.queues.service.FilterEvaluatorRegistry;
 import io.quarkiverse.workitems.runtime.api.WorkItemMapper;
 import io.quarkiverse.workitems.runtime.api.WorkItemResponse;
 import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
@@ -30,6 +31,9 @@ public class QueueResource {
 
     @Inject
     WorkItemRepository workItemRepo;
+
+    @Inject
+    FilterEvaluatorRegistry evaluatorRegistry;
 
     /**
      * Request body for creating a new queue view.
@@ -87,15 +91,11 @@ public class QueueResource {
 
     /**
      * Query the live content of a queue view — returns all WorkItems matching its label pattern,
-     * sorted by {@code sortField}/{@code sortDirection} stored on the queue view.
-     *
-     * <p>
-     * Note: {@code additionalConditions} is stored on the queue view but not yet evaluated;
-     * all WorkItems matching the label pattern are returned regardless of any additional
-     * condition expression.
+     * further filtered by {@code additionalConditions} (JEXL expression) if set, and sorted by
+     * {@code sortField}/{@code sortDirection}.
      *
      * @param id the queue view UUID
-     * @return 200 with the sorted list of matching WorkItems, or 404 if the queue view is not found
+     * @return 200 with the filtered, sorted list of matching WorkItems, or 404 if not found
      */
     @GET
     @Path("/{id}")
@@ -105,7 +105,19 @@ public class QueueResource {
         if (q == null) {
             return Response.status(404).entity(Map.of("error", "Queue view not found")).build();
         }
-        final var items = workItemRepo.findByLabelPattern(q.labelPattern).stream()
+        var candidates = workItemRepo.findByLabelPattern(q.labelPattern);
+
+        // Apply additionalConditions JEXL expression if set
+        if (q.additionalConditions != null && !q.additionalConditions.isBlank()) {
+            final var jexl = evaluatorRegistry.find("jexl");
+            if (jexl != null) {
+                candidates = candidates.stream()
+                        .filter(wi -> jexl.evaluate(wi, q.additionalConditions))
+                        .toList();
+            }
+        }
+
+        final var items = candidates.stream()
                 .map(WorkItemMapper::toResponse)
                 .sorted(buildComparator(q.sortField, q.sortDirection))
                 .toList();
