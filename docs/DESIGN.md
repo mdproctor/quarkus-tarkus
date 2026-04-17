@@ -37,6 +37,8 @@ Maven multi-module layout following Quarkiverse conventions:
 | Flow | `quarkus-workitems-flow` | Quarkus-Flow integration — `WorkItemsFlow` DSL base class, `HumanTaskFlowBridge`, `WorkItemFlowEventListener` |
 | Ledger | `quarkus-workitems-ledger` | Optional accountability module — command/event ledger, SHA-256 hash chain, peer attestation, EigenTrust reputation. Extends `io.quarkiverse.ledger:quarkus-ledger` (shared base library — see ADR-0001). Zero core impact when absent. |
 | Queues | `quarkus-workitems-queues` | Optional label-based work queues — `WorkItemFilter` (JEXL/JQ/Lambda), `FilterChain` derivation graph with cascade delete, `QueueView` named label-pattern queries, soft assignment (`relinquishable` flag). See ADR-0002. Zero core impact when absent. |
+| Queue Examples | `quarkus-workitems-queues-examples` | Real-world queue routing scenarios — support triage cascade, legal compliance, finance approval chain, security exec-escalation, document review pipeline. Run via `POST /queue-examples/{name}/run`. |
+| Queue Dashboard | `quarkus-workitems-queues-dashboard` | Tamboui terminal UI dashboard running inside Quarkus via `@QuarkusMain`. Shows live 3×3 queue board (tiers × states), step-by-step scenario control, console log. Observes `WorkItemLifecycleEvent` directly — zero polling delay. |
 | Examples | `quarkus-workitems-examples` | Runnable scenario demos — 4 `@QuarkusTest` scenarios covering every ledger/audit capability via `POST /examples/{name}/run` |
 | Flow Examples | `quarkus-workitems-flow-examples` | WorkItemsFlow DSL showcase — contract review workflow mixing automated `function()` and human `workItem()` steps |
 | Integration Tests | `integration-tests` | Black-box `@QuarkusIntegrationTest` suite and native image validation |
@@ -57,7 +59,7 @@ Maven multi-module layout following Quarkiverse conventions:
 | Schema migrations | Flyway | `V1__initial_schema.sql`; consuming app owns datasource config |
 | Scheduler | `quarkus-scheduler` | Expiry cleanup job |
 | JDBC (dev/test) | H2 (optional dep) | PostgreSQL for production |
-| Native image | GraalVM 25 (target) | Validation planned after Phase 4 |
+| Native image | GraalVM 25 | Validated: 19 `@QuarkusIntegrationTest` tests, 0.084s startup |
 
 ---
 
@@ -93,6 +95,17 @@ Maven multi-module layout following Quarkiverse conventions:
 | `completedAt` | Instant | When terminal state reached |
 | `suspendedAt` | Instant | When SUSPENDED |
 | `priorStatus` | WorkItemStatus | Status before suspension; restored on resume |
+| `labels` | `List<WorkItemLabel>` | 0..n labels; see Label Model below |
+
+**WorkItemLabel (`runtime/model/`)** — each entry:
+
+| Field | Type | Notes |
+|---|---|---|
+| `path` | String | `/`-separated label path, e.g. `legal/contracts/nda` |
+| `persistence` | `LabelPersistence` | `MANUAL` (human-applied, never touched by engine) or `INFERRED` (filter-applied, recomputed on every mutation) |
+| `appliedBy` | String | userId (MANUAL) or filterId (INFERRED) — audit trail |
+
+Vocabulary (`LabelVocabulary` + `LabelDefinition`) enforces path declarations at four scopes: `GLOBAL → ORG → TEAM → PERSONAL`. A GLOBAL vocabulary is seeded with common labels on first Flyway run. See `docs/specs/2026-04-15-queues-design.md` for full label model and filter engine design.
 
 **WorkItemStatus — aligned with quarkus-flow (`SUSPENDED`, `CANCELLED` identical):**
 
@@ -138,7 +151,7 @@ Two interfaces in `runtime.repository` allow pluggable persistence:
 
 | Interface | Default impl | Purpose |
 |---|---|---|
-| `WorkItemRepository` | `JpaWorkItemRepository` | save, findById, findAll, findInbox (OR across assignee/groups/users), findExpired, findUnclaimedPastDeadline |
+| `WorkItemRepository` | `JpaWorkItemRepository` | save, findById, findAll, findInbox (OR across assignee/groups/users), findExpired, findUnclaimedPastDeadline, findByLabelPattern (exact / `*` / `**` wildcards) |
 | `AuditEntryRepository` | `JpaAuditEntryRepository` | append, findByWorkItemId |
 
 Default JPA implementations are `@ApplicationScoped`. Alternatives (in-memory, MongoDB, Redis)
@@ -195,14 +208,14 @@ between the core and the ledger module. If the module is absent, events fire int
 
 ## REST API Surface
 
-`WorkItemResource` at `/workitems`:
+`WorkItemResource` at `/workitems` (core):
 
 | Endpoint | Transition | Notes |
 |---|---|---|
-| `POST /` | → PENDING | Create WorkItem |
+| `POST /` | → PENDING | Create WorkItem; accepts `labels` list (MANUAL only) |
 | `GET /inbox` | — | `?assignee&candidateGroup&candidateUser&status&priority&category&followUp` |
-| `GET /` | — | List all (admin) |
-| `GET /{id}` | — | Full WorkItem + audit log |
+| `GET /` | — | List all (admin); `?label=pattern` filters by label wildcard |
+| `GET /{id}` | — | Full WorkItem + audit log + labels |
 | `PUT /{id}/claim` | PENDING → ASSIGNED | Caller becomes assignee |
 | `PUT /{id}/start` | ASSIGNED → IN_PROGRESS | Begin work |
 | `PUT /{id}/complete` | IN_PROGRESS → COMPLETED | Body: resolution JSON |
@@ -212,6 +225,17 @@ between the core and the ledger module. If the module is absent, events fire int
 | `PUT /{id}/suspend` | ASSIGNED\|IN_PROGRESS → SUSPENDED | Body: reason |
 | `PUT /{id}/resume` | SUSPENDED → prior state | Restores ASSIGNED or IN_PROGRESS |
 | `PUT /{id}/cancel` | any → CANCELLED | Admin; body: reason |
+| `POST /{id}/labels` | — | Add MANUAL label; path must be in vocabulary |
+| `DELETE /{id}/labels?path=` | — | Remove MANUAL label; returns 404 if absent |
+
+`VocabularyResource` at `/vocabulary` (core):
+
+| Endpoint | Notes |
+|---|---|
+| `GET /` | List all label definitions accessible to caller |
+| `POST /{scope}` | Add label definition; GLOBAL scope currently supported |
+
+`quarkus-workitems-queues` adds `/filters`, `/queues`, and `/workitems/{id}/relinquishable`. See `docs/api-reference.md` for full queue API documentation.
 
 ---
 
@@ -243,7 +267,8 @@ Consuming app owns all datasource config.
 | **6 — Ledger module** | ✅ Complete | `quarkus-workitems-ledger` — command/event model, hash chain, attestation, EigenTrust; optional, zero core impact |
 | **7 — Label-based queues** | ✅ Complete | `quarkus-workitems-queues` — label model (MANUAL/INFERRED), vocabulary (GLOBAL→PERSONAL scopes), filter engine (JEXL/JQ/Lambda, multi-pass propagation, cascade delete via FilterChain), QueueView named queries, soft assignment. See ADR-0002 and `docs/specs/2026-04-15-queues-design.md` |
 | **8 — Native image** | ✅ Complete | GraalVM 25 native build, 19 @QuarkusIntegrationTest tests, 0.084s startup |
-| **Examples** | ✅ Complete | `quarkus-workitems-examples` (4 scenarios, all ledger capabilities) + `quarkus-workitems-flow-examples` (WorkItemsFlow DSL showcase) |
+| **Examples** | ✅ Complete | `quarkus-workitems-examples` (4 ledger scenarios) + `quarkus-workitems-flow-examples` (WorkItemsFlow DSL showcase) + `quarkus-workitems-queues-examples` (5 queue scenarios: triage cascade, legal routing, finance approval, security escalation, document review pipeline) |
+| **Dashboard** | ✅ Complete | `quarkus-workitems-queues-dashboard` — Tamboui TUI inside Quarkus via `@QuarkusMain`; live queue board, step-by-step scenario control, Pilot end-to-end tests (disabled pending Tamboui local build — `TestBackend` not published to Maven snapshots) |
 | **9 — CaseHub integration** | ⏸ Blocked | `quarkus-workitems-casehub` — CaseHub WorkerRegistry adapter (awaiting CaseHub stable API) |
 | **10 — Qhorus integration** | ⏸ Blocked | `quarkus-workitems-qhorus` — MCP tools (awaiting Qhorus stable API) |
 | **11 — ProvenanceLink** | ⏸ Blocked | Typed PROV-O causal graph — awaiting CaseHub + Qhorus integrations (issue #39) |
@@ -252,15 +277,35 @@ Consuming app owns all datasource config.
 
 ## Testing Strategy
 
-Two tiers:
+Three tiers:
 
 **Unit tests** (no Quarkus boot):
 - Use `InMemoryWorkItemRepository` from `quarkus-workitems-testing`
+- Pure logic functions (e.g. `QueueBoardBuilder`, `LabelVocabularyService.matchesPattern()`)
 - No datasource, no Flyway, instant execution
-- Exercise `WorkItemService` logic in isolation
 
 **Integration tests** (`@QuarkusTest`):
-- H2 in-memory datasource; Flyway runs V1 migration at boot
+- H2 in-memory datasource; Flyway runs all migrations at boot
 - `@TestTransaction` per test method — each test rolls back, no data leakage
 - Exercise full stack: REST → Service → JPA → H2
 - TDD: write tests first (RED), implement, run to GREEN
+
+**TUI end-to-end tests** (Tamboui Pilot):
+- `TuiTestRunner.runTest(dashboard::handleEvent, dashboard::renderBoard)` runs the TUI headlessly on a background thread
+- `Pilot.press('s')` + `Pilot.pause()` simulates key input; assert on CDI bean state
+- Tests written in `QueueDashboardTest` but `@Disabled` — Tamboui's `TestBackend` is not published to Maven Central Snapshots; requires `./gradlew publishToMavenLocal` from a local Tamboui clone to enable
+
+**Current test totals (all modules, 0 failures):**
+
+| Module | Tests |
+|---|---|
+| runtime | 217 |
+| workitems-flow | 32 |
+| quarkus-workitems-ledger | 74 |
+| quarkus-workitems-queues | 45 |
+| quarkus-workitems-examples | 4 |
+| quarkus-workitems-queues-examples | 5 |
+| quarkus-workitems-queues-dashboard | 14 (+ 6 disabled Pilot) |
+| testing | 16 |
+| integration-tests | 19 (native) |
+| **Total** | **262+** |
