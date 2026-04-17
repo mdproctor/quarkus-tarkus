@@ -27,38 +27,39 @@ class JqConditionEvaluatorTest {
     @Test
     void evaluate_priorityHigh_matchesHigh() {
         var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.HIGH, null);
-        assertThat(evaluator.evaluate(wi, ".priority == \"HIGH\"")).isTrue();
+        assertThat(evaluator.evaluate(wi, ExpressionDescriptor.of(evaluator.language(), ".priority == \"HIGH\""))).isTrue();
     }
 
     @Test
     void evaluate_priorityHigh_notNormal() {
         var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
-        assertThat(evaluator.evaluate(wi, ".priority == \"HIGH\"")).isFalse();
+        assertThat(evaluator.evaluate(wi, ExpressionDescriptor.of(evaluator.language(), ".priority == \"HIGH\""))).isFalse();
     }
 
     @Test
     void evaluate_statusPending() {
         var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
-        assertThat(evaluator.evaluate(wi, ".status == \"PENDING\"")).isTrue();
+        assertThat(evaluator.evaluate(wi, ExpressionDescriptor.of(evaluator.language(), ".status == \"PENDING\""))).isTrue();
     }
 
     @Test
     void evaluate_assigneeNull() {
         var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
-        assertThat(evaluator.evaluate(wi, ".assigneeId == null")).isTrue();
+        assertThat(evaluator.evaluate(wi, ExpressionDescriptor.of(evaluator.language(), ".assigneeId == null"))).isTrue();
     }
 
     @Test
     void evaluate_malformed_returnsFalse() {
         var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
-        assertThat(evaluator.evaluate(wi, "not valid jq @@@")).isFalse();
+        assertThat(evaluator.evaluate(wi, ExpressionDescriptor.of(evaluator.language(), "not valid jq @@@"))).isFalse();
     }
 
     @Test
     void evaluate_labelCheck_matchesWorkItemWithLabel() {
         var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
         wi.labels.add(new WorkItemLabel("legal/contracts", LabelPersistence.MANUAL, "alice"));
-        assertThat(evaluator.evaluate(wi, ".labels | contains([\"legal/contracts\"])")).isTrue();
+        assertThat(evaluator.evaluate(wi,
+                ExpressionDescriptor.of(evaluator.language(), ".labels | contains([\"legal/contracts\"])"))).isTrue();
     }
 
     private WorkItem wi(final WorkItemStatus s, final WorkItemPriority p, final String a) {
