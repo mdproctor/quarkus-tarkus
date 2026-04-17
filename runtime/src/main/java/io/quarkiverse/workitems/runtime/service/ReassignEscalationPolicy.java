@@ -5,13 +5,13 @@ import jakarta.inject.Inject;
 
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 
 @ApplicationScoped
 public class ReassignEscalationPolicy implements EscalationPolicy {
 
     @Inject
-    WorkItemRepository workItemRepo;
+    WorkItemStore workItemStore;
 
     @Inject
     NotifyEscalationPolicy notifyPolicy;
@@ -21,7 +21,7 @@ public class ReassignEscalationPolicy implements EscalationPolicy {
         if (hasCandidates(workItem)) {
             workItem.assigneeId = null;
             workItem.status = WorkItemStatus.PENDING;
-            workItemRepo.save(workItem);
+            workItemStore.put(workItem);
         } else {
             notifyPolicy.onExpired(workItem);
         }
@@ -32,7 +32,7 @@ public class ReassignEscalationPolicy implements EscalationPolicy {
         if (hasCandidates(workItem)) {
             workItem.assigneeId = null;
             // status stays PENDING — already unclaimed
-            workItemRepo.save(workItem);
+            workItemStore.put(workItem);
         } else {
             notifyPolicy.onUnclaimedPastDeadline(workItem);
         }

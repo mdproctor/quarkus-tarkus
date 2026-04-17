@@ -12,18 +12,19 @@ import io.quarkiverse.workitems.runtime.event.WorkItemLifecycleEvent;
 import io.quarkiverse.workitems.runtime.model.AuditEntry;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
-import io.quarkiverse.workitems.runtime.repository.AuditEntryRepository;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.repository.AuditEntryStore;
+import io.quarkiverse.workitems.runtime.repository.WorkItemQuery;
+import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 import io.quarkus.scheduler.Scheduled;
 
 @ApplicationScoped
 public class ExpiryCleanupJob {
 
     @Inject
-    WorkItemRepository workItemRepo;
+    WorkItemStore workItemStore;
 
     @Inject
-    AuditEntryRepository auditRepo;
+    AuditEntryStore auditStore;
 
     @Inject
     @ExpiryEscalation
@@ -36,18 +37,18 @@ public class ExpiryCleanupJob {
     @Transactional
     public void checkExpired() {
         final Instant now = Instant.now();
-        final List<WorkItem> expired = workItemRepo.findExpired(now);
+        final List<WorkItem> expired = workItemStore.scan(WorkItemQuery.expired(now));
         for (final WorkItem item : expired) {
             item.status = WorkItemStatus.EXPIRED;
             item.completedAt = now;
-            workItemRepo.save(item);
+            workItemStore.put(item);
 
             final AuditEntry entry = new AuditEntry();
             entry.workItemId = item.id;
             entry.event = "EXPIRED";
             entry.actor = "system";
             entry.occurredAt = now;
-            auditRepo.append(entry);
+            auditStore.append(entry);
             lifecycleEvent.fire(WorkItemLifecycleEvent.of("EXPIRED", item.id, item.status, "system", null));
 
             escalationPolicy.onExpired(item);

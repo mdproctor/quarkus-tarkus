@@ -22,7 +22,8 @@ import io.quarkiverse.workitems.queues.service.ExpressionDescriptor;
 import io.quarkiverse.workitems.queues.service.FilterEvaluatorRegistry;
 import io.quarkiverse.workitems.runtime.api.WorkItemMapper;
 import io.quarkiverse.workitems.runtime.api.WorkItemResponse;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.repository.WorkItemQuery;
+import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 
 /** REST resource for managing queue views and querying their live content. */
 @Path("/queues")
@@ -31,7 +32,7 @@ import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
 public class QueueResource {
 
     @Inject
-    WorkItemRepository workItemRepo;
+    WorkItemStore workItemStore;
 
     @Inject
     FilterEvaluatorRegistry evaluatorRegistry;
@@ -106,7 +107,7 @@ public class QueueResource {
         if (q == null) {
             return Response.status(404).entity(Map.of("error", "Queue view not found")).build();
         }
-        var candidates = workItemRepo.findByLabelPattern(q.labelPattern);
+        var candidates = workItemStore.scan(WorkItemQuery.byLabelPattern(q.labelPattern));
 
         // Apply additionalConditions JEXL expression if set
         if (q.additionalConditions != null && !q.additionalConditions.isBlank()) {

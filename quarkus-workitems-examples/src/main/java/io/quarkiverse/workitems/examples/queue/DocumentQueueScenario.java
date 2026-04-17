@@ -27,7 +27,7 @@ import io.quarkiverse.workitems.runtime.model.AuditEntry;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemCreateRequest;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
-import io.quarkiverse.workitems.runtime.repository.AuditEntryRepository;
+import io.quarkiverse.workitems.runtime.repository.AuditEntryStore;
 import io.quarkiverse.workitems.runtime.service.WorkItemService;
 
 /**
@@ -78,7 +78,7 @@ public class DocumentQueueScenario {
     WorkItemLedgerEntryRepository ledgerRepo;
 
     @Inject
-    AuditEntryRepository auditRepo;
+    AuditEntryStore auditStore;
 
     @Inject
     TrustScoreJob trustScoreJob;
@@ -261,7 +261,7 @@ public class DocumentQueueScenario {
         // ----------------------------------------------------------------
         final List<AuditEntryResponse> allAuditEntries = new ArrayList<>();
         for (final WorkItem wi : List.of(wi1, wi2, wi3)) {
-            final List<AuditEntry> auditEntries = auditRepo.findByWorkItemId(wi.id);
+            final List<AuditEntry> auditEntries = auditStore.findByWorkItemId(wi.id);
             auditEntries.stream()
                     .map(a -> new AuditEntryResponse(a.id, a.event, a.actor, a.detail, a.occurredAt))
                     .forEach(allAuditEntries::add);

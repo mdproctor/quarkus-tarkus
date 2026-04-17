@@ -13,7 +13,7 @@ import io.quarkiverse.workitems.queues.model.WorkItemFilter;
 import io.quarkiverse.workitems.runtime.model.LabelPersistence;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemLabel;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 
 /**
  * Full implementation of the filter evaluation engine.
@@ -42,7 +42,7 @@ public class FilterEngineImpl implements FilterEngine {
     LambdaFilterRegistry lambdaRegistry;
 
     @Inject
-    WorkItemRepository workItemRepo;
+    WorkItemStore workItemStore;
 
     /**
      * Evaluates all active filters against the given WorkItem.
@@ -92,7 +92,7 @@ public class FilterEngineImpl implements FilterEngine {
             }
         }
 
-        workItemRepo.save(workItem);
+        workItemStore.put(workItem);
     }
 
     /**
@@ -121,7 +121,7 @@ public class FilterEngineImpl implements FilterEngine {
         }
 
         for (final UUID workItemId : chain.workItems) {
-            workItemRepo.findById(workItemId).ifPresent(wi -> evaluateExcluding(wi, filterId));
+            workItemStore.get(workItemId).ifPresent(wi -> evaluateExcluding(wi, filterId));
         }
 
         chain.delete();
@@ -164,7 +164,7 @@ public class FilterEngineImpl implements FilterEngine {
             }
         }
 
-        workItemRepo.save(workItem);
+        workItemStore.put(workItem);
     }
 
     /**

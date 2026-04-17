@@ -24,8 +24,9 @@ import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemCreateRequest;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
 import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
-import io.quarkiverse.workitems.runtime.repository.AuditEntryRepository;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.repository.AuditEntryStore;
+import io.quarkiverse.workitems.runtime.repository.WorkItemQuery;
+import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 
 class WorkItemServiceTest {
 
@@ -33,12 +34,12 @@ class WorkItemServiceTest {
     // In-memory repository implementations
     // -------------------------------------------------------------------------
 
-    static class TestWorkItemRepo implements WorkItemRepository {
+    static class TestWorkItemRepo implements WorkItemStore {
 
         private final Map<UUID, WorkItem> store = new ConcurrentHashMap<>();
 
         @Override
-        public WorkItem save(WorkItem workItem) {
+        public WorkItem put(WorkItem workItem) {
             if (workItem.id == null) {
                 workItem.id = UUID.randomUUID();
             }
@@ -47,85 +48,77 @@ class WorkItemServiceTest {
         }
 
         @Override
-        public Optional<WorkItem> findById(UUID id) {
+        public Optional<WorkItem> get(UUID id) {
             return Optional.ofNullable(store.get(id));
         }
 
         @Override
-        public List<WorkItem> findAll() {
-            return new ArrayList<>(store.values());
-        }
-
-        @Override
-        public List<WorkItem> findInbox(String assignee, List<String> candidateGroups,
-                WorkItemStatus status, WorkItemPriority priority,
-                String category, Instant followUpBefore) {
+        public List<WorkItem> scan(WorkItemQuery query) {
             return store.values().stream()
-                    .filter(wi -> {
-                        // status filter
-                        if (status != null && wi.status != status) {
-                            return false;
-                        }
-                        // priority filter
-                        if (priority != null && wi.priority != priority) {
-                            return false;
-                        }
-                        // category filter
-                        if (category != null && !category.equals(wi.category)) {
-                            return false;
-                        }
-                        // followUpBefore filter
-                        if (followUpBefore != null && (wi.followUpDate == null || wi.followUpDate.isAfter(followUpBefore))) {
-                            return false;
-                        }
-                        // assignee or candidateGroups/Users match
-                        boolean matchesAssignee = assignee != null && assignee.equals(wi.assigneeId);
-                        boolean matchesCandidateGroups = false;
-                        if (candidateGroups != null && !candidateGroups.isEmpty() && wi.candidateGroups != null) {
-                            for (String g : candidateGroups) {
-                                if (wi.candidateGroups.contains(g)) {
-                                    matchesCandidateGroups = true;
-                                    break;
-                                }
-                            }
-                        }
-                        boolean matchesCandidateUsers = assignee != null
-                                && wi.candidateUsers != null
-                                && wi.candidateUsers.contains(assignee);
-                        return matchesAssignee || matchesCandidateGroups || matchesCandidateUsers;
-                    })
+                    .filter(wi -> matchesAssignment(wi, query))
+                    .filter(wi -> matchesFilters(wi, query))
                     .toList();
         }
 
-        @Override
-        public List<WorkItem> findExpired(Instant now) {
-            return store.values().stream()
-                    .filter(wi -> wi.expiresAt != null && wi.expiresAt.isBefore(now)
-                            && wi.status != WorkItemStatus.COMPLETED
-                            && wi.status != WorkItemStatus.CANCELLED
-                            && wi.status != WorkItemStatus.EXPIRED)
-                    .toList();
+        private boolean matchesAssignment(WorkItem wi, WorkItemQuery q) {
+            if (q.assigneeId() == null && (q.candidateGroups() == null || q.candidateGroups().isEmpty())
+                    && q.candidateUserId() == null) {
+                return true;
+            }
+            if (q.assigneeId() != null && q.assigneeId().equals(wi.assigneeId)) {
+                return true;
+            }
+            if (q.assigneeId() != null && wi.candidateUsers != null && wi.candidateUsers.contains(q.assigneeId())) {
+                return true;
+            }
+            if (q.candidateGroups() != null && !q.candidateGroups().isEmpty() && wi.candidateGroups != null) {
+                for (String g : q.candidateGroups()) {
+                    if (wi.candidateGroups.contains(g)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
-        @Override
-        public List<WorkItem> findUnclaimedPastDeadline(Instant now) {
-            return store.values().stream()
-                    .filter(wi -> wi.claimDeadline != null && wi.claimDeadline.isBefore(now)
-                            && wi.status == WorkItemStatus.PENDING)
-                    .toList();
-        }
-
-        @Override
-        public List<WorkItem> findByLabelPattern(String pattern) {
-            return store.values().stream()
-                    .filter(wi -> wi.labels != null && wi.labels.stream()
-                            .anyMatch(l -> io.quarkiverse.workitems.runtime.service.LabelVocabularyService
-                                    .matchesPattern(pattern, l.path)))
-                    .toList();
+        private boolean matchesFilters(WorkItem wi, WorkItemQuery q) {
+            if (q.status() != null && wi.status != q.status()) {
+                return false;
+            }
+            if (q.statusIn() != null && !q.statusIn().contains(wi.status)) {
+                return false;
+            }
+            if (q.priority() != null && wi.priority != q.priority()) {
+                return false;
+            }
+            if (q.category() != null && !q.category().equals(wi.category)) {
+                return false;
+            }
+            if (q.followUpBefore() != null
+                    && (wi.followUpDate == null || wi.followUpDate.isAfter(q.followUpBefore()))) {
+                return false;
+            }
+            if (q.expiresAtOrBefore() != null
+                    && (wi.expiresAt == null || wi.expiresAt.isAfter(q.expiresAtOrBefore()))) {
+                return false;
+            }
+            if (q.claimDeadlineOrBefore() != null
+                    && (wi.claimDeadline == null || wi.claimDeadline.isAfter(q.claimDeadlineOrBefore()))) {
+                return false;
+            }
+            if (q.labelPattern() != null) {
+                boolean matchesLabel = wi.labels != null && wi.labels.stream()
+                        .anyMatch(l -> io.quarkiverse.workitems.runtime.service.LabelVocabularyService
+                                .matchesPattern(q.labelPattern(), l.path));
+                if (!matchesLabel) {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 
-    static class TestAuditRepo implements AuditEntryRepository {
+    static class TestAuditRepo implements AuditEntryStore {
 
         private final List<AuditEntry> entries = new ArrayList<>();
 
@@ -180,14 +173,14 @@ class WorkItemServiceTest {
     // -------------------------------------------------------------------------
 
     private TestWorkItemRepo repo;
-    private TestAuditRepo auditRepo;
+    private TestAuditRepo auditStore;
     private WorkItemService service;
 
     @BeforeEach
     void setUp() {
         repo = new TestWorkItemRepo();
-        auditRepo = new TestAuditRepo();
-        service = new WorkItemService(repo, auditRepo, testConfig());
+        auditStore = new TestAuditRepo();
+        service = new WorkItemService(repo, auditStore, testConfig());
     }
 
     private WorkItemCreateRequest basicRequest() {
@@ -234,7 +227,7 @@ class WorkItemServiceTest {
     @Test
     void create_writesCreatedAuditEntry() {
         WorkItem wi = service.create(basicRequest());
-        List<AuditEntry> trail = auditRepo.findByWorkItemId(wi.id);
+        List<AuditEntry> trail = auditStore.findByWorkItemId(wi.id);
         assertThat(trail).hasSize(1);
         assertThat(trail.get(0).event).isEqualTo("CREATED");
     }
@@ -285,7 +278,7 @@ class WorkItemServiceTest {
     void claim_writesAssignedAuditEntry() {
         WorkItem wi = service.create(basicRequest());
         service.claim(wi.id, "alice");
-        List<AuditEntry> trail = auditRepo.findByWorkItemId(wi.id);
+        List<AuditEntry> trail = auditStore.findByWorkItemId(wi.id);
         assertThat(trail).hasSize(2);
         assertThat(trail.get(1).event).isEqualTo("ASSIGNED");
         assertThat(trail.get(1).actor).isEqualTo("alice");
@@ -316,7 +309,7 @@ class WorkItemServiceTest {
         WorkItem wi = service.create(basicRequest());
         service.claim(wi.id, "alice");
         service.start(wi.id, "alice");
-        List<AuditEntry> trail = auditRepo.findByWorkItemId(wi.id);
+        List<AuditEntry> trail = auditStore.findByWorkItemId(wi.id);
         assertThat(trail.get(trail.size() - 1).event).isEqualTo("STARTED");
     }
 
@@ -349,7 +342,7 @@ class WorkItemServiceTest {
         service.claim(wi.id, "alice");
         service.start(wi.id, "alice");
         service.complete(wi.id, "alice", "Done");
-        List<AuditEntry> trail = auditRepo.findByWorkItemId(wi.id);
+        List<AuditEntry> trail = auditStore.findByWorkItemId(wi.id);
         assertThat(trail.get(trail.size() - 1).event).isEqualTo("COMPLETED");
     }
 
@@ -388,7 +381,7 @@ class WorkItemServiceTest {
         WorkItem wi = service.create(basicRequest());
         service.claim(wi.id, "alice");
         service.reject(wi.id, "alice", "Not applicable");
-        List<AuditEntry> trail = auditRepo.findByWorkItemId(wi.id);
+        List<AuditEntry> trail = auditStore.findByWorkItemId(wi.id);
         assertThat(trail.get(trail.size() - 1).event).isEqualTo("REJECTED");
     }
 
@@ -434,7 +427,7 @@ class WorkItemServiceTest {
         WorkItem wi = service.create(basicRequest());
         service.claim(wi.id, "alice");
         service.delegate(wi.id, "alice", "bob");
-        List<AuditEntry> trail = auditRepo.findByWorkItemId(wi.id);
+        List<AuditEntry> trail = auditStore.findByWorkItemId(wi.id);
         assertThat(trail.get(trail.size() - 1).event).isEqualTo("DELEGATED");
     }
 
@@ -485,7 +478,7 @@ class WorkItemServiceTest {
         WorkItem wi = service.create(basicRequest());
         service.claim(wi.id, "alice");
         service.release(wi.id, "alice");
-        List<AuditEntry> trail = auditRepo.findByWorkItemId(wi.id);
+        List<AuditEntry> trail = auditStore.findByWorkItemId(wi.id);
         assertThat(trail.get(trail.size() - 1).event).isEqualTo("RELEASED");
     }
 
@@ -525,7 +518,7 @@ class WorkItemServiceTest {
         WorkItem wi = service.create(basicRequest());
         service.claim(wi.id, "alice");
         service.suspend(wi.id, "alice", "blocked");
-        List<AuditEntry> trail = auditRepo.findByWorkItemId(wi.id);
+        List<AuditEntry> trail = auditStore.findByWorkItemId(wi.id);
         assertThat(trail.get(trail.size() - 1).event).isEqualTo("SUSPENDED");
     }
 
@@ -557,7 +550,7 @@ class WorkItemServiceTest {
         service.claim(wi.id, "alice");
         service.suspend(wi.id, "alice", "wait");
         service.resume(wi.id, "alice");
-        List<AuditEntry> trail = auditRepo.findByWorkItemId(wi.id);
+        List<AuditEntry> trail = auditStore.findByWorkItemId(wi.id);
         assertThat(trail.get(trail.size() - 1).event).isEqualTo("RESUMED");
     }
 
@@ -593,7 +586,7 @@ class WorkItemServiceTest {
     void cancel_writesCancelledAuditEntry() {
         WorkItem wi = service.create(basicRequest());
         service.cancel(wi.id, "admin", "no longer needed");
-        List<AuditEntry> trail = auditRepo.findByWorkItemId(wi.id);
+        List<AuditEntry> trail = auditStore.findByWorkItemId(wi.id);
         assertThat(trail.get(trail.size() - 1).event).isEqualTo("CANCELLED");
     }
 
@@ -707,7 +700,7 @@ class WorkItemServiceTest {
         service.start(wi.id, "alice");
         service.complete(wi.id, "alice", "done");
 
-        List<AuditEntry> trail = auditRepo.findByWorkItemId(wi.id);
+        List<AuditEntry> trail = auditStore.findByWorkItemId(wi.id);
         assertThat(trail).hasSize(4);
         assertThat(trail.get(0).event).isEqualTo("CREATED");
         assertThat(trail.get(1).event).isEqualTo("ASSIGNED");
@@ -720,7 +713,7 @@ class WorkItemServiceTest {
         WorkItem wi = service.create(basicRequest());
         service.claim(wi.id, "alice");
 
-        List<AuditEntry> trail = auditRepo.findByWorkItemId(wi.id);
+        List<AuditEntry> trail = auditStore.findByWorkItemId(wi.id);
         // CREATED actor comes from createdBy
         assertThat(trail.get(0).actor).isEqualTo("system");
         assertThat(trail.get(1).actor).isEqualTo("alice");
@@ -735,7 +728,8 @@ class WorkItemServiceTest {
         WorkItem wi = service.create(basicRequest());
         service.claim(wi.id, "alice");
 
-        List<WorkItem> inbox = repo.findInbox("alice", null, WorkItemStatus.ASSIGNED, null, null, null);
+        List<WorkItem> inbox = repo.scan(
+                WorkItemQuery.inbox("alice", null, null).toBuilder().status(WorkItemStatus.ASSIGNED).build());
         assertThat(inbox).extracting(w -> w.id).contains(wi.id);
     }
 
@@ -748,7 +742,7 @@ class WorkItemServiceTest {
                 "system", null, null, null, null, null);
         WorkItem wi = service.create(req);
 
-        List<WorkItem> inbox = repo.findInbox(null, List.of("team-a"), null, null, null, null);
+        List<WorkItem> inbox = repo.scan(WorkItemQuery.inbox(null, List.of("team-a"), null));
         assertThat(inbox).extracting(w -> w.id).contains(wi.id);
     }
 
@@ -761,7 +755,7 @@ class WorkItemServiceTest {
                 "system", null, null, null, null, null);
         WorkItem wi = service.create(req);
 
-        List<WorkItem> inbox = repo.findInbox("bob", null, null, null, null, null);
+        List<WorkItem> inbox = repo.scan(WorkItemQuery.inbox("bob", null, null));
         assertThat(inbox).extracting(w -> w.id).contains(wi.id);
     }
 
@@ -772,7 +766,8 @@ class WorkItemServiceTest {
         service.start(wi.id, "alice");
         service.complete(wi.id, "alice", "done");
 
-        List<WorkItem> inbox = repo.findInbox("alice", null, WorkItemStatus.PENDING, null, null, null);
+        List<WorkItem> inbox = repo.scan(
+                WorkItemQuery.inbox("alice", null, null).toBuilder().status(WorkItemStatus.PENDING).build());
         assertThat(inbox).extracting(w -> w.id).doesNotContain(wi.id);
     }
 
@@ -958,7 +953,7 @@ class WorkItemServiceTest {
                 return () -> 60;
             }
         };
-        WorkItemService svc = new WorkItemService(repo, auditRepo, noClaimConfig);
+        WorkItemService svc = new WorkItemService(repo, auditStore, noClaimConfig);
         WorkItem wi = svc.create(basicRequest());
         assertThat(wi.claimDeadline).isNull();
     }

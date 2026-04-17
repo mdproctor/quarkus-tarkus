@@ -10,14 +10,15 @@ import jakarta.transaction.Transactional;
 
 import io.quarkiverse.workitems.runtime.event.WorkItemLifecycleEvent;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.repository.WorkItemQuery;
+import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 import io.quarkus.scheduler.Scheduled;
 
 @ApplicationScoped
 public class ClaimDeadlineJob {
 
     @Inject
-    WorkItemRepository workItemRepo;
+    WorkItemStore workItemStore;
 
     @Inject
     @ClaimEscalation
@@ -30,7 +31,7 @@ public class ClaimDeadlineJob {
     @Transactional
     public void checkUnclaimedPastDeadline() {
         final Instant now = Instant.now();
-        final List<WorkItem> unclaimed = workItemRepo.findUnclaimedPastDeadline(now);
+        final List<WorkItem> unclaimed = workItemStore.scan(WorkItemQuery.claimExpired(now));
         for (final WorkItem item : unclaimed) {
             claimEscalationPolicy.onUnclaimedPastDeadline(item);
             lifecycleEvent.fire(WorkItemLifecycleEvent.of("ESCALATED", item.id, item.status, "system", null));

@@ -24,7 +24,8 @@ import io.quarkiverse.workitems.runtime.model.LabelPersistence;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemCreateRequest;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.repository.WorkItemQuery;
+import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 import io.quarkiverse.workitems.runtime.service.WorkItemService;
 
 /**
@@ -89,7 +90,7 @@ public class DocumentReviewScenario {
     WorkItemService workItemService;
 
     @Inject
-    WorkItemRepository workItemRepo;
+    WorkItemStore workItemStore;
 
     @Transactional
     void setupFilters() {
@@ -277,17 +278,17 @@ public class DocumentReviewScenario {
 
         // ── Step 6: Snapshot — unassigned urgent queue ──
         LOG.info("[REVIEW] Step 6/7: Queue snapshot — review/urgent/unassigned (should be empty)");
-        final List<UUID> urgentUnassigned = workItemRepo
-                .findByLabelPattern("review/urgent/unassigned")
+        final List<UUID> urgentUnassigned = workItemStore
+                .scan(WorkItemQuery.byLabelPattern("review/urgent/unassigned"))
                 .stream().map(w -> w.id).toList();
-        final List<UUID> urgentActive = workItemRepo
-                .findByLabelPattern("review/urgent/active")
+        final List<UUID> urgentActive = workItemStore
+                .scan(WorkItemQuery.byLabelPattern("review/urgent/active"))
                 .stream().map(w -> w.id).toList();
-        final List<UUID> standardUnassigned = workItemRepo
-                .findByLabelPattern("review/standard/unassigned")
+        final List<UUID> standardUnassigned = workItemStore
+                .scan(WorkItemQuery.byLabelPattern("review/standard/unassigned"))
                 .stream().map(w -> w.id).toList();
-        final List<UUID> routineUnassigned = workItemRepo
-                .findByLabelPattern("review/routine/unassigned")
+        final List<UUID> routineUnassigned = workItemStore
+                .scan(WorkItemQuery.byLabelPattern("review/routine/unassigned"))
                 .stream().map(w -> w.id).toList();
 
         steps.add(new QueueScenarioStep(6,
@@ -355,7 +356,7 @@ public class DocumentReviewScenario {
      */
     @Transactional(Transactional.TxType.REQUIRES_NEW)
     WorkItem readFresh(final UUID id) {
-        return workItemRepo.findById(id).orElseThrow();
+        return workItemStore.get(id).orElseThrow();
     }
 
     private static void sleep(final long delayMs) {

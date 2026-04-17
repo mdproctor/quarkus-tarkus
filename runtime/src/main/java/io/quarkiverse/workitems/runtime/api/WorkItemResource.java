@@ -24,8 +24,9 @@ import io.quarkiverse.workitems.runtime.model.AuditEntry;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
 import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
-import io.quarkiverse.workitems.runtime.repository.AuditEntryRepository;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.repository.AuditEntryStore;
+import io.quarkiverse.workitems.runtime.repository.WorkItemQuery;
+import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 import io.quarkiverse.workitems.runtime.service.LabelNotFoundException;
 import io.quarkiverse.workitems.runtime.service.WorkItemNotFoundException;
 import io.quarkiverse.workitems.runtime.service.WorkItemService;
@@ -39,10 +40,10 @@ public class WorkItemResource {
     WorkItemService workItemService;
 
     @Inject
-    AuditEntryRepository auditRepo;
+    AuditEntryStore auditStore;
 
     @Inject
-    WorkItemRepository workItemRepo;
+    WorkItemStore workItemStore;
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
@@ -64,9 +65,10 @@ public class WorkItemResource {
     @GET
     public List<WorkItemResponse> listAll(@QueryParam("label") final String label) {
         if (label != null && !label.isBlank()) {
-            return workItemRepo.findByLabelPattern(label).stream().map(WorkItemMapper::toResponse).toList();
+            return workItemStore.scan(WorkItemQuery.byLabelPattern(label)).stream()
+                    .map(WorkItemMapper::toResponse).toList();
         }
-        return workItemRepo.findAll().stream().map(WorkItemMapper::toResponse).toList();
+        return workItemStore.scan(WorkItemQuery.all()).stream().map(WorkItemMapper::toResponse).toList();
     }
 
     @GET
@@ -79,30 +81,30 @@ public class WorkItemResource {
             @QueryParam("priority") final WorkItemPriority priority,
             @QueryParam("category") final String category,
             @QueryParam("followUp") final Boolean followUp) {
-        final String effectiveAssignee = assignee != null ? assignee : candidateUser;
         final Instant followUpBefore = Boolean.TRUE.equals(followUp) ? Instant.now() : null;
 
-        if (effectiveAssignee == null && (candidateGroups == null || candidateGroups.isEmpty())) {
-            return workItemRepo.findAll().stream()
-                    .filter(wi -> status == null || wi.status == status)
-                    .filter(wi -> priority == null || wi.priority == priority)
-                    .filter(wi -> category == null || category.equals(wi.category))
-                    .filter(wi -> followUpBefore == null
-                            || (wi.followUpDate != null && !wi.followUpDate.isAfter(followUpBefore)))
-                    .map(WorkItemMapper::toResponse)
-                    .toList();
+        final WorkItemQuery.Builder qb = WorkItemQuery.inbox(assignee, candidateGroups, candidateUser).toBuilder();
+        if (status != null) {
+            qb.status(status);
         }
-
-        return workItemRepo.findInbox(effectiveAssignee, candidateGroups, status, priority, category, followUpBefore)
-                .stream().map(WorkItemMapper::toResponse).toList();
+        if (priority != null) {
+            qb.priority(priority);
+        }
+        if (category != null) {
+            qb.category(category);
+        }
+        if (followUpBefore != null) {
+            qb.followUpBefore(followUpBefore);
+        }
+        return workItemStore.scan(qb.build()).stream().map(WorkItemMapper::toResponse).toList();
     }
 
     @GET
     @Path("/{id}")
     public WorkItemWithAuditResponse getById(@PathParam("id") final UUID id) {
-        final WorkItem wi = workItemRepo.findById(id)
+        final WorkItem wi = workItemStore.get(id)
                 .orElseThrow(() -> new WorkItemNotFoundException(id));
-        final List<AuditEntry> trail = auditRepo.findByWorkItemId(id);
+        final List<AuditEntry> trail = auditStore.findByWorkItemId(id);
         return WorkItemMapper.toWithAudit(wi, trail);
     }
 

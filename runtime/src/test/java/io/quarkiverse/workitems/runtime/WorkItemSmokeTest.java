@@ -17,8 +17,9 @@ import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemCreateRequest;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
 import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
-import io.quarkiverse.workitems.runtime.repository.AuditEntryRepository;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.repository.AuditEntryStore;
+import io.quarkiverse.workitems.runtime.repository.WorkItemQuery;
+import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 import io.quarkiverse.workitems.runtime.service.WorkItemNotFoundException;
 import io.quarkiverse.workitems.runtime.service.WorkItemService;
 import io.quarkus.test.TestTransaction;
@@ -32,10 +33,10 @@ class WorkItemSmokeTest {
     WorkItemService service;
 
     @Inject
-    AuditEntryRepository auditRepo;
+    AuditEntryStore auditStore;
 
     @Inject
-    WorkItemRepository workItemRepo;
+    WorkItemStore workItemStore;
 
     // -------------------------------------------------------------------------
     // Helper
@@ -125,7 +126,7 @@ class WorkItemSmokeTest {
         service.start(wi.id, "alice");
         service.complete(wi.id, "alice", "done");
 
-        List<AuditEntry> trail = auditRepo.findByWorkItemId(wi.id);
+        List<AuditEntry> trail = auditStore.findByWorkItemId(wi.id);
         assertThat(trail).hasSize(4);
     }
 
@@ -167,16 +168,16 @@ class WorkItemSmokeTest {
         wi.createdAt = Instant.now();
         wi.updatedAt = Instant.now();
         wi.expiresAt = Instant.now().minus(2, ChronoUnit.HOURS);
-        workItemRepo.save(wi);
+        workItemStore.put(wi);
 
-        List<WorkItem> expired = workItemRepo.findExpired(Instant.now());
+        List<WorkItem> expired = workItemStore.scan(WorkItemQuery.expired(Instant.now()));
         assertThat(expired).extracting(w -> w.id).contains(wi.id);
     }
 
     @Test
     void findExpiredQuery_doesNotReturnActiveItem() {
         WorkItem wi = service.create(basicRequest()); // expiresAt = now + 24h
-        List<WorkItem> expired = workItemRepo.findExpired(Instant.now());
+        List<WorkItem> expired = workItemStore.scan(WorkItemQuery.expired(Instant.now()));
         assertThat(expired).extracting(w -> w.id).doesNotContain(wi.id);
     }
 
@@ -189,9 +190,9 @@ class WorkItemSmokeTest {
         wi.createdAt = Instant.now();
         wi.updatedAt = Instant.now();
         wi.claimDeadline = Instant.now().minus(1, ChronoUnit.HOURS);
-        workItemRepo.save(wi);
+        workItemStore.put(wi);
 
-        List<WorkItem> unclaimed = workItemRepo.findUnclaimedPastDeadline(Instant.now());
+        List<WorkItem> unclaimed = workItemStore.scan(WorkItemQuery.claimExpired(Instant.now()));
         assertThat(unclaimed).extracting(w -> w.id).contains(wi.id);
     }
 
@@ -206,7 +207,7 @@ class WorkItemSmokeTest {
         WorkItem wi = service.create(req);
         assertThat(wi.claimDeadline).isNotNull();
         // verify it round-trips through JPA
-        WorkItem reloaded = workItemRepo.findById(wi.id).orElseThrow();
+        WorkItem reloaded = workItemStore.get(wi.id).orElseThrow();
         assertThat(reloaded.claimDeadline.truncatedTo(ChronoUnit.SECONDS))
                 .isEqualTo(deadline);
     }
