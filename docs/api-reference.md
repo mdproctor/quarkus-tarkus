@@ -715,6 +715,7 @@ Creates a named queue view over a label pattern.
 | `labelPattern` | string | yes | Label pattern: exact, `legal/*`, or `legal/**` |
 | `scope` | FilterScope | no | `PERSONAL`, `TEAM`, or `ORG` (default: `ORG`) |
 | `ownerId` | string | no | Owner user ID or group ID |
+| `additionalConditions` | string | no | JEXL expression applied per WorkItem after label matching (e.g. `status == 'PENDING'`) |
 | `sortField` | string | no | `createdAt` (default), `title`, or `priority` |
 | `sortDirection` | string | no | `ASC` (default) or `DESC` |
 
@@ -738,7 +739,7 @@ curl -X POST http://localhost:8080/queues \
 
 ### GET /queues/{id}
 
-Executes the queue view: returns all WorkItems whose labels match the queue's `labelPattern`, ordered by `sortField`/`sortDirection`.
+Executes the queue view: returns WorkItems whose labels match `labelPattern`, further filtered by `additionalConditions` (if set), ordered by `sortField`/`sortDirection`.
 
 **Path parameter:** `id` — UUID of the QueueView
 
@@ -757,6 +758,31 @@ curl http://localhost:8080/queues/{id}
 Deletes a QueueView. Does not affect WorkItem labels.
 
 **Response:** `204 No Content`
+
+---
+
+### PUT /workitems/{id}/pickup
+
+Queue pickup — claims a WorkItem from a queue. Handles two cases in one call:
+
+- **PENDING**: standard claim; delegates to the core claim logic.
+- **ASSIGNED + relinquishable**: soft pickup. The current assignee has flagged the item as available. Ownership transfers to `claimant` and the relinquishable flag is cleared automatically.
+
+Returns `409` if the WorkItem is `ASSIGNED` but *not* marked as relinquishable.
+
+**Path parameter:** `id` — UUID
+**Query parameter:** `claimant` — user ID taking ownership
+
+**Response:** `200 OK` — `WorkItemResponse` (updated)
+
+**Errors:**
+- `404` — WorkItem not found.
+- `409` — WorkItem is `ASSIGNED` and not relinquishable, or in a terminal/unsupported status.
+
+```bash
+# Pick up from a queue (works for both PENDING and relinquishable ASSIGNED)
+curl -X PUT "http://localhost:8080/workitems/{id}/pickup?claimant=bob"
+```
 
 ---
 
