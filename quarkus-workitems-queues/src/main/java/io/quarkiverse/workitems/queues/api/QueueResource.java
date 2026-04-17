@@ -18,6 +18,7 @@ import jakarta.ws.rs.core.Response;
 
 import io.quarkiverse.workitems.queues.model.FilterScope;
 import io.quarkiverse.workitems.queues.model.QueueView;
+import io.quarkiverse.workitems.queues.service.ExpressionDescriptor;
 import io.quarkiverse.workitems.queues.service.FilterEvaluatorRegistry;
 import io.quarkiverse.workitems.runtime.api.WorkItemMapper;
 import io.quarkiverse.workitems.runtime.api.WorkItemResponse;
@@ -112,7 +113,7 @@ public class QueueResource {
             final var jexl = evaluatorRegistry.find("jexl");
             if (jexl != null) {
                 candidates = candidates.stream()
-                        .filter(wi -> jexl.evaluate(wi, q.additionalConditions))
+                        .filter(wi -> jexl.evaluate(wi, ExpressionDescriptor.of("jexl", q.additionalConditions)))
                         .toList();
             }
         }

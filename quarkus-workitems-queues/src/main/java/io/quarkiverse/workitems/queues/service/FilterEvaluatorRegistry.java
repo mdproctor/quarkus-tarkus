@@ -12,9 +12,9 @@ import jakarta.inject.Inject;
 public class FilterEvaluatorRegistry {
 
     @Inject
-    Instance<FilterConditionEvaluator> evaluators;
+    Instance<WorkItemExpressionEvaluator> evaluators;
 
-    private final Map<String, FilterConditionEvaluator> index = new HashMap<>();
+    private final Map<String, WorkItemExpressionEvaluator> index = new HashMap<>();
 
     @PostConstruct
     void init() {
@@ -23,7 +23,13 @@ public class FilterEvaluatorRegistry {
         }
     }
 
-    public FilterConditionEvaluator find(final String language) {
+    /** Returns the evaluator for the language in the given descriptor, or {@code null} if unknown. */
+    public WorkItemExpressionEvaluator find(final ExpressionDescriptor descriptor) {
+        return descriptor != null ? index.get(descriptor.language().toLowerCase()) : null;
+    }
+
+    /** Returns the evaluator for a language string directly. Convenience for ad-hoc evaluation. */
+    public WorkItemExpressionEvaluator find(final String language) {
         return language != null ? index.get(language.toLowerCase()) : null;
     }
 }

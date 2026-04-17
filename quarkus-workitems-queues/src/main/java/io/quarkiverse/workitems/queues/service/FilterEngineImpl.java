@@ -75,8 +75,8 @@ public class FilterEngineImpl implements FilterEngine {
 
             // Saved filters (JEXL, JQ)
             for (final WorkItemFilter filter : WorkItemFilter.findActive()) {
-                final FilterConditionEvaluator evaluator = registry.find(filter.conditionLanguage);
-                if (evaluator != null && evaluator.evaluate(workItem, filter.conditionExpression)) {
+                final WorkItemExpressionEvaluator evaluator = registry.find(filter.conditionDescriptor());
+                if (evaluator != null && evaluator.evaluate(workItem, filter.conditionDescriptor())) {
                     changed |= applyActions(workItem, filter.parseActions(), filter.id.toString());
                     // Maintain inverse index: record this WorkItem in the filter's chain
                     final FilterChain chain = FilterChain.findOrCreateForFilter(filter.id);
@@ -149,8 +149,8 @@ public class FilterEngineImpl implements FilterEngine {
                 if (filter.id.equals(excludeFilterId)) {
                     continue; // skip the filter being deleted
                 }
-                final FilterConditionEvaluator evaluator = registry.find(filter.conditionLanguage);
-                if (evaluator != null && evaluator.evaluate(workItem, filter.conditionExpression)) {
+                final WorkItemExpressionEvaluator evaluator = registry.find(filter.conditionDescriptor());
+                if (evaluator != null && evaluator.evaluate(workItem, filter.conditionDescriptor())) {
                     changed |= applyActions(workItem, filter.parseActions(), filter.id.toString());
                     final FilterChain fc = FilterChain.findOrCreateForFilter(filter.id);
                     fc.workItems.add(workItem.id);
