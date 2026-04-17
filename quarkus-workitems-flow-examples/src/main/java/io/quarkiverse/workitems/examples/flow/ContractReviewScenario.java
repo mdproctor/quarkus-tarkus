@@ -22,7 +22,8 @@ import org.jboss.logging.Logger;
 
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.repository.WorkItemQuery;
+import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 import io.quarkiverse.workitems.runtime.service.WorkItemService;
 
 /**
@@ -64,7 +65,7 @@ public class ContractReviewScenario {
     WorkItemService workItemService;
 
     @Inject
-    WorkItemRepository workItemRepo;
+    WorkItemStore workItemStore;
 
     @POST
     @Path("/run")
@@ -145,7 +146,7 @@ public class ContractReviewScenario {
     private WorkItem waitForWorkItem(final String candidateGroup, final String assigneeId) {
         final long deadline = System.currentTimeMillis() + POLL_TIMEOUT_MS;
         while (System.currentTimeMillis() < deadline) {
-            final WorkItem found = workItemRepo.findAll().stream()
+            final WorkItem found = workItemStore.scan(WorkItemQuery.all()).stream()
                     .filter(wi -> wi.status == WorkItemStatus.PENDING)
                     .filter(wi -> candidateGroup == null || candidateGroup.equals(wi.candidateGroups))
                     .filter(wi -> assigneeId == null || assigneeId.equals(wi.assigneeId))

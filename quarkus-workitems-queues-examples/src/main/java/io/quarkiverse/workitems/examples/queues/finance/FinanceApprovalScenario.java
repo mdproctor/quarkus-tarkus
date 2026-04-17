@@ -22,7 +22,8 @@ import io.quarkiverse.workitems.runtime.model.LabelPersistence;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemCreateRequest;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.repository.WorkItemQuery;
+import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 import io.quarkiverse.workitems.runtime.service.WorkItemService;
 
 /**
@@ -57,7 +58,7 @@ public class FinanceApprovalScenario {
     WorkItemService workItemService;
 
     @Inject
-    WorkItemRepository workItemRepo;
+    WorkItemStore workItemStore;
 
     private void setupFilters() {
         if (WorkItemFilter.count("name", "Finance-A: Standard Approval Queue") > 0)
@@ -147,7 +148,7 @@ public class FinanceApprovalScenario {
                 emergency.id, inferredPaths(emergency), manualPaths(emergency)));
 
         LOG.info("[FINANCE] Step 4/4: finance/exec-review queue — only CRITICAL item");
-        final List<UUID> execQueue = workItemRepo.findByLabelPattern("finance/exec-review")
+        final List<UUID> execQueue = workItemStore.scan(WorkItemQuery.byLabelPattern("finance/exec-review"))
                 .stream().map(w -> w.id).toList();
 
         steps.add(new QueueScenarioStep(4,

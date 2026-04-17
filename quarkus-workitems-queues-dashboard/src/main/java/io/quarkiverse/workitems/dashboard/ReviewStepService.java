@@ -18,7 +18,7 @@ import io.quarkiverse.workitems.queues.service.WorkItemFilterBean;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemCreateRequest;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 import io.quarkiverse.workitems.runtime.service.WorkItemService;
 
 /**
@@ -35,7 +35,7 @@ public class ReviewStepService {
     WorkItemService workItemService;
 
     @Inject
-    WorkItemRepository workItemRepo;
+    WorkItemStore workItemStore;
 
     @Inject
     Instance<WorkItemFilterBean> lambdaFilterBeans;
@@ -224,7 +224,7 @@ public class ReviewStepService {
         }
         for (final UUID id : ids) {
             if (id != null) {
-                workItemRepo.findById(id).ifPresent(wi -> {
+                workItemStore.get(id).ifPresent(wi -> {
                     if (!wi.status.isTerminal()) {
                         workItemService.cancel(wi.id, "dashboard-reset", "Dashboard reset");
                     }
@@ -244,7 +244,7 @@ public class ReviewStepService {
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     WorkItem readFresh(final UUID id) {
-        return workItemRepo.findById(id).orElseThrow();
+        return workItemStore.get(id).orElseThrow();
     }
 
     @Transactional

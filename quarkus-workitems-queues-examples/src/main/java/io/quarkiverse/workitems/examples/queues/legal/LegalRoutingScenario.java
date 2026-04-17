@@ -22,7 +22,8 @@ import io.quarkiverse.workitems.runtime.model.LabelPersistence;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemCreateRequest;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.repository.WorkItemQuery;
+import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 import io.quarkiverse.workitems.runtime.service.WorkItemService;
 
 /**
@@ -56,7 +57,7 @@ public class LegalRoutingScenario {
     WorkItemService workItemService;
 
     @Inject
-    WorkItemRepository workItemRepo;
+    WorkItemStore workItemStore;
 
     private void setupFilters() {
         if (WorkItemFilter.count("name", "Legal-A: Route to Legal Review") > 0)
@@ -134,7 +135,7 @@ public class LegalRoutingScenario {
                 manualPaths(ndaDispute)));
 
         LOG.info("[LEGAL] Step 3/3: legal/urgent queue contains only the NDA dispute");
-        final List<UUID> urgentQueue = workItemRepo.findByLabelPattern("legal/urgent")
+        final List<UUID> urgentQueue = workItemStore.scan(WorkItemQuery.byLabelPattern("legal/urgent"))
                 .stream().map(w -> w.id).toList();
 
         steps.add(new QueueScenarioStep(3,

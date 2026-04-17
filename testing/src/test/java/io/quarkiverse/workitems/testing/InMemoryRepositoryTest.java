@@ -14,9 +14,10 @@ import io.quarkiverse.workitems.runtime.model.AuditEntry;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
 import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
+import io.quarkiverse.workitems.runtime.repository.WorkItemQuery;
 
 /**
- * Pure JUnit 5 tests for the in-memory repository implementations.
+ * Pure JUnit 5 tests for the in-memory store implementations.
  *
  * <p>
  * No {@code @QuarkusTest} — the implementations are plain Java objects and can be
@@ -24,17 +25,17 @@ import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
  */
 class InMemoryRepositoryTest {
 
-    private InMemoryWorkItemRepository workItemRepo;
-    private InMemoryAuditEntryRepository auditRepo;
+    private InMemoryWorkItemStore workItemStore;
+    private InMemoryAuditEntryStore auditStore;
 
     @BeforeEach
     void setUp() {
-        workItemRepo = new InMemoryWorkItemRepository();
-        auditRepo = new InMemoryAuditEntryRepository();
+        workItemStore = new InMemoryWorkItemStore();
+        auditStore = new InMemoryAuditEntryStore();
     }
 
     // =========================================================================
-    // WorkItemRepository — basic CRUD
+    // WorkItemStore — basic CRUD
     // =========================================================================
 
     @Test
@@ -42,7 +43,7 @@ class InMemoryRepositoryTest {
         final WorkItem wi = workItem(WorkItemStatus.PENDING);
         assertThat(wi.id).isNull();
 
-        workItemRepo.save(wi);
+        workItemStore.put(wi);
 
         assertThat(wi.id).isNotNull();
     }
@@ -50,46 +51,46 @@ class InMemoryRepositoryTest {
     @Test
     void save_returnsPersistedItem() {
         final WorkItem wi = workItem(WorkItemStatus.PENDING);
-        workItemRepo.save(wi);
+        workItemStore.put(wi);
 
-        assertThat(workItemRepo.findById(wi.id)).isPresent().hasValue(wi);
+        assertThat(workItemStore.get(wi.id)).isPresent().hasValue(wi);
     }
 
     @Test
     void findById_absent_returnsEmpty() {
-        assertThat(workItemRepo.findById(UUID.randomUUID())).isEmpty();
+        assertThat(workItemStore.get(UUID.randomUUID())).isEmpty();
     }
 
     @Test
     void findAll_returnsAllSaved() {
-        workItemRepo.save(workItem(WorkItemStatus.PENDING));
-        workItemRepo.save(workItem(WorkItemStatus.ASSIGNED));
-        workItemRepo.save(workItem(WorkItemStatus.IN_PROGRESS));
+        workItemStore.put(workItem(WorkItemStatus.PENDING));
+        workItemStore.put(workItem(WorkItemStatus.ASSIGNED));
+        workItemStore.put(workItem(WorkItemStatus.IN_PROGRESS));
 
-        assertThat(workItemRepo.findAll()).hasSize(3);
+        assertThat(workItemStore.scan(WorkItemQuery.all())).hasSize(3);
     }
 
     @Test
     void clear_removesAll() {
-        workItemRepo.save(workItem(WorkItemStatus.PENDING));
-        workItemRepo.save(workItem(WorkItemStatus.ASSIGNED));
+        workItemStore.put(workItem(WorkItemStatus.PENDING));
+        workItemStore.put(workItem(WorkItemStatus.ASSIGNED));
 
-        workItemRepo.clear();
+        workItemStore.clear();
 
-        assertThat(workItemRepo.findAll()).isEmpty();
+        assertThat(workItemStore.scan(WorkItemQuery.all())).isEmpty();
     }
 
     // =========================================================================
-    // WorkItemRepository — findInbox assignment filters
+    // WorkItemStore — inbox assignment filters
     // =========================================================================
 
     @Test
     void findInbox_byAssignee() {
         final WorkItem wi = workItem(WorkItemStatus.ASSIGNED);
         wi.assigneeId = "alice";
-        workItemRepo.save(wi);
+        workItemStore.put(wi);
 
-        final List<WorkItem> result = workItemRepo.findInbox("alice", null, null, null, null, null);
+        final List<WorkItem> result = workItemStore.scan(WorkItemQuery.inbox("alice", null, null));
 
         assertThat(result).containsExactly(wi);
     }
@@ -98,9 +99,9 @@ class InMemoryRepositoryTest {
     void findInbox_byCandidateGroup() {
         final WorkItem wi = workItem(WorkItemStatus.PENDING);
         wi.candidateGroups = "team-a,team-b";
-        workItemRepo.save(wi);
+        workItemStore.put(wi);
 
-        final List<WorkItem> result = workItemRepo.findInbox(null, List.of("team-a"), null, null, null, null);
+        final List<WorkItem> result = workItemStore.scan(WorkItemQuery.inbox(null, List.of("team-a"), null));
 
         assertThat(result).containsExactly(wi);
     }
@@ -109,9 +110,9 @@ class InMemoryRepositoryTest {
     void findInbox_byCandidateUser_exactMatch() {
         final WorkItem wi = workItem(WorkItemStatus.PENDING);
         wi.candidateUsers = "bob";
-        workItemRepo.save(wi);
+        workItemStore.put(wi);
 
-        final List<WorkItem> result = workItemRepo.findInbox("bob", null, null, null, null, null);
+        final List<WorkItem> result = workItemStore.scan(WorkItemQuery.inbox("bob", null, null));
 
         assertThat(result).containsExactly(wi);
     }
@@ -120,25 +121,26 @@ class InMemoryRepositoryTest {
     void findInbox_candidateUser_noPartialMatch() {
         final WorkItem wi = workItem(WorkItemStatus.PENDING);
         wi.candidateUsers = "bobby";
-        workItemRepo.save(wi);
+        workItemStore.put(wi);
 
         // "bob" must NOT match "bobby" — token matching, not substring
-        final List<WorkItem> result = workItemRepo.findInbox("bob", null, null, null, null, null);
+        final List<WorkItem> result = workItemStore.scan(WorkItemQuery.inbox("bob", null, null));
 
         assertThat(result).isEmpty();
     }
 
     // =========================================================================
-    // WorkItemRepository — findInbox additional filters
+    // WorkItemStore — inbox additional filters
     // =========================================================================
 
     @Test
     void findInbox_statusFilter() {
         final WorkItem wi = workItem(WorkItemStatus.COMPLETED);
         wi.assigneeId = "alice";
-        workItemRepo.save(wi);
+        workItemStore.put(wi);
 
-        final List<WorkItem> result = workItemRepo.findInbox("alice", null, WorkItemStatus.PENDING, null, null, null);
+        final List<WorkItem> result = workItemStore.scan(
+                WorkItemQuery.inbox("alice", null, null).toBuilder().status(WorkItemStatus.PENDING).build());
 
         assertThat(result).isEmpty();
     }
@@ -148,15 +150,16 @@ class InMemoryRepositoryTest {
         final WorkItem wi = workItem(WorkItemStatus.PENDING);
         wi.assigneeId = "alice";
         wi.category = "finance";
-        workItemRepo.save(wi);
+        workItemStore.put(wi);
 
-        final List<WorkItem> result = workItemRepo.findInbox("alice", null, null, null, "legal", null);
+        final List<WorkItem> result = workItemStore.scan(
+                WorkItemQuery.inbox("alice", null, null).toBuilder().category("legal").build());
 
         assertThat(result).isEmpty();
     }
 
     // =========================================================================
-    // WorkItemRepository — expiry and deadline queries
+    // WorkItemStore — expiry and deadline queries
     // =========================================================================
 
     @Test
@@ -165,17 +168,17 @@ class InMemoryRepositoryTest {
 
         final WorkItem expired = workItem(WorkItemStatus.PENDING);
         expired.expiresAt = fiveMinutesAgo;
-        workItemRepo.save(expired);
+        workItemStore.put(expired);
 
         final WorkItem alreadyCompleted = workItem(WorkItemStatus.COMPLETED);
         alreadyCompleted.expiresAt = fiveMinutesAgo;
-        workItemRepo.save(alreadyCompleted);
+        workItemStore.put(alreadyCompleted);
 
         final WorkItem notExpired = workItem(WorkItemStatus.PENDING);
         notExpired.expiresAt = Instant.now().plus(1, ChronoUnit.HOURS);
-        workItemRepo.save(notExpired);
+        workItemStore.put(notExpired);
 
-        final List<WorkItem> result = workItemRepo.findExpired(Instant.now());
+        final List<WorkItem> result = workItemStore.scan(WorkItemQuery.expired(Instant.now()));
 
         assertThat(result).containsExactly(expired);
     }
@@ -186,23 +189,23 @@ class InMemoryRepositoryTest {
 
         final WorkItem unclaimed = workItem(WorkItemStatus.PENDING);
         unclaimed.claimDeadline = fiveMinutesAgo;
-        workItemRepo.save(unclaimed);
+        workItemStore.put(unclaimed);
 
         final WorkItem assigned = workItem(WorkItemStatus.ASSIGNED);
         assigned.claimDeadline = fiveMinutesAgo;
-        workItemRepo.save(assigned);
+        workItemStore.put(assigned);
 
         final WorkItem futureDeadline = workItem(WorkItemStatus.PENDING);
         futureDeadline.claimDeadline = Instant.now().plus(1, ChronoUnit.HOURS);
-        workItemRepo.save(futureDeadline);
+        workItemStore.put(futureDeadline);
 
-        final List<WorkItem> result = workItemRepo.findUnclaimedPastDeadline(Instant.now());
+        final List<WorkItem> result = workItemStore.scan(WorkItemQuery.claimExpired(Instant.now()));
 
         assertThat(result).containsExactly(unclaimed);
     }
 
     // =========================================================================
-    // AuditEntryRepository
+    // AuditEntryStore
     // =========================================================================
 
     @Test
@@ -211,7 +214,7 @@ class InMemoryRepositoryTest {
         entry.id = null;
         entry.occurredAt = null;
 
-        auditRepo.append(entry);
+        auditStore.append(entry);
 
         assertThat(entry.id).isNotNull();
         assertThat(entry.occurredAt).isNotNull();
@@ -222,11 +225,11 @@ class InMemoryRepositoryTest {
         final UUID workItemId1 = UUID.randomUUID();
         final UUID workItemId2 = UUID.randomUUID();
 
-        auditRepo.append(auditEntry(workItemId1, "CREATED"));
-        auditRepo.append(auditEntry(workItemId1, "ASSIGNED"));
-        auditRepo.append(auditEntry(workItemId2, "CREATED"));
+        auditStore.append(auditEntry(workItemId1, "CREATED"));
+        auditStore.append(auditEntry(workItemId1, "ASSIGNED"));
+        auditStore.append(auditEntry(workItemId2, "CREATED"));
 
-        final List<AuditEntry> result = auditRepo.findByWorkItemId(workItemId1);
+        final List<AuditEntry> result = auditStore.findByWorkItemId(workItemId1);
 
         assertThat(result).hasSize(2);
         assertThat(result).allMatch(e -> workItemId1.equals(e.workItemId));
@@ -243,17 +246,17 @@ class InMemoryRepositoryTest {
         // Append in reverse chronological order
         final AuditEntry third = auditEntry(workItemId, "COMPLETED");
         third.occurredAt = t3;
-        auditRepo.append(third);
+        auditStore.append(third);
 
         final AuditEntry second = auditEntry(workItemId, "ASSIGNED");
         second.occurredAt = t2;
-        auditRepo.append(second);
+        auditStore.append(second);
 
         final AuditEntry first = auditEntry(workItemId, "CREATED");
         first.occurredAt = t1;
-        auditRepo.append(first);
+        auditStore.append(first);
 
-        final List<AuditEntry> result = auditRepo.findByWorkItemId(workItemId);
+        final List<AuditEntry> result = auditStore.findByWorkItemId(workItemId);
 
         assertThat(result).extracting(e -> e.event)
                 .containsExactly("CREATED", "ASSIGNED", "COMPLETED");

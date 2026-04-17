@@ -30,7 +30,8 @@ import dev.tamboui.widgets.table.Table;
 import dev.tamboui.widgets.table.TableState;
 import io.quarkiverse.workitems.runtime.event.WorkItemLifecycleEvent;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.repository.WorkItemQuery;
+import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 
 /**
@@ -58,7 +59,7 @@ public class QueueDashboard {
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     @Inject
-    WorkItemRepository workItemRepo;
+    WorkItemStore workItemStore;
 
     @Inject
     ReviewStepService stepService;
@@ -72,7 +73,7 @@ public class QueueDashboard {
      */
     @Transactional
     public void onLifecycleEvent(@ObservesAsync final WorkItemLifecycleEvent event) {
-        final List<WorkItem> items = workItemRepo.findAll();
+        final List<WorkItem> items = workItemStore.scan(WorkItemQuery.all());
         latestItems.set(List.copyOf(items));
         addLog("Event: " + event.type() + " — " + event.workItemId());
     }
@@ -147,7 +148,7 @@ public class QueueDashboard {
     private void refreshItems() {
         try {
             final List<WorkItem> items = QuarkusTransaction.requiringNew()
-                    .call(() -> workItemRepo.findAll());
+                    .call(() -> workItemStore.scan(WorkItemQuery.all()));
             latestItems.set(List.copyOf(items));
         } catch (final Exception e) {
             addLog("Refresh error: " + e.getMessage());

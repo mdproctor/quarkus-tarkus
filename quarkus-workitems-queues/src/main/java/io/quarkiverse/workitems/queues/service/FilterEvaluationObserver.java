@@ -6,7 +6,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
 import io.quarkiverse.workitems.runtime.event.WorkItemLifecycleEvent;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 
 /**
  * CDI observer: bridges WorkItemLifecycleEvent to the filter evaluation engine.
@@ -19,10 +19,10 @@ public class FilterEvaluationObserver {
     FilterEngine filterEngine;
 
     @Inject
-    WorkItemRepository workItemRepo;
+    WorkItemStore workItemStore;
 
     @Transactional
     public void onLifecycleEvent(@Observes final WorkItemLifecycleEvent event) {
-        workItemRepo.findById(event.workItemId()).ifPresent(filterEngine::evaluate);
+        workItemStore.get(event.workItemId()).ifPresent(filterEngine::evaluate);
     }
 }

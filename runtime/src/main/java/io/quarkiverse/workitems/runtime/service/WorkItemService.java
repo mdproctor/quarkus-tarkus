@@ -19,25 +19,25 @@ import io.quarkiverse.workitems.runtime.model.WorkItemCreateRequest;
 import io.quarkiverse.workitems.runtime.model.WorkItemLabel;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
 import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
-import io.quarkiverse.workitems.runtime.repository.AuditEntryRepository;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.repository.AuditEntryStore;
+import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 
 @ApplicationScoped
 public class WorkItemService {
 
-    private final WorkItemRepository workItemRepo;
-    private final AuditEntryRepository auditRepo;
+    private final WorkItemStore workItemStore;
+    private final AuditEntryStore auditStore;
     private final WorkItemsConfig config;
 
     @Inject
     Event<WorkItemLifecycleEvent> lifecycleEvent;
 
     @Inject
-    public WorkItemService(final WorkItemRepository workItemRepo,
-            final AuditEntryRepository auditRepo,
+    public WorkItemService(final WorkItemStore workItemStore,
+            final AuditEntryStore auditStore,
             final WorkItemsConfig config) {
-        this.workItemRepo = workItemRepo;
-        this.auditRepo = auditRepo;
+        this.workItemStore = workItemStore;
+        this.auditStore = auditStore;
         this.config = config;
     }
 
@@ -82,7 +82,7 @@ public class WorkItemService {
             }
         }
 
-        final WorkItem saved = workItemRepo.save(item);
+        final WorkItem saved = workItemStore.put(item);
         audit(saved.id, "CREATED", request.createdBy(), null);
         if (lifecycleEvent != null) {
             lifecycleEvent.fire(WorkItemLifecycleEvent.of("CREATED", saved.id, saved.status, request.createdBy(), null));
@@ -99,7 +99,7 @@ public class WorkItemService {
         item.status = WorkItemStatus.ASSIGNED;
         item.assigneeId = claimantId;
         item.assignedAt = Instant.now();
-        final WorkItem saved = workItemRepo.save(item);
+        final WorkItem saved = workItemStore.put(item);
         audit(saved.id, "ASSIGNED", claimantId, null);
         if (lifecycleEvent != null) {
             lifecycleEvent.fire(WorkItemLifecycleEvent.of("ASSIGNED", saved.id, saved.status, claimantId, null));
@@ -115,7 +115,7 @@ public class WorkItemService {
         }
         item.status = WorkItemStatus.IN_PROGRESS;
         item.startedAt = Instant.now();
-        final WorkItem saved = workItemRepo.save(item);
+        final WorkItem saved = workItemStore.put(item);
         audit(saved.id, "STARTED", actorId, null);
         if (lifecycleEvent != null) {
             lifecycleEvent.fire(WorkItemLifecycleEvent.of("STARTED", saved.id, saved.status, actorId, null));
@@ -132,7 +132,7 @@ public class WorkItemService {
         item.status = WorkItemStatus.COMPLETED;
         item.completedAt = Instant.now();
         item.resolution = resolution;
-        final WorkItem saved = workItemRepo.save(item);
+        final WorkItem saved = workItemStore.put(item);
         audit(saved.id, "COMPLETED", actorId, null);
         if (lifecycleEvent != null) {
             lifecycleEvent.fire(WorkItemLifecycleEvent.of("COMPLETED", saved.id, saved.status, actorId, resolution));
@@ -148,7 +148,7 @@ public class WorkItemService {
         }
         item.status = WorkItemStatus.REJECTED;
         item.completedAt = Instant.now();
-        final WorkItem saved = workItemRepo.save(item);
+        final WorkItem saved = workItemStore.put(item);
         audit(saved.id, "REJECTED", actorId, reason);
         if (lifecycleEvent != null) {
             lifecycleEvent.fire(WorkItemLifecycleEvent.of("REJECTED", saved.id, saved.status, actorId, reason));
@@ -175,7 +175,7 @@ public class WorkItemService {
         item.status = WorkItemStatus.COMPLETED;
         item.completedAt = Instant.now();
         item.resolution = resolution;
-        final WorkItem saved = workItemRepo.save(item);
+        final WorkItem saved = workItemStore.put(item);
         audit(saved.id, "COMPLETED", actorId, null);
         if (lifecycleEvent != null) {
             lifecycleEvent.fire(WorkItemLifecycleEvent.of(
@@ -201,7 +201,7 @@ public class WorkItemService {
         }
         item.status = WorkItemStatus.REJECTED;
         item.completedAt = Instant.now();
-        final WorkItem saved = workItemRepo.save(item);
+        final WorkItem saved = workItemStore.put(item);
         audit(saved.id, "REJECTED", actorId, reason);
         if (lifecycleEvent != null) {
             lifecycleEvent.fire(WorkItemLifecycleEvent.of(
@@ -225,7 +225,7 @@ public class WorkItemService {
         item.assigneeId = toAssigneeId;
         item.delegationState = DelegationState.PENDING;
         item.status = WorkItemStatus.PENDING;
-        final WorkItem saved = workItemRepo.save(item);
+        final WorkItem saved = workItemStore.put(item);
         audit(saved.id, "DELEGATED", actorId, "to:" + toAssigneeId);
         if (lifecycleEvent != null) {
             lifecycleEvent.fire(WorkItemLifecycleEvent.of("DELEGATED", saved.id, saved.status, actorId, "to:" + toAssigneeId));
@@ -241,7 +241,7 @@ public class WorkItemService {
         }
         item.status = WorkItemStatus.PENDING;
         item.assigneeId = null;
-        final WorkItem saved = workItemRepo.save(item);
+        final WorkItem saved = workItemStore.put(item);
         audit(saved.id, "RELEASED", actorId, null);
         if (lifecycleEvent != null) {
             lifecycleEvent.fire(WorkItemLifecycleEvent.of("RELEASED", saved.id, saved.status, actorId, null));
@@ -258,7 +258,7 @@ public class WorkItemService {
         item.priorStatus = item.status;
         item.status = WorkItemStatus.SUSPENDED;
         item.suspendedAt = Instant.now();
-        final WorkItem saved = workItemRepo.save(item);
+        final WorkItem saved = workItemStore.put(item);
         audit(saved.id, "SUSPENDED", actorId, reason);
         if (lifecycleEvent != null) {
             lifecycleEvent.fire(WorkItemLifecycleEvent.of("SUSPENDED", saved.id, saved.status, actorId, reason));
@@ -275,7 +275,7 @@ public class WorkItemService {
         item.status = item.priorStatus;
         item.priorStatus = null;
         item.suspendedAt = null;
-        final WorkItem saved = workItemRepo.save(item);
+        final WorkItem saved = workItemStore.put(item);
         audit(saved.id, "RESUMED", actorId, null);
         if (lifecycleEvent != null) {
             lifecycleEvent.fire(WorkItemLifecycleEvent.of("RESUMED", saved.id, saved.status, actorId, null));
@@ -291,7 +291,7 @@ public class WorkItemService {
         }
         item.status = WorkItemStatus.CANCELLED;
         item.completedAt = Instant.now();
-        final WorkItem saved = workItemRepo.save(item);
+        final WorkItem saved = workItemStore.put(item);
         audit(saved.id, "CANCELLED", actorId, reason);
         if (lifecycleEvent != null) {
             lifecycleEvent.fire(WorkItemLifecycleEvent.of("CANCELLED", saved.id, saved.status, actorId, reason));
@@ -301,10 +301,10 @@ public class WorkItemService {
 
     @Transactional
     public WorkItem addLabel(final UUID workItemId, final String path, final String appliedBy) {
-        final WorkItem item = workItemRepo.findById(workItemId)
+        final WorkItem item = workItemStore.get(workItemId)
                 .orElseThrow(() -> new WorkItemNotFoundException(workItemId));
         item.labels.add(new WorkItemLabel(path, LabelPersistence.MANUAL, appliedBy));
-        final WorkItem saved = workItemRepo.save(item);
+        final WorkItem saved = workItemStore.put(item);
         if (lifecycleEvent != null) {
             lifecycleEvent.fire(WorkItemLifecycleEvent.of("LABEL_ADDED", saved.id, saved.status, appliedBy, null));
         }
@@ -313,18 +313,18 @@ public class WorkItemService {
 
     @Transactional
     public WorkItem removeLabel(final UUID workItemId, final String path) {
-        final WorkItem item = workItemRepo.findById(workItemId)
+        final WorkItem item = workItemStore.get(workItemId)
                 .orElseThrow(() -> new WorkItemNotFoundException(workItemId));
         final boolean removed = item.labels.removeIf(
                 l -> l.path.equals(path) && l.persistence == LabelPersistence.MANUAL);
         if (!removed) {
             throw new LabelNotFoundException(workItemId, path);
         }
-        return workItemRepo.save(item);
+        return workItemStore.put(item);
     }
 
     private WorkItem requireWorkItem(final UUID id) {
-        return workItemRepo.findById(id)
+        return workItemStore.get(id)
                 .orElseThrow(() -> new WorkItemNotFoundException(id));
     }
 
@@ -335,6 +335,6 @@ public class WorkItemService {
         entry.actor = actor;
         entry.detail = detail;
         entry.occurredAt = Instant.now();
-        auditRepo.append(entry);
+        auditStore.append(entry);
     }
 }

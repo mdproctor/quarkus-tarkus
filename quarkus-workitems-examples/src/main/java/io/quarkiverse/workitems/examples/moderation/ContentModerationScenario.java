@@ -27,7 +27,7 @@ import io.quarkiverse.workitems.runtime.model.AuditEntry;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemCreateRequest;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
-import io.quarkiverse.workitems.runtime.repository.AuditEntryRepository;
+import io.quarkiverse.workitems.runtime.repository.AuditEntryStore;
 import io.quarkiverse.workitems.runtime.service.WorkItemService;
 
 /**
@@ -69,7 +69,7 @@ public class ContentModerationScenario {
     WorkItemLedgerEntryRepository ledgerRepo;
 
     @Inject
-    AuditEntryRepository auditRepo;
+    AuditEntryStore auditStore;
 
     @Inject
     MockAIClassifier classifier;
@@ -166,7 +166,7 @@ public class ContentModerationScenario {
                 .toList();
 
         // Collect audit trail
-        final List<AuditEntry> auditEntries = auditRepo.findByWorkItemId(wi.id);
+        final List<AuditEntry> auditEntries = auditStore.findByWorkItemId(wi.id);
         final List<AuditEntryResponse> auditTrail = auditEntries.stream()
                 .map(a -> new AuditEntryResponse(a.id, a.event, a.actor, a.detail, a.occurredAt))
                 .toList();
