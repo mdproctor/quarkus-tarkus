@@ -16,6 +16,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.quarkiverse.workitems.queues.service.ExpressionDescriptor;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 
 @Entity
@@ -77,6 +78,14 @@ public class WorkItemFilter extends PanacheEntityBase {
         } catch (JsonProcessingException e) {
             return "[]";
         }
+    }
+
+    /**
+     * Returns an {@link ExpressionDescriptor} bundling this filter's language and expression.
+     * Preferred over accessing {@code conditionLanguage} and {@code conditionExpression} separately.
+     */
+    public ExpressionDescriptor conditionDescriptor() {
+        return ExpressionDescriptor.of(conditionLanguage, conditionExpression);
     }
 
     public static List<WorkItemFilter> findActive() {

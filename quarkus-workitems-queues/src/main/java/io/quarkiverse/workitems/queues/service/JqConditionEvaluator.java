@@ -18,7 +18,7 @@ import net.thisptr.jackson.jq.Scope;
 import net.thisptr.jackson.jq.Versions;
 
 @ApplicationScoped
-public class JqConditionEvaluator implements FilterConditionEvaluator {
+public class JqConditionEvaluator implements WorkItemExpressionEvaluator {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final Scope ROOT_SCOPE;
@@ -34,13 +34,13 @@ public class JqConditionEvaluator implements FilterConditionEvaluator {
     }
 
     @Override
-    public boolean evaluate(final WorkItem wi, final String expression) {
-        if (expression == null || expression.isBlank()) {
+    public boolean evaluate(final WorkItem wi, final ExpressionDescriptor descriptor) {
+        if (descriptor == null || descriptor.expression() == null || descriptor.expression().isBlank()) {
             return false;
         }
         try {
             final JsonNode input = MAPPER.valueToTree(toMap(wi));
-            final JsonQuery q = JsonQuery.compile(expression, Versions.JQ_1_6);
+            final JsonQuery q = JsonQuery.compile(descriptor.expression(), Versions.JQ_1_6);
             final Scope scope = Scope.newChildScope(ROOT_SCOPE);
             final var results = new ArrayList<JsonNode>();
             q.apply(scope, input, results::add);

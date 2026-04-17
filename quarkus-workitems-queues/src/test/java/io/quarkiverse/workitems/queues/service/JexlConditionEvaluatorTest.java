@@ -27,57 +27,60 @@ class JexlConditionEvaluatorTest {
     @Test
     void evaluate_priorityHigh_matchesHigh() {
         var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.HIGH, null);
-        assertThat(evaluator.evaluate(wi, "priority == 'HIGH'")).isTrue();
+        assertThat(evaluator.evaluate(wi, ExpressionDescriptor.of(evaluator.language(), "priority == 'HIGH'"))).isTrue();
     }
 
     @Test
     void evaluate_priorityHigh_doesNotMatchNormal() {
         var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
-        assertThat(evaluator.evaluate(wi, "priority == 'HIGH'")).isFalse();
+        assertThat(evaluator.evaluate(wi, ExpressionDescriptor.of(evaluator.language(), "priority == 'HIGH'"))).isFalse();
     }
 
     @Test
     void evaluate_assigneeNull_matchesNull() {
         var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
-        assertThat(evaluator.evaluate(wi, "assigneeId == null")).isTrue();
+        assertThat(evaluator.evaluate(wi, ExpressionDescriptor.of(evaluator.language(), "assigneeId == null"))).isTrue();
     }
 
     @Test
     void evaluate_statusPending() {
         var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
-        assertThat(evaluator.evaluate(wi, "status == 'PENDING'")).isTrue();
+        assertThat(evaluator.evaluate(wi, ExpressionDescriptor.of(evaluator.language(), "status == 'PENDING'"))).isTrue();
     }
 
     @Test
     void evaluate_andCondition() {
         var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.HIGH, null);
-        assertThat(evaluator.evaluate(wi, "priority == 'HIGH' && status == 'PENDING'")).isTrue();
+        assertThat(evaluator.evaluate(wi,
+                ExpressionDescriptor.of(evaluator.language(), "priority == 'HIGH' && status == 'PENDING'"))).isTrue();
     }
 
     @Test
     void evaluate_malformedExpression_returnsFalse() {
         var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
-        assertThat(evaluator.evaluate(wi, "this is not jexl @@##")).isFalse();
+        assertThat(evaluator.evaluate(wi, ExpressionDescriptor.of(evaluator.language(), "this is not jexl @@##"))).isFalse();
     }
 
     @Test
     void evaluate_category() {
         var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
         wi.category = "legal";
-        assertThat(evaluator.evaluate(wi, "category == 'legal'")).isTrue();
+        assertThat(evaluator.evaluate(wi, ExpressionDescriptor.of(evaluator.language(), "category == 'legal'"))).isTrue();
     }
 
     @Test
     void evaluate_labelContains_matchesWorkItemWithLabel() {
         var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
         wi.labels.add(new WorkItemLabel("legal/contracts", LabelPersistence.MANUAL, "alice"));
-        assertThat(evaluator.evaluate(wi, "labels.contains('legal/contracts')")).isTrue();
+        assertThat(evaluator.evaluate(wi, ExpressionDescriptor.of(evaluator.language(), "labels.contains('legal/contracts')")))
+                .isTrue();
     }
 
     @Test
     void evaluate_labelNotContains_noMatch() {
         var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
-        assertThat(evaluator.evaluate(wi, "labels.contains('legal/contracts')")).isFalse();
+        assertThat(evaluator.evaluate(wi, ExpressionDescriptor.of(evaluator.language(), "labels.contains('legal/contracts')")))
+                .isFalse();
     }
 
     private WorkItem wi(final WorkItemStatus s, final WorkItemPriority p, final String assigneeId) {

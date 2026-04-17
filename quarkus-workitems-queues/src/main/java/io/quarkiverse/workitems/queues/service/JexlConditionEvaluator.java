@@ -14,7 +14,7 @@ import org.apache.commons.jexl3.MapContext;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 
 @ApplicationScoped
-public class JexlConditionEvaluator implements FilterConditionEvaluator {
+public class JexlConditionEvaluator implements WorkItemExpressionEvaluator {
 
     private static final JexlEngine JEXL = new JexlBuilder()
             .strict(false).silent(true).create();
@@ -25,14 +25,14 @@ public class JexlConditionEvaluator implements FilterConditionEvaluator {
     }
 
     @Override
-    public boolean evaluate(final WorkItem wi, final String expression) {
-        if (expression == null || expression.isBlank()) {
+    public boolean evaluate(final WorkItem wi, final ExpressionDescriptor descriptor) {
+        if (descriptor == null || descriptor.expression() == null || descriptor.expression().isBlank()) {
             return false;
         }
         try {
             final var ctx = new MapContext();
             buildContext(wi).forEach(ctx::set);
-            final Object result = JEXL.createExpression(expression).evaluate(ctx);
+            final Object result = JEXL.createExpression(descriptor.expression()).evaluate(ctx);
             return Boolean.TRUE.equals(result);
         } catch (JexlException e) {
             return false;

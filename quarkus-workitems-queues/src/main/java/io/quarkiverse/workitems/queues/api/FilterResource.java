@@ -20,9 +20,10 @@ import jakarta.ws.rs.core.Response;
 import io.quarkiverse.workitems.queues.model.FilterAction;
 import io.quarkiverse.workitems.queues.model.FilterScope;
 import io.quarkiverse.workitems.queues.model.WorkItemFilter;
-import io.quarkiverse.workitems.queues.service.FilterConditionEvaluator;
+import io.quarkiverse.workitems.queues.service.ExpressionDescriptor;
 import io.quarkiverse.workitems.queues.service.FilterEngine;
 import io.quarkiverse.workitems.queues.service.FilterEvaluatorRegistry;
+import io.quarkiverse.workitems.queues.service.WorkItemExpressionEvaluator;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
 import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
@@ -118,7 +119,7 @@ public class FilterResource {
     @POST
     @Path("/evaluate")
     public Response evaluate(final AdHocEvalRequest req) {
-        final FilterConditionEvaluator evaluator = registry.find(req.conditionLanguage());
+        final WorkItemExpressionEvaluator evaluator = registry.find(req.conditionLanguage());
         if (evaluator == null) {
             return Response.status(400)
                     .entity(Map.of("error", "Unknown language: " + req.conditionLanguage())).build();
@@ -131,7 +132,10 @@ public class FilterResource {
             wi.assigneeId = req.workItem().assigneeId();
             wi.category = req.workItem().category();
         }
-        return Response.ok(Map.of("matches", evaluator.evaluate(wi, req.conditionExpression()))).build();
+        return Response
+                .ok(Map.of("matches",
+                        evaluator.evaluate(wi, ExpressionDescriptor.of(req.conditionLanguage(), req.conditionExpression()))))
+                .build();
     }
 
     private WorkItemStatus parseStatus(final String s) {
