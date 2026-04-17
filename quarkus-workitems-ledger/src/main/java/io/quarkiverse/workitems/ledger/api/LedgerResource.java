@@ -24,7 +24,7 @@ import io.quarkiverse.workitems.ledger.api.dto.LedgerEntryResponse;
 import io.quarkiverse.workitems.ledger.api.dto.ProvenanceRequest;
 import io.quarkiverse.workitems.ledger.model.WorkItemLedgerEntry;
 import io.quarkiverse.workitems.ledger.repository.WorkItemLedgerEntryRepository;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 import io.quarkiverse.workitems.runtime.service.WorkItemNotFoundException;
 
 /**
@@ -44,7 +44,7 @@ public class LedgerResource {
     WorkItemLedgerEntryRepository ledgerRepo;
 
     @Inject
-    WorkItemRepository workItemRepo;
+    WorkItemStore workItemStore;
 
     @Inject
     LedgerConfig config;
@@ -59,7 +59,7 @@ public class LedgerResource {
     @GET
     @Path("/ledger")
     public List<LedgerEntryResponse> getLedger(@PathParam("id") final UUID workItemId) {
-        workItemRepo.findById(workItemId)
+        workItemStore.get(workItemId)
                 .orElseThrow(() -> new WorkItemNotFoundException(workItemId));
 
         final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(workItemId);
@@ -86,7 +86,7 @@ public class LedgerResource {
     @Transactional
     public Response setProvenance(@PathParam("id") final UUID workItemId,
             final ProvenanceRequest request) {
-        workItemRepo.findById(workItemId)
+        workItemStore.get(workItemId)
                 .orElseThrow(() -> new WorkItemNotFoundException(workItemId));
 
         // Find the creation entry (sequence number 1)

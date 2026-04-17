@@ -22,7 +22,8 @@ import io.quarkiverse.workitems.runtime.model.LabelPersistence;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemCreateRequest;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.repository.WorkItemQuery;
+import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 import io.quarkiverse.workitems.runtime.service.WorkItemService;
 
 /**
@@ -55,7 +56,7 @@ public class SupportTriageScenario {
     WorkItemService workItemService;
 
     @Inject
-    WorkItemRepository workItemRepo;
+    WorkItemStore workItemStore;
 
     private void setupFilters() {
         // Only create filters once (idempotent on scenario name)
@@ -143,7 +144,7 @@ public class SupportTriageScenario {
 
         LOG.info("[TRIAGE] Step 3/4: Claiming the HIGH ticket — intake/triage should disappear on re-evaluation");
         workItemService.claim(high.id, "senior-support-agent");
-        final WorkItem highAfterClaim = workItemRepo.findById(high.id).orElseThrow();
+        final WorkItem highAfterClaim = workItemStore.get(high.id).orElseThrow();
 
         steps.add(new QueueScenarioStep(3,
                 "HIGH ticket claimed by senior-support-agent — re-evaluation fires: assigneeId != null so intake/triage and team/support-lead labels removed",
@@ -152,7 +153,7 @@ public class SupportTriageScenario {
                 manualPaths(highAfterClaim)));
 
         LOG.info("[TRIAGE] Step 4/4: Listing queue/fast-track contents — should contain CRITICAL ticket only");
-        final List<UUID> fastTrackQueue = workItemRepo.findByLabelPattern("queue/fast-track")
+        final List<UUID> fastTrackQueue = workItemStore.scan(WorkItemQuery.byLabelPattern("queue/fast-track"))
                 .stream().map(w -> w.id).toList();
 
         steps.add(new QueueScenarioStep(4,

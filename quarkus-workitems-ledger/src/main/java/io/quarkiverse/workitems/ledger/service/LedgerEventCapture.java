@@ -16,7 +16,7 @@ import io.quarkiverse.workitems.ledger.model.WorkItemLedgerEntry;
 import io.quarkiverse.workitems.ledger.repository.WorkItemLedgerEntryRepository;
 import io.quarkiverse.workitems.runtime.event.WorkItemLifecycleEvent;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 
 /**
  * CDI observer that writes a {@link WorkItemLedgerEntry} for every WorkItem lifecycle transition.
@@ -38,7 +38,7 @@ public class LedgerEventCapture {
     WorkItemLedgerEntryRepository ledgerRepo;
 
     @Inject
-    WorkItemRepository workItemRepo;
+    WorkItemStore workItemStore;
 
     @Inject
     LedgerConfig config;
@@ -55,7 +55,7 @@ public class LedgerEventCapture {
         }
 
         // Load the WorkItem for the decisionContext snapshot
-        final Optional<WorkItem> workItemOpt = workItemRepo.findById(event.workItemId());
+        final Optional<WorkItem> workItemOpt = workItemStore.get(event.workItemId());
 
         // Determine the next sequence number in this WorkItem's ledger
         final int seq = ledgerRepo.findLatestByWorkItemId(event.workItemId())

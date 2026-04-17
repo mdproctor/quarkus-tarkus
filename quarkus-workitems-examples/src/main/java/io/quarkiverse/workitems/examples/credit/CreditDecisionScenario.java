@@ -26,7 +26,7 @@ import io.quarkiverse.workitems.runtime.model.AuditEntry;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemCreateRequest;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
-import io.quarkiverse.workitems.runtime.repository.AuditEntryRepository;
+import io.quarkiverse.workitems.runtime.repository.AuditEntryStore;
 import io.quarkiverse.workitems.runtime.service.WorkItemService;
 
 /**
@@ -68,7 +68,7 @@ public class CreditDecisionScenario {
     WorkItemLedgerEntryRepository ledgerRepo;
 
     @Inject
-    AuditEntryRepository auditRepo;
+    AuditEntryStore auditStore;
 
     /**
      * Run the regulated credit decision scenario from end to end and return the full ledger and audit trail.
@@ -198,7 +198,7 @@ public class CreditDecisionScenario {
                 .toList();
 
         // Collect audit trail
-        final List<AuditEntry> auditEntries = auditRepo.findByWorkItemId(wi.id);
+        final List<AuditEntry> auditEntries = auditStore.findByWorkItemId(wi.id);
         final List<AuditEntryResponse> auditTrail = auditEntries.stream()
                 .map(a -> new AuditEntryResponse(a.id, a.event, a.actor, a.detail, a.occurredAt))
                 .toList();

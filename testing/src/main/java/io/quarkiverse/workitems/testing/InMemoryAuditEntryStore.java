@@ -11,10 +11,10 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
 
 import io.quarkiverse.workitems.runtime.model.AuditEntry;
-import io.quarkiverse.workitems.runtime.repository.AuditEntryRepository;
+import io.quarkiverse.workitems.runtime.repository.AuditEntryStore;
 
 /**
- * In-memory implementation of {@link AuditEntryRepository} for use in tests of
+ * In-memory implementation of {@link AuditEntryStore} for use in tests of
  * applications that embed Quarkus WorkItems. No datasource or Flyway configuration
  * is required.
  *
@@ -33,7 +33,7 @@ import io.quarkiverse.workitems.runtime.repository.AuditEntryRepository;
 @ApplicationScoped
 @Alternative
 @Priority(1)
-public class InMemoryAuditEntryRepository implements AuditEntryRepository {
+public class InMemoryAuditEntryStore implements AuditEntryStore {
 
     // NOT thread-safe — designed for single-threaded test use
     private final List<AuditEntry> entries = new ArrayList<>();

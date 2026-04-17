@@ -22,7 +22,8 @@ import io.quarkiverse.workitems.runtime.model.LabelPersistence;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemCreateRequest;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.repository.WorkItemQuery;
+import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 import io.quarkiverse.workitems.runtime.service.WorkItemService;
 
 /**
@@ -61,7 +62,7 @@ public class SecurityEscalationScenario {
     WorkItemService workItemService;
 
     @Inject
-    WorkItemRepository workItemRepo;
+    WorkItemStore workItemStore;
 
     private void setupFilters() {
         if (WorkItemFilter.count("name", "Security-A: Incident Detection") > 0)
@@ -150,7 +151,7 @@ public class SecurityEscalationScenario {
                 criticalBreach.id, inferredPaths(criticalBreach), manualPaths(criticalBreach)));
 
         LOG.info("[SECURITY] Step 3/3: security/exec-escalate queue — CRITICAL incident only");
-        final List<UUID> execEscalateQueue = workItemRepo.findByLabelPattern("security/exec-escalate")
+        final List<UUID> execEscalateQueue = workItemStore.scan(WorkItemQuery.byLabelPattern("security/exec-escalate"))
                 .stream().map(w -> w.id).toList();
 
         steps.add(new QueueScenarioStep(3,

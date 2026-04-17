@@ -20,7 +20,7 @@ import io.quarkiverse.workitems.queues.model.WorkItemQueueState;
 import io.quarkiverse.workitems.runtime.api.WorkItemMapper;
 import io.quarkiverse.workitems.runtime.event.WorkItemLifecycleEvent;
 import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 import io.quarkiverse.workitems.runtime.service.WorkItemService;
 
 /**
@@ -36,7 +36,7 @@ import io.quarkiverse.workitems.runtime.service.WorkItemService;
 public class QueueStateResource {
 
     @Inject
-    WorkItemRepository workItemRepo;
+    WorkItemStore workItemStore;
 
     @Inject
     WorkItemService workItemService;
@@ -90,7 +90,7 @@ public class QueueStateResource {
     @Transactional
     public Response pickup(@PathParam("id") final UUID id,
             @QueryParam("claimant") final String claimant) {
-        final var wi = workItemRepo.findById(id)
+        final var wi = workItemStore.get(id)
                 .orElse(null);
         if (wi == null) {
             return Response.status(404).entity(Map.of("error", "WorkItem not found: " + id)).build();
@@ -115,7 +115,7 @@ public class QueueStateResource {
             // Transfer ownership
             wi.assigneeId = claimant;
             wi.assignedAt = Instant.now();
-            final var saved = workItemRepo.save(wi);
+            final var saved = workItemStore.put(wi);
             // Clear the flag — the signal is consumed on first pickup
             state.relinquishable = false;
             // Fire lifecycle event so ledger, filter engine, and dashboard observers react
@@ -134,7 +134,7 @@ public class QueueStateResource {
     @Transactional
     public Response setRelinquishable(@PathParam("id") final UUID id,
             final RelinquishableRequest req) {
-        if (workItemRepo.findById(id).isEmpty()) {
+        if (workItemStore.get(id).isEmpty()) {
             return Response.status(404).entity(Map.of("error", "WorkItem not found: " + id)).build();
         }
         final WorkItemQueueState state = WorkItemQueueState.findOrCreate(id);

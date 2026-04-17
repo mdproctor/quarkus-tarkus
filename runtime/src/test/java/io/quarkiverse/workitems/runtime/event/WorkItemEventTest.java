@@ -16,7 +16,7 @@ import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemCreateRequest;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
 import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 import io.quarkiverse.workitems.runtime.service.ClaimDeadlineJob;
 import io.quarkiverse.workitems.runtime.service.ExpiryCleanupJob;
 import io.quarkiverse.workitems.runtime.service.WorkItemService;
@@ -42,7 +42,7 @@ class WorkItemEventTest {
     WorkItemService service;
 
     @Inject
-    WorkItemRepository workItemRepo;
+    WorkItemStore workItemStore;
 
     @Inject
     ExpiryCleanupJob expiryCleanupJob;
@@ -239,7 +239,7 @@ class WorkItemEventTest {
         wi.createdAt = Instant.now();
         wi.updatedAt = Instant.now();
         wi.expiresAt = Instant.now().minus(2, ChronoUnit.HOURS);
-        workItemRepo.save(wi);
+        workItemStore.put(wi);
         observer.clear(); // discard any save-triggered events
 
         expiryCleanupJob.checkExpired();
@@ -258,7 +258,7 @@ class WorkItemEventTest {
         wi.createdAt = Instant.now();
         wi.updatedAt = Instant.now();
         wi.expiresAt = Instant.now().minus(2, ChronoUnit.HOURS);
-        workItemRepo.save(wi);
+        workItemStore.put(wi);
         observer.clear();
 
         expiryCleanupJob.checkExpired();
@@ -278,7 +278,7 @@ class WorkItemEventTest {
         wi.createdAt = Instant.now();
         wi.updatedAt = Instant.now();
         wi.claimDeadline = Instant.now().minus(1, ChronoUnit.HOURS);
-        workItemRepo.save(wi);
+        workItemStore.put(wi);
         observer.clear();
 
         claimDeadlineJob.checkUnclaimedPastDeadline();

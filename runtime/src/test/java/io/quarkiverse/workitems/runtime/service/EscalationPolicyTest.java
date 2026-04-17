@@ -18,8 +18,9 @@ import io.quarkiverse.workitems.runtime.model.AuditEntry;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
 import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
-import io.quarkiverse.workitems.runtime.repository.AuditEntryRepository;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.repository.AuditEntryStore;
+import io.quarkiverse.workitems.runtime.repository.WorkItemQuery;
+import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 
 /**
  * Pure JUnit 5 unit tests for the three EscalationPolicy implementations.
@@ -34,12 +35,12 @@ class EscalationPolicyTest {
     // In-memory repository fakes (same pattern as WorkItemServiceTest)
     // -------------------------------------------------------------------------
 
-    static class TestWorkItemRepo implements WorkItemRepository {
+    static class TestWorkItemRepo implements WorkItemStore {
 
         private final Map<UUID, WorkItem> store = new ConcurrentHashMap<>();
 
         @Override
-        public WorkItem save(WorkItem workItem) {
+        public WorkItem put(WorkItem workItem) {
             if (workItem.id == null) {
                 workItem.id = UUID.randomUUID();
             }
@@ -48,39 +49,17 @@ class EscalationPolicyTest {
         }
 
         @Override
-        public Optional<WorkItem> findById(UUID id) {
+        public Optional<WorkItem> get(UUID id) {
             return Optional.ofNullable(store.get(id));
         }
 
         @Override
-        public List<WorkItem> findAll() {
+        public List<WorkItem> scan(WorkItemQuery query) {
             return new ArrayList<>(store.values());
-        }
-
-        @Override
-        public List<WorkItem> findInbox(String assignee, List<String> candidateGroups,
-                WorkItemStatus status, WorkItemPriority priority,
-                String category, Instant followUpBefore) {
-            return List.of();
-        }
-
-        @Override
-        public List<WorkItem> findExpired(Instant now) {
-            return List.of();
-        }
-
-        @Override
-        public List<WorkItem> findUnclaimedPastDeadline(Instant now) {
-            return List.of();
-        }
-
-        @Override
-        public List<WorkItem> findByLabelPattern(String pattern) {
-            return List.of();
         }
     }
 
-    static class TestAuditRepo implements AuditEntryRepository {
+    static class TestAuditRepo implements AuditEntryStore {
 
         private final List<AuditEntry> entries = new ArrayList<>();
 
@@ -128,11 +107,11 @@ class EscalationPolicyTest {
         notifyPolicy = new NotifyEscalationPolicy();
 
         autoRejectPolicy = new AutoRejectEscalationPolicy();
-        inject(autoRejectPolicy, "workItemRepo", workItemRepo);
-        inject(autoRejectPolicy, "auditRepo", auditRepo);
+        inject(autoRejectPolicy, "workItemStore", workItemRepo);
+        inject(autoRejectPolicy, "auditStore", auditRepo);
 
         reassignPolicy = new ReassignEscalationPolicy();
-        inject(reassignPolicy, "workItemRepo", workItemRepo);
+        inject(reassignPolicy, "workItemStore", workItemRepo);
         inject(reassignPolicy, "notifyPolicy", notifyPolicy);
     }
 
@@ -144,7 +123,7 @@ class EscalationPolicyTest {
         wi.priority = WorkItemPriority.NORMAL;
         wi.createdAt = Instant.now();
         wi.updatedAt = Instant.now();
-        workItemRepo.save(wi);
+        workItemRepo.put(wi);
         return wi;
     }
 
@@ -208,7 +187,7 @@ class EscalationPolicyTest {
         WorkItem wi = workItem(WorkItemStatus.ASSIGNED);
         wi.assigneeId = "alice";
         wi.candidateGroups = "team-a";
-        workItemRepo.save(wi);
+        workItemRepo.put(wi);
 
         reassignPolicy.onExpired(wi);
 
@@ -221,7 +200,7 @@ class EscalationPolicyTest {
         WorkItem wi = workItem(WorkItemStatus.EXPIRED);
         wi.candidateGroups = null;
         wi.candidateUsers = null;
-        workItemRepo.save(wi);
+        workItemRepo.put(wi);
 
         // Falls back to notifyPolicy.onExpired — CDI Event null causes NPE, status unchanged
         try {
@@ -238,7 +217,7 @@ class EscalationPolicyTest {
         WorkItem wi = workItem(WorkItemStatus.PENDING);
         wi.assigneeId = "alice";
         wi.candidateGroups = "team-a";
-        workItemRepo.save(wi);
+        workItemRepo.put(wi);
 
         reassignPolicy.onUnclaimedPastDeadline(wi);
 

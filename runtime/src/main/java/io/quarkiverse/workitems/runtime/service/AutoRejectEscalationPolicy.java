@@ -8,23 +8,23 @@ import jakarta.inject.Inject;
 import io.quarkiverse.workitems.runtime.model.AuditEntry;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
-import io.quarkiverse.workitems.runtime.repository.AuditEntryRepository;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.workitems.runtime.repository.AuditEntryStore;
+import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 
 @ApplicationScoped
 public class AutoRejectEscalationPolicy implements EscalationPolicy {
 
     @Inject
-    AuditEntryRepository auditRepo;
+    AuditEntryStore auditStore;
 
     @Inject
-    WorkItemRepository workItemRepo;
+    WorkItemStore workItemStore;
 
     @Override
     public void onExpired(WorkItem workItem) {
         workItem.status = WorkItemStatus.REJECTED;
         workItem.completedAt = Instant.now();
-        workItemRepo.save(workItem);
+        workItemStore.put(workItem);
 
         final AuditEntry entry = new AuditEntry();
         entry.workItemId = workItem.id;
@@ -32,7 +32,7 @@ public class AutoRejectEscalationPolicy implements EscalationPolicy {
         entry.actor = "system";
         entry.detail = "auto-rejected: expiry deadline exceeded";
         entry.occurredAt = Instant.now();
-        auditRepo.append(entry);
+        auditStore.append(entry);
     }
 
     @Override
