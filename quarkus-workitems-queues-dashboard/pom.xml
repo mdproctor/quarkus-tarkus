@@ -76,7 +76,7 @@ Observes WorkItemLifecycleEvent directly — zero polling delay.</description>
       <artifactId>assertj-core</artifactId>
       <scope>test</scope>
     </dependency>
-    <!-- Tamboui Pilot test harness — TuiTestRunner + Pilot (TuiPilot, ElementNotFoundException) -->
+    <!-- Tamboui Pilot test harness: TuiTestRunner + TuiPilot in tamboui-tui test-fixtures -->
     <dependency>
       <groupId>dev.tamboui</groupId>
       <artifactId>tamboui-tui</artifactId>
@@ -84,7 +84,14 @@ Observes WorkItemLifecycleEvent directly — zero polling delay.</description>
       <classifier>test-fixtures</classifier>
       <scope>test</scope>
     </dependency>
-    <!-- tamboui-tui compile dep above also provides runtime classes for TuiTestRunner -->
+    <!-- TestBackend (used internally by TuiTestRunner) is in tamboui-core test-fixtures -->
+    <dependency>
+      <groupId>dev.tamboui</groupId>
+      <artifactId>tamboui-core</artifactId>
+      <version>0.2.0-SNAPSHOT</version>
+      <classifier>test-fixtures</classifier>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

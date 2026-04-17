@@ -7,7 +7,6 @@ import java.time.Duration;
 import jakarta.inject.Inject;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import dev.tamboui.tui.pilot.Pilot;
@@ -29,17 +28,10 @@ import io.quarkus.test.junit.QuarkusTest;
  * in production. {@code TuiTestRunner} drives the same code paths headlessly.
  *
  * <p>
- * <b>NOTE — tests disabled:</b> {@code TestBackend} (used internally by {@link TuiTestRunner})
- * is not published to Maven Central Snapshots — it lives in Tamboui's Gradle {@code testFixtures}
- * source set and is only available when Tamboui is built locally. To enable these tests:
- * <ol>
- * <li>Clone https://github.com/tamboui/tamboui</li>
- * <li>Run {@code ./gradlew publishToMavenLocal}</li>
- * <li>Remove the {@code @Disabled} annotation below</li>
- * </ol>
+ * {@code TestBackend} is published in {@code dev.tamboui:tamboui-core:test-fixtures} —
+ * add that dependency alongside {@code tamboui-tui:test-fixtures} and these tests run
+ * against the published Maven snapshot with no local Tamboui build required.
  */
-@Disabled("Requires local Tamboui build — TestBackend not published to Maven Central Snapshots. "
-        + "Clone tamboui/tamboui and run ./gradlew publishToMavenLocal to enable.")
 @QuarkusTest
 class QueueDashboardTest {
 
@@ -117,11 +109,12 @@ class QueueDashboardTest {
                 dashboard::handleEvent, dashboard::renderBoard)) {
             final Pilot pilot = test.pilot();
 
-            // Advance to step 2 first
+            // Advance to step 2 first — step 1 (setup) creates filters + 3 WorkItems,
+            // which can take >200ms on first run; use a longer pause
             pilot.press('s');
-            pilot.pause(Duration.ofMillis(200));
+            pilot.pause(Duration.ofMillis(500));
             pilot.press('s');
-            pilot.pause(Duration.ofMillis(200));
+            pilot.pause(Duration.ofMillis(500));
             assertThat(stepService.currentStep()).isEqualTo(2);
 
             // Reset
