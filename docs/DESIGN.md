@@ -268,7 +268,7 @@ Consuming app owns all datasource config.
 | **7 — Label-based queues** | ✅ Complete | `quarkus-workitems-queues` — label model (MANUAL/INFERRED), vocabulary (GLOBAL→PERSONAL scopes), filter engine (JEXL/JQ/Lambda, multi-pass propagation, cascade delete via FilterChain), QueueView named queries, soft assignment. See ADR-0002 and `docs/specs/2026-04-15-queues-design.md` |
 | **8 — Native image** | ✅ Complete | GraalVM 25 native build, 19 @QuarkusIntegrationTest tests, 0.084s startup |
 | **Examples** | ✅ Complete | `quarkus-workitems-examples` (4 ledger scenarios) + `quarkus-workitems-flow-examples` (WorkItemsFlow DSL showcase) + `quarkus-workitems-queues-examples` (5 queue scenarios: triage cascade, legal routing, finance approval, security escalation, document review pipeline) |
-| **Dashboard** | ✅ Complete | `quarkus-workitems-queues-dashboard` — Tamboui TUI inside Quarkus via `@QuarkusMain`; live queue board, step-by-step scenario control, Pilot end-to-end tests (disabled pending Tamboui local build — `TestBackend` not published to Maven snapshots) |
+| **Dashboard** | ✅ Complete | `quarkus-workitems-queues-dashboard` — Tamboui TUI inside Quarkus via `@QuarkusMain`; live queue board, step-by-step scenario control, 6 Pilot end-to-end tests passing headlessly via `TuiTestRunner` (`TestBackend` is in `tamboui-core:test-fixtures`) |
 | **9 — CaseHub integration** | ⏸ Blocked | `quarkus-workitems-casehub` — CaseHub WorkerRegistry adapter (awaiting CaseHub stable API) |
 | **10 — Qhorus integration** | ⏸ Blocked | `quarkus-workitems-qhorus` — MCP tools (awaiting Qhorus stable API) |
 | **11 — ProvenanceLink** | ⏸ Blocked | Typed PROV-O causal graph — awaiting CaseHub + Qhorus integrations (issue #39) |
@@ -293,7 +293,7 @@ Three tiers:
 **TUI end-to-end tests** (Tamboui Pilot):
 - `TuiTestRunner.runTest(dashboard::handleEvent, dashboard::renderBoard)` runs the TUI headlessly on a background thread
 - `Pilot.press('s')` + `Pilot.pause()` simulates key input; assert on CDI bean state
-- Tests written in `QueueDashboardTest` but `@Disabled` — Tamboui's `TestBackend` is not published to Maven Central Snapshots; requires `./gradlew publishToMavenLocal` from a local Tamboui clone to enable
+- 6 tests in `QueueDashboardTest` — all passing. `TestBackend` is in `tamboui-core:test-fixtures` (not `tamboui-tui:test-fixtures`); both must be declared as test dependencies
 
 **Current test totals (all modules, 0 failures):**
 
@@ -305,7 +305,7 @@ Three tiers:
 | quarkus-workitems-queues | 45 |
 | quarkus-workitems-examples | 4 |
 | quarkus-workitems-queues-examples | 5 |
-| quarkus-workitems-queues-dashboard | 14 (+ 6 disabled Pilot) |
+| quarkus-workitems-queues-dashboard | 20 (14 unit/CDI + 6 Pilot) |
 | testing | 16 |
 | integration-tests | 19 (native) |
 | **Total** | **262+** |
