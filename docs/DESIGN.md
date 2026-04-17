@@ -36,7 +36,7 @@ Maven multi-module layout following Quarkiverse conventions:
 | Testing | `quarkus-workitems-testing` | `InMemoryWorkItemRepository` — no datasource needed for unit tests |
 | Flow | `quarkus-workitems-flow` | Quarkus-Flow integration — `WorkItemsFlow` DSL base class, `HumanTaskFlowBridge`, `WorkItemFlowEventListener` |
 | Ledger | `quarkus-workitems-ledger` | Optional accountability module — command/event ledger, SHA-256 hash chain, peer attestation, EigenTrust reputation. Extends `io.quarkiverse.ledger:quarkus-ledger` (shared base library — see ADR-0001). Zero core impact when absent. |
-| Queues | `quarkus-workitems-queues` | Optional label-based work queues — `WorkItemFilter` (JEXL/JQ/Lambda), `FilterChain` derivation graph with cascade delete, `QueueView` named label-pattern queries, soft assignment (`relinquishable` flag). See ADR-0002. Zero core impact when absent. |
+| Queues | `quarkus-workitems-queues` | Optional label-based work queues — `WorkItemFilter` (JEXL/JQ/Lambda), `FilterChain` derivation graph with cascade delete, `QueueView` named label-pattern queries with `additionalConditions` JEXL filtering, queue pickup (`PUT /workitems/{id}/pickup`), soft assignment (`relinquishable` flag). See ADR-0002. Zero core impact when absent. |
 | Queue Examples | `quarkus-workitems-queues-examples` | Real-world queue routing scenarios — support triage cascade, legal compliance, finance approval chain, security exec-escalation, document review pipeline. Run via `POST /queue-examples/{name}/run`. |
 | Queue Dashboard | `quarkus-workitems-queues-dashboard` | Tamboui terminal UI dashboard running inside Quarkus via `@QuarkusMain`. Shows live 3×3 queue board (tiers × states), step-by-step scenario control, console log. Observes `WorkItemLifecycleEvent` directly — zero polling delay. |
 | Examples | `quarkus-workitems-examples` | Runnable scenario demos — 4 `@QuarkusTest` scenarios covering every ledger/audit capability via `POST /examples/{name}/run` |
@@ -235,7 +235,7 @@ between the core and the ledger module. If the module is absent, events fire int
 | `GET /` | List all label definitions accessible to caller |
 | `POST /{scope}` | Add label definition; GLOBAL scope currently supported |
 
-`quarkus-workitems-queues` adds `/filters`, `/queues`, and `/workitems/{id}/relinquishable`. See `docs/api-reference.md` for full queue API documentation.
+`quarkus-workitems-queues` adds `/filters`, `/queues`, `/workitems/{id}/pickup`, and `/workitems/{id}/relinquishable`. See `docs/api-reference.md` for full queue API documentation.
 
 ---
 
