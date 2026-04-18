@@ -36,7 +36,7 @@ Maven multi-module layout following Quarkiverse conventions:
 | Testing | `quarkus-workitems-testing` | `InMemoryWorkItemStore` + `InMemoryAuditEntryStore` — no datasource needed for unit tests |
 | Flow | `quarkus-workitems-flow` | Quarkus-Flow integration — `WorkItemsFlow` DSL base class, `HumanTaskFlowBridge`, `WorkItemFlowEventListener` |
 | Ledger | `quarkus-workitems-ledger` | Optional accountability module — command/event ledger, SHA-256 hash chain, peer attestation, EigenTrust reputation. Extends `io.quarkiverse.ledger:quarkus-ledger` (shared base library — see ADR-0001). Zero core impact when absent. |
-| Queues | `quarkus-workitems-queues` | Optional label-based work queues — `WorkItemFilter` (JEXL/JQ/Lambda), `FilterChain` derivation graph with cascade delete, `QueueView` named label-pattern queries with `additionalConditions` JEXL filtering, queue pickup (`PUT /workitems/{id}/pickup`), soft assignment (`relinquishable` flag). See ADR-0002. Zero core impact when absent. |
+| Queues | `quarkus-workitems-queues` | Optional label-based work queues — `WorkItemFilter` (JEXL/JQ/Lambda), `FilterChain` derivation graph with cascade delete, `QueueView` named label-pattern queries with `additionalConditions` JEXL filtering, queue pickup (`PUT /workitems/{id}/pickup`), soft assignment (`relinquishable` flag). **Queue lifecycle events**: `WorkItemQueueEvent` CDI events (ADDED/REMOVED/CHANGED) with DB-backed `QueueMembershipTracker` (V2001 migration) for restart-consistent state. See ADR-0002. Zero core impact when absent. |
 | Queue Examples | `quarkus-workitems-queues-examples` | Real-world queue routing scenarios — support triage cascade, legal compliance, finance approval chain, security exec-escalation, document review pipeline. Run via `POST /queue-examples/{name}/run`. |
 | Queue Dashboard | `quarkus-workitems-queues-dashboard` | Tamboui terminal UI dashboard running inside Quarkus via `@QuarkusMain`. Shows live 3×3 queue board (tiers × states), step-by-step scenario control, console log. Observes `WorkItemLifecycleEvent` directly — zero polling delay. |
 | Examples | `quarkus-workitems-examples` | Runnable scenario demos — 4 `@QuarkusTest` scenarios covering every ledger/audit capability via `POST /examples/{name}/run` |
@@ -309,4 +309,6 @@ Three tiers:
 | testing | 16 |
 | integration-tests | 19 (native) |
 | quarkus-workitems-persistence-mongodb | 27 |
-| **Total** | **294+** |
+| quarkus-workitems-queues (after queue events) | 80 |
+| quarkus-workitems-queues-examples (after lifecycle) | 15 |
+| **Total** | **321+** |
