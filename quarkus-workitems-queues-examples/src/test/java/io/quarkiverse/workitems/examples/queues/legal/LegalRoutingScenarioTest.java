@@ -17,12 +17,40 @@ class LegalRoutingScenarioTest {
                 .then()
                 .statusCode(200)
                 .body("scenarioId", equalTo("legal-compliance-routing"))
-                // Step 1: NORMAL legal → review only
                 .body("steps[0].inferredLabels", hasItem("legal/review"))
                 .body("steps[0].inferredLabels", not(hasItem("legal/urgent")))
-                // Step 2: HIGH legal → both review and urgent
                 .body("steps[1].inferredLabels", hasItems("legal/review", "legal/urgent"))
-                // Exec queue has HIGH item
                 .body("queueContents", hasSize(greaterThanOrEqualTo(1)));
+    }
+
+    @Test
+    void legalRouting_queueEvents_normalItem_addedToReviewQueueOnly() {
+        given()
+                .post("/queue-examples/legal/run")
+                .then()
+                .statusCode(200)
+                .body("steps[0].queueEvents", hasItem(containsString("ADDED")))
+                .body("steps[0].queueEvents", hasItem(containsString("Legal Review Queue")))
+                .body("steps[0].queueEvents", not(hasItem(containsString("Legal Urgent Queue"))));
+    }
+
+    @Test
+    void legalRouting_queueEvents_highItem_addedToBothQueues() {
+        given()
+                .post("/queue-examples/legal/run")
+                .then()
+                .statusCode(200)
+                .body("steps[1].queueEvents", hasItem(containsString("Legal Review Queue")))
+                .body("steps[1].queueEvents", hasItem(containsString("Legal Urgent Queue")))
+                .body("steps[1].queueEvents", everyItem(containsString("ADDED")));
+    }
+
+    @Test
+    void legalRouting_queueEvents_snapshotStep_hasNoEvents() {
+        given()
+                .post("/queue-examples/legal/run")
+                .then()
+                .statusCode(200)
+                .body("steps[2].queueEvents", empty());
     }
 }

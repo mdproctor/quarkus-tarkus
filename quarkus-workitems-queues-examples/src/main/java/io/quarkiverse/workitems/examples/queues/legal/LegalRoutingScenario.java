@@ -15,8 +15,10 @@ import org.jboss.logging.Logger;
 
 import io.quarkiverse.workitems.examples.queues.QueueScenarioResponse;
 import io.quarkiverse.workitems.examples.queues.QueueScenarioStep;
+import io.quarkiverse.workitems.examples.queues.lifecycle.QueueEventLog;
 import io.quarkiverse.workitems.queues.model.FilterAction;
 import io.quarkiverse.workitems.queues.model.FilterScope;
+import io.quarkiverse.workitems.queues.model.QueueView;
 import io.quarkiverse.workitems.queues.model.WorkItemFilter;
 import io.quarkiverse.workitems.runtime.model.LabelPersistence;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
@@ -41,8 +43,11 @@ import io.quarkiverse.workitems.runtime.service.WorkItemService;
  * </ul>
  *
  * <p>
- * A NORMAL legal contract review lands only in {@code legal/review}.
- * A HIGH-priority NDA dispute lands in both {@code legal/review} and {@code legal/urgent}.
+ * Queue events per step:
+ * <ol>
+ * <li>NORMAL contract → ADDED to Legal Review Queue</li>
+ * <li>HIGH NDA dispute → ADDED to Legal Review Queue + ADDED to Legal Urgent Queue</li>
+ * </ol>
  *
  * <p>
  * Endpoint: {@code POST /queue-examples/legal/run}
@@ -59,11 +64,13 @@ public class LegalRoutingScenario {
     @Inject
     WorkItemStore workItemStore;
 
+    @Inject
+    QueueEventLog eventLog;
+
     private void setupFilters() {
         if (WorkItemFilter.count("name", "Legal-A: Route to Legal Review") > 0)
             return;
 
-        // JEXL: all legal items → legal/review queue
         final WorkItemFilter filterA = new WorkItemFilter();
         filterA.name = "Legal-A: Route to Legal Review";
         filterA.scope = FilterScope.ORG;
@@ -74,7 +81,6 @@ public class LegalRoutingScenario {
         filterA.active = true;
         filterA.persist();
 
-        // JQ: high-priority legal items → legal/urgent (shows JQ evaluator)
         final WorkItemFilter filterB = new WorkItemFilter();
         filterB.name = "Legal-B: High Priority to Urgent Queue (JQ)";
         filterB.scope = FilterScope.ORG;
@@ -86,63 +92,71 @@ public class LegalRoutingScenario {
         filterB.persist();
     }
 
+    private void setupQueueViews() {
+        if (QueueView.count("name", "Legal Review Queue") > 0)
+            return;
+
+        final QueueView review = new QueueView();
+        review.name = "Legal Review Queue";
+        review.labelPattern = "legal/review";
+        review.scope = FilterScope.ORG;
+        review.persist();
+
+        final QueueView urgent = new QueueView();
+        urgent.name = "Legal Urgent Queue";
+        urgent.labelPattern = "legal/urgent";
+        urgent.scope = FilterScope.ORG;
+        urgent.persist();
+    }
+
     /**
      * Run the legal compliance routing scenario end to end.
      *
-     * @return scenario response with steps and legal/urgent queue contents
+     * @return scenario response with steps, queue events per step, and legal/urgent queue contents
      */
     @POST
     @Path("/run")
     @Transactional
     public QueueScenarioResponse run() {
         setupFilters();
+        setupQueueViews();
+        eventLog.clear();
         final List<QueueScenarioStep> steps = new ArrayList<>();
 
         LOG.info("[LEGAL] Step 1/3: NORMAL priority contract review — gets legal/review only");
         final WorkItem contractReview = workItemService.create(new WorkItemCreateRequest(
                 "Vendor contract review — Acme Corp SaaS agreement",
                 "Review vendor SaaS agreement for GDPR compliance. Non-urgent; renewal date in 6 weeks.",
-                "legal",
-                "contract-review",
-                WorkItemPriority.NORMAL,
-                null, "legal-team", null, null,
-                "contract-service",
+                "legal", "contract-review", WorkItemPriority.NORMAL,
+                null, "legal-team", null, null, "contract-service",
                 "{\"vendor\": \"Acme Corp\", \"contract_type\": \"SaaS\", \"renewal_date\": \"2026-06-01\"}",
                 null, null, null, null));
-
         steps.add(new QueueScenarioStep(1,
                 "NORMAL legal contract review — JEXL filter fires: legal/review; JQ filter (legal+HIGH) does not match",
-                contractReview.id,
-                inferredPaths(contractReview),
-                manualPaths(contractReview)));
+                contractReview.id, inferredPaths(contractReview), manualPaths(contractReview),
+                formatEvents(eventLog.drain())));
 
         LOG.info("[LEGAL] Step 2/3: HIGH priority NDA dispute — gets legal/review + legal/urgent");
         final WorkItem ndaDispute = workItemService.create(new WorkItemCreateRequest(
                 "NDA breach — former employee posted confidential roadmap",
                 "Ex-employee posted internal roadmap on LinkedIn. Legal and PR action required immediately.",
-                "legal",
-                "nda-breach",
-                WorkItemPriority.HIGH,
-                null, "legal-team,executive-team", null, null,
-                "hr-system",
+                "legal", "nda-breach", WorkItemPriority.HIGH,
+                null, "legal-team,executive-team", null, null, "hr-system",
                 "{\"employee_id\": \"EMP-4521\", \"disclosure_type\": \"roadmap\", \"channel\": \"LinkedIn\"}",
                 null, null, null, null));
-
         steps.add(new QueueScenarioStep(2,
                 "HIGH legal NDA dispute — JEXL fires: legal/review; JQ fires: legal/urgent — two filters, two queues",
-                ndaDispute.id,
-                inferredPaths(ndaDispute),
-                manualPaths(ndaDispute)));
+                ndaDispute.id, inferredPaths(ndaDispute), manualPaths(ndaDispute),
+                formatEvents(eventLog.drain())));
 
         LOG.info("[LEGAL] Step 3/3: legal/urgent queue contains only the NDA dispute");
         final List<UUID> urgentQueue = workItemStore.scan(WorkItemQuery.byLabelPattern("legal/urgent"))
                 .stream().map(w -> w.id).toList();
-
         steps.add(new QueueScenarioStep(3,
                 "legal/urgent queue — contains HIGH priority items only; NORMAL contract review is absent",
                 null,
                 List.of("legal/urgent contains " + urgentQueue.size() + " item(s)"),
-                List.of()));
+                List.of(), List.of()));
 
         return new QueueScenarioResponse(
                 "legal-compliance-routing",
@@ -151,14 +165,18 @@ public class LegalRoutingScenario {
     }
 
     private List<String> inferredPaths(final WorkItem wi) {
-        return wi.labels.stream()
-                .filter(l -> l.persistence == LabelPersistence.INFERRED)
+        return wi.labels.stream().filter(l -> l.persistence == LabelPersistence.INFERRED)
                 .map(l -> l.path).toList();
     }
 
     private List<String> manualPaths(final WorkItem wi) {
-        return wi.labels.stream()
-                .filter(l -> l.persistence == LabelPersistence.MANUAL)
+        return wi.labels.stream().filter(l -> l.persistence == LabelPersistence.MANUAL)
                 .map(l -> l.path).toList();
+    }
+
+    private List<String> formatEvents(final List<QueueEventLog.Entry> entries) {
+        return entries.stream()
+                .map(e -> e.eventType().name() + " to " + e.queueName())
+                .toList();
     }
 }

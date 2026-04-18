@@ -17,16 +17,46 @@ class SecurityEscalationScenarioTest {
                 .then()
                 .statusCode(200)
                 .body("scenarioId", equalTo("security-exec-escalation"))
-                // Step 1: HIGH incident — security/incident only
                 .body("steps[0].inferredLabels", hasItem("security/incident"))
                 .body("steps[0].inferredLabels", not(hasItem("priority/critical")))
                 .body("steps[0].inferredLabels", not(hasItem("security/exec-escalate")))
-                // Step 2: CRITICAL breach — all 3 labels via cascade
                 .body("steps[1].inferredLabels", hasItems(
-                        "security/incident",
-                        "priority/critical",
-                        "security/exec-escalate"))
-                // Exec escalate queue has the CRITICAL item
+                        "security/incident", "priority/critical", "security/exec-escalate"))
                 .body("queueContents", hasSize(greaterThanOrEqualTo(1)));
+    }
+
+    @Test
+    void security_queueEvents_highIncident_addedToIncidentQueueOnly() {
+        given()
+                .post("/queue-examples/security/run")
+                .then()
+                .statusCode(200)
+                .body("steps[0].queueEvents", hasItem(containsString("ADDED")))
+                .body("steps[0].queueEvents", hasItem(containsString("Security Incidents Queue")))
+                // HIGH incident does NOT trigger critical or exec escalation queues
+                .body("steps[0].queueEvents", not(hasItem(containsString("Priority Critical Queue"))))
+                .body("steps[0].queueEvents", not(hasItem(containsString("Security Exec Escalation Queue"))));
+    }
+
+    @Test
+    void security_queueEvents_criticalBreach_addedToAllThreeQueues() {
+        given()
+                .post("/queue-examples/security/run")
+                .then()
+                .statusCode(200)
+                // CRITICAL breach enters all 3 queues via cascade
+                .body("steps[1].queueEvents", hasItem(containsString("Security Incidents Queue")))
+                .body("steps[1].queueEvents", hasItem(containsString("Priority Critical Queue")))
+                .body("steps[1].queueEvents", hasItem(containsString("Security Exec Escalation Queue")))
+                .body("steps[1].queueEvents", everyItem(containsString("ADDED")));
+    }
+
+    @Test
+    void security_queueEvents_snapshotStep_hasNoEvents() {
+        given()
+                .post("/queue-examples/security/run")
+                .then()
+                .statusCode(200)
+                .body("steps[2].queueEvents", empty());
     }
 }
