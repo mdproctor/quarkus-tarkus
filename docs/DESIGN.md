@@ -44,7 +44,7 @@ Maven multi-module layout following Quarkiverse conventions:
 | Integration Tests | `integration-tests` | Black-box `@QuarkusIntegrationTest` suite and native image validation |
 | *(future)* | `quarkus-workitems-casehub` | CaseHub `WorkerRegistry` adapter (blocked: CaseHub not ready) |
 | *(future)* | `quarkus-workitems-qhorus` | Qhorus MCP tools (blocked: Qhorus not ready) |
-| *(future)* | `quarkus-workitems-mongodb` | MongoDB-backed `WorkItemStore` |
+| MongoDB | `quarkus-workitems-persistence-mongodb` | MongoDB-backed `WorkItemStore` + `AuditEntryStore`. `candidateGroups`/`candidateUsers` stored as arrays; `WorkItemQuery` → MongoDB `Document` filter; `$regex` for label patterns. 27 tests via Dev Services. |
 | *(future)* | `quarkus-workitems-redis` | Redis-backed `WorkItemStore` |
 
 ---
@@ -308,4 +308,5 @@ Three tiers:
 | quarkus-workitems-queues-dashboard | 20 (14 unit/CDI + 6 Pilot) |
 | testing | 16 |
 | integration-tests | 19 (native) |
-| **Total** | **267+** |
+| quarkus-workitems-persistence-mongodb | 27 |
+| **Total** | **294+** |
