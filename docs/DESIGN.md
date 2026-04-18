@@ -299,7 +299,7 @@ Three tiers:
 
 | Module | Tests |
 |---|---|
-| runtime | 217 |
+| runtime | 222 |
 | workitems-flow | 32 |
 | quarkus-workitems-ledger | 74 |
 | quarkus-workitems-queues | 45 |
@@ -308,4 +308,4 @@ Three tiers:
 | quarkus-workitems-queues-dashboard | 20 (14 unit/CDI + 6 Pilot) |
 | testing | 16 |
 | integration-tests | 19 (native) |
-| **Total** | **262+** |
+| **Total** | **267+** |
