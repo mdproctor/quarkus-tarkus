@@ -13,29 +13,57 @@ import io.quarkiverse.workitems.queues.model.WorkItemQueueMembership;
  * Persistent store of last-known queue membership per WorkItem.
  *
  * <p>
- * Backed by the {@code work_item_queue_membership} table (see Flyway migration V2001).
- * This persistence means queue membership state survives JVM restarts — without it,
- * every restart would re-fire {@link io.quarkiverse.workitems.queues.event.QueueEventType#ADDED}
- * for every WorkItem currently in any queue, which is incorrect for consumers that track
- * cumulative state.
+ * Backed by the {@code work_item_queue_membership} DB table (Flyway migration V2001).
+ * {@link FilterEvaluationObserver} writes to this tracker at the end of every
+ * {@link io.quarkiverse.workitems.runtime.event.WorkItemLifecycleEvent}, recording the
+ * resolved membership as the authoritative "before-state" for the next event.
+ *
+ * <h2>Why DB, not an in-memory map?</h2>
+ * <p>
+ * An in-memory {@code ConcurrentHashMap} would work correctly within a single JVM session
+ * but fails on restart. Consider:
+ *
+ * <pre>
+ * JVM instance 1:
+ *   Item A enters queue Q → ADDED fires → tracker records {Q}
+ *   JVM RESTARTS
+ *
+ * JVM instance 2 (in-memory tracker is empty):
+ *   Item A status changes → lifecycle event fires
+ *   tracker.getBefore(A) = {}  ← empty (tracker was reset)
+ *   evaluate(A) → still has label → after = {Q}
+ *   {} vs {Q} → ADDED fires again  ← WRONG: item never left the queue
+ * </pre>
  *
  * <p>
- * Maintained by {@link FilterEvaluationObserver} on every WorkItem lifecycle event.
- * The stored map is used as the "before-state" when
- * {@link QueueMembershipContext#resolve(io.quarkiverse.workitems.runtime.model.WorkItem, java.util.List, java.util.function.Consumer)}
- * computes membership diffs.
+ * With DB-backed persistence:
+ *
+ * <pre>
+ * JVM instance 2 (tracker reads from DB):
+ *   tracker.getBefore(A) = {Q}  ← correct: loaded from work_item_queue_membership table
+ *   evaluate(A) → label survives → after = {Q}
+ *   {Q} vs {Q} → CHANGED fires  ← correct
+ * </pre>
+ *
+ * <h2>Why the tracker exists at all (the root cause)</h2>
+ * <p>
+ * {@link io.quarkiverse.workitems.runtime.event.WorkItemLifecycleEvent} fires AFTER the
+ * WorkItem mutation is persisted. When the observer fetches the entity, the pre-mutation
+ * state is gone. The tracker bridges this timing gap by recording what the queue membership
+ * WAS (at the end of the previous event) so it can serve as "before" for the next event.
+ * See {@link QueueMembershipContext} for the full counter-example.
  *
  * <h2>Concurrency</h2>
  * <p>
- * All operations run within the caller's transaction (they join via {@code Transactional.TxType.REQUIRED}).
- * Since lifecycle events are processed sequentially per WorkItem within a single request,
- * concurrent updates to the same WorkItem are not expected in normal operation.
+ * All operations run within the caller's transaction. Since lifecycle events are processed
+ * sequentially per WorkItem within a single request, concurrent updates to the same
+ * WorkItem are not expected in normal operation.
  *
  * <h2>GC behaviour</h2>
  * <p>
  * When a WorkItem leaves all queues, its rows are deleted — no orphan rows accumulate.
- * Deleted WorkItems naturally lose their rows via cascading OR via the delete-all-then-insert
- * pattern in {@link #update}.
+ * The per-event context object ({@link QueueMembershipContext}) is a local variable that
+ * falls out of scope immediately after {@code resolve()} returns.
  */
 @ApplicationScoped
 class QueueMembershipTracker {

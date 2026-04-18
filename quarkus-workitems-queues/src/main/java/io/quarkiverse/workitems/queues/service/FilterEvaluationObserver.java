@@ -40,10 +40,34 @@ import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
  * <h2>Why the before-state comes from the tracker, not from the live entity</h2>
  * <p>
  * {@link WorkItemLifecycleEvent} fires <em>after</em> the WorkItem has already been
- * mutated in the store. Fetching the entity at observation time therefore yields the
- * post-mutation state — there is no "before" to compare against. The tracker bridges
- * this by persisting the resolved queue membership at the end of each event, making
- * it available as the "before" for the next event.
+ * mutated and persisted. When this observer calls {@code workItemStore.get(id)},
+ * it receives the post-mutation entity. There is no "before" accessible from the store.
+ *
+ * <p>
+ * <strong>Counter-example — what breaks if you use the live entity as "before":</strong>
+ *
+ * <p>
+ * Suppose a WorkItem is created with the MANUAL label {@code "legal/contracts"}, which
+ * matches queue Q. The creation flow is:
+ * <ol>
+ * <li>{@code WorkItemService.create()} persists the item <em>including the label</em>.</li>
+ * <li>{@code lifecycleEvent.fire(CREATED)} is called — the label is already in the store.</li>
+ * <li>This observer runs; {@code workItemStore.get(id)} returns the item <em>with the label</em>.</li>
+ * <li>If "before" were built from the live entity: before = {Q} (label already there).</li>
+ * <li>After {@code evaluate()}: label survives → after = {Q}.</li>
+ * <li>before == after → {@code CHANGED} fires. <strong>Wrong — it should be {@code ADDED}.</strong></li>
+ * </ol>
+ *
+ * <p>
+ * The same failure occurs for label removal: the label is deleted before the event fires,
+ * so the live entity has no label, making before = {} and after = {} — no event fires at all,
+ * missing the expected {@code REMOVED}.
+ *
+ * <p>
+ * <strong>The tracker solves this</strong> by recording the resolved queue membership at the
+ * end of each event (after {@code evaluate()} and before the transaction commits). For a new
+ * item, the tracker has no entry → before = {} → ADDED fires correctly. For a label removal,
+ * the tracker still holds the membership from the previous event → before = {Q} → REMOVED fires.
  *
  * <h2>CHANGED vs spurious REMOVED + ADDED</h2>
  * <p>

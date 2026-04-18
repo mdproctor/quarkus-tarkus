@@ -21,41 +21,81 @@ import io.quarkiverse.workitems.runtime.service.WorkItemService;
 
 /**
  * Runnable example demonstrating the full queue lifecycle event sequence:
- * {@code ADDED → CHANGED → REMOVED}.
+ * {@code ADDED → CHANGED → CHANGED → REMOVED}.
  *
- * <h2>Scenario</h2>
+ * <p>
+ * This example is specifically designed to make the {@code QueueMembershipTracker}
+ * design constraints visible. Each step's explanation shows both what the tracker
+ * produces (correct) and what a naïve live-entity snapshot would produce (wrong).
+ *
+ * <h2>Scenario steps</h2>
  * <ol>
- * <li>A {@link QueueView} named "Lifecycle Demo Queue" is created with the pattern
- * {@code lifecycle-demo/**}.</li>
- * <li>A WorkItem is created with the MANUAL label {@code lifecycle-demo/case-1}.
- * The filter engine runs and determines the item now belongs to the queue →
- * {@link QueueEventType#ADDED} fires.</li>
- * <li>The WorkItem is claimed by an assignee. The filter engine re-evaluates
- * (stripping and re-applying INFERRED labels). The MANUAL label is not affected,
- * so the item remains in the queue → {@link QueueEventType#CHANGED} fires.</li>
- * <li>The MANUAL label is removed. The filter engine runs and finds no matching labels →
- * {@link QueueEventType#REMOVED} fires.</li>
+ * <li><strong>Create + label</strong>: WorkItem created (no label yet → not in queue).
+ * Then {@code addLabel("lifecycle-demo/case-1")} → filter engine runs →
+ * {@code ADDED} fires.</li>
+ * <li><strong>Claim</strong>: filter re-evaluates; MANUAL label survives the INFERRED
+ * strip → {@code CHANGED} fires.</li>
+ * <li><strong>Start</strong>: same re-evaluation; still in queue → {@code CHANGED} fires.</li>
+ * <li><strong>Remove label</strong>: {@code removeLabel()} persists the removal, then the
+ * filter engine runs with no matching labels → {@code REMOVED} fires.</li>
  * </ol>
  *
- * <h2>Key insight — why not REMOVED+ADDED during step 3?</h2>
+ * <h2>Why ADDED fires in step 1 (tracker invariant)</h2>
  * <p>
- * When the filter engine runs, it strips INFERRED labels and re-applies them. Without
- * coordination, this would emit REMOVED (during strip) then ADDED (on re-apply) for the
- * same queue within the same operation — a false signal. The {@code QueueMembershipContext}
- * suppresses this by comparing before vs after states at the operation boundary. Items
- * that remain in a queue after re-evaluation get a single CHANGED event instead.
+ * {@code WorkItemLifecycleEvent} fires AFTER the WorkItem mutation is persisted. When
+ * the observer fetches the entity, the label is already in the store. A naïve live
+ * snapshot would see:
+ *
+ * <pre>
+ *   before = {Q}   ← label already present in store when observer fetches entity
+ *   after  = {Q}   ← label survives evaluate()
+ *   result: CHANGED  ← WRONG — item was just entering the queue for the first time
+ * </pre>
+ *
+ * The tracker correctly returns empty for a new item:
+ *
+ * <pre>
+ *   before = {}    ← no prior history in work_item_queue_membership table
+ *   after  = {Q}
+ *   result: ADDED  ← correct
+ * </pre>
+ *
+ * <h2>Why REMOVED fires in step 4 (tracker invariant)</h2>
+ * <p>
+ * Label removal is also persisted before the event fires. A naïve live snapshot sees:
+ *
+ * <pre>
+ *   before = {}    ← label already gone when observer fetches entity
+ *   after  = {}    ← no labels → not in queue
+ *   result: no event  ← WRONG — item just left a queue it was in
+ * </pre>
+ *
+ * The tracker remembers the post-step-3 membership:
+ *
+ * <pre>
+ *   before = {Q}   ← loaded from work_item_queue_membership table
+ *   after  = {}    ← label removed
+ *   result: REMOVED  ← correct
+ * </pre>
+ *
+ * <h2>Why CHANGED not REMOVED+ADDED in steps 2–3 (context invariant)</h2>
+ * <p>
+ * The filter engine strips all INFERRED labels before re-applying them. Without the
+ * {@code QueueMembershipContext} before/after boundary, this would emit REMOVED (strip)
+ * then ADDED (re-apply) within one operation. The context collapses these into CHANGED
+ * by comparing membership only at operation boundaries, not during the strip.
+ *
+ * <h2>Persistence across restarts</h2>
+ * <p>
+ * The {@code work_item_queue_membership} table (V2001 migration) stores the tracker state.
+ * On JVM restart the tracker reads from DB — items currently in queues produce CHANGED
+ * (not a spurious re-ADDED) on their next lifecycle event.
  *
  * <h2>Running</h2>
  *
  * <pre>
  *   curl -s -X POST http://localhost:8080/queue-examples/lifecycle/run | jq .
  * </pre>
- *
- * <h2>Why persistent membership tracking matters</h2>
- * <p>
- * The "before-state" used by each step comes from the {@code work_item_queue_membership}
- * DB table — not from an in-memory cache. If the JVM restarts between steps, the correct
- * events still fire because the last-known membership state is persisted.
  */
 @Path("/queue-examples/lifecycle")
 @Produces(MediaType.APPLICATION_JSON)
@@ -102,40 +142,48 @@ public class QueueLifecycleScenario {
         final UUID itemId = wi.id;
 
         // Add the MANUAL label that makes the item a member of the queue.
+        // TRACKER INVARIANT: WorkItemLifecycleEvent fires AFTER persistence.
+        // The label is already in the store when the observer runs. A live snapshot
+        // would see before={Q}, after={Q} → CHANGED (wrong). The tracker has no
+        // entry for this new item → before={} → ADDED fires correctly.
         workItemService.addLabel(itemId, "lifecycle-demo/case-1", "demo");
         steps.add(new QueueLifecycleResponse.Step(
                 1,
                 "WorkItem created and labelled 'lifecycle-demo/case-1'",
-                "Before: not in queue. After: in queue → ADDED",
+                "Tracker before={} (new item). After={Q}. → ADDED. "
+                        + "Without tracker: live snapshot would see before={Q} → CHANGED (wrong).",
                 captureEvents(queueId, itemId)));
 
         // ── Step 2: CHANGED ───────────────────────────────────────────────────
-        // Claiming the item fires a WorkItemLifecycleEvent. The filter engine
-        // re-evaluates: INFERRED labels are stripped (none here) and re-applied.
-        // The MANUAL label survives the strip. Before = in queue, after = in queue → CHANGED.
+        // Claiming fires a lifecycle event. The filter engine re-evaluates: INFERRED
+        // labels are stripped (none here) and re-applied. The MANUAL label survives.
+        // Tracker before={Q} (recorded at end of step 1), after={Q} → CHANGED.
         workItemService.claim(itemId, "alice");
         steps.add(new QueueLifecycleResponse.Step(
                 2,
                 "WorkItem claimed by 'alice'",
-                "Before: in queue. INFERRED labels stripped+re-applied. MANUAL survives. After: still in queue → CHANGED",
+                "Tracker before={Q}. Filter re-evaluates (INFERRED strip+re-apply). MANUAL label survives. After={Q}. → CHANGED.",
                 captureEvents(queueId, itemId)));
 
-        // ── Step 3: CHANGED again (started) ───────────────────────────────────
+        // ── Step 3: CHANGED again ─────────────────────────────────────────────
         workItemService.start(itemId, "alice");
         steps.add(new QueueLifecycleResponse.Step(
                 3,
                 "WorkItem started by 'alice'",
-                "Before: in queue. Filter re-evaluates. MANUAL label still present. After: still in queue → CHANGED",
+                "Tracker before={Q} (from step 2). Filter re-evaluates. MANUAL label still present. After={Q}. → CHANGED.",
                 captureEvents(queueId, itemId)));
 
         // ── Step 4: REMOVED ───────────────────────────────────────────────────
-        // Removing the MANUAL label fires LABEL_REMOVED → filter engine runs.
-        // Before = in queue (label was there). After = no matching labels → not in queue → REMOVED.
+        // removeLabel() persists the deletion, then fires LABEL_REMOVED → filter runs.
+        // TRACKER INVARIANT: label is already gone from the store when the observer runs.
+        // A live snapshot would see before={}, after={} → no event (wrong).
+        // The tracker holds the step-3 membership → before={Q}, after={} → REMOVED fires.
         workItemService.removeLabel(itemId, "lifecycle-demo/case-1");
         steps.add(new QueueLifecycleResponse.Step(
                 4,
                 "MANUAL label 'lifecycle-demo/case-1' removed",
-                "Before: in queue. After: no matching labels → not in queue → REMOVED",
+                "Tracker before={Q} (from step 3). Label already deleted in store. After={}. → REMOVED. "
+                        + "Without tracker: live snapshot would see before={} → no event (wrong).",
                 captureEvents(queueId, itemId)));
 
         return new QueueLifecycleResponse("queue-lifecycle-demo", steps);
