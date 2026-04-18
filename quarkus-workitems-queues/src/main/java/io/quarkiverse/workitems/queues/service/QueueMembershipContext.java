@@ -21,11 +21,42 @@ import io.quarkiverse.workitems.runtime.service.LabelVocabularyService;
  * <h2>Why a tracker, not a live before-snapshot?</h2>
  * <p>
  * {@link io.quarkiverse.workitems.runtime.event.WorkItemLifecycleEvent} fires <em>after</em>
- * the WorkItem has already been mutated in the store. Fetching the WorkItem at event observation
- * time therefore yields the post-mutation state, making it impossible to construct a meaningful
- * "before" from the live entity. The tracker solves this by persisting the last-resolved queue
- * membership between events — surviving JVM restarts via the {@code work_item_queue_membership}
- * table.
+ * the WorkItem has already been mutated and persisted in the store. At observation time,
+ * {@code workItemStore.get(id)} returns the post-mutation state — the pre-mutation state is gone.
+ *
+ * <p>
+ * <strong>Concrete failure without the tracker:</strong>
+ *
+ * <pre>
+ * // WorkItem is NEWLY CREATED with MANUAL label "legal/contracts" matching queue Q.
+ * //
+ * // WorkItemService.create() sequence:
+ * //   1. persist workItem WITH the label already attached
+ * //   2. fire WorkItemLifecycleEvent("CREATED")    ← label is already in the store
+ * //
+ * // FilterEvaluationObserver.onLifecycleEvent():
+ * //   3. workItemStore.get(id) → returns item WITH label  ← post-mutation
+ * //
+ * // Without tracker — naive live snapshot:
+ * //   before = computeMembership(liveEntity) = {Q}  ← label already present!
+ * //   evaluate(wi) → label survives → after = {Q}
+ * //   before == after → CHANGED fires              ← WRONG: should be ADDED
+ * //
+ * // With tracker:
+ * //   before = tracker.getBefore(id) = {}           ← no prior history for new item
+ * //   evaluate(wi) → label survives → after = {Q}
+ * //   {} vs {Q} → ADDED fires                      ← correct
+ * </pre>
+ *
+ * <p>
+ * The same failure occurs for label removal: the label is deleted before the event fires,
+ * so a live snapshot would also yield {} before and {} after, producing no event instead
+ * of the correct {@code REMOVED}.
+ *
+ * <p>
+ * The tracker bridges this by recording the after-state at the end of each event — which
+ * is the correct before-state for the next event. It is DB-backed (V2001 migration) so
+ * state survives JVM restarts.
  *
  * <h2>Event semantics</h2>
  * <ul>

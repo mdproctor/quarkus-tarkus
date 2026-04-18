@@ -133,6 +133,41 @@ class QueueLifecycleScenarioTest {
                 QueueEventType.REMOVED); // step 4: label removed
     }
 
+    // ── Tracker invariant — proves the tracker is necessary ──────────────────
+
+    @Test
+    void trackerInvariant_step1IsAdded_notChanged() {
+        // CRITICAL: Without the tracker, step 1 would fire CHANGED instead of ADDED.
+        // Reason: WorkItemLifecycleEvent fires AFTER the label is persisted.
+        // A live-entity snapshot sees {Q} before and {Q} after → CHANGED.
+        // The tracker has no entry for a new item → {} before → ADDED (correct).
+        final var step = runScenario().steps().get(0);
+        assertThat(step.events())
+                .as("Step 1 MUST be ADDED, not CHANGED — proves tracker is working, not live snapshot")
+                .containsExactly(QueueEventType.ADDED);
+    }
+
+    @Test
+    void trackerInvariant_step4IsRemoved_notNothing() {
+        // CRITICAL: Without the tracker, step 4 would fire no event.
+        // Reason: removeLabel() persists the deletion before the event fires.
+        // A live-entity snapshot sees {} before and {} after → no event.
+        // The tracker holds the step-3 membership → {Q} before → REMOVED (correct).
+        final var step = runScenario().steps().get(3);
+        assertThat(step.events())
+                .as("Step 4 MUST be REMOVED — proves tracker is working, not live snapshot")
+                .containsExactly(QueueEventType.REMOVED);
+    }
+
+    @Test
+    void trackerInvariant_explanation_appearsInResponse() {
+        // The scenario response documents WHY each step produces its event type,
+        // including the tracker counter-example. Verify the explanations are present.
+        final var response = runScenario();
+        assertThat(response.steps().get(0).explanation()).contains("tracker");
+        assertThat(response.steps().get(3).explanation()).contains("tracker");
+    }
+
     // ── Idempotency — running twice produces consistent results ───────────────
 
     @Test

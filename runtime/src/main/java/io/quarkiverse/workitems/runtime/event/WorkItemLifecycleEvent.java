@@ -14,6 +14,38 @@ import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
  * The optional {@code rationale} and {@code planRef} fields are populated when
  * available (e.g. rejection reason, policy reference) and are {@code null} otherwise.
  * Observers that don't use them can safely ignore them.
+ *
+ * <h2>Firing contract — fires AFTER the mutation is persisted</h2>
+ * <p>
+ * This event is fired by {@link io.quarkiverse.workitems.runtime.service.WorkItemService}
+ * <em>after</em> the WorkItem has been mutated and written to the store via
+ * {@code workItemStore.put(workItem)}. By the time any observer receives this event,
+ * the WorkItem's new state is already the current state in the store.
+ *
+ * <p>
+ * <strong>This has a critical consequence for observers that need the pre-mutation state.</strong>
+ * If an observer calls {@code workItemStore.get(event.workItemId())} inside its handler,
+ * it receives the <em>post</em>-mutation entity — the "before" is gone. Observers that
+ * must compare before and after (for example, to detect which queues a WorkItem entered
+ * or left) must maintain their own record of the previous state between events.
+ *
+ * <p>
+ * The {@code status} field in this event records the status <em>after</em> the transition.
+ * No "previous status" field is provided in the event itself.
+ *
+ * <h2>Sequence</h2>
+ *
+ * <pre>
+ * WorkItemService.claim(id, actor)
+ *   1. workItemStore.get(id)           ← loads WorkItem (status=PENDING, labels=[...])
+ *   2. wi.status = ASSIGNED            ← mutates in memory
+ *   3. workItemStore.put(wi)           ← persists; store now has status=ASSIGNED
+ *   4. lifecycleEvent.fire(ASSIGNED)   ← fires AFTER step 3
+ *
+ * Observer receives event:
+ *   5. workItemStore.get(id)           ← returns status=ASSIGNED  ← POST-MUTATION
+ *      (no way to recover the pre-mutation state from the store)
+ * </pre>
  */
 public record WorkItemLifecycleEvent(
         String type,
