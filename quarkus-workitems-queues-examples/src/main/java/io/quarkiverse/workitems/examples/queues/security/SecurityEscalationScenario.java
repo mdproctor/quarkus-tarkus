@@ -15,8 +15,10 @@ import org.jboss.logging.Logger;
 
 import io.quarkiverse.workitems.examples.queues.QueueScenarioResponse;
 import io.quarkiverse.workitems.examples.queues.QueueScenarioStep;
+import io.quarkiverse.workitems.examples.queues.lifecycle.QueueEventLog;
 import io.quarkiverse.workitems.queues.model.FilterAction;
 import io.quarkiverse.workitems.queues.model.FilterScope;
+import io.quarkiverse.workitems.queues.model.QueueView;
 import io.quarkiverse.workitems.queues.model.WorkItemFilter;
 import io.quarkiverse.workitems.runtime.model.LabelPersistence;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
@@ -40,14 +42,12 @@ import io.quarkiverse.workitems.runtime.service.WorkItemService;
  * </ul>
  *
  * <p>
- * A HIGH security incident gets only {@code security/incident}.
- * A CRITICAL security incident gets {@code security/incident} + {@code priority/critical} +
- * (cascade) {@code security/exec-escalate} — the executive escalation queue fires only
- * when BOTH conditions are true simultaneously.
- *
- * <p>
- * This pattern is only possible with label-based cascade routing — a single filter
- * cannot express the same logic without the intermediate labels.
+ * Queue events per step:
+ * <ol>
+ * <li>HIGH security incident → ADDED to Security Incidents Queue only</li>
+ * <li>CRITICAL breach → ADDED to Security Incidents Queue + ADDED to Priority Critical Queue +
+ * ADDED to Security Exec Escalation Queue (cascade fires after both A and B labels present)</li>
+ * </ol>
  *
  * <p>
  * Endpoint: {@code POST /queue-examples/security/run}
@@ -64,11 +64,13 @@ public class SecurityEscalationScenario {
     @Inject
     WorkItemStore workItemStore;
 
+    @Inject
+    QueueEventLog eventLog;
+
     private void setupFilters() {
         if (WorkItemFilter.count("name", "Security-A: Incident Detection") > 0)
             return;
 
-        // Filter A: all security category items → security/incident
         final WorkItemFilter filterA = new WorkItemFilter();
         filterA.name = "Security-A: Incident Detection";
         filterA.scope = FilterScope.ORG;
@@ -79,7 +81,6 @@ public class SecurityEscalationScenario {
         filterA.active = true;
         filterA.persist();
 
-        // Filter B: all CRITICAL items → priority/critical
         final WorkItemFilter filterB = new WorkItemFilter();
         filterB.name = "Security-B: Critical Priority Flag";
         filterB.scope = FilterScope.ORG;
@@ -90,9 +91,6 @@ public class SecurityEscalationScenario {
         filterB.active = true;
         filterB.persist();
 
-        // Filter C: BOTH labels present → executive escalation (cascade)
-        // This is the key insight: single filters can't express AND-of-separate-conditions
-        // without intermediate labels acting as signals
         final WorkItemFilter filterC = new WorkItemFilter();
         filterC.name = "Security-C: Critical Incident → Executive Escalation";
         filterC.scope = FilterScope.ORG;
@@ -104,61 +102,79 @@ public class SecurityEscalationScenario {
         filterC.persist();
     }
 
+    private void setupQueueViews() {
+        if (QueueView.count("name", "Security Incidents Queue") > 0)
+            return;
+
+        final QueueView incidents = new QueueView();
+        incidents.name = "Security Incidents Queue";
+        incidents.labelPattern = "security/incident";
+        incidents.scope = FilterScope.ORG;
+        incidents.persist();
+
+        final QueueView critical = new QueueView();
+        critical.name = "Priority Critical Queue";
+        critical.labelPattern = "priority/critical";
+        critical.scope = FilterScope.ORG;
+        critical.persist();
+
+        final QueueView exec = new QueueView();
+        exec.name = "Security Exec Escalation Queue";
+        exec.labelPattern = "security/exec-escalate";
+        exec.scope = FilterScope.ORG;
+        exec.persist();
+    }
+
     /**
      * Run the multi-label security escalation scenario end to end.
      *
-     * @return scenario response with steps and security/exec-escalate queue contents
+     * @return scenario response with steps, queue events per step, and exec-escalate queue contents
      */
     @POST
     @Path("/run")
     @Transactional
     public QueueScenarioResponse run() {
         setupFilters();
+        setupQueueViews();
+        eventLog.clear();
         final List<QueueScenarioStep> steps = new ArrayList<>();
 
         LOG.info("[SECURITY] Step 1/3: HIGH security incident — security/incident only (not CRITICAL)");
         final WorkItem highIncident = workItemService.create(new WorkItemCreateRequest(
                 "Suspicious login attempts — automated bot detected",
                 "Rate limiter flagged 2,400 failed login attempts from a single IP range over 10 minutes.",
-                "security",
-                "login-anomaly",
-                WorkItemPriority.HIGH,
-                null, "security-team", null, null,
-                "siem-system",
+                "security", "login-anomaly", WorkItemPriority.HIGH,
+                null, "security-team", null, null, "siem-system",
                 "{\"source_ip_range\": \"185.220.x.x\", \"attempts\": 2400, \"period_minutes\": 10}",
                 null, null, null, null));
-
         steps.add(new QueueScenarioStep(1,
                 "HIGH security anomaly — filter A fires: security/incident; filter B (CRITICAL) does not match; filter C (cascade) cannot fire without priority/critical",
-                highIncident.id, inferredPaths(highIncident), manualPaths(highIncident)));
+                highIncident.id, inferredPaths(highIncident), manualPaths(highIncident),
+                formatEvents(eventLog.drain())));
 
         LOG.info("[SECURITY] Step 2/3: CRITICAL security breach — all 3 labels via cascade");
         final WorkItem criticalBreach = workItemService.create(new WorkItemCreateRequest(
                 "Data breach confirmed — customer PII exfiltrated",
-                "Forensic analysis confirms unauthorised exfiltration of 340,000 customer records " +
-                        "including name, email, and hashed passwords. GDPR 72-hour notification window started.",
-                "security",
-                "data-breach",
-                WorkItemPriority.CRITICAL,
-                null, "security-team,legal-team,executive-team", null, null,
-                "forensics-system",
+                "Forensic analysis confirms unauthorised exfiltration of 340,000 customer records.",
+                "security", "data-breach", WorkItemPriority.CRITICAL,
+                null, "security-team,legal-team,executive-team", null, null, "forensics-system",
                 "{\"records_affected\": 340000, \"data_types\": [\"name\", \"email\", \"password_hash\"], " +
                         "\"gdpr_window_hours\": 72, \"incident_id\": \"SEC-BREACH-2026-001\"}",
                 null, null, null, null));
-
         steps.add(new QueueScenarioStep(2,
-                "CRITICAL data breach — filter A: security/incident, filter B: priority/critical, filter C cascades (both labels present): security/exec-escalate",
-                criticalBreach.id, inferredPaths(criticalBreach), manualPaths(criticalBreach)));
+                "CRITICAL data breach — filter A: security/incident, filter B: priority/critical, filter C cascades: security/exec-escalate — 3 queue ADDED events",
+                criticalBreach.id, inferredPaths(criticalBreach), manualPaths(criticalBreach),
+                formatEvents(eventLog.drain())));
 
         LOG.info("[SECURITY] Step 3/3: security/exec-escalate queue — CRITICAL incident only");
-        final List<UUID> execEscalateQueue = workItemStore.scan(WorkItemQuery.byLabelPattern("security/exec-escalate"))
+        final List<UUID> execEscalateQueue = workItemStore
+                .scan(WorkItemQuery.byLabelPattern("security/exec-escalate"))
                 .stream().map(w -> w.id).toList();
-
         steps.add(new QueueScenarioStep(3,
                 "security/exec-escalate queue — CRITICAL breach present; HIGH anomaly absent (did not meet cascade threshold)",
                 null,
                 List.of("security/exec-escalate contains " + execEscalateQueue.size() + " item(s)"),
-                List.of()));
+                List.of(), List.of()));
 
         return new QueueScenarioResponse(
                 "security-exec-escalation",
@@ -167,14 +183,18 @@ public class SecurityEscalationScenario {
     }
 
     private List<String> inferredPaths(final WorkItem wi) {
-        return wi.labels.stream()
-                .filter(l -> l.persistence == LabelPersistence.INFERRED)
+        return wi.labels.stream().filter(l -> l.persistence == LabelPersistence.INFERRED)
                 .map(l -> l.path).toList();
     }
 
     private List<String> manualPaths(final WorkItem wi) {
-        return wi.labels.stream()
-                .filter(l -> l.persistence == LabelPersistence.MANUAL)
+        return wi.labels.stream().filter(l -> l.persistence == LabelPersistence.MANUAL)
                 .map(l -> l.path).toList();
+    }
+
+    private List<String> formatEvents(final List<QueueEventLog.Entry> entries) {
+        return entries.stream()
+                .map(e -> e.eventType().name() + " to " + e.queueName())
+                .toList();
     }
 }

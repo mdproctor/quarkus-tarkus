@@ -25,7 +25,39 @@ class FinanceApprovalScenarioTest {
                 .body("steps[1].inferredLabels", not(hasItem("finance/exec-review")))
                 // Step 3: CRITICAL → both queues
                 .body("steps[2].inferredLabels", hasItems("finance/approval", "finance/exec-review"))
-                // Exec queue has CRITICAL item only
+                // Queue contents
                 .body("queueContents", hasSize(greaterThanOrEqualTo(1)));
+    }
+
+    @Test
+    void financeApproval_queueEvents_normalExpense_addedToApprovalQueue() {
+        given()
+                .post("/queue-examples/finance/run")
+                .then()
+                .statusCode(200)
+                .body("steps[0].queueEvents", hasItem(containsString("ADDED")))
+                .body("steps[0].queueEvents", hasItem(containsString("Finance Approval Queue")));
+    }
+
+    @Test
+    void financeApproval_queueEvents_criticalSpend_addedToBothQueues() {
+        given()
+                .post("/queue-examples/finance/run")
+                .then()
+                .statusCode(200)
+                // CRITICAL item enters both Finance Approval Queue and Finance Exec Review Queue
+                .body("steps[2].queueEvents", hasItem(containsString("Finance Approval Queue")))
+                .body("steps[2].queueEvents", hasItem(containsString("Finance Exec Review Queue")))
+                .body("steps[2].queueEvents", everyItem(containsString("ADDED")));
+    }
+
+    @Test
+    void financeApproval_queueEvents_snapshotStep_hasNoEvents() {
+        given()
+                .post("/queue-examples/finance/run")
+                .then()
+                .statusCode(200)
+                // The queue-snapshot step (step 4) doesn't create any WorkItem → no queue events
+                .body("steps[3].queueEvents", empty());
     }
 }
