@@ -320,7 +320,11 @@ public class WorkItemService {
         if (!removed) {
             throw new LabelNotFoundException(workItemId, path);
         }
-        return workItemStore.put(item);
+        final WorkItem saved = workItemStore.put(item);
+        if (lifecycleEvent != null) {
+            lifecycleEvent.fire(WorkItemLifecycleEvent.of("LABEL_REMOVED", saved.id, saved.status, "system", path));
+        }
+        return saved;
     }
 
     private WorkItem requireWorkItem(final UUID id) {
