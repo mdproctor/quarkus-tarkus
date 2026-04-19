@@ -196,8 +196,20 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home
 **Issue tracking:** enabled
 **GitHub repo:** mdproctor/quarkus-workitems
 
+**Active epics** (place new issues under the matching epic before implementation):
+
+| # | Epic | Status | Next child |
+|---|---|---|---|
+| #77 | WorkItem Collaboration & Productivity | active | Bulk operations |
+| #78 | Queue Intelligence & Real-time Observability | active | Inbox summary |
+| #79 | External System Integrations | blocked | CaseHub/Qhorus not stable |
+| #80 | Storage Backend Flexibility | active | Redis backend |
+| #81 | Platform Foundation & Correctness | active | OpenAPI spec tuning |
+| #39 | ProvenanceLink (PROV-O causal graph) | blocked | Awaiting #79 integrations |
+
 **Automatic behaviours (Claude follows these at all times in this project):**
-- **Before implementation begins** — check if an active issue exists. If not, run issue-workflow Phase 1 before writing any code.
+- **Before implementation begins** — check if an active issue exists. If not, run issue-workflow Phase 1 before writing any code. Create a child issue under the matching epic above.
 - **Before any commit** — run issue-workflow Phase 3 to confirm issue linkage.
-- **All commits should reference an issue** — `Refs #N` (ongoing) or `Closes #N` (done).
+- **All commits should reference an issue** — `Refs #N` (ongoing) or `Closes #N` (done). Also reference the parent epic: `Refs #77` etc.
 - **Code review fix commits** — when committing fixes found during a code review, create or reuse an issue for that review work **before** committing. Use `Refs #N` on the relevant epic even if it is already closed.
+- **New feature requests** — assess which epic it belongs to before creating the issue. If none fits, propose a new epic first.
