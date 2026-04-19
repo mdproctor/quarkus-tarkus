@@ -1,216 +1,110 @@
-# WorkItems vs Issue Trackers — Why You Need Both
+# Why WorkItems? The case against "just use GitHub Issues"
 
-## The question developers ask
+The question comes up early: *"My team already has GitHub Issues. Why add another system?"*
 
-> "GitHub Issues already tracks tasks and bugs. Why would I also run WorkItems in my application?"
-
-It's a fair question. Both systems manage units of work. Both have titles, descriptions, and a lifecycle. Both can be assigned to people. The overlap is real — and that's exactly why the distinction matters.
-
-The short answer: **issue trackers track *what* needs to be done; WorkItems track *who is doing it, whether they'll finish in time, and whether that's auditable*.** They operate at different layers, for different audiences, on different timescales.
+It is a fair question. Both track units of work. Both have assignees, labels, and a lifecycle. The overlap is real. But the question contains a category error — GitHub Issues are a *project management* tool that lives outside your application. WorkItems are an *operational runtime* component that lives inside it. Once you see the distinction, the question dissolves.
 
 ---
 
-## What issue trackers do
+## The argument that closes the debate: transaction boundaries
 
-GitHub Issues, Jira, Linear, and their peers are **project management and collaboration tools**:
+This is the one that matters most, because it is not a feature comparison — it is a fundamental architectural constraint.
 
-- They capture requirements, bug reports, and feature requests — often from external contributors or customers
-- They are the permanent record of *why* a decision was made, with threaded discussion
-- They link to pull requests, milestones, and releases — they live in development time
-- They are typically **visible to stakeholders outside your running application** — the community, your product team, your QA team
-- Lifecycle is simple: open → (in progress) → closed. No delegation, no expiry, no SLA.
-- They have **no runtime presence**. Your application doesn't fire CDI events when a Jira ticket moves to "In Review".
+When a loan officer approves a loan, two things must happen together:
+1. The loan record in your database is marked `APPROVED`.
+2. The WorkItem representing the approval task is marked `COMPLETED`.
 
-Issue trackers answer: *"What are we building and what's wrong with what we built?"*
+If the database write fails, the WorkItem must not be marked complete. If the WorkItem cannot be saved, the approval must not proceed. They must be **atomic**.
 
----
+WorkItems live inside your application's transaction boundary. Your service method persists the approval and calls `workItemService.complete()` in the same `@Transactional` context. If anything fails, both roll back.
 
-## What WorkItems do
+GitHub Issues are external. There is no way to close a GitHub Issue inside a database transaction. You close it via HTTP call — after the fact, best-effort, with no rollback if your application crashes mid-operation. For any business-critical workflow, this is not a minor limitation. It is a disqualifying one.
 
-WorkItems are an **operational, runtime concern** — they live inside your running application alongside your business logic:
-
-- They represent tasks that require **human attention within your system's transaction boundary** — approvals, reviews, escalations, delegations
-- They have a **rich lifecycle**: `PENDING → ASSIGNED → IN_PROGRESS → COMPLETED | REJECTED | DELEGATED | SUSPENDED | EXPIRED | ESCALATED`
-- They have **SLA enforcement**: claim deadlines, completion deadlines, escalation policies that fire automatically when breached
-- They fire **CDI events** on every transition — your application reacts in real time
-- They carry a **full audit trail** with actor, timestamp, rationale, and cryptographic hash chain (with the ledger module)
-- They support **delegation chains** — Alice assigns to Bob, Bob delegates to Carol, the chain is preserved
-- They handle **group routing** — `candidateGroups`, `candidateUsers`, label-based queue routing via filters
-- They contain **private business context** — PII, contract terms, financial amounts — that should not be in a public issue tracker
-
-WorkItems answer: *"Who is handling this right now, have they started, will they finish before the deadline, and can we prove it?"*
+**This alone makes GitHub Issues categorically unsuitable for anything that touches business logic.**
 
 ---
 
-## The key differences
+## The other arguments
 
-| Dimension | Issue Tracker | WorkItem |
+Once you accept the transaction boundary argument, these follow naturally.
+
+### 1. GitHub Issues have no runtime presence
+
+When a WorkItem's SLA is breached, a `WorkItemLifecycleEvent` fires synchronously in your JVM. Your `@Observes` handler runs immediately — alerting a team, escalating to a supervisor, auto-rejecting a stale task. The entire escalation chain is code you write, running inside your application, with full access to your domain.
+
+When a GitHub Issue's implicit deadline passes: nothing. There is no event. There is no automatic escalation. To approximate this you would need:
+- A GitHub Action on a cron schedule
+- An API call to GitHub to check issue age
+- Rate limit handling (GitHub API: 5,000 requests/hour authenticated)
+- Error handling for GitHub outages
+- A webhook listener to receive the response
+- Your own escalation logic, outside your application
+
+WorkItems has a built-in expiry job, three escalation policies (`notify`, `reassign`, `auto-reject`), and a pluggable `EscalationPolicy` SPI. It runs inside your JVM. It never hits a rate limit.
+
+### 2. Your data cannot leave your database
+
+A WorkItem payload can contain anything: a customer's financial situation, a patient's medication record, a contract's commercial terms, an AI model's confidence breakdown, personally identifying information. All of it lives in your database, under your control, subject to your data residency requirements.
+
+GitHub Issues, even in private repositories, store data on GitHub's servers. For GDPR, HIPAA, SOC 2, or any jurisdiction with data residency requirements, this is not a policy question — it is a legal one. "We put the loan application details in a GitHub Issue" is not a sentence that survives a compliance audit.
+
+### 3. The lifecycle is completely different
+
+| | GitHub Issues | WorkItems |
 |---|---|---|
-| **Audience** | Developers, community, stakeholders | Internal application users and agents |
-| **Timescale** | Days to months | Minutes to days |
-| **SLA** | None | Claim deadline + completion deadline + escalation |
-| **Runtime presence** | None | CDI events, scheduled jobs, CDI observers |
-| **Lifecycle richness** | Open / Closed | 10 states + delegation + suspension |
-| **Audit** | Comments (mutable) | Append-only log + optional hash chain |
-| **Privacy** | Often public or semi-public | Internal; can contain PII and sensitive data |
-| **Routing** | Manual assignment | Label-based queues, filter chains, candidate groups |
-| **Delegation** | Reassign (no chain) | Full delegation chain with owner tracking |
-| **Expiry** | Never | Automatic expiry + escalation policy |
-| **Compliance** | No | GDPR Art.22 rationale, plan reference, evidence |
+| **States** | Open, Closed | 10 states with enforced transitions |
+| **Assignment** | Anyone can assign to anyone | PENDING → ASSIGNED requires claiming; guards enforced |
+| **Deadlines** | No native concept | `claimDeadline` + `expiresAt`; automatic enforcement |
+| **Escalation** | Manual | Automatic, configurable, code-pluggable |
+| **Delegation** | Reassign (no history) | Full chain: owner → Alice → Bob → Carol, preserved |
+| **Suspension** | Close and reopen | SUSPENDED with priorStatus, resumes correctly |
+| **Group routing** | Assignees only | `candidateGroups` pool; self-service claiming |
+| **Audit trail** | Mutable comments | Append-only log; optional cryptographic hash chain |
+
+GitHub Issues are open or closed. WorkItems has a 10-state machine with guarded transitions, delegation chains, and suspension semantics. These are not the same abstraction with different UIs — they model different things.
+
+### 4. The audit requirement is real, and mutable systems cannot meet it
+
+A GitHub Issue's history is mutable. Comments can be edited. The edit history is visible to admins, but the original text is gone. For financial services, healthcare, or any regulated domain, an audit trail that can be edited — even with history — is not an audit trail. It is a log.
+
+WorkItems' `AuditEntry` table is append-only. With the ledger module, every entry carries a SHA-256 digest chained to the previous entry (Certificate Transparency pattern). Tampering is detectable. Each entry can carry the actor's stated rationale, the policy version that governed their decision, and structured evidence — satisfying GDPR Article 22, EU AI Act Article 12, and financial audit requirements.
+
+GitHub Issues cannot provide this. They were not designed to.
+
+### 5. AI agent workflows need structured waiting
+
+GitHub Issues were designed for human-to-human communication. AI agents need something different: a structured boundary where a machine hands work to a non-deterministic actor — human or agent — and then waits, with a deadline, for a response it can act on.
+
+WorkItems was built for this. An AI pipeline creates a WorkItem and returns a `Uni<String>` that resolves when the WorkItem is completed via REST. The pipeline can set `expiresAt`, configure escalation, specify `candidateGroups`, and inspect the `resolution` JSON when the actor responds. The WorkItem is the contract between the deterministic machine and the non-deterministic actor.
+
+There is no equivalent primitive in GitHub Issues.
 
 ---
 
-## How they complement each other
+## What GitHub Issues are genuinely good at
 
-The most powerful pattern is treating the issue tracker and WorkItems as **complementary layers of the same process**, not competing alternatives.
+This is not an argument that GitHub Issues are bad. They are excellent at what they were designed for:
 
-### Pattern 1 — Issue spawns WorkItem
+- **Developer workflow** — tracking bugs, feature requests, and tasks in the context of code
+- **Community communication** — external contributors discussing changes with maintainers
+- **PR linkage** — "this PR closes #42" is native, not bolted on
+- **Project planning** — milestones, roadmaps, project boards
+- **Public visibility** — the community sees what's being worked on
 
-A GitHub Issue is filed for a security vulnerability. Your application automatically creates a WorkItem for the internal triage team:
-
-```
-GitHub Issue #482 "CVE-2026-1234 affects our crypto dependency"
-  → creates WorkItem "Security triage: CVE-2026-1234"
-      assignee: security-team (candidateGroup)
-      claimDeadline: +4h (SLA: must be claimed within 4 hours)
-      expiresAt: +24h (SLA: must be triaged within 24 hours)
-      payload: {"issueUrl": "...", "cvssScore": 9.1, "affectedVersions": ["2.x"]}
-      linkedIssues: [github:mdproctor/myapp#482]
-```
-
-The WorkItem carries the operational urgency (deadlines, escalation, delegation). The GitHub Issue carries the community discussion, PR references, and public disclosure timeline.
-
-### Pattern 2 — WorkItem closes Issue
-
-When the WorkItem is completed (triage finished, patch deployed), the issue tracker integration automatically closes the GitHub Issue with a comment:
-
-```
-WorkItem completed by alice (rationale: "Patch applied in v2.1.1, deployed to prod")
-  → closes GitHub Issue #482 with comment:
-    "Resolved in v2.1.1. Internal triage complete. /cc @security-team"
-```
-
-### Pattern 3 — WorkItem references Issue without automation
-
-A compliance review WorkItem references the Jira epic it was spawned from — no automatic sync, just a traceable link for auditors:
-
-```
-WorkItem "GDPR data deletion review — customer request #44291"
-  linkedIssues: [jira:GDPR-1042]  ← the Jira epic governing data deletion policy
-```
+For all of this, GitHub Issues are superior to WorkItems. WorkItems has no milestone concept, no PR linkage, no project board. It is not trying to compete here.
 
 ---
 
-## What information goes where
+## The decision rule
 
-### Always in the issue tracker
+**Use GitHub Issues when:** the work is about what to build — bugs, features, technical debt, community requests.
 
-- Bug description and reproduction steps
-- Feature requirements and acceptance criteria
-- Community discussion and external feedback
-- Linked pull requests and release tags
-- Public-facing status ("under investigation", "fixed in v2.1.1")
-- Milestones and roadmap context
+**Use WorkItems when:** the work is a runtime obligation inside your running application — approvals, reviews, escalations, compliance checks, AI-to-human handoffs.
 
-### Always in WorkItems
-
-- SLA clocks and deadlines
-- Delegation chain ("Alice → Bob → Carol")
-- Candidate assignment groups ("who CAN pick this up")
-- Private payload — contract terms, financial amounts, PII, internal incident details
-- Escalation history and policy
-- Audit log with actor identities and timestamps
-- GDPR Art.22 decision rationale and evidence
-- Internal resolution details that should not be public
-
-### Either, depending on your policy
-
-| Information | Issue tracker if... | WorkItem if... |
-|---|---|---|
-| Task title | It's a public bug or feature | It's an internal approval or review |
-| Assignee | Assignment is permanent project ownership | Assignment is operational (may delegate/expire) |
-| Status | For external stakeholders | For internal SLA and routing |
-| Comments/notes | For community discussion | For internal audit detail field |
-| Priority | For release planning | For queue routing and SLA tier |
+Most non-trivial applications need both. The integration module (`quarkus-workitems-issue-tracker`) lets you link them: a GitHub Issue spawns a WorkItem, and the WorkItem's completion closes the issue. The tracker carries the external context; the WorkItem enforces the operational SLA.
 
 ---
 
-## Best practices
+## The one-sentence version
 
-### 1. One WorkItem per operational unit, one Issue per concern
-
-Don't create a GitHub Issue for every individual WorkItem — that defeats the purpose of having both. Create one Issue per *problem or feature*, and one WorkItem per *operational execution* of that problem.
-
-Example: one GitHub Issue "Roll out 2FA to enterprise customers" spawns WorkItems for each customer account that needs a human touchpoint.
-
-### 2. Keep sensitive data out of issue trackers
-
-If the WorkItem's payload contains a customer name, contract value, or security finding, do not copy it to the GitHub Issue body. Link the two, but let the issue contain only what you would tell the public.
-
-### 3. Use links for traceability, not duplication
-
-The link (`workItemId → github:owner/repo#42`) is the relationship. The title in `WorkItemIssueLink.title` is a cached display label — not the source of truth. The issue tracker is the source of truth for its own data; the WorkItem is the source of truth for its own operational state.
-
-### 4. Automate the bridge at boundaries, not throughout
-
-Automate issue → WorkItem creation (when an issue is filed, create a triage task). Automate WorkItem → issue closure (when triage is done, close the issue). Don't try to keep every field in sync at every step — that creates coupling without value.
-
-### 5. Let WorkItems expire; let issues stay open
-
-A WorkItem that expires fires an escalation event. The linked GitHub Issue does not close just because the SLA was breached — it stays open as the permanent record. The WorkItem's expiry is an internal signal; the issue's state is a public one.
-
----
-
-## Using the integration
-
-Add the module:
-
-```xml
-<dependency>
-  <groupId>io.quarkiverse.workitems</groupId>
-  <artifactId>quarkus-workitems-issue-tracker</artifactId>
-  <version>${workitems.version}</version>
-</dependency>
-```
-
-Configure GitHub:
-
-```properties
-quarkus.workitems.issue-tracker.github.token=ghp_...
-quarkus.workitems.issue-tracker.github.default-repository=myorg/myapp
-quarkus.workitems.issue-tracker.github.auto-close-on-complete=true
-```
-
-Link an existing issue:
-
-```bash
-curl -X POST /workitems/{id}/issues \
-  -d '{"trackerType":"github","externalRef":"myorg/myapp#42","linkedBy":"alice"}'
-```
-
-Create a new GitHub issue and link it in one step:
-
-```bash
-curl -X POST /workitems/{id}/issues/create \
-  -d '{"title":"Security triage required","body":"CVE-2026-1234...","linkedBy":"system"}'
-```
-
-Plug in your own tracker (Jira, Linear, etc.):
-
-```java
-@ApplicationScoped
-@Alternative
-@Priority(1)
-public class JiraIssueTrackerProvider implements IssueTrackerProvider {
-    @Override public String trackerType() { return "jira"; }
-    // ...
-}
-```
-
----
-
-## Summary
-
-Issue trackers and WorkItems solve different problems. Issue trackers are the long-lived public record of what was decided and why. WorkItems are the short-lived operational machinery that makes sure humans complete their tasks on time, with accountability.
-
-Used together: an issue captures the *requirement*, a WorkItem enforces the *execution*.
+GitHub Issues track what your team needs to build. WorkItems track what your running application needs from humans.
