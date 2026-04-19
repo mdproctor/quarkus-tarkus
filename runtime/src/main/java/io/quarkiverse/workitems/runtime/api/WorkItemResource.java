@@ -21,6 +21,10 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.jboss.resteasy.reactive.RestStreamElementType;
+
+import io.quarkiverse.workitems.runtime.event.WorkItemEventBroadcaster;
+import io.quarkiverse.workitems.runtime.event.WorkItemLifecycleEvent;
 import io.quarkiverse.workitems.runtime.model.AuditEntry;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemNote;
@@ -33,6 +37,7 @@ import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 import io.quarkiverse.workitems.runtime.service.LabelNotFoundException;
 import io.quarkiverse.workitems.runtime.service.WorkItemNotFoundException;
 import io.quarkiverse.workitems.runtime.service.WorkItemService;
+import io.smallrye.mutiny.Multi;
 
 @Path("/workitems")
 @Produces(MediaType.APPLICATION_JSON)
@@ -50,6 +55,9 @@ public class WorkItemResource {
 
     @Inject
     WorkItemNoteStore noteStore;
+
+    @Inject
+    WorkItemEventBroadcaster broadcaster;
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
@@ -223,6 +231,52 @@ public class WorkItemResource {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity(Map.of("error", e.getMessage())).build();
         }
+    }
+
+    // ── SSE event streams ─────────────────────────────────────────────────────
+
+    /**
+     * Server-Sent Events stream of all WorkItem lifecycle events.
+     *
+     * <p>
+     * Connect and receive real-time notifications as WorkItems transition through
+     * their lifecycle — no polling required. This is the REST equivalent of the
+     * CDI {@link WorkItemLifecycleEvent} that internal beans observe.
+     *
+     * <p>
+     * <strong>Hot stream:</strong> only events that occur after the client connects
+     * are delivered. Past events are not replayed — use {@code GET /workitems/{id}}
+     * to fetch current state.
+     *
+     * @param workItemId if provided, only events for this WorkItem are emitted
+     * @param type if provided, only events matching this type suffix are emitted
+     *        (e.g. {@code "created"}, {@code "completed"}; case-insensitive)
+     */
+    @GET
+    @Path("/events")
+    @Produces(MediaType.SERVER_SENT_EVENTS)
+    @RestStreamElementType(MediaType.APPLICATION_JSON)
+    public Multi<WorkItemLifecycleEvent> streamEvents(
+            @QueryParam("workItemId") final UUID workItemId,
+            @QueryParam("type") final String type) {
+        return broadcaster.stream(workItemId, type);
+    }
+
+    /**
+     * Server-Sent Events stream scoped to a specific WorkItem.
+     *
+     * <p>
+     * Convenience alias for {@code GET /workitems/events?workItemId={id}}.
+     * Useful for dashboards that track a single WorkItem's progress.
+     *
+     * @param id the WorkItem UUID
+     */
+    @GET
+    @Path("/{id}/events")
+    @Produces(MediaType.SERVER_SENT_EVENTS)
+    @RestStreamElementType(MediaType.APPLICATION_JSON)
+    public Multi<WorkItemLifecycleEvent> streamWorkItemEvents(@PathParam("id") final UUID id) {
+        return broadcaster.stream(id, null);
     }
 
     // ── Notes ─────────────────────────────────────────────────────────────────
