@@ -32,6 +32,7 @@ Standalone Quarkiverse extension with optional integrations for Quarkus-Flow, Ca
     <module>quarkus-workitems-examples</module>
     <module>quarkus-workitems-flow-examples</module>
     <module>quarkus-workitems-persistence-mongodb</module>
+    <module>quarkus-workitems-issue-tracker</module>
 
     <module>integration-tests</module>
   </modules>
