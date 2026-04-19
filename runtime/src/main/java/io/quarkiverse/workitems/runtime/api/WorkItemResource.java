@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -22,9 +23,11 @@ import jakarta.ws.rs.core.Response;
 
 import io.quarkiverse.workitems.runtime.model.AuditEntry;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.workitems.runtime.model.WorkItemNote;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
 import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
 import io.quarkiverse.workitems.runtime.repository.AuditEntryStore;
+import io.quarkiverse.workitems.runtime.repository.WorkItemNoteStore;
 import io.quarkiverse.workitems.runtime.repository.WorkItemQuery;
 import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
 import io.quarkiverse.workitems.runtime.service.LabelNotFoundException;
@@ -44,6 +47,9 @@ public class WorkItemResource {
 
     @Inject
     WorkItemStore workItemStore;
+
+    @Inject
+    WorkItemNoteStore noteStore;
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
@@ -217,5 +223,120 @@ public class WorkItemResource {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity(Map.of("error", e.getMessage())).build();
         }
+    }
+
+    // ── Notes ─────────────────────────────────────────────────────────────────
+
+    /** Request body for adding or editing a {@link WorkItemNote}. */
+    public record NoteRequest(String content, String author) {
+    }
+
+    /** Request body for editing an existing note (author is immutable). */
+    public record NoteEditRequest(String content) {
+    }
+
+    /**
+     * Add an internal operational note to a WorkItem.
+     *
+     * @param id the WorkItem UUID
+     * @param request {@code content} (required) and {@code author} (required)
+     * @return 201 Created with the new note, 400 if content or author is missing
+     */
+    @POST
+    @Path("/{id}/notes")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Transactional
+    public Response addNote(@PathParam("id") final UUID id, final NoteRequest request) {
+        if (request == null || request.content() == null || request.content().isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", "content is required")).build();
+        }
+        if (request.author() == null || request.author().isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", "author is required")).build();
+        }
+        final WorkItemNote note = new WorkItemNote();
+        note.workItemId = id;
+        note.content = request.content();
+        note.author = request.author();
+        return Response.status(Response.Status.CREATED)
+                .entity(toNoteResponse(noteStore.append(note))).build();
+    }
+
+    /**
+     * List all notes for a WorkItem, oldest first.
+     *
+     * @param id the WorkItem UUID
+     * @return 200 OK with chronological list; may be empty
+     */
+    @GET
+    @Path("/{id}/notes")
+    public List<Map<String, Object>> listNotes(@PathParam("id") final UUID id) {
+        return noteStore.findByWorkItemId(id).stream().map(this::toNoteResponse).toList();
+    }
+
+    /**
+     * Edit an existing note's content. Sets {@code editedAt} to now.
+     *
+     * @param id the WorkItem UUID
+     * @param noteId the note UUID
+     * @param request new {@code content} (required)
+     * @return 200 OK with updated note, 400 if content blank, 404 if not found
+     */
+    @PUT
+    @Path("/{id}/notes/{noteId}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Transactional
+    public Response editNote(
+            @PathParam("id") final UUID id,
+            @PathParam("noteId") final UUID noteId,
+            final NoteEditRequest request) {
+        if (request == null || request.content() == null || request.content().isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", "content is required")).build();
+        }
+        return noteStore.findById(noteId)
+                .filter(n -> n.workItemId.equals(id))
+                .map(n -> {
+                    n.content = request.content();
+                    n.editedAt = java.time.Instant.now();
+                    return Response.ok(toNoteResponse(noteStore.update(n))).build();
+                })
+                .orElseGet(() -> Response.status(Response.Status.NOT_FOUND)
+                        .entity(Map.of("error", "Note not found")).build());
+    }
+
+    /**
+     * Delete a note.
+     *
+     * @param id the WorkItem UUID
+     * @param noteId the note UUID
+     * @return 204 No Content on success, 404 if not found
+     */
+    @DELETE
+    @Path("/{id}/notes/{noteId}")
+    @Transactional
+    public Response deleteNote(
+            @PathParam("id") final UUID id,
+            @PathParam("noteId") final UUID noteId) {
+        final boolean existed = noteStore.findById(noteId)
+                .filter(n -> n.workItemId.equals(id))
+                .map(n -> noteStore.delete(noteId))
+                .orElse(false);
+        return existed
+                ? Response.noContent().build()
+                : Response.status(Response.Status.NOT_FOUND)
+                        .entity(Map.of("error", "Note not found")).build();
+    }
+
+    private Map<String, Object> toNoteResponse(final WorkItemNote note) {
+        final Map<String, Object> m = new java.util.LinkedHashMap<>();
+        m.put("id", note.id);
+        m.put("workItemId", note.workItemId);
+        m.put("content", note.content);
+        m.put("author", note.author);
+        m.put("createdAt", note.createdAt);
+        m.put("editedAt", note.editedAt);
+        return m;
     }
 }
