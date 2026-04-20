@@ -137,6 +137,23 @@ PENDING | ASSIGNED | IN_PROGRESS | SUSPENDED → EXPIRED → ESCALATED
 (null) → PENDING (delegate op) → RESOLVED (delegate completes) → (null) (owner confirms)
 ```
 
+### WorkItemFormSchema (`runtime/model/`) — Epic #98, Issue #107
+
+JSON Schema definitions for WorkItem payload and resolution, keyed optionally by category.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | UUID PK | Set in `@PrePersist` |
+| `name` | String | Display name; required |
+| `category` | String | Optional — null means global/catch-all; index on `category` |
+| `payloadSchema` | TEXT | JSON Schema (draft-07) for `WorkItem.payload`; stored verbatim |
+| `resolutionSchema` | TEXT | JSON Schema for resolution submitted on complete; stored verbatim |
+| `schemaVersion` | String | Free-form (e.g. "1.0"); optional |
+| `createdBy` | String | Required |
+| `createdAt` | Instant | Set in `@PrePersist` |
+
+WorkItemFormSchema has **no foreign-key relationship to WorkItem** — it is a category-level definition with independent lifecycle. Deleting a schema does not affect WorkItems; creating a WorkItem does not require a schema to exist.
+
 ### AuditEntry (`runtime/model/`)
 Append-only event log: `workItemId`, `event`, `actor`, `detail` (JSON), `occurredAt`.
 
@@ -235,6 +252,16 @@ between the core and the ledger module. If the module is absent, events fire int
 | `GET /` | List all label definitions accessible to caller |
 | `POST /{scope}` | Add label definition; GLOBAL scope currently supported |
 
+`WorkItemFormSchemaResource` at `/workitem-form-schemas` (core, Epic #98):
+
+| Endpoint | Notes |
+|---|---|
+| `POST /workitem-form-schemas` | Create a schema; `name` + `createdBy` required; `category` + both schemas + `schemaVersion` optional |
+| `GET /workitem-form-schemas` | List all, ordered by name |
+| `GET /workitem-form-schemas?category=X` | List schemas for category X |
+| `GET /workitem-form-schemas/{id}` | Get single schema; 404 if not found |
+| `DELETE /workitem-form-schemas/{id}` | Delete schema; 204/404; independent of WorkItem lifecycle |
+
 `quarkus-workitems-queues` adds `/filters`, `/queues`, `/workitems/{id}/pickup`, and `/workitems/{id}/relinquishable`. See `docs/api-reference.md` for full queue API documentation.
 
 ---
@@ -269,7 +296,8 @@ Consuming app owns all datasource config.
 | **8 — Native image** | ✅ Complete | GraalVM 25 native build, 19 @QuarkusIntegrationTest tests, 0.084s startup |
 | **Examples** | ✅ Complete | `quarkus-workitems-examples` (4 ledger scenarios) + `quarkus-workitems-flow-examples` (WorkItemsFlow DSL showcase) + `quarkus-workitems-queues-examples` (5 queue scenarios: triage cascade, legal routing, finance approval, security escalation, document review pipeline) |
 | **Dashboard** | ✅ Complete | `quarkus-workitems-queues-dashboard` — Tamboui TUI inside Quarkus via `@QuarkusMain`; live queue board, step-by-step scenario control, 6 Pilot end-to-end tests passing headlessly via `TuiTestRunner` (`TestBackend` is in `tamboui-core:test-fixtures`) |
-| **9 — CaseHub integration** | ⏸ Blocked | `quarkus-workitems-casehub` — CaseHub WorkerRegistry adapter (awaiting CaseHub stable API) |
+| **9 — Form Schema (partial)** | 🔄 In progress | Epic #98: `WorkItemFormSchema` entity + CRUD API complete (#107 ✅). Payload/resolution validation against schema (#108) pending. |
+| **10 — CaseHub integration** | ⏸ Blocked | `quarkus-workitems-casehub` — CaseHub WorkerRegistry adapter (awaiting CaseHub stable API) |
 | **10 — Qhorus integration** | ⏸ Blocked | `quarkus-workitems-qhorus` — MCP tools (awaiting Qhorus stable API) |
 | **11 — ProvenanceLink** | ⏸ Blocked | Typed PROV-O causal graph — awaiting CaseHub + Qhorus integrations (issue #39) |
 
@@ -299,16 +327,16 @@ Three tiers:
 
 | Module | Tests |
 |---|---|
-| runtime | 222 |
+| runtime | 418 |
 | workitems-flow | 32 |
-| quarkus-workitems-ledger | 74 |
-| quarkus-workitems-queues | 45 |
-| quarkus-workitems-examples | 4 |
-| quarkus-workitems-queues-examples | 5 |
-| quarkus-workitems-queues-dashboard | 20 (14 unit/CDI + 6 Pilot) |
+| quarkus-workitems-ledger | 75 |
+| quarkus-workitems-queues | 82 |
+| quarkus-workitems-examples | 37 |
+| quarkus-workitems-flow-examples | 2 |
+| quarkus-workitems-queues-examples | 37 |
+| quarkus-workitems-queues-dashboard | 20 |
+| quarkus-workitems-persistence-mongodb | 27 |
+| quarkus-workitems-issue-tracker | 23 |
 | testing | 16 |
 | integration-tests | 19 (native) |
-| quarkus-workitems-persistence-mongodb | 27 |
-| quarkus-workitems-queues (after queue events) | 80 |
-| quarkus-workitems-queues-examples (after lifecycle) | 15 |
-| **Total** | **321+** |
+| **Total** | **788+** |
