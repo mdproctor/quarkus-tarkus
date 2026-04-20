@@ -153,6 +153,12 @@
       <artifactId>quarkus-quartz-deployment</artifactId>
     </dependency>
 
+    <!-- Micrometer -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-micrometer-deployment</artifactId>
+    </dependency>
+
     <!-- Testing -->
     <dependency>
       <groupId>io.quarkus</groupId>

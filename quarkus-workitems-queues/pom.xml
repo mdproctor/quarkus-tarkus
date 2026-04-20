@@ -81,6 +81,11 @@ FilterChain derivation graph, and QueueView named queries. The core extension is
       <artifactId>assertj-core</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-micrometer-registry-prometheus</artifactId>
+      <scope>test</scope>
+    </dependency>
 
   </dependencies>
 

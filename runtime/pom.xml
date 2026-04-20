@@ -40,6 +40,11 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-smallrye-openapi</artifactId>
     </dependency>
+    <!-- Micrometer core — consuming apps add their preferred registry (Prometheus, Datadog, etc.) -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-micrometer</artifactId>
+    </dependency>
     <!-- Quartz scheduler — Quartz-backed @Scheduled + CronExpression for nextFireAt computation -->
     <dependency>
       <groupId>io.quarkus</groupId>
@@ -84,6 +89,12 @@
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- Prometheus registry for tests — enables /q/metrics endpoint -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-micrometer-registry-prometheus</artifactId>
       <scope>test</scope>
     </dependency>
 
