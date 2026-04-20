@@ -33,6 +33,8 @@ Standalone Quarkiverse extension with optional integrations for Quarkus-Flow, Ca
     <module>quarkus-workitems-flow-examples</module>
     <module>quarkus-workitems-persistence-mongodb</module>
     <module>quarkus-workitems-issue-tracker</module>
+    <module>quarkus-workitems-filter-registry</module>
+    <module>quarkus-workitems-ai</module>
 
     <module>integration-tests</module>
   </modules>
@@ -80,6 +82,11 @@ Standalone Quarkiverse extension with optional integrations for Quarkus-Flow, Ca
         <groupId>com.networknt</groupId>
         <artifactId>json-schema-validator</artifactId>
         <version>${networknt-json-schema.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-jexl3</artifactId>
+        <version>3.4.0</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
