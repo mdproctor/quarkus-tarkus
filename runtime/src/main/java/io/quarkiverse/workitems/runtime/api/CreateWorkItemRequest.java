@@ -20,5 +20,6 @@ public record CreateWorkItemRequest(
         Instant claimDeadline,
         Instant expiresAt,
         Instant followUpDate,
-        List<WorkItemLabelResponse> labels) {
+        List<WorkItemLabelResponse> labels,
+        Double confidenceScore) {
 }

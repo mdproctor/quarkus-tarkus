@@ -214,6 +214,17 @@ public class WorkItem extends PanacheEntityBase {
     public List<WorkItemLabel> labels = new ArrayList<>();
 
     // -------------------------------------------------------------------------
+    // AI metadata
+    // -------------------------------------------------------------------------
+
+    /**
+     * Confidence score from the AI agent that created this WorkItem (0.0–1.0).
+     * Null when created by a human or when no confidence metadata was provided.
+     */
+    @Column(name = "confidence_score")
+    public Double confidenceScore;
+
+    // -------------------------------------------------------------------------
     // JPA lifecycle callbacks
     // -------------------------------------------------------------------------
 

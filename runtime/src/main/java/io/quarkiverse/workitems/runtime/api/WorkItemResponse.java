@@ -38,6 +38,11 @@ public record WorkItemResponse(
         Instant suspendedAt,
         List<WorkItemLabelResponse> labels,
         /**
+         * Confidence score from the AI agent that created this WorkItem (0.0–1.0).
+         * Null when created by a human or when no confidence metadata was provided.
+         */
+        Double confidenceScore,
+        /**
          * JPA optimistic locking version. Included in the response so clients can detect
          * concurrent modifications — if the version you received differs from what another
          * client received, a modification occurred between your reads.

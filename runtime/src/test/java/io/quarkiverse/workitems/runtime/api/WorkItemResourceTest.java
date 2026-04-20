@@ -696,4 +696,35 @@ class WorkItemResourceTest {
                 .when().get("/workitems/inbox")
                 .then().statusCode(200);
     }
+
+    // -------------------------------------------------------------------------
+    // confidenceScore — AI agent confidence metadata (Issue #112, Epic #100)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void createWorkItem_withConfidenceScore_persistsAndReturnsIt() {
+        given().contentType(ContentType.JSON)
+                .body("{\"title\":\"AI Task\",\"createdBy\":\"agent\",\"confidenceScore\":0.55}")
+                .post("/workitems")
+                .then().statusCode(201)
+                .body("confidenceScore", equalTo(0.55f));
+    }
+
+    @Test
+    void createWorkItem_withoutConfidenceScore_returnsNullConfidenceScore() {
+        given().contentType(ContentType.JSON)
+                .body("{\"title\":\"Human Task\",\"createdBy\":\"human\"}")
+                .post("/workitems")
+                .then().statusCode(201)
+                .body("confidenceScore", nullValue());
+    }
+
+    @Test
+    void createWorkItem_withHighConfidenceScore_returnsIt() {
+        given().contentType(ContentType.JSON)
+                .body("{\"title\":\"High Confidence\",\"createdBy\":\"agent\",\"confidenceScore\":0.95}")
+                .post("/workitems")
+                .then().statusCode(201)
+                .body("confidenceScore", equalTo(0.95f));
+    }
 }

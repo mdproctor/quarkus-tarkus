@@ -51,7 +51,7 @@ class LedgerIntegrationTest {
     private WorkItemCreateRequest basicRequest(final String title) {
         return new WorkItemCreateRequest(title, null, null, null,
                 WorkItemPriority.NORMAL, null, null, null, null, "system",
-                null, null, null, null, null);
+                null, null, null, null, null, null);
     }
 
     // -------------------------------------------------------------------------
@@ -367,7 +367,7 @@ class LedgerIntegrationTest {
         final var item = workItemService.create(new WorkItemCreateRequest(
                 "Rationale complete test", null, null, null,
                 WorkItemPriority.NORMAL, null, null, null, null,
-                "system", null, null, null, null, null));
+                "system", null, null, null, null, null, null));
         workItemService.claim(item.id, "alice");
         workItemService.start(item.id, "alice");
 
@@ -394,7 +394,7 @@ class LedgerIntegrationTest {
         final var item = workItemService.create(new WorkItemCreateRequest(
                 "Rationale reject test", null, null, null,
                 WorkItemPriority.NORMAL, null, null, null, null,
-                "system", null, null, null, null, null));
+                "system", null, null, null, null, null, null));
         workItemService.claim(item.id, "alice");
 
         workItemService.reject(item.id, "alice",
