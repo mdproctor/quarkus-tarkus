@@ -57,40 +57,76 @@ public class WorkItemScheduleService {
      */
     /** Scheduler trigger — must return void. Delegates to {@link #processSchedules()}. */
     @Scheduled(identity = "work-item-schedule-check", every = "${quarkus.workitems.scheduler.schedule-check-interval:60}s", delayed = "10s")
-    @Transactional
     public void scheduledCheck() {
         processSchedules();
     }
 
     /**
-     * Find all due active schedules and instantiate their templates.
-     * Returns the number created — callable directly from tests.
+     * Find all due active schedules and fire each in its own transaction.
+     *
+     * <p>
+     * <strong>Cluster safety:</strong> each schedule fires in a
+     * {@code REQUIRES_NEW} transaction via {@link #fireSchedule}. If two Quarkus
+     * nodes both pick up the same due schedule, the first to commit wins (version
+     * incremented). The second's {@code UPDATE WHERE version=N} matches zero rows →
+     * {@code OptimisticLockException} → that node's {@code REQUIRES_NEW}
+     * rolls back cleanly. Exactly one WorkItem is created per schedule per interval.
+     *
+     * @return the number of WorkItems successfully created this run
      */
-    @Transactional
+    @Transactional(Transactional.TxType.NOT_SUPPORTED)
     public int processSchedules() {
-        final Instant now = Instant.now();
-        final List<WorkItemSchedule> due = WorkItemSchedule.findDue(now);
+        final List<WorkItemSchedule> due = findDueSchedules();
         int created = 0;
-
         for (final WorkItemSchedule schedule : due) {
             try {
-                final WorkItemTemplate template = WorkItemTemplate.findById(schedule.templateId);
-                if (template == null) {
-                    LOG.warnf("Schedule %s references missing template %s — skipping", schedule.id, schedule.templateId);
-                    continue;
-                }
-
-                templateService.instantiate(template, null, null, "schedule:" + schedule.id);
-                schedule.lastFiredAt = now;
-                schedule.nextFireAt = computeNextFireAt(schedule.cronExpression);
+                fireSchedule(schedule.id);
                 created++;
-
+            } catch (jakarta.persistence.OptimisticLockException e) {
+                LOG.infof("Schedule %s already fired by another node — skipping", schedule.id);
             } catch (Exception e) {
                 LOG.errorf("Failed to fire schedule %s: %s", schedule.id, e.getMessage());
             }
         }
-
         return created;
+    }
+
+    /** Read the due schedules in a short-lived transaction. */
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    public List<WorkItemSchedule> findDueSchedules() {
+        return WorkItemSchedule.findDue(Instant.now());
+    }
+
+    /**
+     * Fire a single schedule in its own transaction.
+     *
+     * <p>
+     * {@code REQUIRES_NEW} ensures this transaction is independent of any outer
+     * transaction. If two nodes race on the same schedule, the second to commit
+     * will hit the {@code @Version} check, throw {@code OptimisticLockException},
+     * and roll back without creating a duplicate WorkItem.
+     *
+     * @param scheduleId the schedule to fire
+     * @throws jakarta.persistence.OptimisticLockException if another node fired first
+     * @throws Exception if template is missing or instantiation fails
+     */
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    public void fireSchedule(final UUID scheduleId) throws Exception {
+        final WorkItemSchedule schedule = WorkItemSchedule.findById(scheduleId);
+        if (schedule == null)
+            return;
+
+        final WorkItemTemplate template = WorkItemTemplate.findById(schedule.templateId);
+        if (template == null) {
+            LOG.warnf("Schedule %s references missing template %s — skipping", scheduleId, schedule.templateId);
+            return;
+        }
+
+        final Instant now = Instant.now();
+        templateService.instantiate(template, null, null, "schedule:" + scheduleId);
+        schedule.lastFiredAt = now;
+        schedule.nextFireAt = computeNextFireAt(schedule.cronExpression);
+        // flush here — if another node already committed, @Version mismatch → OLE → REQUIRES_NEW rolls back
     }
 
     /**
