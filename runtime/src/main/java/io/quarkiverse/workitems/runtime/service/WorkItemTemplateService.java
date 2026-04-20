@@ -111,7 +111,8 @@ public class WorkItemTemplateService {
                 null, // claimDeadline — use config default unless template overrides
                 null, // expiresAt — use config default unless template overrides
                 null, // followUpDate
-                null); // labels — applied separately so addLabel fires LABEL_ADDED events
+                null, // labels — applied separately so addLabel fires LABEL_ADDED events
+                null); // confidenceScore — template-spawned items have no AI confidence
     }
 
     /**
