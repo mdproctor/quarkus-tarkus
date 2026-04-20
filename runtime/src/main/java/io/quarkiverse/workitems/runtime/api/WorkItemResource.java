@@ -29,6 +29,8 @@ import io.quarkiverse.workitems.runtime.model.AuditEntry;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemNote;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
+import io.quarkiverse.workitems.runtime.model.WorkItemRelation;
+import io.quarkiverse.workitems.runtime.model.WorkItemRelationType;
 import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
 import io.quarkiverse.workitems.runtime.repository.AuditEntryStore;
 import io.quarkiverse.workitems.runtime.repository.WorkItemNoteStore;
@@ -392,5 +394,51 @@ public class WorkItemResource {
         m.put("createdAt", note.createdAt);
         m.put("editedAt", note.editedAt);
         return m;
+    }
+
+    // ── Relation graph convenience ─────────────────────────────────────────────
+
+    /**
+     * Return all direct children of this WorkItem — items that have a
+     * {@link WorkItemRelationType#PART_OF} relation pointing here.
+     *
+     * <p>
+     * Returns direct children only; does not recurse into grandchildren.
+     * For deep tree traversal, walk the children endpoint repeatedly.
+     *
+     * @param parentId the parent WorkItem UUID
+     * @return 200 OK with list of child WorkItems (as WorkItemResponse); may be empty
+     */
+    @GET
+    @Path("/{id}/children")
+    public List<WorkItemResponse> children(@PathParam("id") final UUID parentId) {
+        return WorkItemRelation.findByTargetAndType(parentId, WorkItemRelationType.PART_OF)
+                .stream()
+                .map(r -> workItemStore.get(r.sourceId).orElse(null))
+                .filter(wi -> wi != null)
+                .map(WorkItemMapper::toResponse)
+                .toList();
+    }
+
+    /**
+     * Return the parent WorkItem — the item this one is
+     * {@link WorkItemRelationType#PART_OF}, if any.
+     *
+     * <p>
+     * A WorkItem has at most one parent (one outgoing PART_OF relation).
+     * If the WorkItem has no parent (it is a root), returns 404.
+     *
+     * @param childId the child WorkItem UUID
+     * @return 200 OK with the parent WorkItemResponse, 404 if no parent exists
+     */
+    @GET
+    @Path("/{id}/parent")
+    public Response parent(@PathParam("id") final UUID childId) {
+        return WorkItemRelation.findBySourceAndType(childId, WorkItemRelationType.PART_OF)
+                .stream().findFirst()
+                .flatMap(r -> workItemStore.get(r.targetId))
+                .map(wi -> Response.ok(WorkItemMapper.toResponse(wi)).build())
+                .orElseGet(() -> Response.status(Response.Status.NOT_FOUND)
+                        .entity(Map.of("error", "No parent — this WorkItem has no PART_OF relation")).build());
     }
 }
