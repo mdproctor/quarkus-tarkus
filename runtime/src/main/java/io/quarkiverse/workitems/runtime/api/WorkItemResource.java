@@ -27,6 +27,7 @@ import io.quarkiverse.workitems.runtime.event.WorkItemEventBroadcaster;
 import io.quarkiverse.workitems.runtime.event.WorkItemLifecycleEvent;
 import io.quarkiverse.workitems.runtime.model.AuditEntry;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.workitems.runtime.model.WorkItemLink;
 import io.quarkiverse.workitems.runtime.model.WorkItemNote;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
 import io.quarkiverse.workitems.runtime.model.WorkItemRelation;
@@ -503,5 +504,109 @@ public class WorkItemResource {
                 .map(wi -> Response.ok(WorkItemMapper.toResponse(wi)).build())
                 .orElseGet(() -> Response.status(Response.Status.NOT_FOUND)
                         .entity(Map.of("error", "No parent — this WorkItem has no PART_OF relation")).build());
+    }
+
+    // ── Links ─────────────────────────────────────────────────────────────────
+
+    /**
+     * Request body for adding a link to an external resource.
+     *
+     * @param url the URL of the external resource (required)
+     * @param title optional human-readable display title
+     * @param relationType the link type — use {@link WorkItemLinkType} constants or any
+     *        custom string (required)
+     * @param linkedBy the actor adding this link
+     */
+    public record AddLinkRequest(String url, String title, String relationType, String linkedBy) {
+    }
+
+    /**
+     * Add a structured reference to an external resource.
+     *
+     * <p>
+     * Any non-blank string is accepted as {@code relationType} — use
+     * {@link WorkItemLinkType} constants for well-known types, or define your own
+     * ({@code "runbook"}, {@code "customer-ticket"}, {@code "internal-wiki"}).
+     *
+     * @param id the WorkItem UUID
+     * @param request the link to add
+     * @return 201 Created with the link, 400 if url or relationType is blank
+     */
+    @POST
+    @Path("/{id}/links")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Transactional
+    public Response addLink(@PathParam("id") final UUID id, final AddLinkRequest request) {
+        if (request == null || request.url() == null || request.url().isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", "url is required")).build();
+        }
+        if (request.relationType() == null || request.relationType().isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", "relationType is required")).build();
+        }
+        final WorkItemLink link = new WorkItemLink();
+        link.workItemId = id;
+        link.url = request.url();
+        link.title = request.title();
+        link.relationType = request.relationType();
+        link.linkedBy = request.linkedBy() != null ? request.linkedBy() : "unknown";
+        link.persist();
+        return Response.status(Response.Status.CREATED).entity(toLinkResponse(link)).build();
+    }
+
+    /**
+     * List all links on a WorkItem, optionally filtered by relation type.
+     *
+     * @param id the WorkItem UUID
+     * @param type if provided, only links with this relationType are returned
+     * @return 200 OK with links ordered by creation time; may be empty
+     */
+    @GET
+    @Path("/{id}/links")
+    public List<Map<String, Object>> listLinks(
+            @PathParam("id") final UUID id,
+            @QueryParam("type") final String type) {
+        final List<WorkItemLink> links = (type != null && !type.isBlank())
+                ? WorkItemLink.findByWorkItemIdAndType(id, type)
+                : WorkItemLink.findByWorkItemId(id);
+        return links.stream().map(this::toLinkResponse).toList();
+    }
+
+    /**
+     * Remove a link from a WorkItem.
+     *
+     * <p>
+     * Does not affect the external resource — only the local reference record is deleted.
+     *
+     * @param id the WorkItem UUID (for ownership check)
+     * @param linkId the link UUID
+     * @return 204 No Content on success, 404 if not found
+     */
+    @DELETE
+    @Path("/{id}/links/{linkId}")
+    @Transactional
+    public Response deleteLink(
+            @PathParam("id") final UUID id,
+            @PathParam("linkId") final UUID linkId) {
+        final WorkItemLink link = WorkItemLink.findById(linkId);
+        if (link == null || !link.workItemId.equals(id)) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(Map.of("error", "Link not found")).build();
+        }
+        link.delete();
+        return Response.noContent().build();
+    }
+
+    private Map<String, Object> toLinkResponse(final WorkItemLink link) {
+        final java.util.LinkedHashMap<String, Object> m = new java.util.LinkedHashMap<>();
+        m.put("id", link.id);
+        m.put("workItemId", link.workItemId);
+        m.put("url", link.url);
+        m.put("title", link.title);
+        m.put("relationType", link.relationType);
+        m.put("linkedBy", link.linkedBy);
+        m.put("createdAt", link.createdAt);
+        return m;
     }
 }
