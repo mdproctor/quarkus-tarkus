@@ -25,4 +25,20 @@ public interface AuditEntryStore {
      * @return chronological list of audit entries; may be empty, never null
      */
     List<AuditEntry> findByWorkItemId(UUID workItemId);
+
+    /**
+     * Return a paginated page of audit entries matching the given query.
+     *
+     * @param query filter + pagination parameters; never null
+     * @return matching entries for the requested page, ordered by occurredAt DESC
+     */
+    List<AuditEntry> query(AuditQuery query);
+
+    /**
+     * Count total matching audit entries for the given query (ignoring pagination).
+     *
+     * @param query filter parameters (page/size are ignored)
+     * @return total matching entry count
+     */
+    long count(AuditQuery query);
 }

@@ -12,6 +12,7 @@ import jakarta.enterprise.inject.Alternative;
 
 import io.quarkiverse.workitems.runtime.model.AuditEntry;
 import io.quarkiverse.workitems.runtime.repository.AuditEntryStore;
+import io.quarkiverse.workitems.runtime.repository.AuditQuery;
 
 /**
  * In-memory implementation of {@link AuditEntryStore} for use in tests of
@@ -72,5 +73,38 @@ public class InMemoryAuditEntryStore implements AuditEntryStore {
                 .filter(e -> workItemId.equals(e.workItemId))
                 .sorted(Comparator.comparing(e -> e.occurredAt))
                 .toList();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>
+     * In-memory implementation for tests — applies actorId, event, from, to filters only.
+     * Category filter is not supported (no WorkItem access); it is silently ignored.
+     */
+    @Override
+    public List<AuditEntry> query(final AuditQuery query) {
+        return entries.stream()
+                .filter(e -> query.actorId() == null || query.actorId().equals(e.actor))
+                .filter(e -> query.event() == null || query.event().equals(e.event))
+                .filter(e -> query.from() == null || !e.occurredAt.isBefore(query.from()))
+                .filter(e -> query.to() == null || !e.occurredAt.isAfter(query.to()))
+                .sorted(Comparator.comparing((AuditEntry e) -> e.occurredAt).reversed())
+                .skip((long) query.page() * query.size())
+                .limit(query.size())
+                .toList();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long count(final AuditQuery query) {
+        return entries.stream()
+                .filter(e -> query.actorId() == null || query.actorId().equals(e.actor))
+                .filter(e -> query.event() == null || query.event().equals(e.event))
+                .filter(e -> query.from() == null || !e.occurredAt.isBefore(query.from()))
+                .filter(e -> query.to() == null || !e.occurredAt.isAfter(query.to()))
+                .count();
     }
 }
