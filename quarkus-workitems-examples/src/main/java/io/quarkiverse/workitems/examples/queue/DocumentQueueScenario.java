@@ -120,6 +120,7 @@ public class DocumentQueueScenario {
                 null,
                 null,
                 null,
+                null,
                 null);
         final WorkItem wi1 = workItemService.create(req1);
         steps.add(new StepLog(1, desc1, wi1.id));
@@ -144,6 +145,7 @@ public class DocumentQueueScenario {
                 null,
                 null,
                 null,
+                null,
                 null);
         final WorkItem wi2 = workItemService.create(req2);
         steps.add(new StepLog(2, desc2, wi2.id));
@@ -165,6 +167,7 @@ public class DocumentQueueScenario {
                 null,
                 ACTOR_CREATOR,
                 "{\"documentId\": \"sla-review-003\", \"documentType\": \"sla\"}",
+                null,
                 null,
                 null,
                 null,

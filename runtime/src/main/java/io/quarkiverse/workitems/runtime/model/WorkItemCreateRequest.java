@@ -25,6 +25,7 @@ import io.quarkiverse.workitems.runtime.api.WorkItemLabelResponse;
  * @param expiresAt Absolute instant by which the item must be completed; null uses default.
  * @param followUpDate Optional follow-up reminder date for inbox filtering.
  * @param labels Optional list of {@link WorkItemLabelResponse} labels to attach at creation; only MANUAL labels accepted.
+ * @param confidenceScore Confidence score from the AI agent that created this WorkItem (0.0–1.0); null if not AI-created.
  */
 public record WorkItemCreateRequest(
         String title,
@@ -41,5 +42,6 @@ public record WorkItemCreateRequest(
         Instant claimDeadline,
         Instant expiresAt,
         Instant followUpDate,
-        List<WorkItemLabelResponse> labels) {
+        List<WorkItemLabelResponse> labels,
+        Double confidenceScore) {
 }
