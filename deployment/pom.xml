@@ -147,6 +147,12 @@
       <artifactId>quarkus-smallrye-openapi-deployment</artifactId>
     </dependency>
 
+    <!-- Quartz -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-quartz-deployment</artifactId>
+    </dependency>
+
     <!-- Testing -->
     <dependency>
       <groupId>io.quarkus</groupId>

@@ -40,6 +40,11 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-smallrye-openapi</artifactId>
     </dependency>
+    <!-- Quartz scheduler — Quartz-backed @Scheduled + CronExpression for nextFireAt computation -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-quartz</artifactId>
+    </dependency>
 
     <!-- Expiry cleanup scheduler -->
     <dependency>
