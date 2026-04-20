@@ -9,6 +9,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 
@@ -45,6 +46,20 @@ public class WorkItemSchedule extends PanacheEntityBase {
 
     @Id
     public UUID id;
+
+    /**
+     * JPA optimistic locking version — prevents double-fire in clustered deployments.
+     *
+     * <p>
+     * When two Quarkus nodes both pick up the same due schedule, each fires it in a
+     * {@code REQUIRES_NEW} transaction. The first to commit wins (version 0→1, nextFireAt
+     * updated). The second's {@code UPDATE WHERE version=0} matches zero rows →
+     * {@code OptimisticLockException} → transaction rolls back. Exactly one WorkItem
+     * is created per schedule per interval.
+     */
+    @Version
+    @Column(nullable = false)
+    public Long version = 0L;
 
     /** Human-readable name for this schedule. */
     @Column(nullable = false, length = 255)
