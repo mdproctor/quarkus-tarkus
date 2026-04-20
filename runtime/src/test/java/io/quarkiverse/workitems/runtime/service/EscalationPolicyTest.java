@@ -74,6 +74,16 @@ class EscalationPolicyTest {
                     .filter(e -> workItemId.equals(e.workItemId))
                     .toList();
         }
+
+        @Override
+        public List<AuditEntry> query(io.quarkiverse.workitems.runtime.repository.AuditQuery query) {
+            return List.of();
+        }
+
+        @Override
+        public long count(io.quarkiverse.workitems.runtime.repository.AuditQuery query) {
+            return 0;
+        }
     }
 
     // -------------------------------------------------------------------------
