@@ -183,6 +183,7 @@ enabling plain unit tests without `@QuarkusTest`.
 | Service | Package | Responsibilities |
 |---|---|---|
 | `WorkItemService` | `runtime.service` | Create, assign, claim, complete, reject, delegate; enforces status transitions. Overloaded `complete(+rationale, +planRef)` and `reject(+rationale)` pass through to ledger for GDPR Article 22 compliance. |
+| `FormSchemaValidationService` | `runtime.service` | Pure JSON Schema draft-07 validator (networknt). No DB access — callers resolve the schema string. Returns `List<String>` violations; null/blank JSON → empty list (skip). Used by `WorkItemResource` on create (payload) and complete (resolution). |
 | `ExpiryCleanupJob` | `runtime.service` | `@Scheduled` — marks expired WorkItems, fires EscalationPolicy |
 | `EscalationPolicy` | `runtime.service` | SPI — pluggable: notify, reassign, auto-reject |
 
@@ -229,13 +230,13 @@ between the core and the ledger module. If the module is absent, events fire int
 
 | Endpoint | Transition | Notes |
 |---|---|---|
-| `POST /` | → PENDING | Create WorkItem; accepts `labels` list (MANUAL only) |
+| `POST /` | → PENDING | Create WorkItem; accepts `labels` list (MANUAL only). If a `WorkItemFormSchema` exists for the `category`, validates `payload` against `payloadSchema` → 400 with `violations[]` on breach. |
 | `GET /inbox` | — | `?assignee&candidateGroup&candidateUser&status&priority&category&followUp` |
 | `GET /` | — | List all (admin); `?label=pattern` filters by label wildcard |
 | `GET /{id}` | — | Full WorkItem + audit log + labels |
 | `PUT /{id}/claim` | PENDING → ASSIGNED | Caller becomes assignee |
 | `PUT /{id}/start` | ASSIGNED → IN_PROGRESS | Begin work |
-| `PUT /{id}/complete` | IN_PROGRESS → COMPLETED | Body: resolution JSON |
+| `PUT /{id}/complete` | IN_PROGRESS → COMPLETED | Body: resolution JSON. If a `WorkItemFormSchema` exists for the category, validates `resolution` against `resolutionSchema` → 400 with `violations[]` on breach. |
 | `PUT /{id}/reject` | ASSIGNED\|IN_PROGRESS → REJECTED | Body: reason |
 | `PUT /{id}/delegate?to=Y` | → DELEGATED → PENDING | Sets owner on first delegation |
 | `PUT /{id}/release` | ASSIGNED → PENDING | Relinquish to candidate pool |
@@ -296,7 +297,7 @@ Consuming app owns all datasource config.
 | **8 — Native image** | ✅ Complete | GraalVM 25 native build, 19 @QuarkusIntegrationTest tests, 0.084s startup |
 | **Examples** | ✅ Complete | `quarkus-workitems-examples` (4 ledger scenarios) + `quarkus-workitems-flow-examples` (WorkItemsFlow DSL showcase) + `quarkus-workitems-queues-examples` (5 queue scenarios: triage cascade, legal routing, finance approval, security escalation, document review pipeline) |
 | **Dashboard** | ✅ Complete | `quarkus-workitems-queues-dashboard` — Tamboui TUI inside Quarkus via `@QuarkusMain`; live queue board, step-by-step scenario control, 6 Pilot end-to-end tests passing headlessly via `TuiTestRunner` (`TestBackend` is in `tamboui-core:test-fixtures`) |
-| **9 — Form Schema (partial)** | 🔄 In progress | Epic #98: `WorkItemFormSchema` entity + CRUD API complete (#107 ✅). Payload/resolution validation against schema (#108) pending. |
+| **9 — Form Schema** | ✅ Complete | Epic #98: `WorkItemFormSchema` entity + CRUD API (#107 ✅), payload/resolution validation (#108 ✅). UI devs can GET the schema for a category and auto-generate validated forms. |
 | **10 — CaseHub integration** | ⏸ Blocked | `quarkus-workitems-casehub` — CaseHub WorkerRegistry adapter (awaiting CaseHub stable API) |
 | **10 — Qhorus integration** | ⏸ Blocked | `quarkus-workitems-qhorus` — MCP tools (awaiting Qhorus stable API) |
 | **11 — ProvenanceLink** | ⏸ Blocked | Typed PROV-O causal graph — awaiting CaseHub + Qhorus integrations (issue #39) |
@@ -327,7 +328,7 @@ Three tiers:
 
 | Module | Tests |
 |---|---|
-| runtime | 418 |
+| runtime | 446 |
 | workitems-flow | 32 |
 | quarkus-workitems-ledger | 75 |
 | quarkus-workitems-queues | 82 |

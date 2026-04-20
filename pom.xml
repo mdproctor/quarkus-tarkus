@@ -48,6 +48,7 @@ Standalone Quarkiverse extension with optional integrations for Quarkus-Flow, Ca
     <quarkus.version>3.32.2</quarkus.version>
     <io.serverlessworkflow.version>7.13.8.Final</io.serverlessworkflow.version>
     <compiler-plugin.version>3.13.0</compiler-plugin.version>
+    <networknt-json-schema.version>1.5.4</networknt-json-schema.version>
     <maven.compiler.release>21</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <surefire-plugin.version>3.2.5</surefire-plugin.version>
@@ -74,6 +75,11 @@ Standalone Quarkiverse extension with optional integrations for Quarkus-Flow, Ca
         <artifactId>assertj-core</artifactId>
         <version>3.26.3</version>
         <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>com.networknt</groupId>
+        <artifactId>json-schema-validator</artifactId>
+        <version>${networknt-json-schema.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

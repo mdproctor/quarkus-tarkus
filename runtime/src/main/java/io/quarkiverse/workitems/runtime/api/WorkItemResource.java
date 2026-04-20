@@ -27,6 +27,7 @@ import io.quarkiverse.workitems.runtime.event.WorkItemEventBroadcaster;
 import io.quarkiverse.workitems.runtime.event.WorkItemLifecycleEvent;
 import io.quarkiverse.workitems.runtime.model.AuditEntry;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.workitems.runtime.model.WorkItemFormSchema;
 import io.quarkiverse.workitems.runtime.model.WorkItemLink;
 import io.quarkiverse.workitems.runtime.model.WorkItemNote;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
@@ -37,6 +38,7 @@ import io.quarkiverse.workitems.runtime.repository.AuditEntryStore;
 import io.quarkiverse.workitems.runtime.repository.WorkItemNoteStore;
 import io.quarkiverse.workitems.runtime.repository.WorkItemQuery;
 import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
+import io.quarkiverse.workitems.runtime.service.FormSchemaValidationService;
 import io.quarkiverse.workitems.runtime.service.InboxSummaryBuilder;
 import io.quarkiverse.workitems.runtime.service.LabelNotFoundException;
 import io.quarkiverse.workitems.runtime.service.WorkItemNotFoundException;
@@ -63,9 +65,26 @@ public class WorkItemResource {
     @Inject
     WorkItemEventBroadcaster broadcaster;
 
+    @Inject
+    FormSchemaValidationService schemaValidator;
+
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response create(final CreateWorkItemRequest request) {
+        // Validate payload against the form schema for this category (if one exists)
+        if (request != null && request.category() != null && !request.category().isBlank()) {
+            final WorkItemFormSchema schema = WorkItemFormSchema.findLatestByCategory(request.category());
+            if (schema != null && schema.payloadSchema != null) {
+                final List<String> violations = schemaValidator.validate(schema.payloadSchema, request.payload());
+                if (!violations.isEmpty()) {
+                    final java.util.LinkedHashMap<String, Object> err = new java.util.LinkedHashMap<>();
+                    err.put("error", "payload violates form schema");
+                    err.put("violations", violations);
+                    return Response.status(Response.Status.BAD_REQUEST).entity(err).build();
+                }
+            }
+        }
+
         try {
             final WorkItem created = workItemService.create(WorkItemMapper.toServiceRequest(request));
             final URI location = URI.create("/workitems/" + created.id);
@@ -172,10 +191,25 @@ public class WorkItemResource {
     @PUT
     @Path("/{id}/complete")
     @Consumes(MediaType.APPLICATION_JSON)
-    public WorkItemResponse complete(@PathParam("id") final UUID id,
+    public Response complete(@PathParam("id") final UUID id,
             @QueryParam("actor") final String actor,
             final CompleteRequest body) {
-        return WorkItemMapper.toResponse(workItemService.complete(id, actor, body != null ? body.resolution() : null));
+        // Validate resolution against the form schema for this WorkItem's category
+        final String resolution = body != null ? body.resolution() : null;
+        final WorkItem current = workItemStore.get(id).orElse(null);
+        if (current != null && current.category != null && !current.category.isBlank()) {
+            final WorkItemFormSchema schema = WorkItemFormSchema.findLatestByCategory(current.category);
+            if (schema != null && schema.resolutionSchema != null) {
+                final List<String> violations = schemaValidator.validate(schema.resolutionSchema, resolution);
+                if (!violations.isEmpty()) {
+                    final java.util.LinkedHashMap<String, Object> err = new java.util.LinkedHashMap<>();
+                    err.put("error", "resolution violates form schema");
+                    err.put("violations", violations);
+                    return Response.status(Response.Status.BAD_REQUEST).entity(err).build();
+                }
+            }
+        }
+        return Response.ok(WorkItemMapper.toResponse(workItemService.complete(id, actor, resolution))).build();
     }
 
     @PUT
