@@ -200,11 +200,11 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home
 
 | # | Epic | Status | Next child |
 |---|---|---|---|
-| #77 | WorkItem Collaboration & Productivity | active | Bulk operations |
-| #78 | Queue Intelligence & Real-time Observability | active | Inbox summary |
+| #77 | WorkItem Collaboration & Productivity | ✅ complete | — |
+| #78 | Queue Intelligence & Real-time Observability | ✅ complete | — |
 | #79 | External System Integrations | blocked | CaseHub/Qhorus not stable |
 | #80 | Storage Backend Flexibility | active | Redis backend |
-| #81 | Platform Foundation & Correctness | active | OpenAPI spec tuning |
+| #81 | Platform Foundation & Correctness | ✅ complete | — |
 | #39 | ProvenanceLink (PROV-O causal graph) | blocked | Awaiting #79 integrations |
 
 **Automatic behaviours (Claude follows these at all times in this project):**
