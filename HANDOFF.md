@@ -1,81 +1,58 @@
 # Quarkus WorkItems — Session Handover
-**Date:** 2026-04-18
+**Date:** 2026-04-20
 
 ## Project Status
 
-All planned phases complete. 321+ tests passing across all modules. 1 open issue (#39, blocked).
+400 runtime + 82 queues = 482 tests, 0 failures. All planned phases complete plus significant new feature work this session.
 
 | Module | Tests |
 |---|---|
-| runtime | 222 |
-| quarkus-workitems-persistence-mongodb | 27 |
+| runtime | 400 |
 | workitems-flow | 32 |
-| quarkus-workitems-ledger | 74 |
-| quarkus-workitems-queues | 50 |
-| quarkus-workitems-examples | 4 |
-| quarkus-workitems-queues-examples | 5 |
-| quarkus-workitems-queues-dashboard | 20 (14 unit/CDI + 6 Pilot) |
+| quarkus-workitems-ledger | 75 |
+| quarkus-workitems-queues | 82 |
+| quarkus-workitems-queues-examples | 37 |
+| quarkus-workitems-queues-dashboard | 20 |
 | quarkus-workitems-flow-examples | 2 |
+| quarkus-workitems-persistence-mongodb | 27 |
+| quarkus-workitems-issue-tracker | 23 |
 | testing | 16 |
 | integration-tests | 19 (native) |
 
-## What Was Built (this session)
+## What Was Built This Session
 
-**MongoDB backend (`quarkus-workitems-persistence-mongodb`, #70):**
-- `MongoWorkItemDocument` + `MongoAuditEntryDocument` — Panache MongoDB entities
-- `MongoWorkItemStore` + `MongoAuditEntryStore` — `@Alternative @Priority(1)`
-- `WorkItemQuery` translated to MongoDB `Document` filters; `$regex` for label patterns
-- `candidateGroups`/`candidateUsers` stored as arrays for efficient `$in` queries
-- 27 `@QuarkusTest` tests via Quarkus Dev Services (Testcontainers MongoDB)
-
-**ORG/TEAM/PERSONAL vocabulary scopes (#69):**
-- Scoped vocabularies found-or-created on demand from `ownerId` in request
-- PERSONAL defaults `ownerId` to `addedBy`; ORG/TEAM require explicit `ownerId`
-- 6 new tests (runtime: 222 total)
-
-## What Was Built (recent sessions)
-
-**WorkItemStore SPI (KV-native storage refactor):**
-- `WorkItemStore` replaces `WorkItemRepository`: `put()`, `get()`, `scan(WorkItemQuery)`
-- `WorkItemQuery` value object with static factories: `inbox()`, `expired()`, `claimExpired()`, `byLabelPattern()`, `all()`
-- `AuditEntryStore` replaces `AuditEntryRepository`
-- `JpaWorkItemStore`, `InMemoryWorkItemStore`, `JpaAuditEntryStore`, `InMemoryAuditEntryStore`
-- Flyway V2001 (ledger module, renamed from V1002 to avoid conflict with quarkus-ledger)
-
-**WorkItemExpressionEvaluator + ExpressionDescriptor (SWF-aligned):**
-- `FilterConditionEvaluator` → `WorkItemExpressionEvaluator`
-- `ExpressionDescriptor` record bundles language+expression — prevents mismatched pairs
-
-**quarkus-ledger supplement API adaptation:**
-- `LedgerEntry` fields moved to `ComplianceSupplement`, `ProvenanceSupplement` via `attach()`
-- `ObservabilitySupplement` absent from published JAR — causedByEntryId/correlationId return null
-
-**Tamboui Pilot tests enabled:**
-- All 6 `QueueDashboardTest` Pilot tests passing headlessly
-- `TestBackend` is in `tamboui-core:test-fixtures` (not `tamboui-tui:test-fixtures`)
-- Feedback raised with Max Anderston (Tamboui author) re: placement/transitivity
-
-**Labels + vocabulary (sub-epic #51), queues module (sub-epic #52), dashboard, examples:**
-- *Unchanged — `git show HEAD~10:HANDOFF.md`*
+- **WorkItemLink** (#89) — structured URL references (design specs, policies, evidence, attachments). Pluggable `WorkItemLinkType` string constants. `POST/GET/DELETE /workitems/{id}/links?type=`
+- **AsyncAPI spec** (#90) — `docs/asyncapi.yaml` (AsyncAPI 3.0) + `GET /q/asyncapi`. Documents `WorkItemLifecycleEvent` and `WorkItemQueueEvent` channels with full schemas and the tracker-not-live-snapshot invariant.
+- **Micrometer metrics** (#91) — `workitems.active`, `workitems.by.status`, `workitems.overdue`, `workitems.claim.deadline.breached` gauges; `workitems.lifecycle.events{type}` counter; `workitems.queue.depth{queue}` in queues module.
+- **Atomic claim** (#96) — `@Version Long version` on `WorkItem`; `OptimisticLockExceptionMapper` → 409 Conflict. `version` exposed in all WorkItem responses.
+- **Distributed schedule execution** (#94) — `@Version` on `WorkItemSchedule` + `REQUIRES_NEW` per-schedule transactions. Prevents double-fire in clusters. No new infrastructure.
+- **Epics #98–#106 created** — 9 epics for market leadership features (priority-ordered). Child issues #107–#110 created for the top two epics.
 
 ## Immediate Next Step
 
-**Redis backend** (`quarkus-workitems-persistence-redis`) — second alternative store, follows the same SPI pattern as the MongoDB module.
+**Epic #98 — Form Schema, child issue #107**: `WorkItemFormSchema` entity (JSON Schema for payload + resolution), V11 migration, CRUD at `/workitem-form-schemas`. This is Priority 1 for enterprise adoption.
+
+## Priority Roadmap
+
+See CLAUDE.md Work Tracking table for full ordering. Top 3:
+1. **#98** Form Schema — payload/resolution JSON Schema (child: #107 entity, #108 validation)
+2. **#99** Audit History Query API — `GET /audit` cross-WorkItem search (child: #109 query, #110 SLA breaches)
+3. **#100** AI-Native Features — confidence gating, semantic routing
 
 ## Open Issues
 
-- #39 — ProvenanceLink PROV-O graph (blocked: CaseHub and Qhorus not ready)
-
-## Remaining Deferred
-
-*(none)*
+| Status | Issues |
+|---|---|
+| Active (priority 1–9) | #98–#106 (9 market leadership epics) |
+| Distributed (some now) | #92 (Epic: #93 SSE, #94 ✅, #95 blocked, #96 ✅, #97 partial) |
+| Blocked | #79 External Integrations, #39 ProvenanceLink |
 
 ## References
 
 | What | Path |
 |---|---|
-| API reference | `docs/api-reference.md` |
 | Design tracker | `docs/DESIGN.md` |
-| Queues design spec | `docs/specs/2026-04-15-queues-design.md` |
-| Queues ADR | `adr/0002-labels-as-queues-with-inferred-persistence.md` |
-| Blog (this session) | `blog/2026-04-18-mdp01-aligning-with-the-sdk.md` |
+| Epic priority table | `CLAUDE.md` Work Tracking section |
+| Competitor gap analysis | See this session's conversation |
+| AsyncAPI spec | `docs/asyncapi.yaml` |
+| WorkItems vs issue trackers | `docs/workitems-vs-issue-trackers.md` |

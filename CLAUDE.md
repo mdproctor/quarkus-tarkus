@@ -196,17 +196,23 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home
 **Issue tracking:** enabled
 **GitHub repo:** mdproctor/quarkus-workitems
 
-**Active epics** (place new issues under the matching epic before implementation):
+**Active epics** — priority order for market leadership:
 
-| # | Epic | Status | Next child |
-|---|---|---|---|
-| #77 | WorkItem Collaboration & Productivity | ✅ complete | — |
-| #78 | Queue Intelligence & Real-time Observability | ✅ complete | — |
-| #79 | External System Integrations | blocked | CaseHub/Qhorus not stable |
-| #80 | Storage Backend Flexibility | ✅ closed | Redis dropped — SPI proven; Redis role is distributed infrastructure |
-| #81 | Platform Foundation & Correctness | ✅ complete | — |
-| #39 | ProvenanceLink (PROV-O causal graph) | blocked | Awaiting #79 integrations |
-| #92 | Distributed WorkItems (clustering + federation) | future | #93/#96 independent; #95/#97 need #79 |
+| Priority | # | Epic | Status | First child |
+|---|---|---|---|---|
+| 1 | #98 | Form Schema — payload/resolution JSON Schema | **active** | #107 entity + CRUD |
+| 2 | #99 | Audit History Query API — cross-WorkItem search | **active** | #109 GET /audit |
+| 3 | #100 | AI-Native Features — confidence gating, semantic routing | **active** | confidence-gated routing |
+| 4 | #101 | Business-Hours Deadlines — SLA in working hours | **active** | BusinessCalendar SPI |
+| 5 | #102 | Workload-Aware Routing — least-loaded assignment | **active** | WorkItemRouter SPI |
+| 6 | #103 | Notifications — Slack/Teams/email/webhook on lifecycle events | **active** | quarkus-workitems-notifications module |
+| 7 | #104 | SLA Compliance Reporting — breach rates, actor performance | **active** | GET /workitems/reports/sla-breaches |
+| 8 | #105 | Subprocess Spawning — template-driven child WorkItems | **active** | WorkItemSpawnRule entity |
+| 9 | #106 | Multi-Instance Tasks — M-of-N parallel completion | **active** | MultiInstanceConfig on template |
+| — | #92 | Distributed WorkItems — clustering + federation | future | #93 (SSE) implementable now |
+| — | #79 | External System Integrations | blocked | CaseHub/Qhorus not stable |
+| — | #39 | ProvenanceLink (PROV-O causal graph) | blocked | Awaiting #79 |
+| ✅ | #77,78,80,81 | Collaboration, Queue Intelligence, Storage, Platform | complete | — |
 
 **Automatic behaviours (Claude follows these at all times in this project):**
 - **Before implementation begins** — check if an active issue exists. If not, run issue-workflow Phase 1 before writing any code. Create a child issue under the matching epic above.
