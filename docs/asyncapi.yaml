@@ -1,0 +1,293 @@
+asyncapi: 3.0.0
+
+info:
+  title: Quarkus WorkItems — Event API
+  version: 1.0.0
+  description: |
+    CDI events fired by Quarkus WorkItems on every WorkItem lifecycle transition
+    and queue membership change.
+
+    ## How to observe
+
+    Add `@Observes` to any CDI bean method:
+
+    ```java
+    @ApplicationScoped
+    public class MyObserver {
+
+        // Fired on every WorkItem state transition
+        void onWorkItemEvent(@Observes WorkItemLifecycleEvent event) {
+            // event.workItemId(), event.type(), event.status(), event.actor() …
+        }
+
+        // Fired on every queue membership change (requires quarkus-workitems-queues)
+        void onQueueEvent(@Observes WorkItemQueueEvent event) {
+            // event.workItemId(), event.queueViewId(), event.eventType() …
+        }
+    }
+    ```
+
+    ## Critical: events fire AFTER the mutation is persisted
+
+    `WorkItemLifecycleEvent` fires AFTER the WorkItem has been written to the store.
+    When an observer calls `workItemStore.get(event.workItemId())` it receives the
+    **post-mutation** entity — the pre-mutation state is gone. Observers that must
+    compare before and after must maintain their own record of the previous state.
+
+    This is documented in detail in `WorkItemLifecycleEvent` and is the reason
+    `QueueMembershipTracker` uses a DB-backed before-state rather than a live snapshot.
+    See `docs/workitems-vs-issue-trackers.md` for the full argument.
+
+    ## Delivery guarantees
+
+    Events are delivered **synchronously** within the same transaction as the
+    originating WorkItem mutation. If the transaction rolls back, the events are
+    discarded. Observers run in the same thread as the mutation.
+
+servers:
+  application:
+    host: localhost:8080
+    protocol: cdi
+    description: |
+      Quarkus CDI event bus. Events are not transmitted over a network — they are
+      delivered in-process via CDI @Observes. To bridge to an external message bus
+      (Kafka, RabbitMQ, MQTT), add a CDI observer that republishes to your broker.
+
+channels:
+  workitem/lifecycle:
+    address: io.quarkiverse.workitems.workitem.*
+    description: |
+      Fired on every WorkItem state transition — creation, claiming, starting,
+      completion, rejection, delegation, suspension, resumption, cancellation,
+      expiry, and escalation.
+
+      Also fired on LABEL_ADDED and LABEL_REMOVED events when manual labels
+      are applied or removed via the REST API.
+
+      **Firing contract:** fires AFTER the WorkItem mutation is persisted.
+      Observers receive the post-mutation state. The pre-mutation state is not
+      recoverable from the store at observation time.
+    messages:
+      WorkItemLifecycleEvent:
+        $ref: '#/components/messages/WorkItemLifecycleEvent'
+
+  workitem/queue:
+    address: io.quarkiverse.workitems.queue.membership
+    description: |
+      Fired when a WorkItem's membership in a QueueView changes. Requires the
+      `quarkus-workitems-queues` module on the classpath.
+
+      **ADDED:** WorkItem entered a queue it was not previously a member of.
+      **REMOVED:** WorkItem left a queue (not re-added within the same operation).
+      **CHANGED:** WorkItem remained in a queue after the filter re-evaluation
+      cycle (INFERRED labels stripped and re-applied). This collapses what would
+      otherwise be a spurious REMOVED + ADDED pair into a single event.
+
+      Delivered synchronously within the same transaction as the originating
+      WorkItem mutation.
+    messages:
+      WorkItemQueueEvent:
+        $ref: '#/components/messages/WorkItemQueueEvent'
+
+components:
+  messages:
+    WorkItemLifecycleEvent:
+      name: WorkItemLifecycleEvent
+      title: WorkItem Lifecycle Event
+      summary: Signals a WorkItem state transition
+      contentType: application/java
+      description: |
+        Immutable record fired after every WorkItem state change.
+        The `type` field uses the format `io.quarkiverse.workitems.workitem.{eventName}`.
+      payload:
+        $ref: '#/components/schemas/WorkItemLifecycleEvent'
+      examples:
+        - name: WorkItem created
+          payload:
+            type: io.quarkiverse.workitems.workitem.created
+            workItemId: 550e8400-e29b-41d4-a716-446655440000
+            status: PENDING
+            actor: underwriting-agent
+            occurredAt: "2026-04-20T09:00:00Z"
+        - name: WorkItem claimed
+          payload:
+            type: io.quarkiverse.workitems.workitem.assigned
+            workItemId: 550e8400-e29b-41d4-a716-446655440000
+            status: ASSIGNED
+            actor: alice
+            occurredAt: "2026-04-20T09:15:00Z"
+        - name: WorkItem completed with rationale
+          payload:
+            type: io.quarkiverse.workitems.workitem.completed
+            workItemId: 550e8400-e29b-41d4-a716-446655440000
+            status: COMPLETED
+            actor: alice
+            rationale: Income verified, DTI within policy limits
+            planRef: LOAN-POLICY-v2.1
+            occurredAt: "2026-04-20T11:30:00Z"
+
+    WorkItemQueueEvent:
+      name: WorkItemQueueEvent
+      title: WorkItem Queue Membership Event
+      summary: Signals a WorkItem entering, leaving, or being re-evaluated in a queue
+      contentType: application/java
+      description: |
+        Fired when a WorkItem's membership in a named QueueView changes.
+        Requires `quarkus-workitems-queues` on the classpath.
+      payload:
+        $ref: '#/components/schemas/WorkItemQueueEvent'
+      examples:
+        - name: WorkItem entered a queue
+          payload:
+            workItemId: 550e8400-e29b-41d4-a716-446655440000
+            queueViewId: 660e8400-e29b-41d4-a716-446655440001
+            queueName: Legal Review Queue
+            eventType: ADDED
+        - name: WorkItem re-evaluated (still in queue)
+          payload:
+            workItemId: 550e8400-e29b-41d4-a716-446655440000
+            queueViewId: 660e8400-e29b-41d4-a716-446655440001
+            queueName: Legal Review Queue
+            eventType: CHANGED
+
+  schemas:
+    WorkItemLifecycleEvent:
+      type: object
+      description: |
+        Post-mutation snapshot of a WorkItem lifecycle transition.
+        **Important:** this fires AFTER persistence. `workItemStore.get(workItemId)`
+        inside an observer returns the post-mutation state — the pre-mutation state
+        is not accessible from the store.
+      required:
+        - type
+        - workItemId
+        - status
+        - occurredAt
+      properties:
+        type:
+          type: string
+          description: |
+            Event type string. Format: `io.quarkiverse.workitems.workitem.{eventName}`
+            where eventName is lowercased.
+          enum:
+            - io.quarkiverse.workitems.workitem.created
+            - io.quarkiverse.workitems.workitem.assigned
+            - io.quarkiverse.workitems.workitem.started
+            - io.quarkiverse.workitems.workitem.completed
+            - io.quarkiverse.workitems.workitem.rejected
+            - io.quarkiverse.workitems.workitem.delegated
+            - io.quarkiverse.workitems.workitem.released
+            - io.quarkiverse.workitems.workitem.suspended
+            - io.quarkiverse.workitems.workitem.resumed
+            - io.quarkiverse.workitems.workitem.cancelled
+            - io.quarkiverse.workitems.workitem.expired
+            - io.quarkiverse.workitems.workitem.escalated
+            - io.quarkiverse.workitems.workitem.label_added
+            - io.quarkiverse.workitems.workitem.label_removed
+        source:
+          type: string
+          description: Source path, e.g. `/workitems/{workItemId}`
+        subject:
+          type: string
+          description: The WorkItem UUID as a string
+        workItemId:
+          type: string
+          format: uuid
+          description: Primary key of the affected WorkItem
+        status:
+          $ref: '#/components/schemas/WorkItemStatus'
+        occurredAt:
+          type: string
+          format: date-time
+          description: When this event occurred
+        actor:
+          type: string
+          description: Identity of the actor who triggered the transition (user, agent, or system)
+        detail:
+          type: string
+          nullable: true
+          description: Optional JSON or plain-text detail about the transition
+        rationale:
+          type: string
+          nullable: true
+          description: |
+            Actor's stated basis for the decision. Populated for complete and reject
+            transitions when the actor supplies it. Supports GDPR Article 22 compliance.
+        planRef:
+          type: string
+          nullable: true
+          description: |
+            Policy or procedure version that governed this decision.
+            Supports GDPR Article 22 and financial audit requirements.
+
+    WorkItemQueueEvent:
+      type: object
+      description: |
+        Queue membership change event. Requires `quarkus-workitems-queues`.
+        Fired synchronously within the WorkItem mutation's transaction.
+      required:
+        - workItemId
+        - queueViewId
+        - queueName
+        - eventType
+      properties:
+        workItemId:
+          type: string
+          format: uuid
+          description: The WorkItem whose queue membership changed
+        queueViewId:
+          type: string
+          format: uuid
+          description: The QueueView affected
+        queueName:
+          type: string
+          description: Human-readable name of the queue (for logging and display)
+        eventType:
+          $ref: '#/components/schemas/QueueEventType'
+
+    WorkItemStatus:
+      type: string
+      description: |
+        Lifecycle status of a WorkItem.
+        Terminal states (COMPLETED, REJECTED, CANCELLED, ESCALATED) have no
+        outgoing transitions.
+      enum:
+        - PENDING
+        - ASSIGNED
+        - IN_PROGRESS
+        - COMPLETED
+        - REJECTED
+        - DELEGATED
+        - SUSPENDED
+        - CANCELLED
+        - EXPIRED
+        - ESCALATED
+      x-terminal-states:
+        - COMPLETED
+        - REJECTED
+        - CANCELLED
+        - ESCALATED
+
+    QueueEventType:
+      type: string
+      description: |
+        How a WorkItem's queue membership changed.
+
+        **ADDED:** WorkItem entered a queue it was not previously in.
+        The `QueueMembershipTracker` (DB-backed) ensures this fires correctly even
+        for items created with labels already present — a live snapshot at observation
+        time would incorrectly yield CHANGED.
+
+        **REMOVED:** WorkItem left a queue permanently (not re-added within the same
+        operation). The tracker's persisted before-state means this fires correctly
+        even after label deletion (the label is gone before the event fires, so a
+        live snapshot would see no membership and produce no event).
+
+        **CHANGED:** WorkItem remained in a queue after the filter re-evaluation cycle.
+        The filter engine strips all INFERRED labels and re-applies them; without the
+        before/after boundary in QueueMembershipContext, this would produce a spurious
+        REMOVED + ADDED pair. CHANGED collapses that into a single event.
+      enum:
+        - ADDED
+        - REMOVED
+        - CHANGED
