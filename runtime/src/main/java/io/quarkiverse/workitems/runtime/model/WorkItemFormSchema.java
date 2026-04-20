@@ -102,4 +102,17 @@ public class WorkItemFormSchema extends PanacheEntityBase {
     public static List<WorkItemFormSchema> findByCategory(final String category) {
         return list("category = ?1 ORDER BY name ASC", category);
     }
+
+    /**
+     * The most recently created schema for a category, for use during validation.
+     *
+     * <p>
+     * When multiple schemas exist for the same category (e.g. after a schema evolution),
+     * the one with the latest {@link #createdAt} is used as the authoritative definition.
+     * Returns {@code null} if no schema exists for the category.
+     */
+    public static WorkItemFormSchema findLatestByCategory(final String category) {
+        return find("category = ?1 ORDER BY createdAt DESC", category)
+                .firstResult();
+    }
 }
