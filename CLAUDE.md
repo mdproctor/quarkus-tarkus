@@ -206,6 +206,7 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home
 | #80 | Storage Backend Flexibility | ✅ closed | Redis dropped — SPI proven; Redis role is distributed infrastructure |
 | #81 | Platform Foundation & Correctness | ✅ complete | — |
 | #39 | ProvenanceLink (PROV-O causal graph) | blocked | Awaiting #79 integrations |
+| #92 | Distributed WorkItems (clustering + federation) | future | #93/#96 independent; #95/#97 need #79 |
 
 **Automatic behaviours (Claude follows these at all times in this project):**
 - **Before implementation begins** — check if an active issue exists. If not, run issue-workflow Phase 1 before writing any code. Create a child issue under the matching epic above.
