@@ -2,6 +2,7 @@ package io.quarkiverse.workitems.filterregistry.engine;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Arrays;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -75,6 +76,17 @@ class JexlConditionEvaluatorTest {
         wi.priority = WorkItemPriority.HIGH;
         assertThat(evaluator.evaluate(
                 "workItem.priority.name() == 'HIGH'", Map.of(), wi)).isTrue();
+    }
+
+    @Test
+    void toMap_containsAllPublicNonStaticWorkItemFields() {
+        // Protects against toMap() going stale when WorkItem gains new fields.
+        // If this test fails, update JexlConditionEvaluator.toMap() to include the new field.
+        final long publicNonStaticFieldCount = Arrays.stream(WorkItem.class.getFields())
+                .filter(f -> !java.lang.reflect.Modifier.isStatic(f.getModifiers()))
+                .count();
+        final java.util.Map<String, Object> map = JexlConditionEvaluator.toMap(new WorkItem());
+        assertThat(map).hasSize((int) publicNonStaticFieldCount);
     }
 
     private WorkItem workItem(final Double confidenceScore, final String category) {
