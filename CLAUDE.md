@@ -200,9 +200,9 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home
 
 | Priority | # | Epic | Status | First child |
 |---|---|---|---|---|
-| 1 | #100 | AI-Native Features — confidence gating, semantic routing | **active** | #112 ✅ confidenceScore, #113 ✅ filter-registry, #114 ✅ LowConfidenceFilter; remaining: WorkItemRouter SPI, semantic matching, resolution suggestion, escalation summarisation |
+| 1 | #100 | AI-Native Features — confidence gating, semantic routing | **active** | #112 ✅ confidenceScore, #113 ✅ filter-registry, #114 ✅ LowConfidenceFilter, #115 ✅ quarkus-workitems-api SPI, #116 ✅ WorkItemAssignmentService+strategies; remaining: semantic skill matching, AI-suggested resolution, escalation summarisation |
 | 2 | #101 | Business-Hours Deadlines — SLA in working hours | **active** | BusinessCalendar SPI |
-| 3 | #102 | Workload-Aware Routing — least-loaded assignment | **active** | WorkItemRouter SPI |
+| 3 | #102 | Workload-Aware Routing — least-loaded assignment | ✅ complete | #115 ✅ shared SPI, #116 ✅ LeastLoadedStrategy wired. RoundRobinStrategy deferred (#117). |
 | 4 | #103 | Notifications — Slack/Teams/email/webhook on lifecycle events | **active** | quarkus-workitems-notifications module |
 | 5 | #104 | SLA Compliance Reporting — breach rates, actor performance | **active** | GET /workitems/reports/sla-breaches |
 | 6 | #105 | Subprocess Spawning — template-driven child WorkItems | **active** | WorkItemSpawnRule entity |
