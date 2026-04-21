@@ -169,6 +169,9 @@ JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn install -DskipTests -f ~/claude/qu
 - `quarkus.http.test-port=0` in test `application.properties` — add when a module has multiple `@QuarkusTest` classes; prevents intermittent `TIME_WAIT` port conflicts when Quarkus restarts between test classes
 - `@TestTransaction` + REST assertions don't mix — a `@Transactional` CDI method called from within `@TestTransaction` joins the test transaction; subsequent HTTP calls run in their own transaction and cannot see the uncommitted data (returns 404). Remove `@TestTransaction` from test classes that mix direct service calls with REST Assured assertions
 - If `deployment/pom.xml` declares `X-deployment` as a dependency, `runtime/pom.xml` **must** declare `X` (the corresponding runtime artifact) — the `extension-descriptor` goal enforces this pairing and fails with a misleading "Could not find artifact" error pointing at the runtime module. If `WorkItemsProcessor` doesn't use anything from `X-deployment`, remove it rather than adding an unnecessary runtime dependency.
+- Optional library modules with CDI beans need `jandex-maven-plugin` in their pom — without it, Quarkus discovers their beans during their own `@QuarkusTest` run (direct class scan) but NOT when consumed as a JAR by another module. Add `io.smallrye:jandex-maven-plugin:3.3.1` with the `jandex` goal to any module that defines `@ApplicationScoped` or `@Path` beans and is not a full Quarkus extension.
+- Hibernate bytecode-enhanced entities return `null`/`0` for all fields when accessed via `Field.get(entity)` reflection — Hibernate stores values in a generated subclass, not in the parent field slots. Use direct field access (`entity.fieldName`) to build context maps or projections; use a drift-protection test to catch new fields (see `JexlConditionEvaluatorTest.toMap_containsAllPublicNonStaticWorkItemFields`).
+- Use `quarkus-junit` (not `quarkus-junit5`, which is deprecated and triggers a Maven relocation warning on every build). For pure-Java modules with no `@QuarkusTest`, use plain `org.junit.jupiter:junit-jupiter` instead.
 
 ---
 
@@ -200,9 +203,9 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home
 
 | Priority | # | Epic | Status | First child |
 |---|---|---|---|---|
-| 1 | #100 | AI-Native Features — confidence gating, semantic routing | **active** | #112 ✅ confidenceScore, #113 ✅ filter-registry, #114 ✅ LowConfidenceFilter; remaining: WorkItemRouter SPI, semantic matching, resolution suggestion, escalation summarisation |
+| 1 | #100 | AI-Native Features — confidence gating, semantic routing | **active** | #112 ✅ confidenceScore, #113 ✅ filter-registry, #114 ✅ LowConfidenceFilter, #115 ✅ quarkus-workitems-api SPI, #116 ✅ WorkItemAssignmentService+strategies; remaining: semantic skill matching, AI-suggested resolution, escalation summarisation |
 | 2 | #101 | Business-Hours Deadlines — SLA in working hours | **active** | BusinessCalendar SPI |
-| 3 | #102 | Workload-Aware Routing — least-loaded assignment | **active** | WorkItemRouter SPI |
+| 3 | #102 | Workload-Aware Routing — least-loaded assignment | ✅ complete | #115 ✅ shared SPI, #116 ✅ LeastLoadedStrategy wired. RoundRobinStrategy deferred (#117). |
 | 4 | #103 | Notifications — Slack/Teams/email/webhook on lifecycle events | **active** | quarkus-workitems-notifications module |
 | 5 | #104 | SLA Compliance Reporting — breach rates, actor performance | **active** | GET /workitems/reports/sla-breaches |
 | 6 | #105 | Subprocess Spawning — template-driven child WorkItems | **active** | WorkItemSpawnRule entity |
