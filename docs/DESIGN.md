@@ -45,6 +45,8 @@ Maven multi-module layout following Quarkiverse conventions:
 | *(future)* | `quarkus-workitems-casehub` | CaseHub `WorkerRegistry` adapter (blocked: CaseHub not ready) |
 | *(future)* | `quarkus-workitems-qhorus` | Qhorus MCP tools (blocked: Qhorus not ready) |
 | MongoDB | `quarkus-workitems-persistence-mongodb` | MongoDB-backed `WorkItemStore` + `AuditEntryStore`. `candidateGroups`/`candidateUsers` stored as arrays; `WorkItemQuery` → MongoDB `Document` filter; `$regex` for label patterns. 27 tests via Dev Services. |
+| Filter Registry | `quarkus-workitems-filter-registry` | `FilterAction` SPI (CDI, resolved by type name), `JexlConditionEvaluator` (workItem map + conditionContext vars), `FilterRegistryEngine` (observes `WorkItemLifecycleEvent`, ThreadLocal guard, ADD/UPDATE/REMOVE event mapping), `PermanentFilterRegistry` (CDI `Instance<FilterDefinition>`, runtime enable/disable), `DynamicFilterRegistry` (DB-backed via `FilterRule` entity). Built-in actions: `APPLY_LABEL`, `OVERRIDE_CANDIDATE_GROUPS`, `SET_PRIORITY`. REST: `POST/GET/GET{id}/DELETE /filter-rules`, `GET /filter-rules/permanent`, `PUT /filter-rules/permanent/enabled?name=`. V3001 migration. |
+| AI | `quarkus-workitems-ai` | `LowConfidenceFilterProducer` — CDI-produced permanent filter applying `ai/low-confidence` label (INFERRED) when `confidenceScore < threshold`. Config: `quarkus.workitems.ai.confidence-threshold` (default 0.7), `quarkus.workitems.ai.low-confidence-filter.enabled` (default true). |
 | *(future)* | `quarkus-workitems-redis` | Redis-backed `WorkItemStore` |
 
 ---
@@ -96,6 +98,7 @@ Maven multi-module layout following Quarkiverse conventions:
 | `suspendedAt` | Instant | When SUSPENDED |
 | `priorStatus` | WorkItemStatus | Status before suspension; restored on resume |
 | `labels` | `List<WorkItemLabel>` | 0..n labels; see Label Model below |
+| `confidenceScore` | Double | Nullable. Set by AI agents (0.0–1.0). Null = no AI metadata. Used by filter-registry to gate routing. V13 migration. |
 
 **WorkItemLabel (`runtime/model/`)** — each entry:
 
@@ -273,6 +276,17 @@ between the core and the ledger module. If the module is absent, events fire int
 | `GET /workitem-form-schemas/{id}` | Get single schema; 404 if not found |
 | `DELETE /workitem-form-schemas/{id}` | Delete schema; 204/404; independent of WorkItem lifecycle |
 
+`FilterRuleResource` at `/filter-rules` (filter-registry module, Epic #100):
+
+| Endpoint | Notes |
+|---|---|
+| `POST /filter-rules` | Create dynamic rule; `name` + `condition` required |
+| `GET /filter-rules` | List all dynamic rules |
+| `GET /filter-rules/{id}` | Get single rule; 404 if not found |
+| `DELETE /filter-rules/{id}` | Delete rule; 204/404 |
+| `GET /filter-rules/permanent` | List CDI-produced permanent filters with enabled state |
+| `PUT /filter-rules/permanent/enabled?name=X` | Toggle permanent filter at runtime; 200/400/404 |
+
 `AuditResource` at `/audit` (core, Epic #99, Issue #109):
 
 | Endpoint | Notes |
@@ -329,6 +343,7 @@ Consuming app owns all datasource config.
 | **Dashboard** | ✅ Complete | `quarkus-workitems-queues-dashboard` — Tamboui TUI inside Quarkus via `@QuarkusMain`; live queue board, step-by-step scenario control, 6 Pilot end-to-end tests passing headlessly via `TuiTestRunner` (`TestBackend` is in `tamboui-core:test-fixtures`) |
 | **9 — Form Schema** | ✅ Complete | Epic #98: `WorkItemFormSchema` entity + CRUD API (#107 ✅), payload/resolution validation (#108 ✅). UI devs can GET the schema for a category and auto-generate validated forms. |
 | **10 — Audit History Query API** | ✅ Complete | Epic #99: `GET /audit` cross-WorkItem query with actorId/event/date/category filters + pagination (#109 ✅), SLA breach report (#110 ✅), actor performance summary (#111 ✅). V12 indexes. |
+| **11 — Confidence-Gated Routing** | ✅ Complete | Epic #100: `confidenceScore` on WorkItem + V13 (#112 ✅), `quarkus-workitems-filter-registry` module with `FilterAction` SPI + JEXL engine + permanent/dynamic registry (#113 ✅), `quarkus-workitems-ai` `LowConfidenceFilterProducer` (#114 ✅). |
 | **10 — CaseHub integration** | ⏸ Blocked | `quarkus-workitems-casehub` — CaseHub WorkerRegistry adapter (awaiting CaseHub stable API) |
 | **10 — Qhorus integration** | ⏸ Blocked | `quarkus-workitems-qhorus` — MCP tools (awaiting Qhorus stable API) |
 | **11 — ProvenanceLink** | ⏸ Blocked | Typed PROV-O causal graph — awaiting CaseHub + Qhorus integrations (issue #39) |
@@ -359,10 +374,12 @@ Three tiers:
 
 | Module | Tests |
 |---|---|
-| runtime | 497 |
+| runtime | 500 |
 | workitems-flow | 32 |
 | quarkus-workitems-ledger | 75 |
 | quarkus-workitems-queues | 82 |
+| quarkus-workitems-filter-registry | 40 |
+| quarkus-workitems-ai | 8 |
 | quarkus-workitems-examples | 37 |
 | quarkus-workitems-flow-examples | 2 |
 | quarkus-workitems-queues-examples | 37 |
@@ -371,4 +388,4 @@ Three tiers:
 | quarkus-workitems-issue-tracker | 23 |
 | testing | 16 |
 | integration-tests | 19 (native) |
-| **Total** | **788+** |
+| **Total** | **918+** |

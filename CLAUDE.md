@@ -200,18 +200,18 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home
 
 | Priority | # | Epic | Status | First child |
 |---|---|---|---|---|
-| 1 | #98 | Form Schema — payload/resolution JSON Schema | **active** | #107 entity + CRUD |
-| 2 | #99 | Audit History Query API — cross-WorkItem search | **active** | #109 GET /audit |
-| 3 | #100 | AI-Native Features — confidence gating, semantic routing | **active** | confidence-gated routing |
-| 4 | #101 | Business-Hours Deadlines — SLA in working hours | **active** | BusinessCalendar SPI |
-| 5 | #102 | Workload-Aware Routing — least-loaded assignment | **active** | WorkItemRouter SPI |
-| 6 | #103 | Notifications — Slack/Teams/email/webhook on lifecycle events | **active** | quarkus-workitems-notifications module |
-| 7 | #104 | SLA Compliance Reporting — breach rates, actor performance | **active** | GET /workitems/reports/sla-breaches |
-| 8 | #105 | Subprocess Spawning — template-driven child WorkItems | **active** | WorkItemSpawnRule entity |
-| 9 | #106 | Multi-Instance Tasks — M-of-N parallel completion | **active** | MultiInstanceConfig on template |
+| 1 | #100 | AI-Native Features — confidence gating, semantic routing | **active** | #112 ✅ confidenceScore, #113 ✅ filter-registry, #114 ✅ LowConfidenceFilter; remaining: WorkItemRouter SPI, semantic matching, resolution suggestion, escalation summarisation |
+| 2 | #101 | Business-Hours Deadlines — SLA in working hours | **active** | BusinessCalendar SPI |
+| 3 | #102 | Workload-Aware Routing — least-loaded assignment | **active** | WorkItemRouter SPI |
+| 4 | #103 | Notifications — Slack/Teams/email/webhook on lifecycle events | **active** | quarkus-workitems-notifications module |
+| 5 | #104 | SLA Compliance Reporting — breach rates, actor performance | **active** | GET /workitems/reports/sla-breaches |
+| 6 | #105 | Subprocess Spawning — template-driven child WorkItems | **active** | WorkItemSpawnRule entity |
+| 7 | #106 | Multi-Instance Tasks — M-of-N parallel completion | **active** | MultiInstanceConfig on template |
 | — | #92 | Distributed WorkItems — clustering + federation | future | #93 (SSE) implementable now |
 | — | #79 | External System Integrations | blocked | CaseHub/Qhorus not stable |
 | — | #39 | ProvenanceLink (PROV-O causal graph) | blocked | Awaiting #79 |
+| ✅ | #98 | Form Schema — payload/resolution JSON Schema | complete | #107 ✅, #108 ✅ |
+| ✅ | #99 | Audit History Query API — cross-WorkItem search | complete | #109 ✅, #110 ✅, #111 ✅ |
 | ✅ | #77,78,80,81 | Collaboration, Queue Intelligence, Storage, Platform | complete | — |
 
 **Automatic behaviours (Claude follows these at all times in this project):**
