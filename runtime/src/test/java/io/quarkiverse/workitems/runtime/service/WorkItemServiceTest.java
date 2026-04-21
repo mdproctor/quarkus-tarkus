@@ -175,6 +175,11 @@ class WorkItemServiceTest {
             public CleanupConfig cleanup() {
                 return () -> 60;
             }
+
+            @Override
+            public RoutingConfig routing() {
+                return () -> "least-loaded";
+            }
         };
     }
 
@@ -961,6 +966,11 @@ class WorkItemServiceTest {
             @Override
             public CleanupConfig cleanup() {
                 return () -> 60;
+            }
+
+            @Override
+            public RoutingConfig routing() {
+                return () -> "least-loaded";
             }
         };
         WorkItemService svc = new WorkItemService(repo, auditStore, noClaimConfig);
