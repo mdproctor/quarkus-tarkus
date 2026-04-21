@@ -79,4 +79,35 @@ public interface WorkItemsConfig {
         @WithDefault("60")
         int expiryCheckSeconds();
     }
+
+    /**
+     * Worker selection strategy configuration.
+     *
+     * @return the routing configuration group
+     */
+    @io.smallrye.config.WithName("routing")
+    RoutingConfig routing();
+
+    /**
+     * Worker selection strategy configuration.
+     */
+    interface RoutingConfig {
+
+        /**
+         * The built-in worker selection strategy to use when no CDI
+         * {@code @Alternative WorkerSelectionStrategy} bean is present.
+         *
+         * <p>
+         * Accepted values:
+         * <ul>
+         * <li>{@code least-loaded} — pre-assigns to the candidateUser with the fewest
+         * active (ASSIGNED/IN_PROGRESS/SUSPENDED) WorkItems (default)
+         * <li>{@code claim-first} — no pre-assignment; pool stays open
+         * </ul>
+         *
+         * @return strategy name; defaults to {@code "least-loaded"}
+         */
+        @io.smallrye.config.WithDefault("least-loaded")
+        String strategy();
+    }
 }
