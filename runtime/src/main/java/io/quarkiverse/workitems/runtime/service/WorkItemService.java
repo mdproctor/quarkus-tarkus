@@ -21,6 +21,7 @@ import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
 import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
 import io.quarkiverse.workitems.runtime.repository.AuditEntryStore;
 import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
+import io.quarkiverse.workitems.spi.AssignmentTrigger;
 
 @ApplicationScoped
 public class WorkItemService {
@@ -28,6 +29,7 @@ public class WorkItemService {
     private final WorkItemStore workItemStore;
     private final AuditEntryStore auditStore;
     private final WorkItemsConfig config;
+    private final WorkItemAssignmentService assignmentService;
 
     @Inject
     Event<WorkItemLifecycleEvent> lifecycleEvent;
@@ -35,10 +37,12 @@ public class WorkItemService {
     @Inject
     public WorkItemService(final WorkItemStore workItemStore,
             final AuditEntryStore auditStore,
-            final WorkItemsConfig config) {
+            final WorkItemsConfig config,
+            final WorkItemAssignmentService assignmentService) {
         this.workItemStore = workItemStore;
         this.auditStore = auditStore;
         this.config = config;
+        this.assignmentService = assignmentService;
     }
 
     @Transactional
@@ -83,6 +87,7 @@ public class WorkItemService {
             }
         }
 
+        assignmentService.assign(item, AssignmentTrigger.CREATED);
         final WorkItem saved = workItemStore.put(item);
         audit(saved.id, "CREATED", request.createdBy(), null);
         if (lifecycleEvent != null) {
@@ -223,11 +228,17 @@ public class WorkItemService {
         item.delegationChain = item.delegationChain == null
                 ? actorId
                 : item.delegationChain + "," + actorId;
-        item.assigneeId = toAssigneeId;
         item.delegationState = DelegationState.PENDING;
-        item.status = WorkItemStatus.PENDING;
+        // Fire strategy while item is still in its current state (assigneeId/status
+        // unchanged) so countActive sees the existing load correctly before reassignment.
+        assignmentService.assign(item, AssignmentTrigger.DELEGATED);
+        // If strategy did not select a candidate, fall back to the explicit 'to' param.
+        if (item.assigneeId == null || item.assigneeId.equals(actorId)) {
+            item.assigneeId = toAssigneeId;
+            item.status = WorkItemStatus.PENDING;
+        }
         final WorkItem saved = workItemStore.put(item);
-        audit(saved.id, "DELEGATED", actorId, "to:" + toAssigneeId);
+        audit(saved.id, "DELEGATED", actorId, "to:" + saved.assigneeId);
         if (lifecycleEvent != null) {
             lifecycleEvent.fire(WorkItemLifecycleEvent.of("DELEGATED", saved.id, saved.status, actorId, "to:" + toAssigneeId));
         }
@@ -242,6 +253,7 @@ public class WorkItemService {
         }
         item.status = WorkItemStatus.PENDING;
         item.assigneeId = null;
+        assignmentService.assign(item, AssignmentTrigger.RELEASED);
         final WorkItem saved = workItemStore.put(item);
         audit(saved.id, "RELEASED", actorId, null);
         if (lifecycleEvent != null) {

@@ -27,6 +27,7 @@ import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
 import io.quarkiverse.workitems.runtime.repository.AuditEntryStore;
 import io.quarkiverse.workitems.runtime.repository.WorkItemQuery;
 import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
+import io.quarkiverse.workitems.spi.AssignmentDecision;
 
 class WorkItemServiceTest {
 
@@ -195,7 +196,11 @@ class WorkItemServiceTest {
     void setUp() {
         repo = new TestWorkItemRepo();
         auditStore = new TestAuditRepo();
-        service = new WorkItemService(repo, auditStore, testConfig());
+        service = new WorkItemService(repo, auditStore, testConfig(),
+                new WorkItemAssignmentService(
+                        (ctx, candidates) -> AssignmentDecision.noChange(),
+                        group -> List.of(),
+                        repo));
     }
 
     private WorkItemCreateRequest basicRequest() {
@@ -973,7 +978,11 @@ class WorkItemServiceTest {
                 return () -> "least-loaded";
             }
         };
-        WorkItemService svc = new WorkItemService(repo, auditStore, noClaimConfig);
+        WorkItemService svc = new WorkItemService(repo, auditStore, noClaimConfig,
+                new WorkItemAssignmentService(
+                        (ctx, candidates) -> AssignmentDecision.noChange(),
+                        group -> List.of(),
+                        repo));
         WorkItem wi = svc.create(basicRequest());
         assertThat(wi.claimDeadline).isNull();
     }
