@@ -1,5 +1,6 @@
 package io.quarkiverse.workitems.runtime.service;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -179,15 +180,22 @@ public class WorkItemAssignmentService {
     }
 
     private int countActive(final String actorId) {
-        return workItemStore.scan(WorkItemQuery.builder()
+        // Filter to strict assigneeId equality — WorkItemQuery.assigneeId also matches
+        // candidateUsers LIKE, which would over-count unassigned pool items.
+        return (int) workItemStore.scan(WorkItemQuery.builder()
                 .assigneeId(actorId)
                 .statusIn(ACTIVE_STATUSES)
-                .build()).size();
+                .build())
+                .stream()
+                .filter(wi -> actorId.equals(wi.assigneeId))
+                .count();
     }
 
     private void applyDecision(final WorkItem workItem, final AssignmentDecision decision) {
         if (decision.assigneeId() != null) {
             workItem.assigneeId = decision.assigneeId();
+            workItem.status = WorkItemStatus.ASSIGNED;
+            workItem.assignedAt = Instant.now();
         }
         if (decision.candidateGroups() != null) {
             workItem.candidateGroups = decision.candidateGroups();
