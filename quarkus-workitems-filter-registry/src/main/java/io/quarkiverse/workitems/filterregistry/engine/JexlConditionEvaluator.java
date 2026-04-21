@@ -1,7 +1,5 @@
 package io.quarkiverse.workitems.filterregistry.engine;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,17 +17,20 @@ import io.quarkiverse.workitems.runtime.model.WorkItem;
  *
  * <p>
  * The JEXL context exposes {@code workItem} as a {@code Map<String, Object>} containing
- * all public fields of the WorkItem (preserving types, e.g. enums remain enum constants).
+ * all known WorkItem fields by name (preserving types, e.g. enums remain enum constants).
  * Additional variables from {@code conditionContext} are also merged into the context.
  *
  * <p>
- * Map-based representation is used because JEXL 3.4 cannot access public fields or
- * getters via reflection under the Java module system (JPMS) in Java 9+. Map access
- * (e.g. {@code workItem.category}) is fully supported and avoids reflection restrictions.
+ * A map-based representation is used because JEXL 3.4 cannot access public fields or
+ * getters via reflection under the Java module system (JPMS) in Java 9+, and because
+ * Hibernate ORM bytecode enhancement intercepts field storage in entity subclasses —
+ * making {@code Field.get()} via reflection unreliable. Map access
+ * (e.g. {@code workItem.category}) is fully supported and always returns the correct
+ * current value.
  *
  * <h2>Context variables</h2>
  * <p>
- * {@code workItem} is exposed as a {@code Map<String, Object>} with all public fields.
+ * {@code workItem} is exposed as a {@code Map<String, Object>} with all WorkItem fields.
  * Enum fields (e.g. {@code priority}, {@code status}) are exposed as the enum constant,
  * not as a String — use {@code workItem.priority.name() == 'HIGH'} not
  * {@code workItem.priority == 'HIGH'}.
@@ -71,28 +72,55 @@ public class JexlConditionEvaluator {
     }
 
     /**
-     * Converts a WorkItem to a {@code Map<String, Object>} by reading all public
-     * non-static fields via reflection.
+     * Converts a WorkItem to a {@code Map<String, Object>} by reading all known public
+     * fields directly (not via reflection).
+     *
+     * <p>
+     * Direct field access is used instead of reflection because Hibernate ORM bytecode
+     * enhancement replaces field storage in the entity class; {@code Field.get()} via
+     * reflection bypasses the enhancement and returns stale or null values even when the
+     * field has been set. Direct access triggers the enhanced getter and returns the
+     * correct value.
      *
      * <p>
      * Enum fields are preserved as enum constants so JEXL can call enum methods
      * (e.g. {@code workItem.priority.name()}).
      *
      * @param workItem the WorkItem to convert
-     * @return map of field name → field value
+     * @return map of field name → field value (null values are included)
      */
-    private static Map<String, Object> toMap(final WorkItem workItem) {
+    static Map<String, Object> toMap(final WorkItem workItem) {
         final Map<String, Object> map = new HashMap<>();
-        for (final Field field : workItem.getClass().getFields()) {
-            if (Modifier.isStatic(field.getModifiers())) {
-                continue;
-            }
-            try {
-                map.put(field.getName(), field.get(workItem));
-            } catch (IllegalAccessException e) {
-                // skip inaccessible fields
-            }
-        }
+        map.put("id", workItem.id);
+        map.put("version", workItem.version);
+        map.put("title", workItem.title);
+        map.put("description", workItem.description);
+        map.put("category", workItem.category);
+        map.put("formKey", workItem.formKey);
+        map.put("status", workItem.status);
+        map.put("priority", workItem.priority);
+        map.put("assigneeId", workItem.assigneeId);
+        map.put("owner", workItem.owner);
+        map.put("candidateGroups", workItem.candidateGroups);
+        map.put("candidateUsers", workItem.candidateUsers);
+        map.put("requiredCapabilities", workItem.requiredCapabilities);
+        map.put("createdBy", workItem.createdBy);
+        map.put("delegationState", workItem.delegationState);
+        map.put("delegationChain", workItem.delegationChain);
+        map.put("priorStatus", workItem.priorStatus);
+        map.put("payload", workItem.payload);
+        map.put("resolution", workItem.resolution);
+        map.put("claimDeadline", workItem.claimDeadline);
+        map.put("expiresAt", workItem.expiresAt);
+        map.put("followUpDate", workItem.followUpDate);
+        map.put("createdAt", workItem.createdAt);
+        map.put("updatedAt", workItem.updatedAt);
+        map.put("assignedAt", workItem.assignedAt);
+        map.put("startedAt", workItem.startedAt);
+        map.put("completedAt", workItem.completedAt);
+        map.put("suspendedAt", workItem.suspendedAt);
+        map.put("labels", workItem.labels);
+        map.put("confidenceScore", workItem.confidenceScore);
         return map;
     }
 }
