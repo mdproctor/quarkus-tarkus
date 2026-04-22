@@ -11,3 +11,4 @@ target/
 /io/
 /application.properties
 /db/
+.worktrees/
