@@ -1,10 +1,10 @@
-package io.quarkiverse.workitems.filterregistry.action;
+package io.quarkiverse.workitems.runtime.action;
 
 import java.util.Map;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.quarkiverse.workitems.filterregistry.spi.FilterAction;
+import io.quarkiverse.work.core.filter.FilterAction;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
 
@@ -25,7 +25,8 @@ public class SetPriorityAction implements FilterAction {
     }
 
     @Override
-    public void apply(final WorkItem workItem, final Map<String, Object> params) {
+    public void apply(final Object workUnit, final Map<String, Object> params) {
+        final WorkItem workItem = (WorkItem) workUnit;
         final Object priorityParam = params.get("priority");
         if (priorityParam == null) {
             return;
