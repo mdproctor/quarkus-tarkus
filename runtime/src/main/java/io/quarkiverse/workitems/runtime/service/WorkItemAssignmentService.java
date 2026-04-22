@@ -4,24 +4,24 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 
+import io.quarkiverse.work.api.AssignmentDecision;
+import io.quarkiverse.work.api.AssignmentTrigger;
+import io.quarkiverse.work.api.SelectionContext;
+import io.quarkiverse.work.api.WorkerCandidate;
+import io.quarkiverse.work.api.WorkerRegistry;
+import io.quarkiverse.work.api.WorkerSelectionStrategy;
+import io.quarkiverse.work.api.WorkloadProvider;
+import io.quarkiverse.work.core.strategy.ClaimFirstStrategy;
+import io.quarkiverse.work.core.strategy.LeastLoadedStrategy;
+import io.quarkiverse.work.core.strategy.WorkBroker;
 import io.quarkiverse.workitems.runtime.config.WorkItemsConfig;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
-import io.quarkiverse.workitems.runtime.repository.WorkItemQuery;
-import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
-import io.quarkiverse.workitems.spi.AssignmentDecision;
-import io.quarkiverse.workitems.spi.AssignmentTrigger;
-import io.quarkiverse.workitems.spi.SelectionContext;
-import io.quarkiverse.workitems.spi.WorkerCandidate;
-import io.quarkiverse.workitems.spi.WorkerRegistry;
-import io.quarkiverse.workitems.spi.WorkerSelectionStrategy;
 
 /**
  * Orchestrates worker selection for WorkItems on creation, release, and delegation.
@@ -30,11 +30,10 @@ import io.quarkiverse.workitems.spi.WorkerSelectionStrategy;
  * Flow:
  * <ol>
  * <li>Resolve active strategy (CDI {@code @Alternative} overrides config-selected built-in)</li>
- * <li>Check trigger against strategy's declared trigger set — skip if not in set</li>
  * <li>Build resolved candidate list from {@code candidateUsers} + {@code WorkerRegistry}</li>
- * <li>Populate {@code activeWorkItemCount} for each candidate from the WorkItem store</li>
- * <li>Filter candidates by {@code requiredCapabilities}</li>
- * <li>Call strategy, apply non-null fields of {@link AssignmentDecision} to WorkItem</li>
+ * <li>Populate {@code activeWorkItemCount} for each candidate via {@link WorkloadProvider}</li>
+ * <li>Delegate trigger gating, capability filtering, and strategy dispatch to {@link WorkBroker}</li>
+ * <li>Apply non-null fields of {@link AssignmentDecision} to the WorkItem</li>
  * </ol>
  *
  * <p>
@@ -44,11 +43,9 @@ import io.quarkiverse.workitems.spi.WorkerSelectionStrategy;
 @ApplicationScoped
 public class WorkItemAssignmentService {
 
-    private static final List<WorkItemStatus> ACTIVE_STATUSES = List.of(
-            WorkItemStatus.ASSIGNED, WorkItemStatus.IN_PROGRESS, WorkItemStatus.SUSPENDED);
-
-    private final WorkItemStore workItemStore;
     private final WorkerRegistry workerRegistry;
+    private final WorkloadProvider workloadProvider;
+    private final WorkBroker workBroker;
 
     // CDI-wired fields — null in unit-test constructor
     private WorkItemsConfig config;
@@ -65,7 +62,8 @@ public class WorkItemAssignmentService {
      * @param config the WorkItems configuration
      * @param alternatives CDI instances of alternative strategies
      * @param workerRegistry the worker registry for group resolution
-     * @param workItemStore the store for active count queries
+     * @param workloadProvider the workload provider for active count queries
+     * @param workBroker the generic work assignment broker
      * @param claimFirst the built-in claim-first strategy
      * @param leastLoaded the built-in least-loaded strategy
      */
@@ -74,13 +72,15 @@ public class WorkItemAssignmentService {
             final WorkItemsConfig config,
             final Instance<WorkerSelectionStrategy> alternatives,
             final WorkerRegistry workerRegistry,
-            final WorkItemStore workItemStore,
+            final WorkloadProvider workloadProvider,
+            final WorkBroker workBroker,
             final ClaimFirstStrategy claimFirst,
             final LeastLoadedStrategy leastLoaded) {
         this.config = config;
         this.alternatives = alternatives;
         this.workerRegistry = workerRegistry;
-        this.workItemStore = workItemStore;
+        this.workloadProvider = workloadProvider;
+        this.workBroker = workBroker;
         this.claimFirst = claimFirst;
         this.leastLoaded = leastLoaded;
         this.fixedStrategy = null;
@@ -92,13 +92,17 @@ public class WorkItemAssignmentService {
      *
      * @param strategy the strategy to use directly
      * @param workerRegistry the worker registry for group resolution
-     * @param workItemStore the store for active count queries
+     * @param workloadProvider the workload provider for active count queries
+     * @param workBroker the generic work assignment broker
      */
     WorkItemAssignmentService(final WorkerSelectionStrategy strategy,
-            final WorkerRegistry workerRegistry, final WorkItemStore workItemStore) {
+            final WorkerRegistry workerRegistry,
+            final WorkloadProvider workloadProvider,
+            final WorkBroker workBroker) {
         this.fixedStrategy = strategy;
         this.workerRegistry = workerRegistry;
-        this.workItemStore = workItemStore;
+        this.workloadProvider = workloadProvider;
+        this.workBroker = workBroker;
     }
 
     /**
@@ -110,10 +114,6 @@ public class WorkItemAssignmentService {
      */
     public void assign(final WorkItem workItem, final AssignmentTrigger trigger) {
         final WorkerSelectionStrategy strategy = activeStrategy();
-        if (!strategy.triggers().contains(trigger)) {
-            return;
-        }
-
         final List<WorkerCandidate> candidates = resolveCandidates(workItem);
         final SelectionContext context = new SelectionContext(
                 workItem.category,
@@ -122,7 +122,7 @@ public class WorkItemAssignmentService {
                 workItem.candidateGroups,
                 workItem.candidateUsers);
 
-        final AssignmentDecision decision = strategy.select(context, candidates);
+        final AssignmentDecision decision = workBroker.apply(context, trigger, candidates, strategy);
         applyDecision(workItem, decision);
     }
 
@@ -152,7 +152,8 @@ public class WorkItemAssignmentService {
                     .map(String::trim)
                     .filter(id -> !id.isEmpty())
                     .forEach(id -> candidates.add(
-                            WorkerCandidate.of(id).withActiveWorkItemCount(countActive(id))));
+                            WorkerCandidate.of(id).withActiveWorkItemCount(
+                                    workloadProvider.getActiveWorkCount(id))));
         }
 
         // 2. candidateGroups — resolved via WorkerRegistry
@@ -164,31 +165,12 @@ public class WorkItemAssignmentService {
                     .filter(c -> candidates.stream().noneMatch(e -> e.id().equals(c.id())))
                     .map(c -> c.activeWorkItemCount() > 0
                             ? c
-                            : c.withActiveWorkItemCount(countActive(c.id())))
+                            : c.withActiveWorkItemCount(workloadProvider.getActiveWorkCount(c.id())))
                     .forEach(candidates::add);
         }
 
-        // 3. Filter by requiredCapabilities (AND logic — candidate must have ALL required)
-        if (workItem.requiredCapabilities != null && !workItem.requiredCapabilities.isBlank()) {
-            final Set<String> required = Arrays.stream(workItem.requiredCapabilities.split(","))
-                    .map(String::trim).filter(s -> !s.isEmpty())
-                    .collect(Collectors.toSet());
-            candidates.removeIf(c -> !c.capabilities().containsAll(required));
-        }
-
+        // Capability filtering and trigger gating are handled by WorkBroker.apply()
         return candidates;
-    }
-
-    private int countActive(final String actorId) {
-        // Filter to strict assigneeId equality — WorkItemQuery.assigneeId also matches
-        // candidateUsers LIKE, which would over-count unassigned pool items.
-        return (int) workItemStore.scan(WorkItemQuery.builder()
-                .assigneeId(actorId)
-                .statusIn(ACTIVE_STATUSES)
-                .build())
-                .stream()
-                .filter(wi -> actorId.equals(wi.assigneeId))
-                .count();
     }
 
     private void applyDecision(final WorkItem workItem, final AssignmentDecision decision) {
