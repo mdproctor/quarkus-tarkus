@@ -31,8 +31,9 @@ Maven multi-module layout following Quarkiverse conventions:
 | Module | Artifact | Purpose |
 |---|---|---|
 | Parent | `quarkus-workitems-parent` | BOM, version management |
-| API | `quarkus-workitems-api` | Shared SPI types — pure Java, zero runtime dependencies. `WorkerCandidate` (id+capabilities+activeWorkItemCount), `SelectionContext` (category/priority/requiredCapabilities/candidateGroups/candidateUsers), `AssignmentDecision` (noChange/assignTo/narrowCandidates/isNoOp), `AssignmentTrigger` (CREATED/RELEASED/DELEGATED), `WorkerSelectionStrategy` (select+default triggers), `WorkerRegistry` (resolveGroup). CaseHub and other systems depend on this without pulling in the full WorkItems stack. |
-| Runtime | `quarkus-workitems` | Core — WorkItem model, storage SPI, JPA defaults, service, REST API, lifecycle engine, labels, vocabulary |
+| API | `quarkus-work-api` | Pure Java SPI contracts — `WorkerCandidate`, `SelectionContext`, `AssignmentDecision`, `AssignmentTrigger`, `WorkerSelectionStrategy`, `WorkerRegistry`, `WorkEventType`, `WorkLifecycleEvent`, `WorkloadProvider`, `EscalationPolicy`. groupId `io.quarkiverse.work`. Zero runtime dependencies. CaseHub and other systems depend on this without pulling in the WorkItems stack. |
+| Core | `quarkus-work-core` | Generic work management implementations — `WorkBroker` (generic assignment orchestrator, replaces CaseHub's TaskBroker concept), `LeastLoadedStrategy`, `ClaimFirstStrategy`, `NoOpWorkerRegistry`, filter engine (`FilterAction` SPI, `FilterRegistryEngine` observing `WorkLifecycleEvent`, `JexlConditionEvaluator`, `PermanentFilterRegistry`, `DynamicFilterRegistry`, `FilterRule`, `FilterRuleResource`). Jandex-indexed library, groupId `io.quarkiverse.work`. |
+| Runtime | `quarkus-workitems` | Core — WorkItem model, storage SPI, JPA defaults, service, REST API, lifecycle engine, labels, vocabulary. Includes `WorkItemContextBuilder`, `JpaWorkloadProvider` (implements `WorkloadProvider`), and runtime actions in `runtime/action/` (`ApplyLabelAction`, `OverrideCandidateGroupsAction`, `SetPriorityAction`). |
 | Deployment | `quarkus-workitems-deployment` | Build-time processor — feature registration, native config |
 | Testing | `quarkus-workitems-testing` | `InMemoryWorkItemStore` + `InMemoryAuditEntryStore` — no datasource needed for unit tests |
 | Flow | `quarkus-workitems-flow` | Quarkus-Flow integration — `WorkItemsFlow` DSL base class, `HumanTaskFlowBridge`, `WorkItemFlowEventListener` |
@@ -46,7 +47,6 @@ Maven multi-module layout following Quarkiverse conventions:
 | *(future)* | `quarkus-workitems-casehub` | CaseHub `WorkerRegistry` adapter (blocked: CaseHub not ready) |
 | *(future)* | `quarkus-workitems-qhorus` | Qhorus MCP tools (blocked: Qhorus not ready) |
 | MongoDB | `quarkus-workitems-persistence-mongodb` | MongoDB-backed `WorkItemStore` + `AuditEntryStore`. `candidateGroups`/`candidateUsers` stored as arrays; `WorkItemQuery` → MongoDB `Document` filter; `$regex` for label patterns. 27 tests via Dev Services. |
-| Filter Registry | `quarkus-workitems-filter-registry` | `FilterAction` SPI (CDI, resolved by type name), `JexlConditionEvaluator` (workItem map + conditionContext vars), `FilterRegistryEngine` (observes `WorkItemLifecycleEvent`, ThreadLocal guard, ADD/UPDATE/REMOVE event mapping), `PermanentFilterRegistry` (CDI `Instance<FilterDefinition>`, runtime enable/disable), `DynamicFilterRegistry` (DB-backed via `FilterRule` entity). Built-in actions: `APPLY_LABEL`, `OVERRIDE_CANDIDATE_GROUPS`, `SET_PRIORITY`. REST: `POST/GET/GET{id}/DELETE /filter-rules`, `GET /filter-rules/permanent`, `PUT /filter-rules/permanent/enabled?name=`. V3001 migration. |
 | AI | `quarkus-workitems-ai` | `LowConfidenceFilterProducer` — CDI-produced permanent filter applying `ai/low-confidence` label (INFERRED) when `confidenceScore < threshold`. Config: `quarkus.workitems.ai.confidence-threshold` (default 0.7), `quarkus.workitems.ai.low-confidence-filter.enabled` (default true). |
 | *(future)* | `quarkus-workitems-redis` | Redis-backed `WorkItemStore` |
 
@@ -199,11 +199,12 @@ enabling plain unit tests without `@QuarkusTest`.
 | `WorkItemService` | `runtime.service` | Create, assign, claim, complete, reject, delegate; enforces status transitions. Overloaded `complete(+rationale, +planRef)` and `reject(+rationale)` pass through to ledger for GDPR Article 22 compliance. |
 | `FormSchemaValidationService` | `runtime.service` | Pure JSON Schema draft-07 validator (networknt). No DB access — callers resolve the schema string. Returns `List<String>` violations; null/blank JSON → empty list (skip). Used by `WorkItemResource` on create (payload) and complete (resolution). |
 | `WorkItemAssignmentService` | `runtime.service` | Orchestrates worker selection on CREATED/RELEASED/DELEGATED. Resolves candidates from `candidateUsers` (direct) + `WorkerRegistry` (groups), populates `activeWorkItemCount`, filters by `requiredCapabilities`, calls `WorkerSelectionStrategy.select()`, applies `AssignmentDecision` (sets status=ASSIGNED + assignedAt when pre-assigning). |
-| `ClaimFirstStrategy` | `runtime.service` | Default `WorkerSelectionStrategy` no-op — `AssignmentDecision.noChange()`; pool stays open for claim-first. Activated by `quarkus.workitems.routing.strategy=claim-first`. |
-| `LeastLoadedStrategy` | `runtime.service` | Default `WorkerSelectionStrategy` — pre-assigns to candidate with fewest ASSIGNED/IN_PROGRESS/SUSPENDED WorkItems. Activated by `quarkus.workitems.routing.strategy=least-loaded` (default). `noChange()` when no candidates. |
-| `NoOpWorkerRegistry` | `runtime.service` | Default `WorkerRegistry` — returns empty list for all groups (groups stay claim-first until app registers real resolver). |
+| `ClaimFirstStrategy` | `io.quarkiverse.work.core.strategy` | Default `WorkerSelectionStrategy` no-op — `AssignmentDecision.noChange()`; pool stays open for claim-first. Activated by `quarkus.workitems.routing.strategy=claim-first`. |
+| `LeastLoadedStrategy` | `io.quarkiverse.work.core.strategy` | Default `WorkerSelectionStrategy` — pre-assigns to candidate with fewest ASSIGNED/IN_PROGRESS/SUSPENDED WorkItems. Activated by `quarkus.workitems.routing.strategy=least-loaded` (default). `noChange()` when no candidates. |
+| `NoOpWorkerRegistry` | `io.quarkiverse.work.core.strategy` | Default `WorkerRegistry` — returns empty list for all groups (groups stay claim-first until app registers real resolver). |
+| `JpaWorkloadProvider` | `runtime.service` | Counts active (ASSIGNED/IN_PROGRESS/SUSPENDED) WorkItems for a worker; implements `WorkloadProvider` from `quarkus-work-api`. |
 | `ExpiryCleanupJob` | `runtime.service` | `@Scheduled` — marks expired WorkItems, fires EscalationPolicy |
-| `EscalationPolicy` | `runtime.service` | SPI — pluggable: notify, reassign, auto-reject |
+| `EscalationPolicy` | `io.quarkiverse.work.api` | SPI — single `escalate(WorkLifecycleEvent)` method; pluggable: notify, reassign, auto-reject |
 
 ---
 
@@ -281,7 +282,7 @@ between the core and the ledger module. If the module is absent, events fire int
 | `GET /workitem-form-schemas/{id}` | Get single schema; 404 if not found |
 | `DELETE /workitem-form-schemas/{id}` | Delete schema; 204/404; independent of WorkItem lifecycle |
 
-`FilterRuleResource` at `/filter-rules` (filter-registry module, Epic #100):
+`FilterRuleResource` at `/filter-rules` (`quarkus-work-core` module, Epic #100):
 
 | Endpoint | Notes |
 |---|---|
@@ -351,6 +352,7 @@ Consuming app owns all datasource config.
 | **10 — Audit History Query API** | ✅ Complete | Epic #99: `GET /audit` cross-WorkItem query with actorId/event/date/category filters + pagination (#109 ✅), SLA breach report (#110 ✅), actor performance summary (#111 ✅). V12 indexes. |
 | **11 — Confidence-Gated Routing** | ✅ Complete | Epic #100: `confidenceScore` on WorkItem + V13 (#112 ✅), `quarkus-workitems-filter-registry` module with `FilterAction` SPI + JEXL engine + permanent/dynamic registry (#113 ✅), `quarkus-workitems-ai` `LowConfidenceFilterProducer` (#114 ✅). |
 | **12 — WorkerSelectionStrategy** | ✅ Complete | Epics #100/#102: `quarkus-workitems-api` shared SPI module (#115 ✅), `WorkItemAssignmentService` + `LeastLoadedStrategy` + `ClaimFirstStrategy` + `NoOpWorkerRegistry` wired into create/release/delegate (#116 ✅). `RoundRobinStrategy` deferred (#117). |
+| **13 — quarkus-work separation** | ✅ Complete | `quarkus-work-api` (shared SPI contracts) and `quarkus-work-core` (WorkBroker + generic filter engine) extracted. `quarkus-workitems-api` renamed to `quarkus-work-api`; `quarkus-workitems-filter-registry` dissolved into `quarkus-work-core`. CaseHub can now depend on `quarkus-work-core` for `WorkBroker` without pulling in human-inbox specifics. Issue #118. |
 | **10 — CaseHub integration** | ⏸ Blocked | `quarkus-workitems-casehub` — CaseHub WorkerRegistry adapter (awaiting CaseHub stable API) |
 | **10 — Qhorus integration** | ⏸ Blocked | `quarkus-workitems-qhorus` — MCP tools (awaiting Qhorus stable API) |
 | **11 — ProvenanceLink** | ⏸ Blocked | Typed PROV-O causal graph — awaiting CaseHub + Qhorus integrations (issue #39) |
@@ -381,12 +383,12 @@ Three tiers:
 
 | Module | Tests |
 |---|---|
-| quarkus-workitems-api | 0 (SPI types only, no logic to test) |
-| runtime | 525 |
+| quarkus-work-api | 15 |
+| quarkus-work-core | 38 |
+| runtime | 548 |
 | workitems-flow | 32 |
 | quarkus-workitems-ledger | 75 |
 | quarkus-workitems-queues | 82 |
-| quarkus-workitems-filter-registry | 40 |
 | quarkus-workitems-ai | 8 |
 | quarkus-workitems-examples | 37 |
 | quarkus-workitems-flow-examples | 2 |
@@ -396,4 +398,4 @@ Three tiers:
 | quarkus-workitems-issue-tracker | 23 |
 | testing | 16 |
 | integration-tests | 19 (native) |
-| **Total** | **943+** |
+| **Total** | **979+** |
