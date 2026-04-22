@@ -24,7 +24,7 @@ class WorkBrokerTest {
     }
 
     private SelectionContext ctx(final String caps) {
-        return new SelectionContext("finance", "HIGH", caps, null, "alice,bob");
+        return new SelectionContext("finance", "HIGH", caps, null, "alice,bob", null, null);
     }
 
     @Test

@@ -69,6 +69,6 @@ class LeastLoadedStrategyTest {
     }
 
     private SelectionContext ctx() {
-        return new SelectionContext("cat", "NORMAL", null, null, "alice,bob");
+        return new SelectionContext("cat", "NORMAL", null, null, "alice,bob", null, null);
     }
 }
