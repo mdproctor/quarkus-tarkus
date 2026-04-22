@@ -22,6 +22,7 @@ Standalone Quarkiverse extension with optional integrations for Quarkus-Flow, Ca
 
   <modules>
     <module>quarkus-work-api</module>
+    <module>quarkus-work-core</module>
     <module>quarkus-workitems-api</module>
     <module>runtime</module>
     <module>deployment</module>
