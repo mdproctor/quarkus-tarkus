@@ -1,10 +1,10 @@
-package io.quarkiverse.workitems.filterregistry.action;
+package io.quarkiverse.workitems.runtime.action;
 
 import java.util.Map;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.quarkiverse.workitems.filterregistry.spi.FilterAction;
+import io.quarkiverse.work.core.filter.FilterAction;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 
 /**
@@ -12,7 +12,7 @@ import io.quarkiverse.workitems.runtime.model.WorkItem;
  *
  * <p>
  * Params: {@code groups} (required) — the replacement candidate groups value.
- * Skips silently if {@code groups} is null.
+ * Skips silently if {@code groups} is null or blank.
  */
 @ApplicationScoped
 public class OverrideCandidateGroupsAction implements FilterAction {
@@ -23,12 +23,17 @@ public class OverrideCandidateGroupsAction implements FilterAction {
     }
 
     @Override
-    public void apply(final WorkItem workItem, final Map<String, Object> params) {
+    public void apply(final Object workUnit, final Map<String, Object> params) {
+        final WorkItem workItem = (WorkItem) workUnit;
         final Object groupsParam = params.get("groups");
         if (groupsParam == null) {
             return;
         }
-        workItem.candidateGroups = groupsParam.toString();
+        final String groups = groupsParam.toString();
+        if (groups.isBlank()) {
+            return;
+        }
+        workItem.candidateGroups = groups;
         // No put() — outer transaction flushes the dirty entity at commit
     }
 }

@@ -1,11 +1,11 @@
-package io.quarkiverse.workitems.filterregistry.action;
+package io.quarkiverse.workitems.runtime.action;
 
 import java.util.ArrayList;
 import java.util.Map;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.quarkiverse.workitems.filterregistry.spi.FilterAction;
+import io.quarkiverse.work.core.filter.FilterAction;
 import io.quarkiverse.workitems.runtime.model.LabelPersistence;
 import io.quarkiverse.workitems.runtime.model.WorkItem;
 import io.quarkiverse.workitems.runtime.model.WorkItemLabel;
@@ -30,7 +30,8 @@ public class ApplyLabelAction implements FilterAction {
     }
 
     @Override
-    public void apply(final WorkItem workItem, final Map<String, Object> params) {
+    public void apply(final Object workUnit, final Map<String, Object> params) {
+        final WorkItem workItem = (WorkItem) workUnit;
         final Object pathParam = params.get("path");
         if (pathParam == null || pathParam.toString().isBlank()) {
             return;
