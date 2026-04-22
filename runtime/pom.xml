@@ -23,7 +23,7 @@
 
     <dependency>
       <groupId>io.quarkiverse.work</groupId>
-      <artifactId>quarkus-work-api</artifactId>
+      <artifactId>quarkus-work-core</artifactId>
       <version>${project.version}</version>
     </dependency>
 
