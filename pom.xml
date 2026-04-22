@@ -74,6 +74,11 @@ Standalone Quarkiverse extension with optional integrations for Quarkus-Flow, Ca
         <scope>import</scope>
       </dependency>
       <dependency>
+        <groupId>io.quarkiverse.langchain4j</groupId>
+        <artifactId>quarkus-langchain4j-core</artifactId>
+        <version>1.8.4</version>
+      </dependency>
+      <dependency>
         <groupId>org.assertj</groupId>
         <artifactId>assertj-core</artifactId>
         <version>3.26.3</version>
