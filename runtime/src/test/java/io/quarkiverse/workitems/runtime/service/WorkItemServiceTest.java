@@ -15,6 +15,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import io.quarkiverse.work.api.AssignmentDecision;
+import io.quarkiverse.work.core.strategy.WorkBroker;
 import io.quarkiverse.workitems.runtime.api.WorkItemLabelResponse;
 import io.quarkiverse.workitems.runtime.config.WorkItemsConfig;
 import io.quarkiverse.workitems.runtime.model.AuditEntry;
@@ -27,7 +29,6 @@ import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
 import io.quarkiverse.workitems.runtime.repository.AuditEntryStore;
 import io.quarkiverse.workitems.runtime.repository.WorkItemQuery;
 import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
-import io.quarkiverse.workitems.spi.AssignmentDecision;
 
 class WorkItemServiceTest {
 
@@ -200,7 +201,8 @@ class WorkItemServiceTest {
                 new WorkItemAssignmentService(
                         (ctx, candidates) -> AssignmentDecision.noChange(),
                         group -> List.of(),
-                        repo));
+                        workerId -> 0,
+                        new WorkBroker()));
     }
 
     private WorkItemCreateRequest basicRequest() {
@@ -982,7 +984,8 @@ class WorkItemServiceTest {
                 new WorkItemAssignmentService(
                         (ctx, candidates) -> AssignmentDecision.noChange(),
                         group -> List.of(),
-                        repo));
+                        workerId -> 0,
+                        new WorkBroker()));
         WorkItem wi = svc.create(basicRequest());
         assertThat(wi.claimDeadline).isNull();
     }

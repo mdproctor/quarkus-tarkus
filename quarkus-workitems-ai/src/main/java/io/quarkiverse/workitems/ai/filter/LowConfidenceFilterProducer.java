@@ -7,9 +7,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 
+import io.quarkiverse.work.core.filter.ActionDescriptor;
+import io.quarkiverse.work.core.filter.FilterDefinition;
 import io.quarkiverse.workitems.ai.config.WorkItemsAiConfig;
-import io.quarkiverse.workitems.filterregistry.spi.ActionDescriptor;
-import io.quarkiverse.workitems.filterregistry.spi.FilterDefinition;
 
 /**
  * Produces the permanent {@code ai/low-confidence} filter definition.

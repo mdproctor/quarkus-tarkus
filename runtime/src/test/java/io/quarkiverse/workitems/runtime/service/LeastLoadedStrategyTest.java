@@ -7,7 +7,11 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.workitems.spi.*;
+import io.quarkiverse.work.api.AssignmentDecision;
+import io.quarkiverse.work.api.AssignmentTrigger;
+import io.quarkiverse.work.api.SelectionContext;
+import io.quarkiverse.work.api.WorkerCandidate;
+import io.quarkiverse.work.core.strategy.LeastLoadedStrategy;
 
 class LeastLoadedStrategyTest {
 
