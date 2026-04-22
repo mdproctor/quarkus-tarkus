@@ -120,7 +120,9 @@ public class WorkItemAssignmentService {
                 workItem.priority != null ? workItem.priority.name() : null,
                 workItem.requiredCapabilities,
                 workItem.candidateGroups,
-                workItem.candidateUsers);
+                workItem.candidateUsers,
+                workItem.title,
+                workItem.description);
 
         final AssignmentDecision decision = workBroker.apply(context, trigger, candidates, strategy);
         applyDecision(workItem, decision);

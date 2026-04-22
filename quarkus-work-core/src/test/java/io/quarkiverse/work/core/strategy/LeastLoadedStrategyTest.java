@@ -14,7 +14,7 @@ import io.quarkiverse.work.api.WorkerCandidate;
 class LeastLoadedStrategyTest {
 
     private final LeastLoadedStrategy strategy = new LeastLoadedStrategy();
-    private final SelectionContext ctx = new SelectionContext(null, null, null, null, null);
+    private final SelectionContext ctx = new SelectionContext(null, null, null, null, null, null, null);
 
     @Test
     void selectsCandidateWithFewestActiveItems() {

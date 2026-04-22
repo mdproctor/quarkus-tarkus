@@ -47,7 +47,7 @@ class SkillProfileTest {
     @Test
     void skillMatcher_canImplementWithLambda() {
         SkillMatcher m = (profile, ctx) -> profile.narrative().length();
-        final var ctx = new SelectionContext("legal", null, null, null, null);
+        final var ctx = new SelectionContext("legal", null, null, null, null, null, null);
         assertThat(m.score(SkillProfile.ofNarrative("expert"), ctx)).isEqualTo(6.0);
     }
 }
