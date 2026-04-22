@@ -12,9 +12,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import io.quarkiverse.work.api.AssignmentDecision;
+import io.quarkiverse.work.api.AssignmentTrigger;
+import io.quarkiverse.work.api.SelectionContext;
+import io.quarkiverse.work.api.WorkerCandidate;
+import io.quarkiverse.work.api.WorkerRegistry;
+import io.quarkiverse.work.api.WorkerSelectionStrategy;
+import io.quarkiverse.work.api.WorkloadProvider;
+import io.quarkiverse.work.core.strategy.LeastLoadedStrategy;
+import io.quarkiverse.work.core.strategy.WorkBroker;
 import io.quarkiverse.workitems.runtime.model.*;
-import io.quarkiverse.workitems.runtime.repository.*;
-import io.quarkiverse.workitems.spi.*;
 
 /**
  * Unit tests for WorkItemAssignmentService — no Quarkus boot.
@@ -24,18 +31,20 @@ import io.quarkiverse.workitems.spi.*;
 class WorkItemAssignmentServiceTest {
 
     @Mock
-    WorkItemStore workItemStore;
+    WorkloadProvider workloadProvider;
     @Mock
     WorkerRegistry workerRegistry;
 
+    private WorkBroker workBroker;
     private WorkItemAssignmentService service;
 
     @BeforeEach
     void setUp() {
+        workBroker = new WorkBroker();
         lenient().when(workerRegistry.resolveGroup(anyString())).thenReturn(List.of());
-        lenient().when(workItemStore.scan(any())).thenReturn(List.of());
+        lenient().when(workloadProvider.getActiveWorkCount(anyString())).thenReturn(0);
         service = new WorkItemAssignmentService(
-                new LeastLoadedStrategy(), workerRegistry, workItemStore);
+                new LeastLoadedStrategy(), workerRegistry, workloadProvider, workBroker);
     }
 
     // ── Trigger filtering ─────────────────────────────────────────────────────
@@ -53,7 +62,7 @@ class WorkItemAssignmentServiceTest {
                 return Set.of(AssignmentTrigger.CREATED);
             }
         };
-        service = new WorkItemAssignmentService(createdOnly, workerRegistry, workItemStore);
+        service = new WorkItemAssignmentService(createdOnly, workerRegistry, workloadProvider, workBroker);
 
         final WorkItem wi = workItem(null, null, "alice,bob");
         service.assign(wi, AssignmentTrigger.RELEASED);
@@ -62,7 +71,7 @@ class WorkItemAssignmentServiceTest {
 
     @Test
     void assign_fires_whenTriggerIsInStrategyTriggers() {
-        when(workItemStore.scan(any())).thenReturn(List.of());
+        when(workloadProvider.getActiveWorkCount("alice")).thenReturn(0);
         final WorkItem wi = workItem(null, null, "alice");
         service.assign(wi, AssignmentTrigger.CREATED);
         assertThat(wi.assigneeId).isEqualTo("alice");
@@ -72,9 +81,9 @@ class WorkItemAssignmentServiceTest {
 
     @Test
     void assign_parsesCandidateUsers_asCommaDelimitedList() {
-        mockActiveCount("alice", 5);
-        mockActiveCount("bob", 1);
-        mockActiveCount("carol", 3);
+        when(workloadProvider.getActiveWorkCount("alice")).thenReturn(5);
+        when(workloadProvider.getActiveWorkCount("bob")).thenReturn(1);
+        when(workloadProvider.getActiveWorkCount("carol")).thenReturn(3);
         final WorkItem wi = workItem(null, null, "alice,bob,carol");
         service.assign(wi, AssignmentTrigger.CREATED);
         assertThat(wi.assigneeId).isEqualTo("bob");
@@ -82,8 +91,8 @@ class WorkItemAssignmentServiceTest {
 
     @Test
     void assign_trimsWhitespace_inCandidateUsers() {
-        mockActiveCount("alice", 0);
-        mockActiveCount("bob", 2);
+        when(workloadProvider.getActiveWorkCount("alice")).thenReturn(0);
+        when(workloadProvider.getActiveWorkCount("bob")).thenReturn(2);
         final WorkItem wi = workItem(null, null, " alice , bob ");
         service.assign(wi, AssignmentTrigger.CREATED);
         assertThat(wi.assigneeId).isEqualTo("alice");
@@ -102,8 +111,8 @@ class WorkItemAssignmentServiceTest {
     void assign_resolvesGroup_viaWorkerRegistry() {
         when(workerRegistry.resolveGroup("finance-team")).thenReturn(
                 List.of(WorkerCandidate.of("alice"), WorkerCandidate.of("bob")));
-        mockActiveCount("alice", 3);
-        mockActiveCount("bob", 0);
+        when(workloadProvider.getActiveWorkCount("alice")).thenReturn(3);
+        when(workloadProvider.getActiveWorkCount("bob")).thenReturn(0);
         final WorkItem wi = workItem(null, "finance-team", null);
         service.assign(wi, AssignmentTrigger.CREATED);
         assertThat(wi.assigneeId).isEqualTo("bob");
@@ -113,8 +122,8 @@ class WorkItemAssignmentServiceTest {
     void assign_deduplicates_candidatesFromUsersAndGroups() {
         when(workerRegistry.resolveGroup("team")).thenReturn(
                 List.of(WorkerCandidate.of("alice")));
-        mockActiveCount("alice", 2);
-        mockActiveCount("bob", 1);
+        when(workloadProvider.getActiveWorkCount("alice")).thenReturn(2);
+        when(workloadProvider.getActiveWorkCount("bob")).thenReturn(1);
         final WorkItem wi = workItem(null, "team", "alice,bob");
         service.assign(wi, AssignmentTrigger.CREATED);
         assertThat(wi.assigneeId).isEqualTo("bob");
@@ -156,7 +165,7 @@ class WorkItemAssignmentServiceTest {
 
     @Test
     void assign_setsAssigneeId_fromDecision() {
-        mockActiveCount("alice", 0);
+        when(workloadProvider.getActiveWorkCount("alice")).thenReturn(0);
         final WorkItem wi = workItem(null, null, "alice");
         service.assign(wi, AssignmentTrigger.CREATED);
         assertThat(wi.assigneeId).isEqualTo("alice");
@@ -165,7 +174,7 @@ class WorkItemAssignmentServiceTest {
     @Test
     void assign_setsCandidateGroups_fromNarrowDecision() {
         final WorkerSelectionStrategy narrower = (ctx, c) -> AssignmentDecision.narrowCandidates("narrowed-group", null);
-        service = new WorkItemAssignmentService(narrower, workerRegistry, workItemStore);
+        service = new WorkItemAssignmentService(narrower, workerRegistry, workloadProvider, workBroker);
         final WorkItem wi = workItem(null, "original-group", null);
         service.assign(wi, AssignmentTrigger.CREATED);
         assertThat(wi.candidateGroups).isEqualTo("narrowed-group");
@@ -175,7 +184,7 @@ class WorkItemAssignmentServiceTest {
     @Test
     void assign_doesNotOverwrite_existingFields_onNoChange() {
         final WorkerSelectionStrategy noOp = (ctx, c) -> AssignmentDecision.noChange();
-        service = new WorkItemAssignmentService(noOp, workerRegistry, workItemStore);
+        service = new WorkItemAssignmentService(noOp, workerRegistry, workloadProvider, workBroker);
         final WorkItem wi = workItem(null, null, "alice");
         wi.assigneeId = "pre-existing";
         service.assign(wi, AssignmentTrigger.CREATED);
@@ -190,18 +199,5 @@ class WorkItemAssignmentServiceTest {
         wi.candidateGroups = groups != null ? groups : groupsOnly;
         wi.candidateUsers = users;
         return wi;
-    }
-
-    private void mockActiveCount(final String actorId, final int count) {
-        final List<WorkItem> items = new ArrayList<>();
-        for (int i = 0; i < count; i++) {
-            final WorkItem wi = new WorkItem();
-            wi.assigneeId = actorId;
-            wi.status = WorkItemStatus.ASSIGNED;
-            items.add(wi);
-        }
-        lenient().when(workItemStore.scan(argThat(q -> q != null && actorId.equals(q.assigneeId()) &&
-                q.statusIn() != null && q.statusIn().contains(WorkItemStatus.ASSIGNED))))
-                .thenReturn(items);
     }
 }

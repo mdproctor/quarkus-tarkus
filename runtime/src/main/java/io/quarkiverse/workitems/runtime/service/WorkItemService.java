@@ -9,6 +9,7 @@ import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
+import io.quarkiverse.work.api.AssignmentTrigger;
 import io.quarkiverse.workitems.runtime.config.WorkItemsConfig;
 import io.quarkiverse.workitems.runtime.event.WorkItemLifecycleEvent;
 import io.quarkiverse.workitems.runtime.model.AuditEntry;
@@ -21,7 +22,6 @@ import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
 import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
 import io.quarkiverse.workitems.runtime.repository.AuditEntryStore;
 import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
-import io.quarkiverse.workitems.spi.AssignmentTrigger;
 
 @ApplicationScoped
 public class WorkItemService {
