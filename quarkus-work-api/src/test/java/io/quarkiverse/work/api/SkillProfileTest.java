@@ -3,6 +3,7 @@ package io.quarkiverse.work.api;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -34,5 +35,19 @@ class SkillProfileTest {
     void ofNarrative_emptyString_stored() {
         final var p = SkillProfile.ofNarrative("");
         assertThat(p.narrative()).isEmpty();
+    }
+
+    @Test
+    void skillProfileProvider_canImplementWithLambda() {
+        SkillProfileProvider p = (workerId, caps) -> SkillProfile.ofNarrative("skills: " + String.join(", ", caps));
+        final var profile = p.getProfile("alice", Set.of("legal", "nda"));
+        assertThat(profile.narrative()).contains("legal");
+    }
+
+    @Test
+    void skillMatcher_canImplementWithLambda() {
+        SkillMatcher m = (profile, ctx) -> profile.narrative().length();
+        final var ctx = new SelectionContext("legal", null, null, null, null);
+        assertThat(m.score(SkillProfile.ofNarrative("expert"), ctx)).isEqualTo(6.0);
     }
 }
