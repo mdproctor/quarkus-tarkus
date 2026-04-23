@@ -14,7 +14,7 @@ class WorkEventTypeTest {
                 .containsExactlyInAnyOrder(
                         "CREATED", "ASSIGNED", "STARTED", "COMPLETED", "REJECTED",
                         "DELEGATED", "RELEASED", "SUSPENDED", "RESUMED",
-                        "CANCELLED", "EXPIRED", "CLAIM_EXPIRED", "ESCALATED");
+                        "CANCELLED", "EXPIRED", "CLAIM_EXPIRED", "SPAWNED", "ESCALATED");
     }
 
     @Test
