@@ -1,117 +1,160 @@
 # Subprocess Spawning — Design Spec
 **Date:** 2026-04-23  
-**Status:** DRAFT v2 — reviewed against real casehub-engine + quarkus-ledger  
+**Status:** FINAL — reviewed against real casehub-engine + quarkus-ledger  
 **Epic:** #105
-
----
-
-## What this document is
-
-The design for subprocess spawning in quarkus-work, positioning it as the mechanical primitive layer that CaseHub (blackboard + CMMN) and standalone callers drive. Reviewed twice against the real `casehub-engine` at `/Users/mdproctor/dev/casehub-engine` and `quarkus-ledger`. Open questions are explicitly called out where a CaseHub architectural decision is still needed.
 
 ---
 
 ## Positioning
 
-### quarkus-work is the primitive layer
+quarkus-work is the **primitive layer**. It provides the mechanics of spawning child WorkItems and fires events. It makes no decisions about what those events mean or what should happen next. That is CaseHub's job.
 
-quarkus-work provides WorkItems — units of human work with lifecycle, assignment, audit, and SLA. It does not orchestrate between WorkItems. It does not decide when to create them or what their completion means to a larger process.
-
-### CaseHub is the orchestration layer
-
-CaseHub (blackboard + CMMN) owns case state, `CasePlanModel`, `PlanItem` lifecycle, `Stage` autocomplete, and activation conditions. It decides *when* to spawn children, *which* children, and *what a child's completion means* for the case. quarkus-work does not replicate any of this.
-
-### The boundary
-
-quarkus-work subprocess spawning:
-
-- Creates child WorkItems from templates on explicit request
-- Wires them to a parent via `PART_OF`
-- Stores an opaque `callerRef` on each child (CaseHub embeds its routing key here)
-- Fires a per-child `WorkItemLifecycleEvent` on every terminal state transition
-- Optionally tracks the group and fires a `SpawnGroupCompletedEvent` for standalone callers
-
-quarkus-work does **not**:
-
-- Decide when to spawn
-- Apply activation conditions to individual children
-- Know what a child group completing means for the overall case
-- Implement milestones, ad-hoc fragments, or case lifecycle patterns
-- Own completion policy for CaseHub deployments — `completionPolicy` is CaseHub's `Stage.requiredItemIds` + autocomplete, not quarkus-work's concern
+See `docs/architecture/LAYERING.md` for the full boundary definition.
 
 ---
 
-## Correlation naming: `callerRef`
+## What quarkus-work provides for subprocess spawning
 
-**`correlationKey` must not be used.** In `casehub-engine`, `correlationKey` is a SHA-256 hash of `workerName:capabilityName:inputDataHash` used by `WorkerExecutionKeys` and `PendingWorkRegistry` for worker-execution idempotency. Reusing that name in quarkus-work would cause confusion across both codebases.
+### 1. `callerRef` on WorkItem
 
-**`callerRef`** is an opaque string field added to:
-- Each child entry in the spawn request body
-- The `WorkItem` entity (nullable column `caller_ref`)
-- Every `WorkItemLifecycleEvent` fired on a child WorkItem
+A nullable opaque string field added to `WorkItem`:
 
-quarkus-work treats `callerRef` as opaque bytes — it stores and echoes it, never interprets it. CaseHub embeds `caseId:planItemId` (or equivalent routing key). When a child completes, CaseHub's adapter uses `callerRef` to locate the right `CasePlanModel` and mark the `PlanItem` COMPLETED without a query.
+```java
+@Column(name = "caller_ref", length = 512, nullable = true)
+public String callerRef;
+```
 
-This mirrors `CaseInstance.parentPlanItemId` in casehub-engine — the existing field explicitly designed for linking a spawned child back to the `PlanItem` that caused it.
+quarkus-work stores it and echoes it in every `WorkItemLifecycleEvent`. It never interprets it. CaseHub embeds its routing key here (e.g. `caseId:planItemId`) so it can route child completion back to the right `PlanItem` without a query. This mirrors `CaseInstance.parentPlanItemId` in casehub-engine.
 
----
+`callerRef` is also present in:
+- `WorkItemCreateRequest` (passed through at spawn time)
+- Every `WorkItemLifecycleEvent` on the child WorkItem
+- The spawn response body (echoed per child)
 
-## What quarkus-work provides
+### 2. `WorkEventType.SPAWNED`
 
-### 1. Caller-driven spawn API
+New value added to `WorkEventType` in `quarkus-work-api`. Fired on the parent WorkItem when children are spawned. Allows `FilterRegistryEngine`, ledger, and `EscalationPolicy` observers to react to spawn events.
+
+### 3. `SpawnPort` SPI in `quarkus-work-api`
+
+```java
+public interface SpawnPort {
+    SpawnResult spawn(SpawnRequest request);
+    void cancelGroup(UUID groupId, boolean cascadeChildren);
+}
+
+public record SpawnRequest(
+    UUID parentId,
+    String idempotencyKey,
+    List<ChildSpec> children
+) {}
+
+public record ChildSpec(
+    UUID templateId,
+    String callerRef,        // opaque, stored on spawned WorkItem
+    Map<String, Object> overrides
+) {}
+
+public record SpawnResult(
+    UUID groupId,
+    List<SpawnedChild> children
+) {}
+
+public record SpawnedChild(
+    UUID workItemId,
+    String callerRef
+) {}
+```
+
+### 4. Caller-driven spawn API
 
 ```
 POST /workitems/{parentId}/spawn
 ```
 
-Request body:
-
 ```json
 {
-  "idempotencyKey": "caseid-stageid-attempt-1",
-  "completionPolicy": null,
+  "idempotencyKey": "case-loan-123-stage-review-attempt-1",
   "children": [
-    {
-      "templateId": "credit-check-template",
-      "callerRef": "case:loan-123/planitem:credit-stage-pi-1"
-    },
-    {
-      "templateId": "fraud-check-template",
-      "overrides": { "candidateGroups": "fraud-team" },
-      "callerRef": "case:loan-123/planitem:fraud-stage-pi-2"
-    },
-    {
-      "templateId": "compliance-check-template",
-      "callerRef": "case:loan-123/planitem:compliance-stage-pi-3"
-    }
+    { "templateId": "credit-check-template",     "callerRef": "case:loan-123/pi:credit-1" },
+    { "templateId": "fraud-check-template",       "callerRef": "case:loan-123/pi:fraud-2",
+      "overrides": { "candidateGroups": "fraud-team" } },
+    { "templateId": "compliance-check-template",  "callerRef": "case:loan-123/pi:compliance-3" }
   ]
 }
 ```
-
-Fields:
-- `idempotencyKey` — caller-supplied deduplication key. Separate from `callerRef`. Prevents double-spawn on Quartz job retry or network retry. quarkus-work rejects (409) a second call with the same `idempotencyKey` on the same parent.
-- `completionPolicy` — nullable. When null (CaseHub always sends null), quarkus-work fires per-child lifecycle events only; no group-level rollup. When set (`ALL_MUST_COMPLETE` | `M_OF_N`), quarkus-work also tracks the group and fires `SpawnGroupCompletedEvent`. Standalone deployments use this; CaseHub does not.
-- `children[].callerRef` — opaque string stored on the spawned WorkItem, echoed in all lifecycle events.
-- `children[].overrides` — fields that override the template defaults for this specific child.
 
 Response:
 
 ```json
 {
-  "spawnGroupId": "uuid",
+  "groupId": "uuid",
   "children": [
-    { "workItemId": "uuid", "callerRef": "case:loan-123/planitem:credit-stage-pi-1" }
+    { "workItemId": "uuid", "callerRef": "case:loan-123/pi:credit-1" },
+    { "workItemId": "uuid", "callerRef": "case:loan-123/pi:fraud-2" },
+    { "workItemId": "uuid", "callerRef": "case:loan-123/pi:compliance-3" }
   ]
 }
 ```
 
-### 2. Per-child lifecycle events (primary signal for CaseHub)
+CaseHub calls this explicitly when a binding fires. quarkus-work creates the children, wires PART_OF, stores `callerRef`, fires `WorkEventType.SPAWNED` on the parent, and returns. It does nothing further.
 
-Every terminal state transition on a child WorkItem fires `WorkItemLifecycleEvent` (already exists). No changes needed to the event structure itself — but `callerRef` is now a field on `WorkItem`, so it is accessible from the event's source object.
+### 5. `WorkItemSpawnGroup` — minimal tracking entity
 
-CaseHub's adapter (`quarkus-work-casehub`, future module) observes `WorkItemLifecycleEvent` and, for terminal states (COMPLETED, REJECTED, CANCELLED, EXPIRED, ESCALATED), extracts `callerRef` from the WorkItem and routes to the right `CasePlanModel`/`PlanItem`.
+Exists solely for idempotency and group membership queries. No state machine. No completion policy. No status.
 
-Terminal state mapping for CaseHub (mirrors `SubCaseCompletionStrategy`):
+```
+WorkItemSpawnGroup {
+  id:               UUID
+  parentId:         UUID
+  idempotencyKey:   String (unique constraint per parent)
+  createdAt:        Instant
+}
+```
+
+Child membership is derived from the PART_OF graph — no childIds column. The group record proves "this spawn happened" for idempotency purposes.
+
+### 6. Group management endpoints
+
+```
+GET    /workitems/{id}/spawn-groups          list groups spawned from this parent
+GET    /spawn-groups/{id}                    group record + PART_OF children
+DELETE /workitems/{id}/spawn-groups/{gid}    cancel group
+       ?cancelChildren=true                  also cancel all PENDING children atomically
+```
+
+CaseHub uses `DELETE ?cancelChildren=true` when `StageTerminatedEvent` fires — avoids O(N) individual cancel calls.
+
+### 7. Ledger wiring
+
+When children are spawned:
+- Parent gets a `LedgerEntry` with `WorkEventType.SPAWNED`
+- Each child's CREATED `LedgerEntry` carries `causedByEntryId` pointing to the parent's SPAWNED entry
+
+This creates the causal chain: parent SPAWNED → child CREATED, visible in PROV-DM export as `prov:wasDerivedFrom`.
+
+---
+
+## What is NOT in quarkus-work
+
+These are orchestration concerns. They belong in CaseHub or the calling application:
+
+| Concern | Owner |
+|---|---|
+| When to spawn children | CaseHub (binding fires) |
+| Which children to spawn | CaseHub (CasePlanModel) |
+| Template-driven auto-spawn | Not in quarkus-work |
+| Completion rollup | CaseHub (`Stage.requiredItemIds` + autocomplete) |
+| Parent auto-completion | CaseHub |
+| What REJECTED means for the group | CaseHub (goal evaluation) |
+| Activation conditions per child | CaseHub (blackboard) |
+| SpawnGroupCompletedEvent | Not in quarkus-work |
+
+If a standalone application (no CaseHub) wants completion rollup, it writes a CDI observer on `WorkItemLifecycleEvent`. That is ten lines of code. quarkus-work does not provide it.
+
+---
+
+## Terminal status mapping (for CaseHub adapter)
 
 | WorkItemStatus | CaseHub PlanItemStatus |
 |---|---|
@@ -121,110 +164,7 @@ Terminal state mapping for CaseHub (mirrors `SubCaseCompletionStrategy`):
 | EXPIRED | FAULTED |
 | ESCALATED | FAULTED |
 
-The resolution payload (`WorkItem.resolution`) must be retrievable when a child completes — CaseHub's adapter fetches `GET /workitems/{id}` to extract `resolution` and write it to `CaseContext`. The lifecycle event itself does not need to carry the full resolution, but must carry enough to identify the WorkItem.
-
-### 3. Template-level spawn config (standalone only)
-
-For applications that do not use CaseHub, `WorkItemTemplate` can embed a spawn config:
-
-```json
-{
-  "name": "loan-application",
-  "spawnConfig": {
-    "triggerOn": "ASSIGNED",
-    "completionPolicy": "ALL_MUST_COMPLETE",
-    "children": [
-      { "templateId": "credit-check-template" },
-      { "templateId": "fraud-check-template" },
-      { "templateId": "compliance-check-template" }
-    ]
-  }
-}
-```
-
-**CaseHub never uses template-driven auto-spawn.** CaseHub's `BlackboardPlanConfigurer` and binding/trigger model control when children are spawned — the engine always calls the spawn API explicitly. Template auto-spawn would create a race condition where the engine dispatches a WorkItem but quarkus-work silently spawns additional children the engine knows nothing about.
-
-Config opt-out for CaseHub deployments:
-```
-quarkus.work.spawn.template-auto-spawn=false   # CaseHub: set to false
-quarkus.work.spawn.auto-complete-parent=false  # CaseHub: set to false
-```
-
-### 4. Spawn group entity (standalone only; internal for CaseHub)
-
-`WorkItemSpawnGroup` tracks children created together, used for group-level completion rollup in standalone deployments. CaseHub does not use this entity — CaseHub's `BlackboardRegistry`/`CasePlanModel` is the authoritative group state.
-
-```
-WorkItemSpawnGroup {
-  id:                  UUID
-  parentId:            UUID
-  idempotencyKey:      String (unique per parent)
-  childIds:            UUID[] (JSON column or join table)
-  completionPolicy:    ALL_MUST_COMPLETE | M_OF_N | NONE
-  completionThreshold: int   (for M_OF_N)
-  status:              ACTIVE | COMPLETE | CANCELLED
-  createdAt:           Instant
-  completedAt:         Instant?
-}
-```
-
-### 5. SpawnGroupCompletedEvent (standalone convenience)
-
-Fired only when `completionPolicy` is non-null and the threshold is met:
-
-```java
-public class SpawnGroupCompletedEvent {
-    UUID spawnGroupId;
-    UUID parentWorkItemId;
-    List<ChildOutcome> childOutcomes;  // id + status + callerRef per child
-    CompletionPolicy policy;
-}
-```
-
-CaseHub does not observe this event. CaseHub works from per-child `WorkItemLifecycleEvent`.
-
-### 6. WorkEventType.SPAWNED (new)
-
-Add `SPAWNED` to `WorkEventType` enum in `quarkus-work-api`. This allows:
-- `FilterRegistryEngine` to react to spawn events
-- Ledger module to record the spawn act as a distinct entry
-- `EscalationPolicy` observers to see when a group is spawned
-
-### 7. Cascade cancellation
-
-```
-DELETE /workitems/{parentId}/spawn-groups/{groupId}?cancelChildren=true
-```
-
-Default `cancelChildren=false` (group marked CANCELLED, children unchanged). With `cancelChildren=true`, all PENDING children are cancelled atomically. CaseHub uses `cancelChildren=true` when `StageTerminatedEvent` fires — avoids O(N) individual cancel calls.
-
----
-
-## Ledger integration
-
-### causedByEntryId wiring
-
-When children are spawned, each child's CREATED `LedgerEntry` must carry `causedByEntryId` pointing to the parent WorkItem's triggering ledger entry (the entry for the state that caused the spawn — e.g., ASSIGNED or SPAWNED). This wires the causal chain in the PROV-DM graph: `prov:wasDerivedFrom` links child to parent spawn event.
-
-This is not automatic — `LedgerEventCapture` must receive the parent entry UUID at spawn time and set `causedByEntryId` on each child's CREATED entry.
-
-### WorkEventType.SPAWNED in ledger
-
-The SPAWNED event on the parent WorkItem should produce its own `LedgerEntry` with `subjectId = parentWorkItemId`. Child CREATED entries then carry `causedByEntryId = parentSpawnEntryId`, creating the two-hop chain: parent SPAWNED → child CREATED.
-
----
-
-## Orchestration vs choreography — open CaseHub decision
-
-The real casehub-engine has two worker execution paths:
-
-**Choreography**: binding fires → `WorkBroker` dispatches → CDI events signal completion → `CaseContextChangedEvent` → engine re-evaluates. No future/suspension.
-
-**Orchestration**: `WorkOrchestrator.submitAndWait()` → `PendingWorkRegistry` registers a `CompletableFuture` keyed on `correlationKey` → `CaseInstance` transitions to `WAITING` with `waitingForWorkId` set → on `WORK_COMPLETED`, future resolves and case resumes.
-
-**For WorkItems, CaseHub must choose which path.** CDI events (per-child `WorkItemLifecycleEvent`) are sufficient for choreography mode. For orchestration mode, the `PendingWorkRegistry` must be keyed on something quarkus-work can signal — `callerRef` is the natural candidate (CaseHub embeds a key that it also registers in `PendingWorkRegistry`). quarkus-work does not need to know which mode CaseHub is using; it just echoes `callerRef` on every lifecycle event. CaseHub's adapter decides whether to route that to `PendingWorkRegistry.complete()` or to `CaseContextChangedEvent`.
-
-**This is an open CaseHub architectural decision.** quarkus-work's `callerRef` mechanism supports both paths without change.
+This mapping lives in `quarkus-work-casehub` (future adapter module), not in quarkus-work.
 
 ---
 
@@ -232,196 +172,151 @@ The real casehub-engine has two worker execution paths:
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/workitems/{id}/spawn` | Spawn children, create PART_OF links, return group + child IDs |
-| `GET` | `/workitems/{id}/spawn-groups` | List spawn groups for a parent (standalone use) |
-| `GET` | `/spawn-groups/{id}` | Get group status and child outcomes (standalone use) |
-| `DELETE` | `/workitems/{id}/spawn-groups/{groupId}` | Cancel group; `?cancelChildren=true` cascades |
+| `POST` | `/workitems/{id}/spawn` | Spawn children, PART_OF links, fire SPAWNED event |
+| `GET` | `/workitems/{id}/spawn-groups` | List spawn groups for parent |
+| `GET` | `/spawn-groups/{id}` | Group record + children via PART_OF |
+| `DELETE` | `/workitems/{id}/spawn-groups/{gid}` | Cancel group; `?cancelChildren=true` cascades to PENDING children |
 | `GET` | `/workitems/{id}/children` | (existing) PART_OF children — unchanged |
 
 ---
 
 ## Test strategy
 
-Every layer is independently testable. Tests are organised by concern.
-
 ### Unit tests (no Quarkus, no DB)
 
 **SpawnRequestBuilder:**
 - Template override merging: child overrides win over template defaults field-by-field
-- `callerRef` is preserved exactly as provided — no transformation
-- Null template → `WorkItemCreateException` before any persistence
+- `callerRef` preserved exactly — no transformation, no trimming
+- Null `templateId` → exception before any persistence
+- Empty children list → exception before any persistence
 
-**SpawnEngine:**
-- Happy path: parent + spawn config → correct `WorkItemCreateRequest` objects produced
-- `triggerOn=ASSIGNED`: only fires on ASSIGNED transition, not CREATED or IN_PROGRESS
-- Idempotency: same `idempotencyKey` on same parent → returns existing group, no second spawn
-- No `spawnConfig` on template → no-op, no exception
-- `completionPolicy=null` → no `SpawnGroup` created, no rollup
+**SpawnPort implementation:**
+- Happy path: request → correct `WorkItemCreateRequest` objects produced per child
+- `callerRef` stored on each created WorkItem
+- `idempotencyKey` uniqueness: second call same key+parent → returns existing group, no new children
+- PART_OF link created child→parent for each child
+- `WorkEventType.SPAWNED` fired on parent after all children created
 
-**CompletionRollupService (standalone path only):**
-- `ALL_MUST_COMPLETE`: fires `SpawnGroupCompletedEvent` only when last REQUIRED child completes
-- `M_OF_N`: fires at threshold, not before; subsequent completions beyond threshold are no-ops
-- `NONE`: never fires rollup
-- CANCELLED child: does not count toward completion; does not block if policy is M_OF_N
-- REJECTED child: blocks `ALL_MUST_COMPLETE`; counts toward M_OF_N threshold
-- EXPIRED child: treated same as REJECTED
-- Two children completing simultaneously: exactly one `SpawnGroupCompletedEvent` fires (optimistic lock on `SpawnGroup`)
+**callerRef contract:**
+- Unicode, special chars, 512-char strings round-trip unchanged
+- Null `callerRef` on one child → that child's events carry null; others carry their own
+- `callerRef` present on every terminal lifecycle event (COMPLETED, REJECTED, CANCELLED, EXPIRED)
 
-**SpawnGroup state machine:**
-- `ACTIVE → COMPLETE`: only when policy threshold met
-- `ACTIVE → CANCELLED`: cascades to set group CANCELLED; children not touched
-- Already-COMPLETE: subsequent child terminal events are no-ops
-
-**WorkItemStatus → CaseHub PlanItemStatus mapping:**
-- COMPLETED → COMPLETED
-- REJECTED → FAULTED
-- CANCELLED → CANCELLED
-- EXPIRED → FAULTED
-- ESCALATED → FAULTED
+**Cascade cancellation logic:**
+- `cancelChildren=false` → group record only, children untouched
+- `cancelChildren=true` → PENDING children cancelled, IN_PROGRESS children untouched
+- Already-cancelled group → idempotent no-op
 
 ### Integration tests (@QuarkusTest, H2)
 
 **Spawn API — happy paths:**
-- `POST /workitems/{id}/spawn` with valid templateIds → 201, children PENDING, PART_OF links exist, `callerRef` stored on each child
-- `completionPolicy=null` → no `SpawnGroup` row created
-- `completionPolicy=ALL_MUST_COMPLETE` → `SpawnGroup` row created with status ACTIVE
-- `callerRef` round-trips: present on GET /workitems/{childId}, present in lifecycle event
+- `POST /workitems/{id}/spawn` → 201, children PENDING, PART_OF links verified, `callerRef` on each child, groupId returned
+- Response echoes `callerRef` per child matching request
+- `GET /workitems/{id}/children` returns spawned children
+- `GET /spawn-groups/{id}` returns group + children
 
 **Spawn API — error paths:**
 - Invalid `templateId` → 422
 - Non-existent parent → 404
 - Terminal parent (COMPLETED, CANCELLED) → 409
-- Duplicate `idempotencyKey` on same parent → 200 with existing group (idempotent)
-- Empty `children` array → 422
+- Duplicate `idempotencyKey` on same parent → 200 with existing group (idempotent, no new children)
+- Empty children → 422
+- `callerRef` > 512 chars → 422
 
 **Cascade cancellation:**
-- `DELETE /workitems/{id}/spawn-groups/{gid}?cancelChildren=false` → group CANCELLED, children unchanged
-- `DELETE /workitems/{id}/spawn-groups/{gid}?cancelChildren=true` → group CANCELLED, all PENDING children CANCELLED, IN_PROGRESS children unchanged
-
-**Template-driven spawn:**
-- WorkItem from template with `spawnConfig`, reaches `triggerOn` status → children created automatically
-- `quarkus.work.spawn.template-auto-spawn=false` → no auto-spawn fires
-- `triggerOn=ASSIGNED`: fires on claim (ASSIGNED), not on CREATED
-
-**CompletionRollup integration:**
-- All children COMPLETED → `SpawnGroupCompletedEvent` CDI event captured, group status = COMPLETE
-- M_OF_N=2 of 3: complete 2 → event fires, 3rd child still PENDING
-- One child REJECTED → `ALL_MUST_COMPLETE` group stays ACTIVE (blocked)
-- Manual cancel of one child (not via group cancel) → does not trigger rollup
+- `DELETE ?cancelChildren=false` → group only, children unchanged
+- `DELETE ?cancelChildren=true` → PENDING children CANCELLED, IN_PROGRESS child unchanged
+- `DELETE` on non-existent group → 404
 
 **WorkEventType.SPAWNED:**
-- After `POST /spawn`, audit trail on parent contains SPAWNED event
-- Ledger entry for SPAWNED created on parent
-- Child CREATED ledger entries carry `causedByEntryId` = parent SPAWNED entry ID
+- After spawn, parent audit trail contains SPAWNED entry
+- Ledger: parent SPAWNED entry created
+- Ledger: each child CREATED entry has `causedByEntryId` = parent SPAWNED entry ID
+
+**callerRef round-trip:**
+- `callerRef` set on spawn → present on `GET /workitems/{childId}` → present in lifecycle event
 
 ### End-to-end tests (scenario-style, @QuarkusTest)
 
-**Scenario 1 — Standalone all-parallel:**
-1. Create `loan-application` template with `spawnConfig` (3 children, `ALL_MUST_COMPLETE`)
-2. Instantiate template → WorkItem created (PENDING)
-3. Assign WorkItem → ASSIGNED, SpawnEngine fires → 3 child WorkItems created, PART_OF links verified
-4. Complete all 3 children
-5. Assert `SpawnGroupCompletedEvent` fired with all 3 outcomes
-6. Assert parent auto-completes (config: `auto-complete-parent=true`)
-7. Assert audit trail: parent has SPAWNED + COMPLETED entries; children have CREATED + COMPLETED
-
-**Scenario 2 — M-of-N threshold:**
-1. Spawn 3 children with `M_OF_N` threshold=2
-2. Complete child 1 → no event
-3. Complete child 2 → `SpawnGroupCompletedEvent` fires
-4. Assert child 3 still PENDING (not auto-cancelled)
-5. Complete child 3 → no second group event
-
-**Scenario 3 — CaseHub pattern (caller-driven, no completionPolicy):**
+**Scenario 1 — CaseHub pattern (caller-driven):**
 1. Create parent WorkItem
-2. `POST /workitems/{id}/spawn` with 3 children, `callerRef` set per child, `completionPolicy=null`
-3. Verify 3 children PENDING, `callerRef` stored on each
-4. Complete each child; verify `WorkItemLifecycleEvent` fired with correct `callerRef`
-5. No `SpawnGroupCompletedEvent` (policy was null)
+2. `POST /workitems/{id}/spawn` with 3 children, distinct `callerRef` per child
+3. Verify 3 children PENDING, `callerRef` on each, PART_OF links correct
+4. Complete each child; capture `WorkItemLifecycleEvent` per child
+5. Verify each event carries correct `callerRef`
+6. No group-level event fired (quarkus-work makes no completion decision)
 
-**Scenario 4 — Cascade cancellation:**
+**Scenario 2 — Idempotency under retry:**
+1. `POST /workitems/{id}/spawn` with `idempotencyKey=key-1` → 201, 3 children created
+2. Same POST with `idempotencyKey=key-1` → 200, same groupId, no new children
+3. Child count still 3, no duplicate PART_OF links
+
+**Scenario 3 — Cascade cancellation:**
 1. Spawn 3 children
 2. Assign child 1 (IN_PROGRESS), leave 2 and 3 PENDING
-3. `DELETE /spawn-groups/{id}?cancelChildren=true`
-4. Assert group CANCELLED, children 2+3 CANCELLED, child 1 still IN_PROGRESS
+3. `DELETE ?cancelChildren=true`
+4. Children 2+3 CANCELLED; child 1 still IN_PROGRESS
+5. Each cancellation fires `WorkItemLifecycleEvent(CANCELLED)` with `callerRef`
 
-**Scenario 5 — Idempotency under retry:**
-1. `POST /workitems/{id}/spawn` with `idempotencyKey=key-1` → 201, 3 children
-2. Same POST with `idempotencyKey=key-1` → 200, same group ID returned, no new children created
-3. Verify child count is still 3
+**Scenario 4 — Ledger causal chain:**
+1. Spawn 3 children
+2. Fetch ledger entries for parent → SPAWNED entry present
+3. Fetch ledger entries for each child → CREATED entry has `causedByEntryId` = parent SPAWNED entry
+4. PROV traversal: `findCausedBy(parentSpawnedEntryId)` returns all 3 child CREATED entries
 
-**Scenario 6 — REJECTED child blocks ALL_MUST_COMPLETE:**
-1. Spawn 3 children, `ALL_MUST_COMPLETE`
-2. Complete children 1 and 2
-3. REJECT child 3
-4. Assert `SpawnGroupCompletedEvent` NOT fired
-5. Assert group status still ACTIVE
+**Scenario 5 — PART_OF graph integrity:**
+1. Spawn 3 children from parent A
+2. Spawn 2 grandchildren from child 1 (nested spawn)
+3. `GET /workitems/child-1/children` → returns 2 grandchildren
+4. `GET /workitems/parent-A/children` → returns 3 children only (not grandchildren)
+5. Cyclic PART_OF guard: attempt to make parent-A a child of grandchild → 409
 
 ### Robustness tests
 
-- **Parent cancelled mid-spawn**: children already created remain; group transitions to CANCELLED
-- **Template deleted after spawn**: existing child WorkItems unaffected (no FK to template at runtime)
-- **SpawnEngine CDI observer throws**: error logged, parent WorkItem state unchanged
-- **`SpawnGroupCompletedEvent` observer throws**: error logged, group status update persisted regardless
-- **Database unavailable during child creation**: partial spawn → transaction rolled back, no orphaned PART_OF links
-- **`causedByEntryId` set to null when ledger module absent**: graceful degradation, spawn still succeeds
+- **DB failure mid-spawn**: transaction rolled back, no orphaned PART_OF links, no partial group record
+- **Child template deleted after spawn**: existing WorkItems unaffected (no runtime FK to template)
+- **Spawn observer throws**: error logged, parent WorkItem state unchanged, no partial state
+- **Duplicate concurrent spawn** (same idempotencyKey, race): exactly one group created (DB unique constraint)
+- **`causedByEntryId` when ledger module absent**: spawn succeeds; ledger wiring skipped gracefully
 
 ### Correctness tests
 
-**PART_OF graph integrity:**
-- Children are linked child→parent (source=child, target=parent), consistent with existing convention
-- Cyclic PART_OF guard still enforced for manually-created PART_OF links
-- Nested spawn: child from group A is itself a parent in group B — group resolution is independent per parent
+**PART_OF direction:**
+- Source = child, target = parent (consistent with existing `WorkItemRelation` convention)
 
-**`callerRef` fidelity:**
-- Unicode, special chars, long strings (255 chars) round-trip unchanged
-- Null `callerRef` on one child → that child's events carry null; others unaffected
+**callerRef fidelity:**
+- Empty string stored as empty string (not null)
+- Null stored as null
+- 512-char string stored and retrieved intact
 
-**Concurrency:**
-- Two children completing at identical millisecond: exactly one `SpawnGroupCompletedEvent` fires
-- Optimistic lock conflict on `SpawnGroup` retried once; second attempt succeeds
-
-**Completion policy edge cases:**
-- `ALL_MUST_COMPLETE` with 0 children → group immediately COMPLETE (vacuous truth)
-- `M_OF_N` with threshold > child count → group never auto-completes (stuck ACTIVE until cancelled)
-- `M_OF_N` threshold = 0 → 422 at POST time
-- `completionPolicy=null` with 0 children → no group created, no event fired
+**Idempotency boundary:**
+- Same `idempotencyKey`, different parent → creates new group (key is scoped per parent)
+- Different `idempotencyKey`, same parent → creates new group
 
 ---
 
-## WorkItem model changes
+## Model changes summary
 
-New nullable field on `WorkItem`:
-
-```java
-@Column(name = "caller_ref", length = 512, nullable = true)
-public String callerRef;
-```
-
-Added to:
-- `WorkItemCreateRequest` (optional, passed through at spawn time)
-- `WorkItemResponse` / any DTO that exposes WorkItem fields
-- `WorkItemLifecycleEvent` source object (via `WorkItem.callerRef`)
-- Flyway migration (next available version)
+| Artifact | Change |
+|---|---|
+| `WorkItem` | Add `caller_ref VARCHAR(512)` (nullable) |
+| `WorkItemCreateRequest` | Add `callerRef` field (optional) |
+| `WorkItemLifecycleEvent` | `callerRef` accessible via source WorkItem |
+| `WorkEventType` | Add `SPAWNED` |
+| `WorkItemSpawnGroup` | New entity: `id`, `parentId`, `idempotencyKey`, `createdAt` |
+| Flyway | Next migration: `caller_ref` column + `work_item_spawn_group` table |
+| `quarkus-work-api` | Add `SpawnPort`, `SpawnRequest`, `ChildSpec`, `SpawnResult`, `SpawnedChild` |
 
 ---
 
-## What is explicitly NOT in scope
+## What is explicitly not in scope
 
-- Activation conditions on individual children (CaseHub's blackboard)
-- Milestones (CaseHub's CMMN model)
-- Ad-hoc fragment activation (CaseHub's case lifecycle)
-- Sequential chaining (API accommodates it via future `spawnStrategy` field; implementation deferred)
+- Completion rollup / `SpawnGroupCompletedEvent` (orchestration — CaseHub's concern)
+- Template-level `spawnConfig` / auto-trigger (orchestration)
+- Parent auto-completion (orchestration)
+- Activation conditions (CaseHub blackboard)
+- Milestones (CaseHub CMMN)
+- Sequential chaining (deferred — future `spawnStrategy` field)
 - Cross-service spawn (distributed WorkItems epic #92)
-- Dynamic spawn rule topology (CaseHub's domain — CaseHub decides what to spawn, when)
-- Quarkus-Flow as spawn execution engine (deferred — would require `quarkus-work-spawn-flow` module)
-
----
-
-## Open decisions (require CaseHub input)
-
-1. **Orchestration vs choreography mode for WorkItems.** Does CaseHub use `WorkOrchestrator.submitAndWait()` (which registers a `CompletableFuture` in `PendingWorkRegistry` keyed on a `correlationKey`) for human WorkItems, or does it use the choreography path (observe CDI events, write to `CaseContext`, let the engine re-evaluate)? The `callerRef` mechanism supports both; CaseHub's adapter design depends on this choice.
-
-2. **Resolution payload delivery.** Should the per-child `WorkItemLifecycleEvent` carry `WorkItem.resolution` inline, or should CaseHub's adapter call `GET /workitems/{id}` to retrieve it? Inline is simpler but makes the event larger. Fetch is a second network call but keeps events lean.
-
-3. **`WorkItemSpawnGroup` public API.** The group entity and its REST endpoints (`GET /spawn-groups/{id}`, etc.) are documented as "standalone only." Should these endpoints be omitted entirely from a CaseHub deployment, or simply documented as non-canonical? A profile/config flag could suppress them.
+- `quarkus-work-casehub` adapter module (future — separate epic)
+- Terminal status mapping implementation (lives in future `quarkus-work-casehub`)
