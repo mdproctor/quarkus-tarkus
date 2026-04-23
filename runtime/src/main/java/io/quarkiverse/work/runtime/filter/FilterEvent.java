@@ -1,4 +1,4 @@
-package io.quarkiverse.work.core.filter;
+package io.quarkiverse.work.runtime.filter;
 
 /** Lifecycle events that filter rules can subscribe to. */
 public enum FilterEvent {

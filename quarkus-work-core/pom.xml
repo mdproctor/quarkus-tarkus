@@ -10,39 +10,18 @@
   </parent>
   <groupId>io.quarkiverse.work</groupId>
   <artifactId>quarkus-work-core</artifactId>
-  <name>Quarkus Work - Core (WorkBroker + Filter Engine)</name>
-  <description>Generic work management implementations: WorkBroker, built-in WorkerSelectionStrategies, and the reactive filter engine. Jandex-indexed library — no deployment module needed.</description>
+  <name>Quarkus Work - Core (WorkBroker + Strategies)</name>
+  <description>Generic work management implementations: WorkBroker, built-in WorkerSelectionStrategies, and ClaimSla policies. Jandex-indexed library — no deployment module needed. No JPA entities, no REST resources, no Quarkus-specific runtime dependencies beyond CDI.</description>
   <dependencies>
     <dependency>
       <groupId>io.quarkiverse.work</groupId>
       <artifactId>quarkus-work-api</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- CDI for @ApplicationScoped, @Alternative, @Inject on strategy/policy beans -->
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-hibernate-orm-panache</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-rest</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-rest-jackson</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-jexl3</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-junit</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.rest-assured</groupId>
-      <artifactId>rest-assured</artifactId>
-      <scope>test</scope>
+      <artifactId>quarkus-arc</artifactId>
     </dependency>
     <dependency>
       <groupId>org.assertj</groupId>
@@ -50,18 +29,13 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-jdbc-h2</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-flyway</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
