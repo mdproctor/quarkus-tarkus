@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Implement pluggable worker selection for WorkItems — a new `quarkus-workitems-api` module with shared SPIs (WorkerSelectionStrategy, WorkerRegistry, WorkerCandidate, AssignmentDecision), and built-in LeastLoadedStrategy/ClaimFirstStrategy in the runtime, wired into WorkItemService on create/release/delegate.
+**Goal:** Implement pluggable worker selection for WorkItems — a new `quarkus-work-api` module with shared SPIs (WorkerSelectionStrategy, WorkerRegistry, WorkerCandidate, AssignmentDecision), and built-in LeastLoadedStrategy/ClaimFirstStrategy in the runtime, wired into WorkItemService on create/release/delegate.
 
-**Architecture:** Three layers — `quarkus-workitems-api` (pure Java, zero runtime deps) owns the shared SPI contracts; `quarkus-workitems` runtime implements built-in strategies and wires them into `WorkItemAssignmentService`; `WorkItemService.create/release/delegate` call the assignment service before persisting. The `SelectionContext` record (in api module) decouples strategies from the WorkItem entity.
+**Architecture:** Three layers — `quarkus-work-api` (pure Java, zero runtime deps) owns the shared SPI contracts; `quarkus-work` runtime implements built-in strategies and wires them into `WorkItemAssignmentService`; `WorkItemService.create/release/delegate` call the assignment service before persisting. The `SelectionContext` record (in api module) decouples strategies from the WorkItem entity.
 
 **Tech Stack:** Java 21, Quarkus 3.32.2, Panache ORM, CDI `Instance<>` for strategy discovery, `WorkItemStore.scan()` for active-count queries. Maven: `JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn`.
 
@@ -12,9 +12,9 @@
 
 ## File Map
 
-### New module: `quarkus-workitems-api`
+### New module: `quarkus-work-api`
 ```
-quarkus-workitems-api/
+quarkus-work-api/
   pom.xml
   src/main/java/io/quarkiverse/workitems/spi/
     WorkerCandidate.java          record: id, capabilities, activeWorkItemCount
@@ -51,10 +51,10 @@ runtime/src/test/java/io/quarkiverse/workitems/runtime/
 ```
 
 ### Modified: parent `pom.xml`
-- Add `quarkus-workitems-api` to `<modules>` (before `runtime`)
+- Add `quarkus-work-api` to `<modules>` (before `runtime`)
 
 ### Modified: `runtime/pom.xml`
-- Add compile dependency on `quarkus-workitems-api`
+- Add compile dependency on `quarkus-work-api`
 
 ### Docs
 - `docs/DESIGN.md` — new module row, domain model, REST API, test totals, roadmap
@@ -64,16 +64,16 @@ runtime/src/test/java/io/quarkiverse/workitems/runtime/
 
 ## Task 1: Create GitHub issues
 
-- [ ] **Step 1: Create issue #115 — quarkus-workitems-api module**
+- [ ] **Step 1: Create issue #115 — quarkus-work-api module**
 ```bash
-gh issue create --repo mdproctor/quarkus-workitems \
-  --title "quarkus-workitems-api module — shared WorkerSelectionStrategy SPI types" \
+gh issue create --repo mdproctor/quarkus-work \
+  --title "quarkus-work-api module — shared WorkerSelectionStrategy SPI types" \
   --label "enhancement" \
   --body "## Context
 Part of epics #100 and #102. Shared API module with zero runtime dependencies.
 
 ## What
-New quarkus-workitems-api module containing:
+New quarkus-work-api module containing:
 - WorkerCandidate record (id, capabilities, activeWorkItemCount)
 - SelectionContext record (category, priority, requiredCapabilities, candidateGroups, candidateUsers)
 - AssignmentDecision record (assigneeId, candidateGroups, candidateUsers) + noChange/assignTo/narrowCandidates factories
@@ -90,7 +90,7 @@ Refs #102"
 
 - [ ] **Step 2: Create issue #116 — WorkItemAssignmentService + built-in strategies**
 ```bash
-gh issue create --repo mdproctor/quarkus-workitems \
+gh issue create --repo mdproctor/quarkus-work \
   --title "WorkItemAssignmentService + LeastLoadedStrategy + ClaimFirstStrategy" \
   --label "enhancement" \
   --body "## Context
@@ -108,7 +108,7 @@ Part of epics #100 and #102. Depends on #115.
 - [ ] POST /workitems with candidateUsers=[alice,bob] and alice has 5 active, bob has 1 → pre-assigned to bob
 - [ ] No candidates → noChange (pool stays open)
 - [ ] PUT /workitems/{id}/release → strategy re-fires (RELEASED trigger)
-- [ ] quarkus.workitems.routing.strategy=claim-first → no pre-assignment
+- [ ] quarkus.work.routing.strategy=claim-first → no pre-assignment
 - [ ] @Alternative custom strategy overrides config
 
 Refs #100
@@ -117,7 +117,7 @@ Refs #102"
 
 - [ ] **Step 3: Create issue for round-robin (deferred)**
 ```bash
-gh issue create --repo mdproctor/quarkus-workitems \
+gh issue create --repo mdproctor/quarkus-work \
   --title "RoundRobinStrategy — stateful sequential worker selection" \
   --label "enhancement" \
   --body "## Context
@@ -136,25 +136,25 @@ Refs #102"
 
 ---
 
-## Task 2: quarkus-workitems-api module — scaffold + SPI types
+## Task 2: quarkus-work-api module — scaffold + SPI types
 
 **Files:**
-- Create: `quarkus-workitems-api/pom.xml`
-- Create: `quarkus-workitems-api/src/main/java/io/quarkiverse/workitems/spi/WorkerCandidate.java`
-- Create: `quarkus-workitems-api/src/main/java/io/quarkiverse/workitems/spi/SelectionContext.java`
-- Create: `quarkus-workitems-api/src/main/java/io/quarkiverse/workitems/spi/AssignmentDecision.java`
-- Create: `quarkus-workitems-api/src/main/java/io/quarkiverse/workitems/spi/AssignmentTrigger.java`
-- Create: `quarkus-workitems-api/src/main/java/io/quarkiverse/workitems/spi/WorkerSelectionStrategy.java`
-- Create: `quarkus-workitems-api/src/main/java/io/quarkiverse/workitems/spi/WorkerRegistry.java`
-- Test: `quarkus-workitems-api/src/test/java/io/quarkiverse/workitems/spi/WorkerCandidateTest.java`
-- Test: `quarkus-workitems-api/src/test/java/io/quarkiverse/workitems/spi/AssignmentDecisionTest.java`
-- Test: `quarkus-workitems-api/src/test/java/io/quarkiverse/workitems/spi/SelectionContextTest.java`
+- Create: `quarkus-work-api/pom.xml`
+- Create: `quarkus-work-api/src/main/java/io/quarkiverse/workitems/spi/WorkerCandidate.java`
+- Create: `quarkus-work-api/src/main/java/io/quarkiverse/workitems/spi/SelectionContext.java`
+- Create: `quarkus-work-api/src/main/java/io/quarkiverse/workitems/spi/AssignmentDecision.java`
+- Create: `quarkus-work-api/src/main/java/io/quarkiverse/workitems/spi/AssignmentTrigger.java`
+- Create: `quarkus-work-api/src/main/java/io/quarkiverse/workitems/spi/WorkerSelectionStrategy.java`
+- Create: `quarkus-work-api/src/main/java/io/quarkiverse/workitems/spi/WorkerRegistry.java`
+- Test: `quarkus-work-api/src/test/java/io/quarkiverse/workitems/spi/WorkerCandidateTest.java`
+- Test: `quarkus-work-api/src/test/java/io/quarkiverse/workitems/spi/AssignmentDecisionTest.java`
+- Test: `quarkus-work-api/src/test/java/io/quarkiverse/workitems/spi/SelectionContextTest.java`
 
 - [ ] **Step 1: Write failing tests (RED)**
 
-Create `quarkus-workitems-api/src/test/java/io/quarkiverse/workitems/spi/WorkerCandidateTest.java`:
+Create `quarkus-work-api/src/test/java/io/quarkiverse/workitems/spi/WorkerCandidateTest.java`:
 ```java
-package io.quarkiverse.workitems.spi;
+package io.quarkiverse.work.spi;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Set;
@@ -189,9 +189,9 @@ class WorkerCandidateTest {
 }
 ```
 
-Create `quarkus-workitems-api/src/test/java/io/quarkiverse/workitems/spi/AssignmentDecisionTest.java`:
+Create `quarkus-work-api/src/test/java/io/quarkiverse/workitems/spi/AssignmentDecisionTest.java`:
 ```java
-package io.quarkiverse.workitems.spi;
+package io.quarkiverse.work.spi;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
@@ -231,9 +231,9 @@ class AssignmentDecisionTest {
 }
 ```
 
-Create `quarkus-workitems-api/src/test/java/io/quarkiverse/workitems/spi/SelectionContextTest.java`:
+Create `quarkus-work-api/src/test/java/io/quarkiverse/workitems/spi/SelectionContextTest.java`:
 ```java
-package io.quarkiverse.workitems.spi;
+package io.quarkiverse.work.spi;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
@@ -262,14 +262,14 @@ class SelectionContextTest {
 
 - [ ] **Step 2: Run tests RED**
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-api \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-api \
   -Dtest="WorkerCandidateTest,AssignmentDecisionTest,SelectionContextTest" 2>&1 | tail -5
 ```
 Expected: COMPILATION ERROR — types don't exist yet.
 
 - [ ] **Step 3: Create pom.xml**
 
-Create `quarkus-workitems-api/pom.xml`:
+Create `quarkus-work-api/pom.xml`:
 ```xml
 <?xml version="1.0"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -277,11 +277,11 @@ Create `quarkus-workitems-api/pom.xml`:
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>io.quarkiverse.workitems</groupId>
-    <artifactId>quarkus-workitems-parent</artifactId>
+    <groupId>io.quarkiverse.work</groupId>
+    <artifactId>quarkus-work-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
   </parent>
-  <artifactId>quarkus-workitems-api</artifactId>
+  <artifactId>quarkus-work-api</artifactId>
   <name>Quarkus WorkItems - API (Shared SPI)</name>
   <description>
     Pure Java shared SPI types for the WorkItems ecosystem. Zero runtime dependencies.
@@ -302,13 +302,13 @@ Create `quarkus-workitems-api/pom.xml`:
 </project>
 ```
 
-Add `<module>quarkus-workitems-api</module>` to parent `pom.xml` **before** `<module>runtime</module>` (the api module must be built first since runtime will depend on it).
+Add `<module>quarkus-work-api</module>` to parent `pom.xml` **before** `<module>runtime</module>` (the api module must be built first since runtime will depend on it).
 
 - [ ] **Step 4: Create SPI types**
 
-Create `quarkus-workitems-api/src/main/java/io/quarkiverse/workitems/spi/WorkerCandidate.java`:
+Create `quarkus-work-api/src/main/java/io/quarkiverse/workitems/spi/WorkerCandidate.java`:
 ```java
-package io.quarkiverse.workitems.spi;
+package io.quarkiverse.work.spi;
 
 import java.util.Set;
 
@@ -316,7 +316,7 @@ import java.util.Set;
  * A potential assignee for a WorkItem.
  *
  * <p>Returned by {@link WorkerRegistry#resolveGroup} and constructed by
- * {@link io.quarkiverse.workitems.runtime.service.WorkItemAssignmentService}
+ * {@link io.quarkiverse.work.runtime.service.WorkItemAssignmentService}
  * from {@code WorkItem.candidateUsers}. The {@code activeWorkItemCount} is
  * pre-populated before the list is passed to {@link WorkerSelectionStrategy#select}.
  *
@@ -336,9 +336,9 @@ public record WorkerCandidate(String id, Set<String> capabilities, int activeWor
 }
 ```
 
-Create `quarkus-workitems-api/src/main/java/io/quarkiverse/workitems/spi/SelectionContext.java`:
+Create `quarkus-work-api/src/main/java/io/quarkiverse/workitems/spi/SelectionContext.java`:
 ```java
-package io.quarkiverse.workitems.spi;
+package io.quarkiverse.work.spi;
 
 /**
  * Minimal context from a WorkItem used by {@link WorkerSelectionStrategy#select}.
@@ -361,16 +361,16 @@ public record SelectionContext(
 }
 ```
 
-Create `quarkus-workitems-api/src/main/java/io/quarkiverse/workitems/spi/AssignmentDecision.java`:
+Create `quarkus-work-api/src/main/java/io/quarkiverse/workitems/spi/AssignmentDecision.java`:
 ```java
-package io.quarkiverse.workitems.spi;
+package io.quarkiverse.work.spi;
 
 /**
  * Immutable outcome of a {@link WorkerSelectionStrategy#select} call.
  *
  * <p>A {@code null} field means "no change to this WorkItem field". Only non-null
  * fields are applied to the WorkItem by
- * {@link io.quarkiverse.workitems.runtime.service.WorkItemAssignmentService}.
+ * {@link io.quarkiverse.work.runtime.service.WorkItemAssignmentService}.
  *
  * @param assigneeId       pre-assign to this actor; null = leave unassigned (pool stays open)
  * @param candidateGroups  replace candidateGroups; null = keep as-is
@@ -400,9 +400,9 @@ public record AssignmentDecision(String assigneeId, String candidateGroups, Stri
 }
 ```
 
-Create `quarkus-workitems-api/src/main/java/io/quarkiverse/workitems/spi/AssignmentTrigger.java`:
+Create `quarkus-work-api/src/main/java/io/quarkiverse/workitems/spi/AssignmentTrigger.java`:
 ```java
-package io.quarkiverse.workitems.spi;
+package io.quarkiverse.work.spi;
 
 /** Lifecycle events that trigger worker (re-)selection. */
 public enum AssignmentTrigger {
@@ -415,9 +415,9 @@ public enum AssignmentTrigger {
 }
 ```
 
-Create `quarkus-workitems-api/src/main/java/io/quarkiverse/workitems/spi/WorkerSelectionStrategy.java`:
+Create `quarkus-work-api/src/main/java/io/quarkiverse/workitems/spi/WorkerSelectionStrategy.java`:
 ```java
-package io.quarkiverse.workitems.spi;
+package io.quarkiverse.work.spi;
 
 import java.util.List;
 import java.util.Set;
@@ -427,7 +427,7 @@ import java.util.Set;
  *
  * <p>Implement as {@code @ApplicationScoped @Alternative @Priority(1)} to override
  * the built-in strategy selected by
- * {@code quarkus.workitems.routing.strategy}. Only one alternative may be active.
+ * {@code quarkus.work.routing.strategy}. Only one alternative may be active.
  *
  * <p>Built-in implementations in the runtime module:
  * <ul>
@@ -461,9 +461,9 @@ public interface WorkerSelectionStrategy {
 }
 ```
 
-Create `quarkus-workitems-api/src/main/java/io/quarkiverse/workitems/spi/WorkerRegistry.java`:
+Create `quarkus-work-api/src/main/java/io/quarkiverse/workitems/spi/WorkerRegistry.java`:
 ```java
-package io.quarkiverse.workitems.spi;
+package io.quarkiverse.work.spi;
 
 import java.util.List;
 
@@ -487,7 +487,7 @@ public interface WorkerRegistry {
      *
      * <p>Implementations should pre-populate {@link WorkerCandidate#capabilities()}
      * where known. The {@code activeWorkItemCount} will be populated by
-     * {@link io.quarkiverse.workitems.runtime.service.WorkItemAssignmentService}
+     * {@link io.quarkiverse.work.runtime.service.WorkItemAssignmentService}
      * if left at 0.
      *
      * @param groupName the group to resolve (as stored in {@code WorkItem.candidateGroups})
@@ -499,15 +499,15 @@ public interface WorkerRegistry {
 
 - [ ] **Step 5: Run tests GREEN**
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-api \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-api \
   2>&1 | grep -E "Tests run:|BUILD" | tail -5
 ```
 Expected: BUILD SUCCESS, 7 tests pass.
 
 - [ ] **Step 6: Commit**
 ```bash
-git add quarkus-workitems-api/ pom.xml
-git commit -m "feat(api): quarkus-workitems-api module — shared WorkerSelectionStrategy SPI
+git add quarkus-work-api/ pom.xml
+git commit -m "feat(api): quarkus-work-api module — shared WorkerSelectionStrategy SPI
 
 New pure-Java module with zero runtime dependencies, usable by CaseHub and any other
 system that wants to implement worker selection without the full WorkItems stack.
@@ -531,7 +531,7 @@ Refs #102"
 ## Task 3: Add api dependency to runtime + WorkItemsConfig routing sub-group
 
 **Files:**
-- Modify: `runtime/pom.xml` — add dependency on `quarkus-workitems-api`
+- Modify: `runtime/pom.xml` — add dependency on `quarkus-work-api`
 - Modify: `runtime/src/main/java/io/quarkiverse/workitems/runtime/config/WorkItemsConfig.java`
 - Test: `runtime/src/test/java/io/quarkiverse/workitems/runtime/config/WorkItemsConfigRoutingTest.java`
 
@@ -539,7 +539,7 @@ Refs #102"
 
 Create `runtime/src/test/java/io/quarkiverse/workitems/runtime/config/WorkItemsConfigRoutingTest.java`:
 ```java
-package io.quarkiverse.workitems.runtime.config;
+package io.quarkiverse.work.runtime.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import io.quarkus.test.junit.QuarkusTest;
@@ -570,8 +570,8 @@ Expected: COMPILATION ERROR — `routing()` method doesn't exist.
 In `runtime/pom.xml`, add after the first `<dependency>`:
 ```xml
 <dependency>
-  <groupId>io.quarkiverse.workitems</groupId>
-  <artifactId>quarkus-workitems-api</artifactId>
+  <groupId>io.quarkiverse.work</groupId>
+  <artifactId>quarkus-work-api</artifactId>
   <version>${project.version}</version>
 </dependency>
 ```
@@ -633,8 +633,8 @@ git add runtime/pom.xml \
   runtime/src/test/java/io/quarkiverse/workitems/runtime/config/WorkItemsConfigRoutingTest.java
 git commit -m "feat(core): WorkItemsConfig routing sub-group + api module dependency
 
-Adds quarkus.workitems.routing.strategy config (default: least-loaded) via a new
-RoutingConfig sub-interface. Runtime module gains compile dep on quarkus-workitems-api.
+Adds quarkus.work.routing.strategy config (default: least-loaded) via a new
+RoutingConfig sub-interface. Runtime module gains compile dep on quarkus-work-api.
 1 @QuarkusTest config test.
 
 Refs #116
@@ -657,13 +657,13 @@ Refs #102"
 
 Create `runtime/src/test/java/io/quarkiverse/workitems/runtime/service/ClaimFirstStrategyTest.java`:
 ```java
-package io.quarkiverse.workitems.runtime.service;
+package io.quarkiverse.work.runtime.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
-import io.quarkiverse.workitems.spi.*;
+import io.quarkiverse.work.spi.*;
 
 class ClaimFirstStrategyTest {
 
@@ -697,13 +697,13 @@ class ClaimFirstStrategyTest {
 
 Create `runtime/src/test/java/io/quarkiverse/workitems/runtime/service/LeastLoadedStrategyTest.java`:
 ```java
-package io.quarkiverse.workitems.runtime.service;
+package io.quarkiverse.work.runtime.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
-import io.quarkiverse.workitems.spi.*;
+import io.quarkiverse.work.spi.*;
 
 class LeastLoadedStrategyTest {
 
@@ -774,21 +774,21 @@ Expected: COMPILATION ERROR — classes don't exist.
 
 Create `runtime/src/main/java/io/quarkiverse/workitems/runtime/service/ClaimFirstStrategy.java`:
 ```java
-package io.quarkiverse.workitems.runtime.service;
+package io.quarkiverse.work.runtime.service;
 
 import java.util.List;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.quarkiverse.workitems.spi.AssignmentDecision;
-import io.quarkiverse.workitems.spi.SelectionContext;
-import io.quarkiverse.workitems.spi.WorkerCandidate;
-import io.quarkiverse.workitems.spi.WorkerSelectionStrategy;
+import io.quarkiverse.work.spi.AssignmentDecision;
+import io.quarkiverse.work.spi.SelectionContext;
+import io.quarkiverse.work.spi.WorkerCandidate;
+import io.quarkiverse.work.spi.WorkerSelectionStrategy;
 
 /**
  * No-op selection strategy — leaves all WorkItems in the open pool.
  * Whoever claims first wins. Activated by:
- * {@code quarkus.workitems.routing.strategy=claim-first}.
+ * {@code quarkus.work.routing.strategy=claim-first}.
  */
 @ApplicationScoped
 public class ClaimFirstStrategy implements WorkerSelectionStrategy {
@@ -805,17 +805,17 @@ public class ClaimFirstStrategy implements WorkerSelectionStrategy {
 
 Create `runtime/src/main/java/io/quarkiverse/workitems/runtime/service/LeastLoadedStrategy.java`:
 ```java
-package io.quarkiverse.workitems.runtime.service;
+package io.quarkiverse.work.runtime.service;
 
 import java.util.Comparator;
 import java.util.List;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.quarkiverse.workitems.spi.AssignmentDecision;
-import io.quarkiverse.workitems.spi.SelectionContext;
-import io.quarkiverse.workitems.spi.WorkerCandidate;
-import io.quarkiverse.workitems.spi.WorkerSelectionStrategy;
+import io.quarkiverse.work.spi.AssignmentDecision;
+import io.quarkiverse.work.spi.SelectionContext;
+import io.quarkiverse.work.spi.WorkerCandidate;
+import io.quarkiverse.work.spi.WorkerSelectionStrategy;
 
 /**
  * Pre-assigns WorkItems to the candidate with the fewest active WorkItems.
@@ -828,7 +828,7 @@ import io.quarkiverse.workitems.spi.WorkerSelectionStrategy;
  * resolving any groups), returns {@link AssignmentDecision#noChange()} and the
  * WorkItem remains in the open pool for claim-first assignment.
  *
- * <p>Activated by: {@code quarkus.workitems.routing.strategy=least-loaded} (default).
+ * <p>Activated by: {@code quarkus.work.routing.strategy=least-loaded} (default).
  */
 @ApplicationScoped
 public class LeastLoadedStrategy implements WorkerSelectionStrategy {
@@ -851,14 +851,14 @@ public class LeastLoadedStrategy implements WorkerSelectionStrategy {
 
 Create `runtime/src/main/java/io/quarkiverse/workitems/runtime/service/NoOpWorkerRegistry.java`:
 ```java
-package io.quarkiverse.workitems.runtime.service;
+package io.quarkiverse.work.runtime.service;
 
 import java.util.List;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.quarkiverse.workitems.spi.WorkerCandidate;
-import io.quarkiverse.workitems.spi.WorkerRegistry;
+import io.quarkiverse.work.spi.WorkerCandidate;
+import io.quarkiverse.work.spi.WorkerRegistry;
 
 /**
  * Default WorkerRegistry — returns an empty list for every group.
@@ -918,7 +918,7 @@ Refs #102"
 
 Create `runtime/src/test/java/io/quarkiverse/workitems/runtime/service/WorkItemAssignmentServiceTest.java`:
 ```java
-package io.quarkiverse.workitems.runtime.service;
+package io.quarkiverse.work.runtime.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -931,9 +931,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import io.quarkiverse.workitems.runtime.model.*;
-import io.quarkiverse.workitems.runtime.repository.*;
-import io.quarkiverse.workitems.spi.*;
+import io.quarkiverse.work.runtime.model.*;
+import io.quarkiverse.work.runtime.repository.*;
+import io.quarkiverse.work.spi.*;
 
 /**
  * Unit tests for WorkItemAssignmentService — no Quarkus boot required.
@@ -1152,7 +1152,7 @@ Expected: COMPILATION ERROR.
 
 Create `runtime/src/main/java/io/quarkiverse/workitems/runtime/service/WorkItemAssignmentService.java`:
 ```java
-package io.quarkiverse.workitems.runtime.service;
+package io.quarkiverse.work.runtime.service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1164,17 +1164,17 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 
-import io.quarkiverse.workitems.runtime.config.WorkItemsConfig;
-import io.quarkiverse.workitems.runtime.model.WorkItem;
-import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
-import io.quarkiverse.workitems.runtime.repository.WorkItemQuery;
-import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
-import io.quarkiverse.workitems.spi.AssignmentDecision;
-import io.quarkiverse.workitems.spi.AssignmentTrigger;
-import io.quarkiverse.workitems.spi.SelectionContext;
-import io.quarkiverse.workitems.spi.WorkerCandidate;
-import io.quarkiverse.workitems.spi.WorkerRegistry;
-import io.quarkiverse.workitems.spi.WorkerSelectionStrategy;
+import io.quarkiverse.work.runtime.config.WorkItemsConfig;
+import io.quarkiverse.work.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.model.WorkItemStatus;
+import io.quarkiverse.work.runtime.repository.WorkItemQuery;
+import io.quarkiverse.work.runtime.repository.WorkItemStore;
+import io.quarkiverse.work.spi.AssignmentDecision;
+import io.quarkiverse.work.spi.AssignmentTrigger;
+import io.quarkiverse.work.spi.SelectionContext;
+import io.quarkiverse.work.spi.WorkerCandidate;
+import io.quarkiverse.work.spi.WorkerRegistry;
+import io.quarkiverse.work.spi.WorkerSelectionStrategy;
 
 /**
  * Orchestrates worker selection for WorkItems on creation, release, and delegation.
@@ -1369,7 +1369,7 @@ Refs #102"
 
 Create `runtime/src/test/java/io/quarkiverse/workitems/runtime/api/WorkerSelectionStrategyIT.java`:
 ```java
-package io.quarkiverse.workitems.runtime.api;
+package io.quarkiverse.work.runtime.api;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
@@ -1623,7 +1623,7 @@ assignmentService.assign(item, AssignmentTrigger.CREATED);
 final WorkItem saved = workItemStore.put(item);
 ```
 
-Add import: `import io.quarkiverse.workitems.spi.AssignmentTrigger;`
+Add import: `import io.quarkiverse.work.spi.AssignmentTrigger;`
 
 **In `release()`, call assignment AFTER state change but BEFORE `workItemStore.put()`:**
 ```java
@@ -1694,7 +1694,7 @@ Refs #102"
 - [ ] **Step 1: Run final verification across all modules**
 ```bash
 JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test \
-  -pl quarkus-workitems-api,runtime 2>&1 | \
+  -pl quarkus-work-api,runtime 2>&1 | \
   grep -E "Tests run: [0-9]+, Failures:|BUILD" | tail -5
 ```
 Expected: BUILD SUCCESS, 0 failures. Record the test counts.
@@ -1703,9 +1703,9 @@ Expected: BUILD SUCCESS, 0 failures. Record the test counts.
 
 Read `docs/DESIGN.md` first, then make these changes:
 
-**A) Add `quarkus-workitems-api` row to Module Structure table** (first row, before Runtime):
+**A) Add `quarkus-work-api` row to Module Structure table** (first row, before Runtime):
 ```
-| API | `quarkus-workitems-api` | Shared SPI types — pure Java, zero runtime deps. `WorkerCandidate`, `SelectionContext`, `AssignmentDecision`, `AssignmentTrigger`, `WorkerSelectionStrategy`, `WorkerRegistry`. CaseHub and any system can depend on this without pulling in the full WorkItems stack. |
+| API | `quarkus-work-api` | Shared SPI types — pure Java, zero runtime deps. `WorkerCandidate`, `SelectionContext`, `AssignmentDecision`, `AssignmentTrigger`, `WorkerSelectionStrategy`, `WorkerRegistry`. CaseHub and any system can depend on this without pulling in the full WorkItems stack. |
 ```
 
 **B) Add `confidenceScore` and new routing fields to Domain Model WorkItem table** (if `confidenceScore` not already there — check) and add note about `assignedAt` being set on pre-assignment.
@@ -1713,14 +1713,14 @@ Read `docs/DESIGN.md` first, then make these changes:
 **C) Add WorkerSelectionStrategy section to Services table:**
 ```
 | `WorkItemAssignmentService` | `runtime.service` | Orchestrates worker selection on CREATED/RELEASED/DELEGATED. Resolves candidates from `candidateUsers` + `WorkerRegistry`, populates `activeWorkItemCount`, filters by `requiredCapabilities`, calls `WorkerSelectionStrategy.select()`, applies `AssignmentDecision` to WorkItem fields in memory. |
-| `ClaimFirstStrategy` | `runtime.service` | `WorkerSelectionStrategy` no-op — `AssignmentDecision.noChange()`; pool stays open. Config: `quarkus.workitems.routing.strategy=claim-first`. |
-| `LeastLoadedStrategy` | `runtime.service` | Default `WorkerSelectionStrategy` — pre-assigns to candidate with fewest ASSIGNED/IN_PROGRESS/SUSPENDED WorkItems. Config: `quarkus.workitems.routing.strategy=least-loaded` (default). |
+| `ClaimFirstStrategy` | `runtime.service` | `WorkerSelectionStrategy` no-op — `AssignmentDecision.noChange()`; pool stays open. Config: `quarkus.work.routing.strategy=claim-first`. |
+| `LeastLoadedStrategy` | `runtime.service` | Default `WorkerSelectionStrategy` — pre-assigns to candidate with fewest ASSIGNED/IN_PROGRESS/SUSPENDED WorkItems. Config: `quarkus.work.routing.strategy=least-loaded` (default). |
 | `NoOpWorkerRegistry` | `runtime.service` | Default `WorkerRegistry` — returns empty list for all groups; groups stay claim-first until app registers a real resolver. |
 ```
 
 **D) Add config to Configuration table:**
 ```
-| `quarkus.workitems.routing.strategy` | least-loaded | Worker selection: `least-loaded` or `claim-first`. CDI `@Alternative WorkerSelectionStrategy` overrides config. |
+| `quarkus.work.routing.strategy` | least-loaded | Worker selection: `least-loaded` or `claim-first`. CDI `@Alternative WorkerSelectionStrategy` overrides config. |
 ```
 
 **E) Update Build Roadmap** — add or update Phase 11/12 to show WorkerSelectionStrategy complete.
@@ -1739,9 +1739,9 @@ In the Work Tracking section, update Epic #100 to show:
 git add docs/DESIGN.md CLAUDE.md
 git commit -m "docs: update DESIGN.md and CLAUDE.md for WorkerSelectionStrategy
 
-quarkus-workitems-api module documented (shared SPI, zero deps, CaseHub alignment).
+quarkus-work-api module documented (shared SPI, zero deps, CaseHub alignment).
 WorkItemAssignmentService, ClaimFirstStrategy, LeastLoadedStrategy, NoOpWorkerRegistry
-added to Services table. quarkus.workitems.routing.strategy config documented.
+added to Services table. quarkus.work.routing.strategy config documented.
 Build roadmap updated. Test totals updated. Epics #100/#102 child issues updated.
 
 Refs #100
@@ -1753,7 +1753,7 @@ Refs #102"
 ## Self-Review
 
 **1. Spec coverage:**
-- ✅ `quarkus-workitems-api` module with all 6 SPI types (Task 2)
+- ✅ `quarkus-work-api` module with all 6 SPI types (Task 2)
 - ✅ `WorkItemsConfig.routing().strategy()` default `least-loaded` (Task 3)
 - ✅ `ClaimFirstStrategy`, `LeastLoadedStrategy`, `NoOpWorkerRegistry` (Task 4)
 - ✅ `WorkItemAssignmentService` — resolve/filter/select/apply (Task 5)

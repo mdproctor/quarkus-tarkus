@@ -5,7 +5,7 @@ date: 2026-04-18
 type: phase-update
 entry_type: note
 subtype: diary
-projects: [quarkus-workitems]
+projects: [quarkus-work]
 tags: [architecture, testing, tamboui]
 ---
 

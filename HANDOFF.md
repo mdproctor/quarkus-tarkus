@@ -10,8 +10,8 @@
 | quarkus-work-api | 27 |
 | quarkus-work-core | 53 |
 | runtime | 548 |
-| quarkus-workitems-ai | 77 |
-| quarkus-workitems-examples | 14 |
+| quarkus-work-ai | 77 |
+| quarkus-work-examples | 14 |
 | (others unchanged) | — |
 
 ## What Was Built This Session
@@ -52,7 +52,7 @@ in quarkus-ledger sibling (was Qhorus-specific, broke workitems context).
 
 ### Queues migration fix
 
-`quarkus-workitems-queues` V2001 renamed to V2002 (conflict with ledger V2001).
+`quarkus-work-queues` V2001 renamed to V2002 (conflict with ledger V2001).
 
 ## Closed This Session
 
@@ -75,7 +75,7 @@ Issues: #107, #108, #112–#116, #119, #120, #123–#126
 
 ## Deferred / Carry-Forward
 
-- `quarkus-workitems-ledger` tests (`LedgerIntegrationTest` etc.) use old 15-arg
+- `quarkus-work-ledger` tests (`LedgerIntegrationTest` etc.) use old 15-arg
   `WorkItemCreateRequest` constructor — need updating (separate session)
 - `ClaimSlaPolicy` — no config-driven policy selection yet; users choose via CDI `@Alternative @Priority`
 - Embedding model for `EmbeddingSkillMatcher` — degrades to LeastLoaded fallback when not configured (correct behaviour now, thanks to #120)
@@ -88,6 +88,6 @@ Issues: #107, #108, #112–#116, #119, #120, #123–#126
 | Examples guide | `docs/examples-guide.md` |
 | Integration guide (§8 quarkus-work, §9 semantic) | `docs/integration-guide.md` |
 | API reference (/worker-skill-profiles, /resolution-suggestion, /escalation-summaries) | `docs/api-reference.md` |
-| AI module | `quarkus-workitems-ai/src/main/java/io/quarkiverse/workitems/ai/` |
+| AI module | `quarkus-work-ai/src/main/java/io/quarkiverse/workitems/ai/` |
 | ClaimSlaPolicy impls | `quarkus-work-core/src/main/java/io/quarkiverse/work/core/policy/` |
 | Epic priority table | `CLAUDE.md` Work Tracking section |

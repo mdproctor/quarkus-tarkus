@@ -5,13 +5,13 @@ date: 2026-04-15
 type: phase-update
 entry_type: note
 subtype: diary
-projects: [quarkus-workitems]
+projects: [quarkus-work]
 tags: [ledger, eigentrust, quarkus-flow, tdd]
 ---
 
 The conversation that shaped everything in this session came before I wrote a line of code.
 
-I asked whether to build the ledger as a standalone Quarkus module. My first instinct was yes — the design felt like a separate concern. Then I stopped and asked the harder question: if someone adds `quarkus-workitems` to their application and doesn't want the ledger, do they have to carry it? Does the `WorkItemService` get `if (ledgerConfig.enabled())` guards? Does `WorkItemsConfig` grow a ledger section?
+I asked whether to build the ledger as a standalone Quarkus module. My first instinct was yes — the design felt like a separate concern. Then I stopped and asked the harder question: if someone adds `quarkus-work` to their application and doesn't want the ledger, do they have to carry it? Does the `WorkItemService` get `if (ledgerConfig.enabled())` guards? Does `WorkItemsConfig` grow a ledger section?
 
 The answer to all of those had to be no. The ledger had to be invisible when absent.
 
@@ -19,7 +19,7 @@ The answer to all of those had to be no. The ledger had to be invisible when abs
 
 Phase 4 had already given us the answer. `WorkItemService` fires `WorkItemLifecycleEvent` on every transition. It doesn't know who's listening. If nobody is, events fire into the void.
 
-`quarkus-workitems-ledger` is simply a `@Observes WorkItemLifecycleEvent` CDI bean. Nothing in the core changes except two nullable fields on the event record (`rationale`, `planRef`) — backward compatible, ignored by observers that don't use them. If the module isn't on the classpath: zero overhead, zero tables, zero config keys.
+`quarkus-work-ledger` is simply a `@Observes WorkItemLifecycleEvent` CDI bean. Nothing in the core changes except two nullable fields on the event record (`rationale`, `planRef`) — backward compatible, ignored by observers that don't use them. If the module isn't on the classpath: zero overhead, zero tables, zero config keys.
 
 The boundary came out clean. The core fires; the ledger listens.
 

@@ -21,7 +21,7 @@ runtime (core)
   WorkItemCreateRequest        gains confidenceScore field
   V13 migration                confidence_score DOUBLE column
 
-quarkus-workitems-filter-registry  (new)
+quarkus-work-filter-registry  (new)
   depends on: runtime
   FilterAction SPI             CDI interface — apply(WorkItem, Map<String,Object>)
   ActionDescriptor             record: type (String), params (Map<String,Object>)
@@ -32,9 +32,9 @@ quarkus-workitems-filter-registry  (new)
   FilterRegistryEngine         observes WorkItemLifecycleEvent → evaluate → apply
   V3001 migration              filter_rule table (separate prefix from queues V2001)
 
-quarkus-workitems-ai  (new)
-  depends on: runtime + quarkus-workitems-filter-registry + quarkus-langchain4j (provider-agnostic)
-  WorkItemsAiConfig            @ConfigMapping prefix=quarkus.workitems.ai
+quarkus-work-ai  (new)
+  depends on: runtime + quarkus-work-filter-registry + quarkus-langchain4j (provider-agnostic)
+  WorkItemsAiConfig            @ConfigMapping prefix=quarkus.work.ai
   LowConfidenceFilterProducer  @Produces FilterDefinition for ai/low-confidence filter
 ```
 
@@ -111,12 +111,12 @@ DELETE /filter-rules/{id}                                                       
 
 ---
 
-## Confidence Gating (quarkus-workitems-ai)
+## Confidence Gating (quarkus-work-ai)
 
 ### Configuration
 ```properties
-quarkus.workitems.ai.confidence-threshold=0.7
-quarkus.workitems.ai.low-confidence-filter.enabled=true
+quarkus.work.ai.confidence-threshold=0.7
+quarkus.work.ai.low-confidence-filter.enabled=true
 ```
 
 ### LowConfidenceFilterProducer
@@ -126,7 +126,7 @@ Produces a `FilterDefinition`:
    the producer passes `{threshold: configValue}` in the filter's condition context params)
 - **events:** `{ADD}` only
 - **actions:** `[{type: "APPLY_LABEL", params: {path: "ai/low-confidence", persistence: "INFERRED"}}]`
-- **enabled:** controlled by `quarkus.workitems.ai.low-confidence-filter.enabled`
+- **enabled:** controlled by `quarkus.work.ai.low-confidence-filter.enabled`
 
 ---
 
@@ -163,7 +163,7 @@ Result:
 - `DynamicFilterRegistryTest` — CRUD lifecycle, 201/200/404
 - `FilterRuleEvaluationTest` — end-to-end: matching condition fires action, non-matching skips
 
-### Integration tests — quarkus-workitems-ai module (@QuarkusTest)
+### Integration tests — quarkus-work-ai module (@QuarkusTest)
 - `LowConfidenceFilterTest`:
   - score=0.55 (< 0.7 default) → label applied
   - score=0.85 (≥ 0.7) → no label
@@ -182,9 +182,9 @@ Result:
 | # | Title | Epic |
 |---|---|---|
 | TBD | `confidenceScore` field on WorkItem + V13 migration | #100 |
-| TBD | `quarkus-workitems-filter-registry` module — FilterAction SPI + built-ins + engine | #100 |
+| TBD | `quarkus-work-filter-registry` module — FilterAction SPI + built-ins + engine | #100 |
 | TBD | Permanent + dynamic filter rule registry + REST API | #100 |
-| TBD | `quarkus-workitems-ai` module — LowConfidenceFilterProducer + config | #100 |
+| TBD | `quarkus-work-ai` module — LowConfidenceFilterProducer + config | #100 |
 
 ---
 

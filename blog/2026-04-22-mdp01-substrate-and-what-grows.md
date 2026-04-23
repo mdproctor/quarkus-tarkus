@@ -5,27 +5,27 @@ date: 2026-04-22
 type: phase-update
 entry_type: note
 subtype: diary
-projects: [quarkus-workitems]
+projects: [quarkus-work]
 tags: [architecture, ai-native, casehub, semantic-routing, langchain4j]
 ---
 
-The insight that started this session: `quarkus-workitems-api` was already a shared contract layer. The follow-on question — what else belongs below the WorkItems inbox, and what's actually inbox-specific? — turned into a day's work.
+The insight that started this session: `quarkus-work-api` was already a shared contract layer. The follow-on question — what else belongs below the WorkItems inbox, and what's actually inbox-specific? — turned into a day's work.
 
 ## From WorkItems to Work
 
-I'd been calling it `quarkus-workitems-api` and thinking of it as a WorkItems artifact. But `WorkerSelectionStrategy`, `WorkBroker`, `WorkloadProvider` — none of those are inbox-specific. CaseHub has a `TaskBroker` doing roughly the same thing. Two systems reinventing the same substrate separately.
+I'd been calling it `quarkus-work-api` and thinking of it as a WorkItems artifact. But `WorkerSelectionStrategy`, `WorkBroker`, `WorkloadProvider` — none of those are inbox-specific. CaseHub has a `TaskBroker` doing roughly the same thing. Two systems reinventing the same substrate separately.
 
-The solution was to pull it into two new modules under groupId `io.quarkiverse.work`: `quarkus-work-api` (pure Java, zero dependencies — the shared contract language) and `quarkus-work-core` (CDI implementations: `WorkBroker`, routing strategies, the filter engine). `quarkus-workitems` becomes the human-inbox specialisation on top. CaseHub depends on `quarkus-work-core` for `WorkBroker` and writes its own work-unit types.
+The solution was to pull it into two new modules under groupId `io.quarkiverse.work`: `quarkus-work-api` (pure Java, zero dependencies — the shared contract language) and `quarkus-work-core` (CDI implementations: `WorkBroker`, routing strategies, the filter engine). `quarkus-work` becomes the human-inbox specialisation on top. CaseHub depends on `quarkus-work-core` for `WorkBroker` and writes its own work-unit types.
 
 The naming resolved a tension I'd been ignoring. "WorkBroker" fits better than "TaskBroker" for what CaseHub is actually doing — brokering units of work, not just tasks. "Work" as the base concept, "WorkItems" and "Tasks" as specialisations of it.
 
 The filter engine moved with it. `FilterRegistryEngine` now observes `WorkLifecycleEvent` — any subtype, from any system. CDI's observer matching uses type assignability, not exact equality, which means WorkItems fires `WorkItemLifecycleEvent` and the engine catches it automatically. Worth noting because it's not in the docs and the symptom when it's wrong (observer silently doesn't fire) takes time to diagnose.
 
-We deleted `quarkus-workitems-api` and `quarkus-workitems-filter-registry` entirely. Clean break.
+We deleted `quarkus-work-api` and `quarkus-work-filter-registry` entirely. Clean break.
 
 ## Routing that reads the work
 
-With the substrate in place, the next Epic #100 feature had a clear home: semantic skill matching in `quarkus-workitems-ai`, using SPIs that live in `quarkus-work-api`.
+With the substrate in place, the next Epic #100 feature had a clear home: semantic skill matching in `quarkus-work-ai`, using SPIs that live in `quarkus-work-api`.
 
 The interesting design question was the `SkillProfile` shape. A candidate's profile could come from capability tags (just join the set into a string), from a stored narrative (free text in a DB entity), or from resolution history (aggregate past completed WorkItems by category). Different sources produce different kinds of evidence. A string is fine for embedding — the LLM handles prose and structured text alike. But a history-based profile also knows "47 NDA reviews, 0.95 completion rate" as numbers, which a different matcher could exploit. So `SkillProfile` carries both: `narrative()` for embedding matchers, `attributes()` for numerical ones.
 

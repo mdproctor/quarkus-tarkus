@@ -12,7 +12,7 @@ import io.quarkiverse.work.api.WorkerSelectionStrategy;
 /**
  * No-op worker selection strategy — leaves all WorkItems in the open pool.
  * Whoever claims first wins. Activated by:
- * {@code quarkus.workitems.routing.strategy=claim-first}.
+ * {@code quarkus.work.routing.strategy=claim-first}.
  */
 @ApplicationScoped
 public class ClaimFirstStrategy implements WorkerSelectionStrategy {

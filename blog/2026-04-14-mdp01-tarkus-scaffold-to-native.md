@@ -5,7 +5,7 @@ date: 2026-04-14
 type: phase-update
 entry_type: note
 subtype: diary
-projects: [quarkus-workitems]
+projects: [quarkus-work]
 tags: [quarkus, tdd, native-image, workflow, human-tasks]
 ---
 

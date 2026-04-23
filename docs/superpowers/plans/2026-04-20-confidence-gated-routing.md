@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add `confidenceScore` to WorkItem, a generic filter-registry module (persistent rules + pluggable action SPI), and a `quarkus-workitems-ai` module that ships a low-confidence routing filter.
+**Goal:** Add `confidenceScore` to WorkItem, a generic filter-registry module (persistent rules + pluggable action SPI), and a `quarkus-work-ai` module that ships a low-confidence routing filter.
 
-**Architecture:** Three layers — core runtime gains `confidenceScore`; `quarkus-workitems-filter-registry` provides the `FilterAction` SPI, JEXL evaluation engine, permanent (CDI-produced) and dynamic (DB-persisted) filter rules; `quarkus-workitems-ai` produces the low-confidence `FilterDefinition` via CDI. A `ThreadLocal` guard in `FilterRegistryEngine` prevents recursive firing when actions trigger lifecycle events.
+**Architecture:** Three layers — core runtime gains `confidenceScore`; `quarkus-work-filter-registry` provides the `FilterAction` SPI, JEXL evaluation engine, permanent (CDI-produced) and dynamic (DB-persisted) filter rules; `quarkus-work-ai` produces the low-confidence `FilterDefinition` via CDI. A `ThreadLocal` guard in `FilterRegistryEngine` prevents recursive firing when actions trigger lifecycle events.
 
 **Tech Stack:** Java 21, Quarkus 3.32.2, Panache ORM, commons-jexl3:3.4.0, RESTEasy Reactive, CDI, Flyway (V13 in core, V3001 in filter-registry).
 
@@ -22,9 +22,9 @@
 - `runtime/src/main/java/.../api/WorkItemWithAuditResponse.java` — add `confidenceScore` field
 - `runtime/src/test/java/.../api/WorkItemResourceTest.java` — add confidence score test cases
 
-### quarkus-workitems-filter-registry (new module)
+### quarkus-work-filter-registry (new module)
 ```
-quarkus-workitems-filter-registry/
+quarkus-work-filter-registry/
   pom.xml
   src/main/java/io/quarkiverse/workitems/filterregistry/
     spi/
@@ -60,13 +60,13 @@ quarkus-workitems-filter-registry/
     FilterRuleEvaluationTest.java          @QuarkusTest — end-to-end evaluation
   src/test/resources/application.properties
 
-### quarkus-workitems-ai (new module)
+### quarkus-work-ai (new module)
 ```
-quarkus-workitems-ai/
+quarkus-work-ai/
   pom.xml
   src/main/java/io/quarkiverse/workitems/ai/
     config/
-      WorkItemsAiConfig.java    @ConfigMapping prefix=quarkus.workitems.ai
+      WorkItemsAiConfig.java    @ConfigMapping prefix=quarkus.work.ai
     filter/
       LowConfidenceFilterProducer.java   @Produces FilterDefinition
   src/test/java/io/quarkiverse/workitems/ai/
@@ -79,7 +79,7 @@ quarkus-workitems-ai/
 
 - [ ] **Create issue #112**
 ```bash
-gh issue create --repo mdproctor/quarkus-workitems \
+gh issue create --repo mdproctor/quarkus-work \
   --title "confidenceScore field on WorkItem — V13 migration" \
   --label "enhancement" \
   --body "## Context
@@ -97,8 +97,8 @@ V13 Flyway migration: confidence_score DOUBLE column.
 
 - [ ] **Create issue #113**
 ```bash
-gh issue create --repo mdproctor/quarkus-workitems \
-  --title "quarkus-workitems-filter-registry module — FilterAction SPI + evaluation engine" \
+gh issue create --repo mdproctor/quarkus-work \
+  --title "quarkus-work-filter-registry module — FilterAction SPI + evaluation engine" \
   --label "enhancement" \
   --body "## Context
 Part of epic #100. Foundational module for confidence-gated routing and future AI features.
@@ -118,16 +118,16 @@ permanent (CDI-produced) + dynamic (DB-persisted) filter rule registry, REST at 
 
 - [ ] **Create issue #114**
 ```bash
-gh issue create --repo mdproctor/quarkus-workitems \
-  --title "quarkus-workitems-ai module — LowConfidenceFilterProducer" \
+gh issue create --repo mdproctor/quarkus-work \
+  --title "quarkus-work-ai module — LowConfidenceFilterProducer" \
   --label "enhancement" \
   --body "## Context
 Part of epic #100. Depends on #112 and #113.
 
 ## What
-New module: quarkus-workitems-ai. Produces a permanent FilterDefinition that applies
+New module: quarkus-work-ai. Produces a permanent FilterDefinition that applies
 label ai/low-confidence when workItem.confidenceScore < threshold (default 0.7).
-Config: quarkus.workitems.ai.confidence-threshold, quarkus.workitems.ai.low-confidence-filter.enabled.
+Config: quarkus.work.ai.confidence-threshold, quarkus.work.ai.low-confidence-filter.enabled.
 
 ## Acceptance Criteria
 - [ ] score < threshold → ai/low-confidence label applied
@@ -326,9 +326,9 @@ Refs #100"
 ## Task 3: filter-registry — module scaffold
 
 **Files:**
-- Create: `quarkus-workitems-filter-registry/pom.xml`
+- Create: `quarkus-work-filter-registry/pom.xml`
 - Modify: `pom.xml` (parent — add module entry)
-- Create: `quarkus-workitems-filter-registry/src/test/resources/application.properties`
+- Create: `quarkus-work-filter-registry/src/test/resources/application.properties`
 
 - [ ] **Step 1: Add commons-jexl3 to parent BOM**
 
@@ -345,13 +345,13 @@ In `pom.xml` dependencyManagement, add after the assertj entry:
 
 In the `<modules>` section of `pom.xml`, add:
 ```xml
-<module>quarkus-workitems-filter-registry</module>
-<module>quarkus-workitems-ai</module>
+<module>quarkus-work-filter-registry</module>
+<module>quarkus-work-ai</module>
 ```
 
 - [ ] **Step 3: Create filter-registry pom.xml**
 
-Create `quarkus-workitems-filter-registry/pom.xml`:
+Create `quarkus-work-filter-registry/pom.xml`:
 ```xml
 <?xml version="1.0"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -359,16 +359,16 @@ Create `quarkus-workitems-filter-registry/pom.xml`:
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>io.quarkiverse.workitems</groupId>
-    <artifactId>quarkus-workitems-parent</artifactId>
+    <groupId>io.quarkiverse.work</groupId>
+    <artifactId>quarkus-work-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
   </parent>
-  <artifactId>quarkus-workitems-filter-registry</artifactId>
+  <artifactId>quarkus-work-filter-registry</artifactId>
   <name>Quarkus WorkItems - Filter Registry</name>
   <dependencies>
     <dependency>
-      <groupId>io.quarkiverse.workitems</groupId>
-      <artifactId>quarkus-workitems</artifactId>
+      <groupId>io.quarkiverse.work</groupId>
+      <artifactId>quarkus-work</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -419,7 +419,7 @@ Create `quarkus-workitems-filter-registry/pom.xml`:
 
 - [ ] **Step 4: Create test application.properties**
 
-Create `quarkus-workitems-filter-registry/src/test/resources/application.properties`:
+Create `quarkus-work-filter-registry/src/test/resources/application.properties`:
 ```properties
 quarkus.datasource.db-kind=h2
 quarkus.datasource.jdbc.url=jdbc:h2:mem:filterregistry;DB_CLOSE_DELAY=-1
@@ -430,7 +430,7 @@ quarkus.http.test-port=0
 
 - [ ] **Step 5: Verify module compiles**
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn install -DskipTests -pl quarkus-workitems-filter-registry 2>&1 | grep -E "BUILD|ERROR" | tail -5
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn install -DskipTests -pl quarkus-work-filter-registry 2>&1 | grep -E "BUILD|ERROR" | tail -5
 ```
 Expected: BUILD SUCCESS (empty module).
 
@@ -439,15 +439,15 @@ Expected: BUILD SUCCESS (empty module).
 ## Task 4: filter-registry — SPI types
 
 **Files (all new):**
-- `quarkus-workitems-filter-registry/src/main/java/io/quarkiverse/workitems/filterregistry/spi/FilterEvent.java`
-- `quarkus-workitems-filter-registry/src/main/java/io/quarkiverse/workitems/filterregistry/spi/ActionDescriptor.java`
-- `quarkus-workitems-filter-registry/src/main/java/io/quarkiverse/workitems/filterregistry/spi/FilterDefinition.java`
-- `quarkus-workitems-filter-registry/src/main/java/io/quarkiverse/workitems/filterregistry/spi/FilterAction.java`
+- `quarkus-work-filter-registry/src/main/java/io/quarkiverse/workitems/filterregistry/spi/FilterEvent.java`
+- `quarkus-work-filter-registry/src/main/java/io/quarkiverse/workitems/filterregistry/spi/ActionDescriptor.java`
+- `quarkus-work-filter-registry/src/main/java/io/quarkiverse/workitems/filterregistry/spi/FilterDefinition.java`
+- `quarkus-work-filter-registry/src/main/java/io/quarkiverse/workitems/filterregistry/spi/FilterAction.java`
 
 - [ ] **Step 1: Create FilterEvent enum**
 
 ```java
-package io.quarkiverse.workitems.filterregistry.spi;
+package io.quarkiverse.work.filterregistry.spi;
 
 /** Lifecycle events that filter rules can subscribe to. */
 public enum FilterEvent {
@@ -463,7 +463,7 @@ public enum FilterEvent {
 - [ ] **Step 2: Create ActionDescriptor record**
 
 ```java
-package io.quarkiverse.workitems.filterregistry.spi;
+package io.quarkiverse.work.filterregistry.spi;
 
 import java.util.Map;
 
@@ -483,7 +483,7 @@ public record ActionDescriptor(String type, Map<String, Object> params) {
 - [ ] **Step 3: Create FilterDefinition record**
 
 ```java
-package io.quarkiverse.workitems.filterregistry.spi;
+package io.quarkiverse.work.filterregistry.spi;
 
 import java.util.List;
 import java.util.Map;
@@ -535,11 +535,11 @@ public record FilterDefinition(
 - [ ] **Step 4: Create FilterAction SPI**
 
 ```java
-package io.quarkiverse.workitems.filterregistry.spi;
+package io.quarkiverse.work.filterregistry.spi;
 
 import java.util.Map;
 
-import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.model.WorkItem;
 
 /**
  * SPI for actions that a filter rule can apply to a WorkItem when its condition matches.
@@ -571,7 +571,7 @@ public interface FilterAction {
 
 - [ ] **Step 5: Compile check**
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn compile -pl quarkus-workitems-filter-registry 2>&1 | grep -E "BUILD|ERROR" | tail -5
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn compile -pl quarkus-work-filter-registry 2>&1 | grep -E "BUILD|ERROR" | tail -5
 ```
 Expected: BUILD SUCCESS.
 
@@ -589,9 +589,9 @@ Expected: BUILD SUCCESS.
 
 - [ ] **Step 1: Write failing unit tests for JexlConditionEvaluator**
 
-Create `quarkus-workitems-filter-registry/src/test/java/io/quarkiverse/workitems/filterregistry/engine/JexlConditionEvaluatorTest.java`:
+Create `quarkus-work-filter-registry/src/test/java/io/quarkiverse/workitems/filterregistry/engine/JexlConditionEvaluatorTest.java`:
 ```java
-package io.quarkiverse.workitems.filterregistry.engine;
+package io.quarkiverse.work.filterregistry.engine;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -599,8 +599,8 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.workitems.runtime.model.WorkItem;
-import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
+import io.quarkiverse.work.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.model.WorkItemPriority;
 
 class JexlConditionEvaluatorTest {
 
@@ -683,7 +683,7 @@ class JexlConditionEvaluatorTest {
 
 Create `...filterregistry/engine/FilterRegistryEngineTest.java`:
 ```java
-package io.quarkiverse.workitems.filterregistry.engine;
+package io.quarkiverse.work.filterregistry.engine;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -701,11 +701,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import io.quarkiverse.workitems.filterregistry.spi.*;
-import io.quarkiverse.workitems.runtime.event.WorkItemLifecycleEvent;
-import io.quarkiverse.workitems.runtime.model.WorkItem;
-import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
-import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
+import io.quarkiverse.work.filterregistry.spi.*;
+import io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent;
+import io.quarkiverse.work.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.model.WorkItemStatus;
+import io.quarkiverse.work.runtime.repository.WorkItemStore;
 
 @ExtendWith(MockitoExtension.class)
 class FilterRegistryEngineTest {
@@ -798,7 +798,7 @@ class FilterRegistryEngineTest {
 }
 ```
 
-Add Mockito to `quarkus-workitems-filter-registry/pom.xml` test dependencies:
+Add Mockito to `quarkus-work-filter-registry/pom.xml` test dependencies:
 ```xml
 <dependency>
   <groupId>org.mockito</groupId>
@@ -810,7 +810,7 @@ Check the Quarkus BOM includes `mockito-junit-jupiter` — it does via `quarkus-
 
 - [ ] **Step 3: Run tests to verify RED**
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-filter-registry \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-filter-registry \
   -Dtest="JexlConditionEvaluatorTest,FilterRegistryEngineTest" 2>&1 | tail -10
 ```
 Expected: COMPILATION ERROR — `JexlConditionEvaluator` and `FilterRegistryEngine` don't exist.
@@ -819,7 +819,7 @@ Expected: COMPILATION ERROR — `JexlConditionEvaluator` and `FilterRegistryEngi
 
 Create `...filterregistry/engine/JexlConditionEvaluator.java`:
 ```java
-package io.quarkiverse.workitems.filterregistry.engine;
+package io.quarkiverse.work.filterregistry.engine;
 
 import java.util.Map;
 
@@ -830,7 +830,7 @@ import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.jexl3.MapContext;
 
-import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.model.WorkItem;
 
 /**
  * Evaluates JEXL conditions against a WorkItem.
@@ -874,11 +874,11 @@ public class JexlConditionEvaluator {
 
 Create `...filterregistry/registry/PermanentFilterRegistry.java` (stub — fleshed out in Task 8):
 ```java
-package io.quarkiverse.workitems.filterregistry.registry;
+package io.quarkiverse.work.filterregistry.registry;
 
 import java.util.List;
 import jakarta.enterprise.context.ApplicationScoped;
-import io.quarkiverse.workitems.filterregistry.spi.FilterDefinition;
+import io.quarkiverse.work.filterregistry.spi.FilterDefinition;
 
 @ApplicationScoped
 public class PermanentFilterRegistry {
@@ -889,11 +889,11 @@ public class PermanentFilterRegistry {
 
 Create `...filterregistry/registry/DynamicFilterRegistry.java` (stub — fleshed out in Task 7):
 ```java
-package io.quarkiverse.workitems.filterregistry.registry;
+package io.quarkiverse.work.filterregistry.registry;
 
 import java.util.List;
 import jakarta.enterprise.context.ApplicationScoped;
-import io.quarkiverse.workitems.filterregistry.spi.FilterDefinition;
+import io.quarkiverse.work.filterregistry.spi.FilterDefinition;
 
 @ApplicationScoped
 public class DynamicFilterRegistry {
@@ -905,7 +905,7 @@ public class DynamicFilterRegistry {
 
 Create `...filterregistry/engine/FilterRegistryEngine.java`:
 ```java
-package io.quarkiverse.workitems.filterregistry.engine;
+package io.quarkiverse.work.filterregistry.engine;
 
 import java.util.List;
 import java.util.Map;
@@ -916,16 +916,16 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 
-import io.quarkiverse.workitems.filterregistry.registry.DynamicFilterRegistry;
-import io.quarkiverse.workitems.filterregistry.registry.PermanentFilterRegistry;
-import io.quarkiverse.workitems.filterregistry.spi.ActionDescriptor;
-import io.quarkiverse.workitems.filterregistry.spi.FilterAction;
-import io.quarkiverse.workitems.filterregistry.spi.FilterDefinition;
-import io.quarkiverse.workitems.filterregistry.spi.FilterEvent;
-import io.quarkiverse.workitems.runtime.event.WorkItemLifecycleEvent;
-import io.quarkiverse.workitems.runtime.model.WorkItem;
-import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
-import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
+import io.quarkiverse.work.filterregistry.registry.DynamicFilterRegistry;
+import io.quarkiverse.work.filterregistry.registry.PermanentFilterRegistry;
+import io.quarkiverse.work.filterregistry.spi.ActionDescriptor;
+import io.quarkiverse.work.filterregistry.spi.FilterAction;
+import io.quarkiverse.work.filterregistry.spi.FilterDefinition;
+import io.quarkiverse.work.filterregistry.spi.FilterEvent;
+import io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent;
+import io.quarkiverse.work.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.model.WorkItemStatus;
+import io.quarkiverse.work.runtime.repository.WorkItemStore;
 
 /**
  * Observes WorkItemLifecycleEvent, evaluates all enabled filter definitions,
@@ -1035,14 +1035,14 @@ in the test. This is correct — it bypasses the CDI event observer for unit tes
 
 - [ ] **Step 8: Run tests GREEN**
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-filter-registry \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-filter-registry \
   -Dtest="JexlConditionEvaluatorTest,FilterRegistryEngineTest" 2>&1 | grep -E "Tests run:|BUILD" | tail -5
 ```
 Expected: BUILD SUCCESS, 9 + 5 = 14 tests pass.
 
 - [ ] **Step 9: Commit**
 ```bash
-git add quarkus-workitems-filter-registry/ pom.xml
+git add quarkus-work-filter-registry/ pom.xml
 git commit -m "feat(filter-registry): FilterAction SPI + JEXL evaluator + FilterRegistryEngine
 
 FilterAction SPI (CDI interface resolved by type name), JexlConditionEvaluator
@@ -1068,7 +1068,7 @@ Refs #100"
 
 Create `...filterregistry/action/FilterActionIntegrationTest.java`:
 ```java
-package io.quarkiverse.workitems.filterregistry.action;
+package io.quarkiverse.work.filterregistry.action;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
@@ -1090,7 +1090,7 @@ class FilterActionIntegrationTest {
 
     @Test
     void applyLabelAction_addsLabelToWorkItem() {
-        // Wired by LowConfidenceFilterProducer in quarkus-workitems-ai;
+        // Wired by LowConfidenceFilterProducer in quarkus-work-ai;
         // here we test the action directly via a programmatic FilterDefinition
         // registered as a test CDI producer in TestFilterProducer.
         final String id = given().contentType(ContentType.JSON)
@@ -1133,13 +1133,13 @@ class FilterActionIntegrationTest {
 
 Create `...filterregistry/action/TestFilterProducer.java` (test CDI producer to exercise actions):
 ```java
-package io.quarkiverse.workitems.filterregistry.action;
+package io.quarkiverse.work.filterregistry.action;
 
 import java.util.List;
 import java.util.Map;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
-import io.quarkiverse.workitems.filterregistry.spi.*;
+import io.quarkiverse.work.filterregistry.spi.*;
 
 @ApplicationScoped
 class TestFilterProducer {
@@ -1175,7 +1175,7 @@ class TestFilterProducer {
 
 - [ ] **Step 2: Run tests RED**
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-filter-registry \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-filter-registry \
   -Dtest="FilterActionIntegrationTest" 2>&1 | tail -10
 ```
 Expected: COMPILATION ERROR — action classes don't exist.
@@ -1183,15 +1183,15 @@ Expected: COMPILATION ERROR — action classes don't exist.
 - [ ] **Step 3: Implement ApplyLabelAction**
 
 ```java
-package io.quarkiverse.workitems.filterregistry.action;
+package io.quarkiverse.work.filterregistry.action;
 
 import java.util.Map;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import io.quarkiverse.workitems.filterregistry.spi.FilterAction;
-import io.quarkiverse.workitems.runtime.model.LabelPersistence;
-import io.quarkiverse.workitems.runtime.model.WorkItem;
-import io.quarkiverse.workitems.runtime.service.WorkItemService;
+import io.quarkiverse.work.filterregistry.spi.FilterAction;
+import io.quarkiverse.work.runtime.model.LabelPersistence;
+import io.quarkiverse.work.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.service.WorkItemService;
 
 /**
  * Applies a label to the WorkItem. The label is persisted as INFERRED
@@ -1224,15 +1224,15 @@ the existing signature with INFERRED persistence as default.
 - [ ] **Step 4: Implement OverrideCandidateGroupsAction**
 
 ```java
-package io.quarkiverse.workitems.filterregistry.action;
+package io.quarkiverse.work.filterregistry.action;
 
 import java.util.Map;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import io.quarkiverse.workitems.filterregistry.spi.FilterAction;
-import io.quarkiverse.workitems.runtime.model.WorkItem;
-import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
+import io.quarkiverse.work.filterregistry.spi.FilterAction;
+import io.quarkiverse.work.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.repository.WorkItemStore;
 
 /**
  * Replaces candidateGroups on the WorkItem with the configured value.
@@ -1260,16 +1260,16 @@ public class OverrideCandidateGroupsAction implements FilterAction {
 - [ ] **Step 5: Implement SetPriorityAction**
 
 ```java
-package io.quarkiverse.workitems.filterregistry.action;
+package io.quarkiverse.work.filterregistry.action;
 
 import java.util.Map;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import io.quarkiverse.workitems.filterregistry.spi.FilterAction;
-import io.quarkiverse.workitems.runtime.model.WorkItem;
-import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
-import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
+import io.quarkiverse.work.filterregistry.spi.FilterAction;
+import io.quarkiverse.work.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.model.WorkItemPriority;
+import io.quarkiverse.work.runtime.repository.WorkItemStore;
 
 /**
  * Sets the priority of a WorkItem.
@@ -1298,7 +1298,7 @@ public class SetPriorityAction implements FilterAction {
 
 Replace stub with real implementation:
 ```java
-package io.quarkiverse.workitems.filterregistry.registry;
+package io.quarkiverse.work.filterregistry.registry;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -1308,7 +1308,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 
-import io.quarkiverse.workitems.filterregistry.spi.FilterDefinition;
+import io.quarkiverse.work.filterregistry.spi.FilterDefinition;
 
 /**
  * Collects all CDI-produced {@link FilterDefinition} beans (permanent filters).
@@ -1352,14 +1352,14 @@ public class PermanentFilterRegistry {
 
 - [ ] **Step 7: Run integration tests GREEN**
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-filter-registry \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-filter-registry \
   -Dtest="FilterActionIntegrationTest" 2>&1 | grep -E "Tests run:|BUILD|ERROR" | tail -10
 ```
 Expected: BUILD SUCCESS, 3 tests pass. Investigate and fix any `addLabel` signature issues.
 
 - [ ] **Step 8: Commit**
 ```bash
-git add quarkus-workitems-filter-registry/
+git add quarkus-work-filter-registry/
 git commit -m "feat(filter-registry): built-in FilterActions + PermanentFilterRegistry
 
 ApplyLabelAction (INFERRED label), OverrideCandidateGroupsAction (replaces candidateGroups),
@@ -1384,7 +1384,7 @@ Refs #100"
 
 Create `...filterregistry/registry/DynamicFilterRegistryTest.java`:
 ```java
-package io.quarkiverse.workitems.filterregistry.registry;
+package io.quarkiverse.work.filterregistry.registry;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
@@ -1463,14 +1463,14 @@ class DynamicFilterRegistryTest {
 
 - [ ] **Step 2: Verify RED**
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-filter-registry \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-filter-registry \
   -Dtest="DynamicFilterRegistryTest" 2>&1 | tail -5
 ```
 Expected: 404 for all POST /filter-rules (endpoint not yet implemented).
 
 - [ ] **Step 3: Create V3001 migration**
 
-Create `quarkus-workitems-filter-registry/src/main/resources/db/migration/V3001__filter_rule.sql`:
+Create `quarkus-work-filter-registry/src/main/resources/db/migration/V3001__filter_rule.sql`:
 ```sql
 -- V3001: FilterRule — dynamic (DB-persisted) filter rules (Issue #113, Epic #100)
 --
@@ -1498,7 +1498,7 @@ CREATE INDEX idx_filter_rule_enabled ON filter_rule (enabled);
 - [ ] **Step 4: Create FilterRule entity**
 
 ```java
-package io.quarkiverse.workitems.filterregistry.model;
+package io.quarkiverse.work.filterregistry.model;
 
 import java.time.Instant;
 import java.util.List;
@@ -1536,13 +1536,13 @@ public class FilterRule extends PanacheEntityBase {
 
 Replace stub with:
 ```java
-package io.quarkiverse.workitems.filterregistry.registry;
+package io.quarkiverse.work.filterregistry.registry;
 
 import java.util.*;
 import jakarta.enterprise.context.ApplicationScoped;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.quarkiverse.workitems.filterregistry.model.FilterRule;
-import io.quarkiverse.workitems.filterregistry.spi.*;
+import io.quarkiverse.work.filterregistry.model.FilterRule;
+import io.quarkiverse.work.filterregistry.spi.*;
 
 @ApplicationScoped
 public class DynamicFilterRegistry {
@@ -1577,15 +1577,15 @@ public class DynamicFilterRegistry {
 
 Create `...filterregistry/api/FilterRuleResource.java`:
 ```java
-package io.quarkiverse.workitems.filterregistry.api;
+package io.quarkiverse.work.filterregistry.api;
 
 import java.util.*;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
-import io.quarkiverse.workitems.filterregistry.model.FilterRule;
-import io.quarkiverse.workitems.filterregistry.registry.PermanentFilterRegistry;
+import io.quarkiverse.work.filterregistry.model.FilterRule;
+import io.quarkiverse.work.filterregistry.registry.PermanentFilterRegistry;
 
 @Path("/filter-rules")
 @Produces(MediaType.APPLICATION_JSON)
@@ -1677,14 +1677,14 @@ public class FilterRuleResource {
 
 - [ ] **Step 7: Run CRUD tests GREEN**
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-filter-registry \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-filter-registry \
   -Dtest="DynamicFilterRegistryTest" 2>&1 | grep -E "Tests run:|BUILD" | tail -5
 ```
 Expected: 6 tests pass.
 
 - [ ] **Step 8: Commit**
 ```bash
-git add quarkus-workitems-filter-registry/
+git add quarkus-work-filter-registry/
 git commit -m "feat(filter-registry): FilterRule entity + V3001 migration + CRUD REST
 
 FilterRule JPA entity (Panache), V3001 Flyway migration, DynamicFilterRegistry
@@ -1708,7 +1708,7 @@ Refs #100"
 
 Create `...filterregistry/registry/PermanentFilterRegistryTest.java`:
 ```java
-package io.quarkiverse.workitems.filterregistry.registry;
+package io.quarkiverse.work.filterregistry.registry;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
@@ -1757,7 +1757,7 @@ class PermanentFilterRegistryTest {
 
 Create `...filterregistry/FilterRuleEvaluationTest.java`:
 ```java
-package io.quarkiverse.workitems.filterregistry;
+package io.quarkiverse.work.filterregistry;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
@@ -1844,14 +1844,14 @@ class FilterRuleEvaluationTest {
 
 - [ ] **Step 3: Run all filter-registry tests GREEN**
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-filter-registry \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-filter-registry \
   2>&1 | grep -E "Tests run:|BUILD" | tail -5
 ```
 Expected: BUILD SUCCESS, all tests pass (unit + integration + E2E).
 
 - [ ] **Step 4: Commit**
 ```bash
-git add quarkus-workitems-filter-registry/
+git add quarkus-work-filter-registry/
 git commit -m "feat(filter-registry): permanent registry REST + E2E evaluation tests
 
 PermanentFilterRegistry REST endpoints (GET /filter-rules/permanent,
@@ -1866,20 +1866,20 @@ Refs #100"
 
 ---
 
-## Task 9: quarkus-workitems-ai module — scaffold + LowConfidenceFilterProducer
+## Task 9: quarkus-work-ai module — scaffold + LowConfidenceFilterProducer
 
 **Files:**
-- Create: `quarkus-workitems-ai/pom.xml`
-- Create: `quarkus-workitems-ai/src/main/java/.../ai/config/WorkItemsAiConfig.java`
-- Create: `quarkus-workitems-ai/src/main/java/.../ai/filter/LowConfidenceFilterProducer.java`
-- Create: `quarkus-workitems-ai/src/test/resources/application.properties`
-- Test: `quarkus-workitems-ai/src/test/java/.../ai/LowConfidenceFilterTest.java`
+- Create: `quarkus-work-ai/pom.xml`
+- Create: `quarkus-work-ai/src/main/java/.../ai/config/WorkItemsAiConfig.java`
+- Create: `quarkus-work-ai/src/main/java/.../ai/filter/LowConfidenceFilterProducer.java`
+- Create: `quarkus-work-ai/src/test/resources/application.properties`
+- Test: `quarkus-work-ai/src/test/java/.../ai/LowConfidenceFilterTest.java`
 
 - [ ] **Step 1: Write failing tests**
 
-Create `quarkus-workitems-ai/src/test/java/io/quarkiverse/workitems/ai/LowConfidenceFilterTest.java`:
+Create `quarkus-work-ai/src/test/java/io/quarkiverse/workitems/ai/LowConfidenceFilterTest.java`:
 ```java
-package io.quarkiverse.workitems.ai;
+package io.quarkiverse.work.ai;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
@@ -1992,7 +1992,7 @@ class LowConfidenceFilterTest {
 }
 ```
 
-- [ ] **Step 2: Create quarkus-workitems-ai pom.xml**
+- [ ] **Step 2: Create quarkus-work-ai pom.xml**
 
 ```xml
 <?xml version="1.0"?>
@@ -2001,21 +2001,21 @@ class LowConfidenceFilterTest {
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>io.quarkiverse.workitems</groupId>
-    <artifactId>quarkus-workitems-parent</artifactId>
+    <groupId>io.quarkiverse.work</groupId>
+    <artifactId>quarkus-work-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
   </parent>
-  <artifactId>quarkus-workitems-ai</artifactId>
+  <artifactId>quarkus-work-ai</artifactId>
   <name>Quarkus WorkItems - AI</name>
   <dependencies>
     <dependency>
-      <groupId>io.quarkiverse.workitems</groupId>
-      <artifactId>quarkus-workitems</artifactId>
+      <groupId>io.quarkiverse.work</groupId>
+      <artifactId>quarkus-work</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>io.quarkiverse.workitems</groupId>
-      <artifactId>quarkus-workitems-filter-registry</artifactId>
+      <groupId>io.quarkiverse.work</groupId>
+      <artifactId>quarkus-work-filter-registry</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -2069,31 +2069,31 @@ class LowConfidenceFilterTest {
 
 - [ ] **Step 3: Create test application.properties**
 
-Create `quarkus-workitems-ai/src/test/resources/application.properties`:
+Create `quarkus-work-ai/src/test/resources/application.properties`:
 ```properties
 quarkus.datasource.db-kind=h2
 quarkus.datasource.jdbc.url=jdbc:h2:mem:workitemsai;DB_CLOSE_DELAY=-1
 quarkus.hibernate-orm.database.generation=none
 quarkus.flyway.migrate-at-start=true
 quarkus.http.test-port=0
-quarkus.workitems.ai.confidence-threshold=0.7
-quarkus.workitems.ai.low-confidence-filter.enabled=true
+quarkus.work.ai.confidence-threshold=0.7
+quarkus.work.ai.low-confidence-filter.enabled=true
 ```
 
 - [ ] **Step 4: Create WorkItemsAiConfig**
 
 ```java
-package io.quarkiverse.workitems.ai.config;
+package io.quarkiverse.work.ai.config;
 
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 
 /**
- * Configuration for the quarkus-workitems-ai module.
+ * Configuration for the quarkus-work-ai module.
  * All properties are optional — sensible defaults apply.
  */
-@ConfigMapping(prefix = "quarkus.workitems.ai")
+@ConfigMapping(prefix = "quarkus.work.ai")
 public interface WorkItemsAiConfig {
 
     /**
@@ -2129,7 +2129,7 @@ public interface WorkItemsAiConfig {
 - [ ] **Step 5: Create LowConfidenceFilterProducer**
 
 ```java
-package io.quarkiverse.workitems.ai.filter;
+package io.quarkiverse.work.ai.filter;
 
 import java.util.List;
 import java.util.Map;
@@ -2138,21 +2138,21 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 
-import io.quarkiverse.workitems.ai.config.WorkItemsAiConfig;
-import io.quarkiverse.workitems.filterregistry.spi.ActionDescriptor;
-import io.quarkiverse.workitems.filterregistry.spi.FilterDefinition;
+import io.quarkiverse.work.ai.config.WorkItemsAiConfig;
+import io.quarkiverse.work.filterregistry.spi.ActionDescriptor;
+import io.quarkiverse.work.filterregistry.spi.FilterDefinition;
 
 /**
  * Produces the permanent {@code ai/low-confidence} filter definition.
  *
- * <p>When {@code quarkus.workitems.ai.low-confidence-filter.enabled=true} (default),
+ * <p>When {@code quarkus.work.ai.low-confidence-filter.enabled=true} (default),
  * WorkItems created with {@code confidenceScore} below
- * {@code quarkus.workitems.ai.confidence-threshold} (default 0.7) automatically
+ * {@code quarkus.work.ai.confidence-threshold} (default 0.7) automatically
  * receive the {@code ai/low-confidence} label (INFERRED persistence).
  *
  * <p>The filter fires on ADD only — it is not re-evaluated on subsequent updates.
  *
- * @see <a href="https://github.com/mdproctor/quarkus-workitems/issues/114">Issue #114</a>
+ * @see <a href="https://github.com/mdproctor/quarkus-work/issues/114">Issue #114</a>
  */
 @ApplicationScoped
 public class LowConfidenceFilterProducer {
@@ -2182,20 +2182,20 @@ public class LowConfidenceFilterProducer {
 
 - [ ] **Step 6: Run tests GREEN**
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-ai \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-ai \
   2>&1 | grep -E "Tests run:|BUILD|ERROR" | tail -10
 ```
 Expected: BUILD SUCCESS, 8 tests pass.
 
 - [ ] **Step 7: Commit**
 ```bash
-git add quarkus-workitems-ai/
+git add quarkus-work-ai/
 git commit -m "feat(workitems-ai): LowConfidenceFilterProducer — confidence-gated routing
 
-New quarkus-workitems-ai module. LowConfidenceFilterProducer @Produces a permanent
+New quarkus-work-ai module. LowConfidenceFilterProducer @Produces a permanent
 FilterDefinition: condition=confidenceScore<threshold, action=APPLY_LABEL ai/low-confidence.
-Config: quarkus.workitems.ai.confidence-threshold (default 0.7) and
-quarkus.workitems.ai.low-confidence-filter.enabled (default true).
+Config: quarkus.work.ai.confidence-threshold (default 0.7) and
+quarkus.work.ai.low-confidence-filter.enabled (default true).
 8 tests: label applied below threshold, not applied above/at threshold, null score,
 INFERRED persistence, filter visible in /filter-rules/permanent, full E2E workflow.
 
@@ -2211,8 +2211,8 @@ Refs #100"
 
 Add to the Module Structure table:
 ```markdown
-| Filter Registry | `quarkus-workitems-filter-registry` | `FilterAction` SPI (CDI, resolved by type name), JEXL condition evaluator, permanent (CDI-produced) + dynamic (DB-persisted) filter rules, `FilterRegistryEngine` observer, built-in actions: `APPLY_LABEL`, `OVERRIDE_CANDIDATE_GROUPS`, `SET_PRIORITY`. REST: `/filter-rules` CRUD + `/filter-rules/permanent` toggle. V3001 migration. |
-| AI | `quarkus-workitems-ai` | `confidenceScore` routing, `LowConfidenceFilterProducer` — permanent filter applying `ai/low-confidence` label when score < threshold. Config: `quarkus.workitems.ai.confidence-threshold` (default 0.7), `low-confidence-filter.enabled` (default true). |
+| Filter Registry | `quarkus-work-filter-registry` | `FilterAction` SPI (CDI, resolved by type name), JEXL condition evaluator, permanent (CDI-produced) + dynamic (DB-persisted) filter rules, `FilterRegistryEngine` observer, built-in actions: `APPLY_LABEL`, `OVERRIDE_CANDIDATE_GROUPS`, `SET_PRIORITY`. REST: `/filter-rules` CRUD + `/filter-rules/permanent` toggle. V3001 migration. |
+| AI | `quarkus-work-ai` | `confidenceScore` routing, `LowConfidenceFilterProducer` — permanent filter applying `ai/low-confidence` label when score < threshold. Config: `quarkus.work.ai.confidence-threshold` (default 0.7), `low-confidence-filter.enabled` (default true). |
 ```
 
 Add to Domain Model:
@@ -2236,7 +2236,7 @@ Add to REST API Surface:
 
 Update the Build Roadmap phase 11 (or add new phase):
 ```markdown
-| **11 — Confidence-Gated Routing** | ✅ Complete | Epic #100: `confidenceScore` on WorkItem (#112 ✅), filter-registry module with FilterAction SPI + JEXL engine + permanent/dynamic registry (#113 ✅), `quarkus-workitems-ai` LowConfidenceFilterProducer (#114 ✅). |
+| **11 — Confidence-Gated Routing** | ✅ Complete | Epic #100: `confidenceScore` on WorkItem (#112 ✅), filter-registry module with FilterAction SPI + JEXL engine + permanent/dynamic registry (#113 ✅), `quarkus-work-ai` LowConfidenceFilterProducer (#114 ✅). |
 ```
 
 Update test totals.
@@ -2248,7 +2248,7 @@ Mark issues #112, #113, #114 closed in the epic table.
 - [ ] **Step 3: Final full build verification**
 ```bash
 JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test \
-  -pl runtime,quarkus-workitems-filter-registry,quarkus-workitems-ai \
+  -pl runtime,quarkus-work-filter-registry,quarkus-work-ai \
   2>&1 | grep -E "Tests run: [0-9]+, Failures:|BUILD" | tail -5
 ```
 Expected: BUILD SUCCESS, 0 failures across all three modules.
@@ -2258,7 +2258,7 @@ Expected: BUILD SUCCESS, 0 failures across all three modules.
 git add docs/DESIGN.md CLAUDE.md
 git commit -m "docs: update DESIGN.md and CLAUDE.md for Epic #100 (confidence-gated routing)
 
-New modules quarkus-workitems-filter-registry and quarkus-workitems-ai documented.
+New modules quarkus-work-filter-registry and quarkus-work-ai documented.
 confidenceScore field, FilterAction SPI, filter rule REST API, LowConfidenceFilterProducer,
 build roadmap phase 11, updated test totals.
 

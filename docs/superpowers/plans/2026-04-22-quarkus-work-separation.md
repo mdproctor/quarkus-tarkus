@@ -1,10 +1,10 @@
-# quarkus-work / quarkus-workitems Separation — Implementation Plan
+# quarkus-work / quarkus-work Separation — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Extract a `quarkus-work-api` (pure-Java SPI) and `quarkus-work-core` (Jandex library with CDI, WorkBroker, filter engine) from the WorkItems mono-repo, leaving `quarkus-workitems` as a thin human-inbox layer on top.
+**Goal:** Extract a `quarkus-work-api` (pure-Java SPI) and `quarkus-work-core` (Jandex library with CDI, WorkBroker, filter engine) from the WorkItems mono-repo, leaving `quarkus-work` as a thin human-inbox layer on top.
 
-**Architecture:** `quarkus-work-api` holds all shared contracts (WorkEventType, WorkLifecycleEvent, WorkloadProvider, EscalationPolicy, WorkerSelectionStrategy, WorkerRegistry, WorkerCandidate, SelectionContext, AssignmentDecision, AssignmentTrigger). `quarkus-work-core` holds all generic implementations (WorkBroker, LeastLoadedStrategy, ClaimFirstStrategy, NoOpWorkerRegistry, filter engine). `quarkus-workitems` implements the SPIs for the human-inbox domain. Two old modules — `quarkus-workitems-api` and `quarkus-workitems-filter-registry` — are deleted, their contents absorbed.
+**Architecture:** `quarkus-work-api` holds all shared contracts (WorkEventType, WorkLifecycleEvent, WorkloadProvider, EscalationPolicy, WorkerSelectionStrategy, WorkerRegistry, WorkerCandidate, SelectionContext, AssignmentDecision, AssignmentTrigger). `quarkus-work-core` holds all generic implementations (WorkBroker, LeastLoadedStrategy, ClaimFirstStrategy, NoOpWorkerRegistry, filter engine). `quarkus-work` implements the SPIs for the human-inbox domain. Two old modules — `quarkus-work-api` and `quarkus-work-filter-registry` — are deleted, their contents absorbed.
 
 **Tech Stack:** Java 21, Quarkus 3.32.2, Panache, CDI, commons-jexl3, JUnit 5, AssertJ, Rest-Assured, Mockito, H2, Flyway. Build: `JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn`. All commits reference a GitHub issue + epic.
 
@@ -20,7 +20,7 @@ quarkus-work-api/src/main/java/io/quarkiverse/work/api/
   WorkLifecycleEvent.java    (new abstract class)
   WorkloadProvider.java      (new interface)
   EscalationPolicy.java      (moved from runtime/service — signature change)
-  WorkerCandidate.java       (moved from quarkus-workitems-api/spi)
+  WorkerCandidate.java       (moved from quarkus-work-api/spi)
   SelectionContext.java       (moved)
   AssignmentDecision.java    (moved)
   AssignmentTrigger.java     (moved)
@@ -28,7 +28,7 @@ quarkus-work-api/src/main/java/io/quarkiverse/work/api/
   WorkerRegistry.java        (moved)
 quarkus-work-api/src/test/java/io/quarkiverse/work/api/
   WorkEventTypeTest.java     (new)
-  WorkerCandidateTest.java   (moved from quarkus-workitems-api)
+  WorkerCandidateTest.java   (moved from quarkus-work-api)
   AssignmentDecisionTest.java (moved)
   SelectionContextTest.java  (moved)
 ```
@@ -53,7 +53,7 @@ quarkus-work-core/src/main/java/io/quarkiverse/work/core/filter/
   FilterRule.java            (moved)
   FilterRuleResource.java    (moved)
 quarkus-work-core/src/main/resources/db/migration/
-  V3001__filter_rules.sql    (moved from quarkus-workitems-filter-registry)
+  V3001__filter_rules.sql    (moved from quarkus-work-filter-registry)
 quarkus-work-core/src/test/java/io/quarkiverse/work/core/strategy/
   WorkBrokerTest.java        (new unit tests)
   LeastLoadedStrategyTest.java (moved + re-packaged)
@@ -67,7 +67,7 @@ quarkus-work-core/src/test/java/io/quarkiverse/work/core/filter/
   FilterActionIntegrationTest.java (moved — @QuarkusTest)
 ```
 
-### Modified: `runtime/` (quarkus-workitems)
+### Modified: `runtime/` (quarkus-work)
 ```
 event/WorkItemLifecycleEvent.java   record→class extends WorkLifecycleEvent; carries WorkItem
 event/WorkItemContextBuilder.java   (new — toMap(WorkItem), moved from JexlConditionEvaluator)
@@ -82,24 +82,24 @@ service/ClaimDeadlineJob.java       same
 action/ApplyLabelAction.java        (moved to runtime — was in filter-registry)
 action/OverrideCandidateGroupsAction.java (moved)
 action/SetPriorityAction.java       (moved)
-runtime/pom.xml                     swap quarkus-workitems-api→quarkus-work-core
+runtime/pom.xml                     swap quarkus-work-api→quarkus-work-core
 ```
 
-### Modified: `quarkus-workitems-ai/`
+### Modified: `quarkus-work-ai/`
 ```
-pom.xml   swap quarkus-workitems-filter-registry dep → quarkus-work-core
+pom.xml   swap quarkus-work-filter-registry dep → quarkus-work-core
 filter/LowConfidenceFilterProducer.java  update imports
 ```
 
 ### Deleted
 ```
-quarkus-workitems-api/      (entire module)
-quarkus-workitems-filter-registry/  (entire module)
+quarkus-work-api/      (entire module)
+quarkus-work-filter-registry/  (entire module)
 ```
 
 ### Modified: root `pom.xml`
 ```
-Remove: quarkus-workitems-api, quarkus-workitems-filter-registry modules
+Remove: quarkus-work-api, quarkus-work-filter-registry modules
 Add:    quarkus-work-api, quarkus-work-core modules
 ```
 
@@ -121,7 +121,7 @@ Extract generic work management contracts and implementations into two new modul
 - **quarkus-work-api** — pure-Java SPI (WorkEventType, WorkLifecycleEvent, WorkloadProvider, EscalationPolicy, all routing SPI types)
 - **quarkus-work-core** — Jandex library with WorkBroker, built-in strategies, filter engine
 
-Absorbs: quarkus-workitems-api (renamed) and quarkus-workitems-filter-registry (dissolved).
+Absorbs: quarkus-work-api (renamed) and quarkus-work-filter-registry (dissolved).
 Enables CaseHub to depend on quarkus-work-core for WorkBroker without pulling in human-inbox specifics.
 
 Design spec: docs/superpowers/specs/2026-04-22-quarkus-work-separation-design.md
@@ -152,14 +152,14 @@ EOF
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>io.quarkiverse.workitems</groupId>
-    <artifactId>quarkus-workitems-parent</artifactId>
+    <groupId>io.quarkiverse.work</groupId>
+    <artifactId>quarkus-work-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
   </parent>
   <groupId>io.quarkiverse.work</groupId>
   <artifactId>quarkus-work-api</artifactId>
   <name>Quarkus Work - API (Shared SPI)</name>
-  <description>Pure Java shared SPI contracts for work management. Zero runtime dependencies. CaseHub and quarkus-workitems depend on this without pulling in implementation details.</description>
+  <description>Pure Java shared SPI contracts for work management. Zero runtime dependencies. CaseHub and quarkus-work depend on this without pulling in implementation details.</description>
   <dependencies>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -175,13 +175,13 @@ EOF
 </project>
 ```
 
-- [ ] **Step 2: Add to root pom.xml modules — add quarkus-work-api BEFORE quarkus-workitems-api**
+- [ ] **Step 2: Add to root pom.xml modules — add quarkus-work-api BEFORE quarkus-work-api**
 
 In `pom.xml` `<modules>` section, add:
 ```xml
 <module>quarkus-work-api</module>
 ```
-Leave `quarkus-workitems-api` in place for now — it will be deleted later.
+Leave `quarkus-work-api` in place for now — it will be deleted later.
 
 - [ ] **Step 3: Create source directories**
 
@@ -296,10 +296,10 @@ JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-api 2>&1 | t
 ```
 Expected: compilation error (types not yet defined).
 
-- [ ] **Step 3: Copy SPI types from quarkus-workitems-api, update package to io.quarkiverse.work.api**
+- [ ] **Step 3: Copy SPI types from quarkus-work-api, update package to io.quarkiverse.work.api**
 
 Copy each file verbatim, changing only the `package` declaration:
-- `quarkus-workitems-api/.../spi/WorkerCandidate.java` → `quarkus-work-api/.../api/WorkerCandidate.java` (package `io.quarkiverse.work.api`)
+- `quarkus-work-api/.../spi/WorkerCandidate.java` → `quarkus-work-api/.../api/WorkerCandidate.java` (package `io.quarkiverse.work.api`)
 - `SelectionContext.java` — same pattern
 - `AssignmentDecision.java` — same
 - `AssignmentTrigger.java` — same
@@ -322,7 +322,7 @@ feat: scaffold quarkus-work-api, move routing SPI types
 
 WorkerCandidate, SelectionContext, AssignmentDecision, AssignmentTrigger,
 WorkerSelectionStrategy, WorkerRegistry moved to io.quarkiverse.work.api.
-quarkus-workitems-api kept in place temporarily pending full cutover.
+quarkus-work-api kept in place temporarily pending full cutover.
 
 Refs #ISSUE, #100, #102
 EOF
@@ -416,7 +416,7 @@ import java.util.Map;
  * Abstract base for CDI lifecycle events fired when a work unit transitions state.
  *
  * <p>Observers declared as {@code @Observes WorkLifecycleEvent} receive any subtype,
- * including {@code WorkItemLifecycleEvent} from quarkus-workitems and future event
+ * including {@code WorkItemLifecycleEvent} from quarkus-work and future event
  * types from CaseHub.
  *
  * <p>Implementations carry the underlying work unit so observers can act on it without
@@ -438,7 +438,7 @@ public abstract class WorkLifecycleEvent {
     public abstract Map<String, Object> context();
 
     /**
-     * The underlying work unit (e.g. {@code WorkItem} in quarkus-workitems).
+     * The underlying work unit (e.g. {@code WorkItem} in quarkus-work).
      * {@code FilterAction} implementations downcast to the concrete type they expect.
      * Never null.
      */
@@ -511,7 +511,7 @@ package io.quarkiverse.work.api;
  * SPI for querying the active work count for a worker.
  *
  * <p>Implement as {@code @ApplicationScoped @Alternative @Priority(1)} to provide
- * domain-specific workload data. quarkus-workitems provides {@code JpaWorkloadProvider}.
+ * domain-specific workload data. quarkus-work provides {@code JpaWorkloadProvider}.
  * CaseHub provides its own implementation against its task store.
  *
  * <p>Used by {@code WorkItemAssignmentService} to populate
@@ -540,13 +540,13 @@ package io.quarkiverse.work.api;
 /**
  * SPI for escalation behaviour when work stalls past a deadline.
  *
- * <p>Implementations in quarkus-workitems cast {@code event.source()} to {@code WorkItem}
+ * <p>Implementations in quarkus-work cast {@code event.source()} to {@code WorkItem}
  * and can inspect {@code event.eventType()} to distinguish between
  * {@link WorkEventType#EXPIRED} (completion deadline missed) and
  * {@link WorkEventType#CLAIM_EXPIRED} (claim deadline missed without assignment).
  *
  * <p>Implementations are qualified with {@code @ExpiryEscalation} or
- * {@code @ClaimEscalation} in quarkus-workitems to distinguish the two injection points.
+ * {@code @ClaimEscalation} in quarkus-work to distinguish the two injection points.
  */
 public interface EscalationPolicy {
 
@@ -603,8 +603,8 @@ EOF
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>io.quarkiverse.workitems</groupId>
-    <artifactId>quarkus-workitems-parent</artifactId>
+    <groupId>io.quarkiverse.work</groupId>
+    <artifactId>quarkus-work-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
   </parent>
   <groupId>io.quarkiverse.work</groupId>
@@ -699,7 +699,7 @@ mkdir -p quarkus-work-core/src/test/java/io/quarkiverse/work/core/filter
 mkdir -p quarkus-work-core/src/test/resources
 ```
 
-Copy `quarkus-workitems-filter-registry/src/main/resources/db/migration/V3001__filter_rules.sql`
+Copy `quarkus-work-filter-registry/src/main/resources/db/migration/V3001__filter_rules.sql`
 to `quarkus-work-core/src/main/resources/db/migration/V3001__filter_rules.sql` (verbatim — no changes to SQL).
 
 - [ ] **Step 4: Verify scaffold compiles**
@@ -717,7 +717,7 @@ git commit -m "$(cat <<'EOF'
 feat: scaffold quarkus-work-core module
 
 Jandex library with Quarkus CDI/Panache/REST deps and quarkus-work-api.
-V3001 filter_rules migration moved from quarkus-workitems-filter-registry.
+V3001 filter_rules migration moved from quarkus-work-filter-registry.
 
 Refs #ISSUE, #100
 EOF
@@ -994,7 +994,7 @@ JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-core 2>&1 | 
 
 Copy `runtime/.../service/LeastLoadedStrategy.java` → `quarkus-work-core/.../strategy/LeastLoadedStrategy.java`:
 - Package: `io.quarkiverse.work.core.strategy`
-- Imports: `io.quarkiverse.work.api.*` (instead of `io.quarkiverse.workitems.spi.*`)
+- Imports: `io.quarkiverse.work.api.*` (instead of `io.quarkiverse.work.spi.*`)
 
 Copy `runtime/.../service/ClaimFirstStrategy.java` → same pattern.
 
@@ -1035,7 +1035,7 @@ git commit -m "$(cat <<'EOF'
 feat(work-core): move routing strategies and NoOpWorkerRegistry
 
 LeastLoadedStrategy, ClaimFirstStrategy, NoOpWorkerRegistry moved from
-quarkus-workitems runtime to io.quarkiverse.work.core.strategy.
+quarkus-work runtime to io.quarkiverse.work.core.strategy.
 Copies in runtime retained temporarily — removed in Phase 5.
 
 Refs #ISSUE, #100, #102
@@ -1109,9 +1109,9 @@ import java.util.Map;
  * them by matching {@link ActionDescriptor#type()} to {@link #type()}.
  *
  * <p>The {@code workUnit} parameter is the domain-specific work object (e.g. {@code WorkItem}
- * in quarkus-workitems). Implementations cast to their expected concrete type.
+ * in quarkus-work). Implementations cast to their expected concrete type.
  *
- * <p>Built-in implementations (in quarkus-workitems): {@code APPLY_LABEL},
+ * <p>Built-in implementations (in quarkus-work): {@code APPLY_LABEL},
  * {@code OVERRIDE_CANDIDATE_GROUPS}, {@code SET_PRIORITY}.
  */
 public interface FilterAction {
@@ -1143,7 +1143,7 @@ git commit -m "$(cat <<'EOF'
 feat(work-core): move filter SPI types (FilterEvent, ActionDescriptor, FilterDefinition, FilterAction)
 
 FilterAction.apply() signature changes from (WorkItem, Map) to (Object workUnit, Map)
-to break the dependency on the WorkItem entity. Implementations in quarkus-workitems
+to break the dependency on the WorkItem entity. Implementations in quarkus-work
 downcast workUnit to WorkItem.
 
 Refs #ISSUE, #100
@@ -1241,7 +1241,7 @@ import org.apache.commons.jexl3.MapContext;
  * backward compatibility with existing filter rule expressions). Additional variables
  * from {@code conditionContext} are merged alongside.
  *
- * <p>The caller is responsible for building the context map. In quarkus-workitems,
+ * <p>The caller is responsible for building the context map. In quarkus-work,
  * {@code WorkItemContextBuilder.toMap(WorkItem)} provides it via
  * {@code WorkItemLifecycleEvent.context()}.
  */
@@ -1282,7 +1282,7 @@ public class JexlConditionEvaluator {
 
 - [ ] **Step 4: Move PermanentFilterRegistry, DynamicFilterRegistry, FilterRule**
 
-Copy from `quarkus-workitems-filter-registry`:
+Copy from `quarkus-work-filter-registry`:
 - `filterregistry/registry/PermanentFilterRegistry.java` → `io.quarkiverse.work.core.filter.PermanentFilterRegistry` — update package + imports (FilterDefinition now from `io.quarkiverse.work.core.filter`)
 - `filterregistry/registry/DynamicFilterRegistry.java` → same pattern
 - `filterregistry/model/FilterRule.java` → `io.quarkiverse.work.core.filter.FilterRule` — update package
@@ -1305,7 +1305,7 @@ feat(work-core): move JexlConditionEvaluator, filter registries, FilterRule
 
 JexlConditionEvaluator.evaluate() now takes Map<String,Object> workUnitContext
 instead of WorkItem — removes dependency on domain entity. toMap() removed
-(moved to WorkItemContextBuilder in quarkus-workitems in Task 12).
+(moved to WorkItemContextBuilder in quarkus-work in Task 12).
 
 Refs #ISSUE, #100
 EOF
@@ -1542,11 +1542,11 @@ quarkus.http.test-port=0
 
 - [ ] **Step 6: Move FilterRuleEvaluationTest and FilterActionIntegrationTest**
 
-Copy `quarkus-workitems-filter-registry/src/test/.../FilterRuleEvaluationTest.java` → `quarkus-work-core/src/test/.../filter/FilterRuleEvaluationTest.java` — update package + imports. These are `@QuarkusTest` tests; they need the `quarkus-workitems` runtime on the classpath for full CDI context with WorkItem. Add `quarkus-workitems` as a `test` scope dependency in `quarkus-work-core/pom.xml`:
+Copy `quarkus-work-filter-registry/src/test/.../FilterRuleEvaluationTest.java` → `quarkus-work-core/src/test/.../filter/FilterRuleEvaluationTest.java` — update package + imports. These are `@QuarkusTest` tests; they need the `quarkus-work` runtime on the classpath for full CDI context with WorkItem. Add `quarkus-work` as a `test` scope dependency in `quarkus-work-core/pom.xml`:
 ```xml
 <dependency>
-  <groupId>io.quarkiverse.workitems</groupId>
-  <artifactId>quarkus-workitems</artifactId>
+  <groupId>io.quarkiverse.work</groupId>
+  <artifactId>quarkus-work</artifactId>
   <version>${project.version}</version>
   <scope>test</scope>
 </dependency>
@@ -1578,7 +1578,7 @@ EOF
 
 ---
 
-## Phase 3 — Update quarkus-workitems Runtime
+## Phase 3 — Update quarkus-work Runtime
 
 ### Task 12: Add WorkItemContextBuilder and update WorkItemLifecycleEvent
 
@@ -1595,7 +1595,7 @@ EOF
 
 `runtime/src/test/java/io/quarkiverse/workitems/runtime/event/WorkItemContextBuilderTest.java`:
 ```java
-package io.quarkiverse.workitems.runtime.event;
+package io.quarkiverse.work.runtime.event;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import java.lang.reflect.Modifier;
@@ -1603,7 +1603,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
-import io.quarkiverse.workitems.runtime.model.*;
+import io.quarkiverse.work.runtime.model.*;
 
 class WorkItemContextBuilderTest {
 
@@ -1655,12 +1655,12 @@ JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -Dtest=WorkItemContextBuilder
 Copy the `toMap(WorkItem)` method body verbatim from the existing `JexlConditionEvaluator.toMap()` (it reads every public field of `WorkItem`). Class structure:
 
 ```java
-package io.quarkiverse.workitems.runtime.event;
+package io.quarkiverse.work.runtime.event;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.model.WorkItem;
 
 /**
  * Builds the JEXL context map for a WorkItem.
@@ -1704,7 +1704,7 @@ The new class:
 - Updates static factory methods to take `WorkItem` entity directly (derive `id` and `status` from it)
 
 ```java
-package io.quarkiverse.workitems.runtime.event;
+package io.quarkiverse.work.runtime.event;
 
 import java.time.Instant;
 import java.util.Map;
@@ -1712,8 +1712,8 @@ import java.util.UUID;
 
 import io.quarkiverse.work.api.WorkEventType;
 import io.quarkiverse.work.api.WorkLifecycleEvent;
-import io.quarkiverse.workitems.runtime.model.WorkItem;
-import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
+import io.quarkiverse.work.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.model.WorkItemStatus;
 
 /**
  * CDI event fired on every WorkItem lifecycle transition.
@@ -1757,7 +1757,7 @@ public final class WorkItemLifecycleEvent extends WorkLifecycleEvent {
     public static WorkItemLifecycleEvent of(final String eventName, final WorkItem workItem,
             final String actor, final String detail) {
         return new WorkItemLifecycleEvent(
-                "io.quarkiverse.workitems.workitem." + eventName.toLowerCase(),
+                "io.quarkiverse.work.workitem." + eventName.toLowerCase(),
                 "/workitems/" + workItem.id,
                 workItem.id.toString(),
                 workItem.id, workItem.status, Instant.now(),
@@ -1768,7 +1768,7 @@ public final class WorkItemLifecycleEvent extends WorkLifecycleEvent {
             final String actor, final String detail,
             final String rationale, final String planRef) {
         return new WorkItemLifecycleEvent(
-                "io.quarkiverse.workitems.workitem." + eventName.toLowerCase(),
+                "io.quarkiverse.work.workitem." + eventName.toLowerCase(),
                 "/workitems/" + workItem.id,
                 workItem.id.toString(),
                 workItem.id, workItem.status, Instant.now(),
@@ -1815,7 +1815,7 @@ public final class WorkItemLifecycleEvent extends WorkLifecycleEvent {
 - [ ] **Step 6: Find all callers of the old WorkItemLifecycleEvent.of() with UUID signature**
 
 ```bash
-grep -rn "WorkItemLifecycleEvent.of(" runtime/src quarkus-workitems-ledger/src quarkus-workitems-queues/src workitems-flow/src 2>/dev/null | grep -v "workItem,"
+grep -rn "WorkItemLifecycleEvent.of(" runtime/src quarkus-work-ledger/src quarkus-work-queues/src work-flow/src 2>/dev/null | grep -v "workItem,"
 ```
 
 Update every call site from `WorkItemLifecycleEvent.of("EVENT", item.id, item.status, ...)` to `WorkItemLifecycleEvent.of("EVENT", item, ...)`. The `WorkItemService` fires many such events — update all of them.
@@ -1857,13 +1857,13 @@ EOF
 
 `runtime/src/test/java/io/quarkiverse/workitems/runtime/service/JpaWorkloadProviderTest.java`:
 ```java
-package io.quarkiverse.workitems.runtime.service;
+package io.quarkiverse.work.runtime.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
-import io.quarkiverse.workitems.runtime.model.*;
-import io.quarkiverse.workitems.testing.InMemoryWorkItemStore;
+import io.quarkiverse.work.runtime.model.*;
+import io.quarkiverse.work.testing.InMemoryWorkItemStore;
 
 class JpaWorkloadProviderTest {
 
@@ -1911,7 +1911,7 @@ JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -Dtest=JpaWorkloadProviderTes
 
 `runtime/src/main/java/io/quarkiverse/workitems/runtime/service/JpaWorkloadProvider.java`:
 ```java
-package io.quarkiverse.workitems.runtime.service;
+package io.quarkiverse.work.runtime.service;
 
 import java.util.List;
 
@@ -1919,9 +1919,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import io.quarkiverse.work.api.WorkloadProvider;
-import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
-import io.quarkiverse.workitems.runtime.repository.WorkItemQuery;
-import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
+import io.quarkiverse.work.runtime.model.WorkItemStatus;
+import io.quarkiverse.work.runtime.repository.WorkItemQuery;
+import io.quarkiverse.work.runtime.repository.WorkItemStore;
 
 /**
  * WorkloadProvider backed by the JPA WorkItemStore.
@@ -2107,22 +2107,22 @@ EOF
 - Create: `runtime/src/main/java/io/quarkiverse/workitems/runtime/action/SetPriorityAction.java`
 - Modify: `runtime/pom.xml`
 
-- [ ] **Step 1: Copy ApplyLabelAction, OverrideCandidateGroupsAction, SetPriorityAction from quarkus-workitems-filter-registry to runtime/action/**
+- [ ] **Step 1: Copy ApplyLabelAction, OverrideCandidateGroupsAction, SetPriorityAction from quarkus-work-filter-registry to runtime/action/**
 
 Update each file:
-- Package: `io.quarkiverse.workitems.runtime.action`
+- Package: `io.quarkiverse.work.runtime.action`
 - Import `FilterAction` from `io.quarkiverse.work.core.filter.FilterAction`
 - Change `void apply(WorkItem workItem, Map<String, Object> params)` signature to `void apply(Object workUnit, Map<String, Object> params)` and add cast at top: `final WorkItem workItem = (WorkItem) workUnit;`
 
 Example for `ApplyLabelAction`:
 ```java
-package io.quarkiverse.workitems.runtime.action;
+package io.quarkiverse.work.runtime.action;
 
 import java.util.ArrayList;
 import java.util.Map;
 import jakarta.enterprise.context.ApplicationScoped;
 import io.quarkiverse.work.core.filter.FilterAction;
-import io.quarkiverse.workitems.runtime.model.*;
+import io.quarkiverse.work.runtime.model.*;
 
 @ApplicationScoped
 public class ApplyLabelAction implements FilterAction {
@@ -2141,8 +2141,8 @@ public class ApplyLabelAction implements FilterAction {
 Replace:
 ```xml
 <dependency>
-  <groupId>io.quarkiverse.workitems</groupId>
-  <artifactId>quarkus-workitems-api</artifactId>
+  <groupId>io.quarkiverse.work</groupId>
+  <artifactId>quarkus-work-api</artifactId>
   <version>${project.version}</version>
 </dependency>
 ```
@@ -2155,12 +2155,12 @@ With:
 </dependency>
 ```
 
-- [ ] **Step 3: Update all runtime imports from io.quarkiverse.workitems.spi.* to io.quarkiverse.work.api.***
+- [ ] **Step 3: Update all runtime imports from io.quarkiverse.work.spi.* to io.quarkiverse.work.api.***
 
 Files to update: `WorkItemAssignmentService`, `WorkItemService`, `LeastLoadedStrategy` (if still present — will be deleted in Task 16), any test files importing old SPI package.
 
 ```bash
-find runtime/src -name "*.java" | xargs grep -l "io.quarkiverse.workitems.spi" | sort
+find runtime/src -name "*.java" | xargs grep -l "io.quarkiverse.work.spi" | sort
 ```
 Update each file's imports.
 
@@ -2186,8 +2186,8 @@ git commit -m "$(cat <<'EOF'
 feat(workitems): move filter actions to runtime, wire quarkus-work-core dependency
 
 ApplyLabelAction, OverrideCandidateGroupsAction, SetPriorityAction moved from
-quarkus-workitems-filter-registry to runtime/action. Each casts workUnit to WorkItem.
-Runtime now depends on quarkus-work-core (was quarkus-workitems-api).
+quarkus-work-filter-registry to runtime/action. Each casts workUnit to WorkItem.
+Runtime now depends on quarkus-work-core (was quarkus-work-api).
 
 Refs #ISSUE, #100
 EOF
@@ -2198,7 +2198,7 @@ EOF
 
 ## Phase 4 — Delete Old Modules
 
-### Task 16: Delete quarkus-workitems-api and quarkus-workitems-filter-registry
+### Task 16: Delete quarkus-work-api and quarkus-work-filter-registry
 
 **Note:** These modules still have their old strategy/registry code. Remove them only after all consumers have been updated.
 
@@ -2206,15 +2206,15 @@ EOF
 
 In `pom.xml` `<modules>`, remove:
 ```xml
-<module>quarkus-workitems-api</module>
-<module>quarkus-workitems-filter-registry</module>
+<module>quarkus-work-api</module>
+<module>quarkus-work-filter-registry</module>
 ```
 
 - [ ] **Step 2: Delete the directories**
 
 ```bash
-rm -rf quarkus-workitems-api/
-rm -rf quarkus-workitems-filter-registry/
+rm -rf quarkus-work-api/
+rm -rf quarkus-work-filter-registry/
 ```
 
 - [ ] **Step 3: Verify full build — no references to deleted modules**
@@ -2239,7 +2239,7 @@ Update `WorkItemAssignmentService.activeStrategy()` to reference the new package
 - [ ] **Step 5: Run full build including all existing modules**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn clean install -DskipTests -pl quarkus-work-api,quarkus-work-core,runtime,deployment,testing,workitems-flow,quarkus-workitems-ledger,quarkus-workitems-queues,quarkus-workitems-issue-tracker,quarkus-workitems-persistence-mongodb
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn clean install -DskipTests -pl quarkus-work-api,quarkus-work-core,runtime,deployment,testing,work-flow,quarkus-work-ledger,quarkus-work-queues,quarkus-work-issue-tracker,quarkus-work-persistence-mongodb
 ```
 Expected: BUILD SUCCESS.
 
@@ -2248,7 +2248,7 @@ Expected: BUILD SUCCESS.
 ```bash
 git add -A
 git commit -m "$(cat <<'EOF'
-chore: delete quarkus-workitems-api and quarkus-workitems-filter-registry
+chore: delete quarkus-work-api and quarkus-work-filter-registry
 
 Both absorbed into quarkus-work-api and quarkus-work-core respectively.
 Old LeastLoadedStrategy/ClaimFirstStrategy/NoOpWorkerRegistry copies removed
@@ -2261,21 +2261,21 @@ EOF
 
 ---
 
-## Phase 5 — Update quarkus-workitems-ai
+## Phase 5 — Update quarkus-work-ai
 
-### Task 17: Update quarkus-workitems-ai
+### Task 17: Update quarkus-work-ai
 
 **Files:**
-- Modify: `quarkus-workitems-ai/pom.xml`
-- Modify: `quarkus-workitems-ai/src/main/java/io/quarkiverse/workitems/ai/filter/LowConfidenceFilterProducer.java`
+- Modify: `quarkus-work-ai/pom.xml`
+- Modify: `quarkus-work-ai/src/main/java/io/quarkiverse/workitems/ai/filter/LowConfidenceFilterProducer.java`
 
 - [ ] **Step 1: Update pom.xml — replace filter-registry dep with work-core**
 
 Replace:
 ```xml
 <dependency>
-  <groupId>io.quarkiverse.workitems</groupId>
-  <artifactId>quarkus-workitems-filter-registry</artifactId>
+  <groupId>io.quarkiverse.work</groupId>
+  <artifactId>quarkus-work-filter-registry</artifactId>
   <version>${project.version}</version>
 </dependency>
 ```
@@ -2292,8 +2292,8 @@ With:
 
 Change:
 ```java
-import io.quarkiverse.workitems.filterregistry.spi.ActionDescriptor;
-import io.quarkiverse.workitems.filterregistry.spi.FilterDefinition;
+import io.quarkiverse.work.filterregistry.spi.ActionDescriptor;
+import io.quarkiverse.work.filterregistry.spi.FilterDefinition;
 ```
 To:
 ```java
@@ -2301,21 +2301,21 @@ import io.quarkiverse.work.core.filter.ActionDescriptor;
 import io.quarkiverse.work.core.filter.FilterDefinition;
 ```
 
-- [ ] **Step 3: Run quarkus-workitems-ai tests**
+- [ ] **Step 3: Run quarkus-work-ai tests**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-ai
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-ai
 ```
 Expected: all 8 tests pass.
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add quarkus-workitems-ai/
+git add quarkus-work-ai/
 git commit -m "$(cat <<'EOF'
 feat(workitems-ai): update to quarkus-work-core dependency
 
-Replace quarkus-workitems-filter-registry dep with quarkus-work-core.
+Replace quarkus-work-filter-registry dep with quarkus-work-core.
 Update FilterDefinition/ActionDescriptor imports to io.quarkiverse.work.core.filter.
 
 Refs #ISSUE, #114
@@ -2372,15 +2372,15 @@ If all green, proceed. If any test fails, fix it and commit the fix before conti
 
 - [ ] **Step 1: Update the Project Structure section**
 
-Replace the old module table with the new one reflecting `quarkus-work-api`, `quarkus-work-core`, and the deletion of `quarkus-workitems-api` and `quarkus-workitems-filter-registry`.
+Replace the old module table with the new one reflecting `quarkus-work-api`, `quarkus-work-core`, and the deletion of `quarkus-work-api` and `quarkus-work-filter-registry`.
 
 - [ ] **Step 2: Update Known Quarkiverse Gotchas section**
 
-Remove any gotcha entries that reference `quarkus-workitems-filter-registry` or `quarkus-workitems-api` as standalone modules. Add if applicable: any new gotchas discovered during this refactor.
+Remove any gotcha entries that reference `quarkus-work-filter-registry` or `quarkus-work-api` as standalone modules. Add if applicable: any new gotchas discovered during this refactor.
 
-- [ ] **Step 3: Update package references** — any mention of `io.quarkiverse.workitems.spi` → `io.quarkiverse.work.api`; `io.quarkiverse.workitems.filterregistry` → `io.quarkiverse.work.core.filter`.
+- [ ] **Step 3: Update package references** — any mention of `io.quarkiverse.work.spi` → `io.quarkiverse.work.api`; `io.quarkiverse.work.filterregistry` → `io.quarkiverse.work.core.filter`.
 
-- [ ] **Step 4: Verify CLAUDE.md build commands still accurate** — confirm the module-specific test commands (`-pl runtime`, `-pl quarkus-workitems-queues`, etc.) are all still valid.
+- [ ] **Step 4: Verify CLAUDE.md build commands still accurate** — confirm the module-specific test commands (`-pl runtime`, `-pl quarkus-work-queues`, etc.) are all still valid.
 
 - [ ] **Step 5: Commit**
 
@@ -2389,7 +2389,7 @@ git add CLAUDE.md
 git commit -m "$(cat <<'EOF'
 docs: update CLAUDE.md for quarkus-work-api/work-core separation
 
-Module table updated: quarkus-workitems-api and quarkus-workitems-filter-registry
+Module table updated: quarkus-work-api and quarkus-work-filter-registry
 removed; quarkus-work-api and quarkus-work-core added. Package references updated.
 
 Refs #ISSUE
@@ -2406,7 +2406,7 @@ EOF
 
 - [ ] **Step 1: Update the Component Structure table in DESIGN.md**
 
-Replace the API row (quarkus-workitems-api) with two rows:
+Replace the API row (quarkus-work-api) with two rows:
 - `quarkus-work-api` — SPI types (WorkEventType, WorkLifecycleEvent, WorkloadProvider, EscalationPolicy, WorkerCandidate, SelectionContext, AssignmentDecision, AssignmentTrigger, WorkerSelectionStrategy, WorkerRegistry)
 - `quarkus-work-core` — WorkBroker, LeastLoadedStrategy, ClaimFirstStrategy, NoOpWorkerRegistry, filter engine (FilterAction SPI, FilterRegistryEngine, JexlConditionEvaluator, PermanentFilterRegistry, DynamicFilterRegistry, FilterRule, FilterRuleResource)
 
@@ -2432,7 +2432,7 @@ git commit -m "$(cat <<'EOF'
 docs: update DESIGN.md for quarkus-work separation
 
 Component table updated: quarkus-work-api + quarkus-work-core added,
-quarkus-workitems-api + quarkus-workitems-filter-registry removed.
+quarkus-work-api + quarkus-work-filter-registry removed.
 Build Roadmap extended with Phase 13 complete.
 
 Closes #ISSUE, Refs #100, #102
@@ -2468,14 +2468,14 @@ EOF
 After completing all tasks, verify:
 
 - [ ] `quarkus-work-api` has zero runtime dependencies (only test-scope JUnit/AssertJ)
-- [ ] `quarkus-work-core` has no import of `io.quarkiverse.workitems.*` in main sources
-- [ ] `quarkus-workitems` runtime has no import of `io.quarkiverse.workitems.spi.*` (old package gone)
-- [ ] `quarkus-workitems-ai` imports from `io.quarkiverse.work.core.filter`
+- [ ] `quarkus-work-core` has no import of `io.quarkiverse.work.*` in main sources
+- [ ] `quarkus-work` runtime has no import of `io.quarkiverse.work.spi.*` (old package gone)
+- [ ] `quarkus-work-ai` imports from `io.quarkiverse.work.core.filter`
 - [ ] All 943+ tests pass
 - [ ] Integration tests (19) pass in JVM mode
 - [ ] `FilterRegistryEngine` observer type is `WorkLifecycleEvent`, not `WorkItemLifecycleEvent`
 - [ ] `FilterAction.apply()` signature is `(Object workUnit, Map<String,Object> params)`
 - [ ] `JexlConditionEvaluator.evaluate()` takes `Map<String,Object>` as third arg, not `WorkItem`
-- [ ] No file imports `io.quarkiverse.workitems.filterregistry.*`
-- [ ] No file imports `io.quarkiverse.workitems.spi.*`
+- [ ] No file imports `io.quarkiverse.work.filterregistry.*`
+- [ ] No file imports `io.quarkiverse.work.spi.*`
 - [ ] DESIGN.md, CLAUDE.md, HANDOFF.md all reflect the new structure

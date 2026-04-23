@@ -5,7 +5,7 @@ date: 2026-04-21
 type: phase-update
 entry_type: note
 subtype: diary
-projects: [quarkus-workitems]
+projects: [quarkus-work]
 tags: [architecture, ai-native, routing, casehub, filter-registry]
 ---
 
@@ -25,7 +25,7 @@ I wanted: when an AI agent creates a WorkItem with `confidenceScore < 0.7`, appl
 label `ai/low-confidence`. Simple enough. The label mechanism already existed. I could
 have wired it directly in `WorkItemService.create()` in twenty lines.
 
-We didn't do that. We spent most of the session building `quarkus-workitems-filter-registry`
+We didn't do that. We spent most of the session building `quarkus-work-filter-registry`
 instead.
 
 The reasoning: confidence-gating is a routing decision, and routing decisions should be
@@ -36,7 +36,7 @@ actions beyond labels. It made sense to build one pluggable engine instead of tw
 So the design became: a `FilterAction` SPI resolved by CDI bean name, a `FilterRegistryEngine`
 that observes `WorkItemLifecycleEvent` and evaluates JEXL conditions against a WorkItem,
 permanent (CDI-produced) and dynamic (DB-persisted) filter rules, and three built-in actions:
-`APPLY_LABEL`, `OVERRIDE_CANDIDATE_GROUPS`, `SET_PRIORITY`. The `quarkus-workitems-ai` module
+`APPLY_LABEL`, `OVERRIDE_CANDIDATE_GROUPS`, `SET_PRIORITY`. The `quarkus-work-ai` module
 then just produces one `FilterDefinition` via CDI — the low-confidence filter is four lines.
 
 That architecture is what I wanted. But the design conversation that followed it is what made
@@ -48,7 +48,7 @@ WorkerSelectionStrategy — the second Epic #100 feature — is also in CaseHub'
 `WorkerSelectionStrategy.select(request, availableWorkers)` in casehub-engine. Two systems
 were independently inventing the same SPI.
 
-Rather than let them drift, I decided to create `quarkus-workitems-api` — a pure-Java module
+Rather than let them drift, I decided to create `quarkus-work-api` — a pure-Java module
 with zero runtime dependencies containing only the shared types: `WorkerCandidate`,
 `SelectionContext`, `AssignmentDecision`, `AssignmentTrigger`, `WorkerSelectionStrategy`,
 `WorkerRegistry`. CaseHub can add a compile-scope dependency on this module without pulling
@@ -63,7 +63,7 @@ exact steps to adopt the shared API.
 
 `LeastLoadedStrategy` counts active WorkItems (ASSIGNED + IN_PROGRESS + SUSPENDED — not PENDING)
 per candidate and pre-assigns to the lightest. `ClaimFirstStrategy` is the no-op. Both get
-selected by `quarkus.workitems.routing.strategy` config; a CDI `@Alternative` overrides both.
+selected by `quarkus.work.routing.strategy` config; a CDI `@Alternative` overrides both.
 
 `WorkItemAssignmentService` wires into `create()`, `release()`, and `delegate()`. The delegate
 case had a subtle bug: the strategy must evaluate before `item.assigneeId` is cleared, or
@@ -75,5 +75,5 @@ One other thing worth noting: `JpaWorkItemStore.scan()` with an `assigneeId` fil
 `OR candidateUsers LIKE '%actorId%'`. For inbox queries that's correct. For workload counting
 it over-counts — the fix is a post-filter in memory. Both are garden entries now.
 
-The session ended at 525 runtime tests, 0 failures, with `quarkus-workitems-api` available as
+The session ended at 525 runtime tests, 0 failures, with `quarkus-work-api` available as
 a standalone artifact and a CaseHub issue filed to adopt it.

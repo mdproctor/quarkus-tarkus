@@ -5,7 +5,7 @@ Status: Accepted
 
 ## Context and Problem Statement
 
-`quarkus-workitems-ledger` originally contained all ledger infrastructure —
+`quarkus-work-ledger` originally contained all ledger infrastructure —
 `LedgerEntry`, `LedgerAttestation`, `ActorTrustScore`, `TrustScoreComputer`,
 `LedgerHashChain`, `LedgerConfig`, and their repositories — as WorkItems-specific
 classes. CaseHub and Qhorus will need the same accountability infrastructure.
@@ -22,7 +22,7 @@ Keeping it inside WorkItems would force both to depend on WorkItems to get it.
 
 * **Option A** — Extract generic ledger infrastructure to `io.quarkiverse.ledger:quarkus-ledger`; WorkItems provides `WorkItemLedgerEntry` as a subtype
 * **Option B** — Copy the ledger classes into each downstream project (CaseHub, Qhorus) independently
-* **Option C** — Keep everything in `quarkus-workitems-ledger`; CaseHub and Qhorus depend on WorkItems to get the ledger
+* **Option C** — Keep everything in `quarkus-work-ledger`; CaseHub and Qhorus depend on WorkItems to get the ledger
 
 ## Decision Outcome
 
@@ -43,7 +43,7 @@ the hash chain and trust score logic across projects.
 
 * `quarkus-ledger` is a separate local project (`~/claude/quarkus-ledger/`)
   that must be installed into the local Maven repo before building
-  `quarkus-workitems-ledger` — documented in CLAUDE.md
+  `quarkus-work-ledger` — documented in CLAUDE.md
 * Two repositories to maintain until `quarkus-ledger` is published to Maven Central
 * JPA JOINED inheritance adds a join on every ledger query
 
@@ -63,7 +63,7 @@ the hash chain and trust score logic across projects.
 * ❌ Divergence over time — three copies of hash chain and trust score logic
 * ❌ Bug fixes need applying to every copy
 
-### Option C — Keep in quarkus-workitems-ledger; downstream depends on WorkItems
+### Option C — Keep in quarkus-work-ledger; downstream depends on WorkItems
 
 * ✅ No new library
 * ❌ CaseHub and Qhorus take a WorkItems dependency they don't conceptually need
@@ -71,6 +71,6 @@ the hash chain and trust score logic across projects.
 
 ## Links
 
-* Issue: #49 — Migrate quarkus-workitems-ledger to use quarkus-ledger as shared base library
+* Issue: #49 — Migrate quarkus-work-ledger to use quarkus-ledger as shared base library
 * `quarkus-ledger` source: `~/claude/quarkus-ledger/`
-* `WorkItemLedgerEntry`: `quarkus-workitems-ledger/src/main/java/io/quarkiverse/workitems/ledger/model/WorkItemLedgerEntry.java`
+* `WorkItemLedgerEntry`: `quarkus-work-ledger/src/main/java/io/quarkiverse/workitems/ledger/model/WorkItemLedgerEntry.java`

@@ -5,7 +5,7 @@ package io.quarkiverse.work.api;
  *
  * <p>
  * Implement as {@code @ApplicationScoped @Alternative @Priority(1)} to provide
- * domain-specific workload data. quarkus-workitems provides {@code JpaWorkloadProvider}.
+ * domain-specific workload data. quarkus-work provides {@code JpaWorkloadProvider}.
  * CaseHub provides its own implementation against its task store.
  *
  * <p>

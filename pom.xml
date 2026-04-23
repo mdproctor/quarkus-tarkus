@@ -10,15 +10,15 @@
     <version>21</version>
   </parent>
 
-  <groupId>io.quarkiverse.workitems</groupId>
-  <artifactId>quarkus-workitems-parent</artifactId>
+  <groupId>io.quarkiverse.work</groupId>
+  <artifactId>quarkus-work-parent</artifactId>
   <version>1.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Quarkus WorkItems - Parent</name>
   <description>Human-scale WorkItem lifecycle management — expiry, delegation, escalation, audit trail.
 Standalone Quarkiverse extension with optional integrations for Quarkus-Flow, CaseHub, and Qhorus.</description>
-  <url>https://github.com/mdproctor/quarkus-workitems</url>
+  <url>https://github.com/mdproctor/quarkus-work</url>
 
   <modules>
     <module>quarkus-work-api</module>
@@ -26,24 +26,24 @@ Standalone Quarkiverse extension with optional integrations for Quarkus-Flow, Ca
     <module>runtime</module>
     <module>deployment</module>
     <module>testing</module>
-    <module>workitems-flow</module>
-    <module>quarkus-workitems-ledger</module>
-    <module>quarkus-workitems-queues</module>
-    <module>quarkus-workitems-queues-examples</module>
-    <module>quarkus-workitems-queues-dashboard</module>
-    <module>quarkus-workitems-examples</module>
-    <module>quarkus-workitems-flow-examples</module>
-    <module>quarkus-workitems-persistence-mongodb</module>
-    <module>quarkus-workitems-issue-tracker</module>
-    <module>quarkus-workitems-ai</module>
+    <module>work-flow</module>
+    <module>quarkus-work-ledger</module>
+    <module>quarkus-work-queues</module>
+    <module>quarkus-work-queues-examples</module>
+    <module>quarkus-work-queues-dashboard</module>
+    <module>quarkus-work-examples</module>
+    <module>quarkus-work-flow-examples</module>
+    <module>quarkus-work-persistence-mongodb</module>
+    <module>quarkus-work-issue-tracker</module>
+    <module>quarkus-work-ai</module>
 
     <module>integration-tests</module>
   </modules>
 
   <scm>
-    <connection>scm:git:git@github.com:mdproctor/quarkus-workitems.git</connection>
-    <developerConnection>scm:git:git@github.com:mdproctor/quarkus-workitems.git</developerConnection>
-    <url>https://github.com/mdproctor/quarkus-workitems</url>
+    <connection>scm:git:git@github.com:mdproctor/quarkus-work.git</connection>
+    <developerConnection>scm:git:git@github.com:mdproctor/quarkus-work.git</developerConnection>
+    <url>https://github.com/mdproctor/quarkus-work</url>
     <tag>HEAD</tag>
   </scm>
 

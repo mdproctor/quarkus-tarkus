@@ -8,7 +8,7 @@ import java.util.Set;
  *
  * <p>
  * Implement as {@code @ApplicationScoped @Alternative @Priority(1)} to override
- * the built-in strategy configured by {@code quarkus.workitems.routing.strategy}.
+ * the built-in strategy configured by {@code quarkus.work.routing.strategy}.
  *
  * <p>
  * Built-in implementations (in the runtime module):
