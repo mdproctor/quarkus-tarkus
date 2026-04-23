@@ -26,6 +26,7 @@ import io.quarkiverse.work.runtime.api.WorkItemLabelResponse;
  * @param followUpDate Optional follow-up reminder date for inbox filtering.
  * @param labels Optional list of {@link WorkItemLabelResponse} labels to attach at creation; only MANUAL labels accepted.
  * @param confidenceScore Confidence score from the AI agent that created this WorkItem (0.0–1.0); null if not AI-created.
+ * @param callerRef Opaque caller-supplied routing key set at spawn time; null for WorkItems not created via spawn.
  */
 public record WorkItemCreateRequest(
         String title,
@@ -43,5 +44,6 @@ public record WorkItemCreateRequest(
         Instant expiresAt,
         Instant followUpDate,
         List<WorkItemLabelResponse> labels,
-        Double confidenceScore) {
+        Double confidenceScore,
+        String callerRef) {
 }

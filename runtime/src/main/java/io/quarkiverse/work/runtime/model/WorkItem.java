@@ -245,6 +245,20 @@ public class WorkItem extends PanacheEntityBase {
     public Double confidenceScore;
 
     // -------------------------------------------------------------------------
+    // Spawn routing
+    // -------------------------------------------------------------------------
+
+    /**
+     * Opaque caller-supplied routing key set at spawn time.
+     * quarkus-work stores and echoes this in every lifecycle event; it never
+     * interprets it. CaseHub embeds its {@code caseId:planItemId} here so that
+     * child completion events can be routed back to the right PlanItem without
+     * a query. Null for WorkItems not created via spawn.
+     */
+    @Column(name = "caller_ref", length = 512)
+    public String callerRef;
+
+    // -------------------------------------------------------------------------
     // JPA lifecycle callbacks
     // -------------------------------------------------------------------------
 

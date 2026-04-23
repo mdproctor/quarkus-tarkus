@@ -43,6 +43,11 @@ public record WorkItemResponse(
          */
         Double confidenceScore,
         /**
+         * Opaque caller-supplied routing key set at spawn time.
+         * Null for WorkItems not created via spawn.
+         */
+        String callerRef,
+        /**
          * JPA optimistic locking version. Included in the response so clients can detect
          * concurrent modifications — if the version you received differs from what another
          * client received, a modification occurred between your reads.

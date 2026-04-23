@@ -67,6 +67,7 @@ public class WorkItemService {
         item.createdBy = request.createdBy();
         item.payload = request.payload();
         item.confidenceScore = request.confidenceScore();
+        item.callerRef = request.callerRef();
         item.followUpDate = request.followUpDate();
 
         final Instant now = Instant.now();
@@ -399,7 +400,7 @@ public class WorkItemService {
                 title, source.description, source.category, source.formKey,
                 source.priority, null, source.candidateGroups, source.candidateUsers,
                 source.requiredCapabilities, createdBy, source.payload,
-                null, null, null, null, null);
+                null, null, null, null, null, null);
 
         WorkItem clone = create(req);
 
