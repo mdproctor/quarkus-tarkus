@@ -1,7 +1,7 @@
 # Quarkus WorkItems — Labels, Filters, and Queues Design
 
 > *This document covers the label model, vocabulary, filter engine, and queue
-> views. The queues feature is an optional module — `quarkus-workitems-queues`
+> views. The queues feature is an optional module — `quarkus-work-queues`
 > — built on top of label infrastructure in the core extension.*
 
 ---
@@ -22,16 +22,16 @@ engine that maintains them, one query per queue view.
 
 | Concern | Module |
 |---|---|
-| `WorkItemLabel` type | `quarkus-workitems` core |
-| `labels` collection on `WorkItem` | `quarkus-workitems` core |
-| `LabelVocabulary` + `LabelDefinition` | `quarkus-workitems` core |
-| Label REST endpoints (add, remove, query by label) | `quarkus-workitems` core |
-| `WorkItemFilter` (conditions + actions) | `quarkus-workitems-queues` |
-| `FilterChain` (derivation graph + inverse index) | `quarkus-workitems-queues` |
-| `WorkItemExpressionEvaluator` SPI + `ExpressionDescriptor` + built-ins | `quarkus-workitems-queues` |
-| Filter evaluation engine | `quarkus-workitems-queues` |
-| `QueueView` (named query over a label) | `quarkus-workitems-queues` |
-| Queue REST endpoints | `quarkus-workitems-queues` |
+| `WorkItemLabel` type | `quarkus-work` core |
+| `labels` collection on `WorkItem` | `quarkus-work` core |
+| `LabelVocabulary` + `LabelDefinition` | `quarkus-work` core |
+| Label REST endpoints (add, remove, query by label) | `quarkus-work` core |
+| `WorkItemFilter` (conditions + actions) | `quarkus-work-queues` |
+| `FilterChain` (derivation graph + inverse index) | `quarkus-work-queues` |
+| `WorkItemExpressionEvaluator` SPI + `ExpressionDescriptor` + built-ins | `quarkus-work-queues` |
+| Filter evaluation engine | `quarkus-work-queues` |
+| `QueueView` (named query over a label) | `quarkus-work-queues` |
+| Queue REST endpoints | `quarkus-work-queues` |
 
 The integration seam is `WorkItemLifecycleEvent` — already fired by
 `WorkItemService` on every creation and mutation. The queue module observes
@@ -39,13 +39,13 @@ this event to trigger filter re-evaluation. If the module is absent, the event
 fires into the void. The core is unchanged.
 
 ```
-quarkus-workitems-parent
-├── quarkus-workitems                  ← core (labels, vocabulary)
-├── quarkus-workitems-deployment
-├── quarkus-workitems-testing
-├── quarkus-workitems-flow
-├── quarkus-workitems-ledger
-└── quarkus-workitems-queues           ← optional (filters, chains, queue views)
+quarkus-work-parent
+├── quarkus-work                  ← core (labels, vocabulary)
+├── quarkus-work-deployment
+├── quarkus-work-testing
+├── quarkus-work-flow
+├── quarkus-work-ledger
+└── quarkus-work-queues           ← optional (filters, chains, queue views)
 ```
 
 ---
@@ -265,7 +265,7 @@ When a user attempts to apply an undeclared label, the system prompts:
 
 ## Filter Model
 
-Filters live in `quarkus-workitems-queues`. They are evaluated by observing
+Filters live in `quarkus-work-queues`. They are evaluated by observing
 `WorkItemLifecycleEvent`.
 
 ### WorkItemFilter
@@ -465,7 +465,7 @@ Setting `relinquishable = false` or starting work (`PUT /{id}/start`) clears it.
 
 ## REST API Surface
 
-### Core additions (`quarkus-workitems`)
+### Core additions (`quarkus-work`)
 
 | Method | Path | Description |
 |---|---|---|
@@ -475,7 +475,7 @@ Setting `relinquishable = false` or starting work (`PUT /{id}/start`) clears it.
 | `GET` | `/vocabulary` | List accessible label vocabularies |
 | `POST` | `/vocabulary/{scope}` | Add a LabelDefinition to a vocabulary |
 
-### Queues module (`quarkus-workitems-queues`)
+### Queues module (`quarkus-work-queues`)
 
 | Method | Path | Description |
 |---|---|---|

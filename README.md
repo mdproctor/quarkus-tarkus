@@ -22,8 +22,8 @@ Beyond transactions: WorkItems fire CDI events when they expire, enforce a 10-st
 
 ```xml
 <dependency>
-  <groupId>io.quarkiverse.workitems</groupId>
-  <artifactId>quarkus-workitems</artifactId>
+  <groupId>io.quarkiverse.work</groupId>
+  <artifactId>quarkus-work</artifactId>
   <version>1.0.0-SNAPSHOT</version>
 </dependency>
 ```
@@ -122,13 +122,13 @@ Three systems in the Quarkus ecosystem define "task":
 
 | Artifact | Status | Purpose |
 |---|---|---|
-| `quarkus-workitems` | Core | WorkItem model, JPA storage, REST API, lifecycle engine, CDI events, labels, vocabulary |
-| `quarkus-workitems-testing` | Core | `InMemoryWorkItemStore` + `InMemoryAuditEntryStore` for unit tests without a datasource |
-| `quarkus-workitems-queues` | Optional | Label-based work queues — JEXL/JQ/Lambda filters, FilterChain, QueueView, soft assignment, queue lifecycle events (ADDED/REMOVED/CHANGED) |
-| `quarkus-workitems-ledger` | Optional | Accountability — command/event ledger, SHA-256/MMR hash chain, peer attestation, EigenTrust reputation scoring |
-| `quarkus-workitems-persistence-mongodb` | Optional | MongoDB `WorkItemStore` + `AuditEntryStore`. Drop-in replacement for JPA defaults |
-| `quarkus-workitems-issue-tracker` | Optional | Link WorkItems to GitHub Issues, Jira, Linear, etc. Pluggable `IssueTrackerProvider` SPI |
-| `quarkus-workitems-flow` | Integration | Quarkus-Flow `WorkItemsFlow` base class — `workItem()` DSL alongside `function()`, `agent()` |
+| `quarkus-work` | Core | WorkItem model, JPA storage, REST API, lifecycle engine, CDI events, labels, vocabulary |
+| `quarkus-work-testing` | Core | `InMemoryWorkItemStore` + `InMemoryAuditEntryStore` for unit tests without a datasource |
+| `quarkus-work-queues` | Optional | Label-based work queues — JEXL/JQ/Lambda filters, FilterChain, QueueView, soft assignment, queue lifecycle events (ADDED/REMOVED/CHANGED) |
+| `quarkus-work-ledger` | Optional | Accountability — command/event ledger, SHA-256/MMR hash chain, peer attestation, EigenTrust reputation scoring |
+| `quarkus-work-persistence-mongodb` | Optional | MongoDB `WorkItemStore` + `AuditEntryStore`. Drop-in replacement for JPA defaults |
+| `quarkus-work-issue-tracker` | Optional | Link WorkItems to GitHub Issues, Jira, Linear, etc. Pluggable `IssueTrackerProvider` SPI |
+| `quarkus-work-flow` | Integration | Quarkus-Flow `WorkItemsFlow` base class — `workItem()` DSL alongside `function()`, `agent()` |
 
 ---
 
@@ -136,11 +136,11 @@ Three systems in the Quarkus ecosystem define "task":
 
 | Property | Default | Description |
 |---|---|---|
-| `quarkus.workitems.default-expiry-hours` | `24` | Completion deadline when none supplied at creation |
-| `quarkus.workitems.default-claim-hours` | `4` | Claim deadline for unclaimed WorkItems. `0` = no deadline |
-| `quarkus.workitems.escalation-policy` | `notify` | On `expiresAt` breach: `notify`, `reassign`, or `auto-reject` |
-| `quarkus.workitems.claim-escalation-policy` | `notify` | On `claimDeadline` breach: `notify` or `reassign` |
-| `quarkus.workitems.cleanup.expiry-check-seconds` | `60` | Polling interval for the expiry/claim-deadline job |
+| `quarkus.work.default-expiry-hours` | `24` | Completion deadline when none supplied at creation |
+| `quarkus.work.default-claim-hours` | `4` | Claim deadline for unclaimed WorkItems. `0` = no deadline |
+| `quarkus.work.escalation-policy` | `notify` | On `expiresAt` breach: `notify`, `reassign`, or `auto-reject` |
+| `quarkus.work.claim-escalation-policy` | `notify` | On `claimDeadline` breach: `notify` or `reassign` |
+| `quarkus.work.cleanup.expiry-check-seconds` | `60` | Polling interval for the expiry/claim-deadline job |
 
 ---
 

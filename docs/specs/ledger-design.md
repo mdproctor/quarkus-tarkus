@@ -7,10 +7,10 @@
 
 ## Design Principle: Complexity Must Not Leak
 
-The ledger is an **optional, separate Maven module** — `quarkus-workitems-ledger`.
+The ledger is an **optional, separate Maven module** — `quarkus-work-ledger`.
 
 If you don't add it as a dependency, your application is identical to using
-`quarkus-workitems` today. No extra tables, no extra config keys, no overhead. The
+`quarkus-work` today. No extra tables, no extra config keys, no overhead. The
 core extension doesn't know the ledger exists.
 
 This is possible because Phase 4 already established the right seam:
@@ -23,12 +23,12 @@ The ledger module is a CDI observer of those events. Observer with no implementa
 ## Module Architecture
 
 ```
-quarkus-workitems-parent
-├── quarkus-workitems                  ← core (unchanged)
-├── quarkus-workitems-deployment       ← core deployment
-├── quarkus-workitems-testing          ← InMemory impls for unit tests
-├── quarkus-workitems-flow             ← Quarkus-Flow CDI bridge
-├── quarkus-workitems-ledger           ← NEW: fully optional ledger module
+quarkus-work-parent
+├── quarkus-work                  ← core (unchanged)
+├── quarkus-work-deployment       ← core deployment
+├── quarkus-work-testing          ← InMemory impls for unit tests
+├── quarkus-work-flow             ← Quarkus-Flow CDI bridge
+├── quarkus-work-ledger           ← NEW: fully optional ledger module
 │   └── (no separate deployment needed — pure runtime CDI)
 └── integration-tests               ← native image validation
 ```
@@ -36,7 +36,7 @@ quarkus-workitems-parent
 **How the separation works at runtime:**
 
 ```
-quarkus-workitems (core)                        quarkus-workitems-ledger (optional)
+quarkus-work (core)                        quarkus-work-ledger (optional)
 ─────────────────────────────────────────    ─────────────────────────────────────────
 WorkItem entity                              LedgerEntry entity
 AuditEntry entity                            LedgerAttestation entity
@@ -49,7 +49,7 @@ WorkItemsConfig (stays clean)                   LedgerResource (/workitems/.../l
                                              db/ledger-migration/ (own migration path)
 ```
 
-If `quarkus-workitems-ledger` is absent: CDI events fire into the void. No ledger
+If `quarkus-work-ledger` is absent: CDI events fire into the void. No ledger
 tables. No config. No overhead. Zero core changes required.
 
 ---
@@ -61,7 +61,7 @@ to support richer context — useful to any observer, not just the ledger:
 
 ```java
 public record WorkItemLifecycleEvent(
-    String type,        // "io.quarkiverse.workitems.workitem.completed"
+    String type,        // "io.quarkiverse.work.workitem.completed"
     String source,      // "/workitems/{id}"
     String subject,     // workItemId.toString()
     UUID workItemId,
@@ -97,14 +97,14 @@ POST /workitems/{id}/ledger/provenance
 }
 ```
 
-This endpoint is on `LedgerResource` in `quarkus-workitems-ledger`. If the module
+This endpoint is on `LedgerResource` in `quarkus-work-ledger`. If the module
 isn't present, the endpoint doesn't exist. No impact on the core API.
 
 ---
 
 ## Database Migrations
 
-`quarkus-workitems-ledger` registers its own Flyway migration path
+`quarkus-work-ledger` registers its own Flyway migration path
 (`db/ledger-migration/`) via a Quarkus `@BuildStep` in its deployment processor.
 Core's `db/migration/` (V1__initial_schema.sql) is untouched.
 
@@ -115,20 +115,20 @@ If the ledger module is absent, the `ledger_entry`, `ledger_attestation`, and
 
 ## Configuration
 
-`LedgerConfig` is a `@ConfigMapping(prefix = "quarkus.workitems.ledger")` interface
-in `quarkus-workitems-ledger`. These config keys are invisible unless the module is
+`LedgerConfig` is a `@ConfigMapping(prefix = "quarkus.work.ledger")` interface
+in `quarkus-work-ledger`. These config keys are invisible unless the module is
 on the classpath.
 
 | Property | Default | Meaning |
 |---|---|---|
-| `quarkus.workitems.ledger.enabled` | `true` | Master switch when module is present |
-| `quarkus.workitems.ledger.hash-chain.enabled` | `true` | SHA-256 tamper-evidence chain |
-| `quarkus.workitems.ledger.decision-context.enabled` | `true` | WorkItem snapshot at each transition |
-| `quarkus.workitems.ledger.evidence.enabled` | `false` | Structured evidence capture (opt-in) |
-| `quarkus.workitems.ledger.attestations.enabled` | `true` | Stamp/attestation REST endpoints |
-| `quarkus.workitems.ledger.trust-score.enabled` | `false` | Nightly EigenTrust batch computation |
-| `quarkus.workitems.ledger.trust-score.decay-half-life-days` | `90` | Score decay rate |
-| `quarkus.workitems.ledger.trust-routing.enabled` | `false` | Trust-score-based routing |
+| `quarkus.work.ledger.enabled` | `true` | Master switch when module is present |
+| `quarkus.work.ledger.hash-chain.enabled` | `true` | SHA-256 tamper-evidence chain |
+| `quarkus.work.ledger.decision-context.enabled` | `true` | WorkItem snapshot at each transition |
+| `quarkus.work.ledger.evidence.enabled` | `false` | Structured evidence capture (opt-in) |
+| `quarkus.work.ledger.attestations.enabled` | `true` | Stamp/attestation REST endpoints |
+| `quarkus.work.ledger.trust-score.enabled` | `false` | Nightly EigenTrust batch computation |
+| `quarkus.work.ledger.trust-score.decay-half-life-days` | `90` | Score decay rate |
+| `quarkus.work.ledger.trust-routing.enabled` | `false` | Trust-score-based routing |
 
 **Rationale for defaults:** hash-chain and decision-context default ON — low
 overhead, high compliance value (GDPR, EU AI Act). evidence, trust-score, and
@@ -165,7 +165,7 @@ and EU AI Act Article 12.
 }
 ```
 
-**Configurable:** `quarkus.workitems.ledger.decision-context.enabled`
+**Configurable:** `quarkus.work.ledger.decision-context.enabled`
 
 ### 3. Plan Reference
 
@@ -277,7 +277,7 @@ actor_trust_score
 
 ---
 
-## REST API (in quarkus-workitems-ledger)
+## REST API (in quarkus-work-ledger)
 
 All endpoints are on `LedgerResource`. **None of these exist if the module is absent.**
 
@@ -324,7 +324,7 @@ doesn't use them.
 Once CaseHub and Qhorus integrations ship, the lightweight `sourceEntityRef` fields
 on `LedgerEntry` can be promoted to a full `ProvenanceLink` typed-edge graph
 modelling W3C PROV-O relationships (GENERATED_BY, USED, DERIVED_FROM, INFORMED_BY).
-See issue #39. The `quarkus-workitems-ledger` module is the natural home for this.
+See issue #39. The `quarkus-work-ledger` module is the natural home for this.
 
 ---
 

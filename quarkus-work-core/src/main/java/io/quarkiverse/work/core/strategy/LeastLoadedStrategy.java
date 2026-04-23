@@ -22,7 +22,7 @@ import io.quarkiverse.work.api.WorkerSelectionStrategy;
  * and the WorkItem remains in the open pool for claim-first behaviour.
  *
  * <p>
- * Activated by: {@code quarkus.workitems.routing.strategy=least-loaded} (default).
+ * Activated by: {@code quarkus.work.routing.strategy=least-loaded} (default).
  */
 @ApplicationScoped
 public class LeastLoadedStrategy implements WorkerSelectionStrategy {

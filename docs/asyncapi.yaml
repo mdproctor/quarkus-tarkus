@@ -20,7 +20,7 @@ info:
             // event.workItemId(), event.type(), event.status(), event.actor() …
         }
 
-        // Fired on every queue membership change (requires quarkus-workitems-queues)
+        // Fired on every queue membership change (requires quarkus-work-queues)
         void onQueueEvent(@Observes WorkItemQueueEvent event) {
             // event.workItemId(), event.queueViewId(), event.eventType() …
         }
@@ -55,7 +55,7 @@ servers:
 
 channels:
   workitem/lifecycle:
-    address: io.quarkiverse.workitems.workitem.*
+    address: io.quarkiverse.work.workitem.*
     description: |
       Fired on every WorkItem state transition — creation, claiming, starting,
       completion, rejection, delegation, suspension, resumption, cancellation,
@@ -72,10 +72,10 @@ channels:
         $ref: '#/components/messages/WorkItemLifecycleEvent'
 
   workitem/queue:
-    address: io.quarkiverse.workitems.queue.membership
+    address: io.quarkiverse.work.queue.membership
     description: |
       Fired when a WorkItem's membership in a QueueView changes. Requires the
-      `quarkus-workitems-queues` module on the classpath.
+      `quarkus-work-queues` module on the classpath.
 
       **ADDED:** WorkItem entered a queue it was not previously a member of.
       **REMOVED:** WorkItem left a queue (not re-added within the same operation).
@@ -98,27 +98,27 @@ components:
       contentType: application/java
       description: |
         Immutable record fired after every WorkItem state change.
-        The `type` field uses the format `io.quarkiverse.workitems.workitem.{eventName}`.
+        The `type` field uses the format `io.quarkiverse.work.workitem.{eventName}`.
       payload:
         $ref: '#/components/schemas/WorkItemLifecycleEvent'
       examples:
         - name: WorkItem created
           payload:
-            type: io.quarkiverse.workitems.workitem.created
+            type: io.quarkiverse.work.workitem.created
             workItemId: 550e8400-e29b-41d4-a716-446655440000
             status: PENDING
             actor: underwriting-agent
             occurredAt: "2026-04-20T09:00:00Z"
         - name: WorkItem claimed
           payload:
-            type: io.quarkiverse.workitems.workitem.assigned
+            type: io.quarkiverse.work.workitem.assigned
             workItemId: 550e8400-e29b-41d4-a716-446655440000
             status: ASSIGNED
             actor: alice
             occurredAt: "2026-04-20T09:15:00Z"
         - name: WorkItem completed with rationale
           payload:
-            type: io.quarkiverse.workitems.workitem.completed
+            type: io.quarkiverse.work.workitem.completed
             workItemId: 550e8400-e29b-41d4-a716-446655440000
             status: COMPLETED
             actor: alice
@@ -133,7 +133,7 @@ components:
       contentType: application/java
       description: |
         Fired when a WorkItem's membership in a named QueueView changes.
-        Requires `quarkus-workitems-queues` on the classpath.
+        Requires `quarkus-work-queues` on the classpath.
       payload:
         $ref: '#/components/schemas/WorkItemQueueEvent'
       examples:
@@ -167,23 +167,23 @@ components:
         type:
           type: string
           description: |
-            Event type string. Format: `io.quarkiverse.workitems.workitem.{eventName}`
+            Event type string. Format: `io.quarkiverse.work.workitem.{eventName}`
             where eventName is lowercased.
           enum:
-            - io.quarkiverse.workitems.workitem.created
-            - io.quarkiverse.workitems.workitem.assigned
-            - io.quarkiverse.workitems.workitem.started
-            - io.quarkiverse.workitems.workitem.completed
-            - io.quarkiverse.workitems.workitem.rejected
-            - io.quarkiverse.workitems.workitem.delegated
-            - io.quarkiverse.workitems.workitem.released
-            - io.quarkiverse.workitems.workitem.suspended
-            - io.quarkiverse.workitems.workitem.resumed
-            - io.quarkiverse.workitems.workitem.cancelled
-            - io.quarkiverse.workitems.workitem.expired
-            - io.quarkiverse.workitems.workitem.escalated
-            - io.quarkiverse.workitems.workitem.label_added
-            - io.quarkiverse.workitems.workitem.label_removed
+            - io.quarkiverse.work.workitem.created
+            - io.quarkiverse.work.workitem.assigned
+            - io.quarkiverse.work.workitem.started
+            - io.quarkiverse.work.workitem.completed
+            - io.quarkiverse.work.workitem.rejected
+            - io.quarkiverse.work.workitem.delegated
+            - io.quarkiverse.work.workitem.released
+            - io.quarkiverse.work.workitem.suspended
+            - io.quarkiverse.work.workitem.resumed
+            - io.quarkiverse.work.workitem.cancelled
+            - io.quarkiverse.work.workitem.expired
+            - io.quarkiverse.work.workitem.escalated
+            - io.quarkiverse.work.workitem.label_added
+            - io.quarkiverse.work.workitem.label_removed
         source:
           type: string
           description: Source path, e.g. `/workitems/{workItemId}`
@@ -223,7 +223,7 @@ components:
     WorkItemQueueEvent:
       type: object
       description: |
-        Queue membership change event. Requires `quarkus-workitems-queues`.
+        Queue membership change event. Requires `quarkus-work-queues`.
         Fired synchronously within the WorkItem mutation's transaction.
       required:
         - workItemId

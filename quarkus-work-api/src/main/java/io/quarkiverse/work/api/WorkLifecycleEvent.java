@@ -7,7 +7,7 @@ import java.util.Map;
  *
  * <p>
  * Observers declared as {@code @Observes WorkLifecycleEvent} receive any subtype,
- * including {@code WorkItemLifecycleEvent} from quarkus-workitems and future event
+ * including {@code WorkItemLifecycleEvent} from quarkus-work and future event
  * types from CaseHub.
  *
  * <p>
@@ -30,7 +30,7 @@ public abstract class WorkLifecycleEvent {
     public abstract Map<String, Object> context();
 
     /**
-     * The underlying work unit (e.g. {@code WorkItem} in quarkus-workitems).
+     * The underlying work unit (e.g. {@code WorkItem} in quarkus-work).
      * {@code FilterAction} implementations downcast to the concrete type they expect.
      * Never null.
      */

@@ -12,7 +12,7 @@ Adds pluggable worker selection to WorkItems. Instead of all-candidates-claim-fi
 the best available candidate. The default strategy (`least-loaded`) picks the candidateUser
 with the fewest active WorkItems. Custom strategies are CDI `@Alternative` beans.
 
-The selection SPI lives in a new `quarkus-workitems-api` module — pure Java, no Quarkus
+The selection SPI lives in a new `quarkus-work-api` module — pure Java, no Quarkus
 runtime dependencies — so CaseHub and other systems can depend on the shared types without
 pulling in the full WorkItems stack. This eliminates the naming divergence between
 WorkItems' `WorkItemRouter` and CaseHub's `WorkerSelectionStrategy`.
@@ -31,22 +31,22 @@ WorkItems' `WorkItemRouter` and CaseHub's `WorkerSelectionStrategy`.
 
 ### CaseHub coordination (after `-api` is published)
 
-Once `quarkus-workitems-api` is available, CaseHub must:
+Once `quarkus-work-api` is available, CaseHub must:
 
-1. Add `quarkus-workitems-api` as a **compile-scope** dependency in `casehub-engine` (no runtime dependency on the full WorkItems stack).
+1. Add `quarkus-work-api` as a **compile-scope** dependency in `casehub-engine` (no runtime dependency on the full WorkItems stack).
 2. Align `HumanWorkerProfile` to `WorkerCandidate` — either implement it directly or provide a mapping method.
 3. Implement `WorkerRegistry` using CaseHub's `WorkerRegistry`/`WorkerRegistrar` to resolve group names to `WorkerCandidate` lists (with capabilities and workload pre-populated).
 4. Align `WorkerSelectionStrategy` (CaseHub) to the shared interface — or implement the shared interface directly in the strategies (`CapabilityMatchStrategy`, `LoadAwareStrategy`).
-5. The `quarkus-workitems-casehub` integration adapter bridges remaining gaps between the two runtimes.
+5. The `quarkus-work-casehub` integration adapter bridges remaining gaps between the two runtimes.
 
-A GitHub issue will be filed in `casehubio/engine` after `quarkus-workitems-api` ships, with these steps as the acceptance criteria.
+A GitHub issue will be filed in `casehubio/engine` after `quarkus-work-api` ships, with these steps as the acceptance criteria.
 
 ---
 
 ## Module Structure
 
 ```
-quarkus-workitems-api   (new — pure Java, zero dependencies)
+quarkus-work-api   (new — pure Java, zero dependencies)
   spi/
     WorkerCandidate           record
     WorkerSelectionStrategy   interface
@@ -54,7 +54,7 @@ quarkus-workitems-api   (new — pure Java, zero dependencies)
     AssignmentTrigger         enum
     WorkerRegistry            interface
 
-quarkus-workitems (runtime — gains dep on quarkus-workitems-api)
+quarkus-work (runtime — gains dep on quarkus-work-api)
   service/
     WorkItemAssignmentService  @ApplicationScoped — orchestrates resolution + selection
     ClaimFirstStrategy         @ApplicationScoped — no-op, pool stays open
@@ -66,19 +66,19 @@ casehub-engine (future — depends on api only, NOT workitems runtime)
   WorkerSelectionStrategy implements shared interface
   HumanWorkerProfile      aligns to WorkerCandidate
 
-quarkus-workitems-casehub (future integration adapter)
+quarkus-work-casehub (future integration adapter)
   depends on: workitems runtime + casehub-engine
   bridges HumanWorkerProfile ↔ WorkerCandidate
 ```
 
 **Dependency graph (acyclic):**
 ```
-quarkus-workitems-api   ← pure Java, no runtime deps
+quarkus-work-api   ← pure Java, no runtime deps
        ↑                          ↑
-quarkus-workitems            casehub-engine
+quarkus-work            casehub-engine
   (runtime)                  (api dep only)
        ↑                          ↑
-       └──── quarkus-workitems-casehub ────┘
+       └──── quarkus-work-casehub ────┘
 ```
 
 ---
@@ -86,7 +86,7 @@ quarkus-workitems            casehub-engine
 ## SPI Contracts
 
 ```java
-// quarkus-workitems-api — pure Java
+// quarkus-work-api — pure Java
 
 /** A potential assignee for a WorkItem. */
 record WorkerCandidate(
@@ -118,7 +118,7 @@ enum AssignmentTrigger { CREATED, RELEASED, DELEGATED }
 /**
  * Pluggable worker selection SPI.
  * Implement as @ApplicationScoped @Alternative @Priority(1) to override the
- * built-in strategy selected by quarkus.workitems.routing.strategy.
+ * built-in strategy selected by quarkus.work.routing.strategy.
  */
 interface WorkerSelectionStrategy {
     AssignmentDecision select(WorkItem workItem, List<WorkerCandidate> candidates);
@@ -142,7 +142,7 @@ interface WorkerRegistry {
 
 **Config (WorkItems runtime):**
 ```properties
-quarkus.workitems.routing.strategy=least-loaded   # default
+quarkus.work.routing.strategy=least-loaded   # default
 # Options: least-loaded | claim-first
 ```
 
@@ -158,7 +158,7 @@ WorkItemService.create(request)
 WorkItemAssignmentService.assign(workItem, trigger):
   1. Resolve active strategy:
      - CDI @Alternative WorkerSelectionStrategy present → use it
-     - Else → read quarkus.workitems.routing.strategy → built-in
+     - Else → read quarkus.work.routing.strategy → built-in
   2. strategy.triggers() does not contain trigger → return (skip)
   3. Resolve candidates:
      a. Parse workItem.candidateUsers (comma-sep) → List<WorkerCandidate>
@@ -200,7 +200,7 @@ an application registers a real implementation.
 
 ## Testing Strategy
 
-**Unit tests (no Quarkus boot) — `quarkus-workitems-api`:**
+**Unit tests (no Quarkus boot) — `quarkus-work-api`:**
 - `WorkerCandidateTest` — record construction, `of()` factory
 - `AssignmentDecisionTest` — `noChange()`, `assignTo()`, `narrowCandidates()` factories
 
@@ -217,7 +217,7 @@ an application registers a real implementation.
   - No candidateUsers/Groups → `noChange()`, no pre-assignment
   - `PUT /workitems/{id}/release` → strategy re-fires (RELEASED trigger)
   - `PUT /workitems/{id}/delegate` → strategy re-fires (DELEGATED trigger)
-  - `quarkus.workitems.routing.strategy=claim-first` → no pre-assignment
+  - `quarkus.work.routing.strategy=claim-first` → no pre-assignment
   - `@Alternative` custom strategy → overrides config
 
 **E2E:**
@@ -232,7 +232,7 @@ an application registers a real implementation.
 
 | # | Title | Epic |
 |---|---|---|
-| TBD | `quarkus-workitems-api` module — shared SPI types | #100 / #102 |
+| TBD | `quarkus-work-api` module — shared SPI types | #100 / #102 |
 | TBD | `WorkItemAssignmentService` + `ClaimFirstStrategy` + `LeastLoadedStrategy` | #100 / #102 |
 | TBD | `WorkerRegistry` default + `WorkItemsConfig` routing sub-group | #102 |
 | TBD | `round-robin` strategy — stateful cursor, cluster-safe | #102 |
@@ -245,4 +245,4 @@ an application registers a real implementation.
 - `RoundRobinStrategy` — stateful cursor; separate issue filed, not implemented here
 - LangChain4j-backed semantic strategy — future Epic #100 feature
 - Notification on pre-assignment — future Epic #103
-- `quarkus-workitems-casehub` integration adapter — blocked on CaseHub stability
+- `quarkus-work-casehub` integration adapter — blocked on CaseHub stability

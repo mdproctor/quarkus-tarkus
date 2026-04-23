@@ -1,8 +1,8 @@
-# quarkus-workitems → quarkus-workitems Rename Plan
+# quarkus-work → quarkus-work Rename Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Rename the entire project from `quarkus-workitems` to `quarkus-workitems` — directory, GitHub repo, Maven coordinates, Java packages, class names, config prefix, REST paths, and all documentation.
+**Goal:** Rename the entire project from `quarkus-work` to `quarkus-work` — directory, GitHub repo, Maven coordinates, Java packages, class names, config prefix, REST paths, and all documentation.
 
 **Architecture:** The rename proceeds in dependency order: GitHub repo and directory first (infrastructure), then Maven POMs, then Java source (directory moves + text replacements), then config/REST paths, then docs. Each task ends with a build or test verification so regressions surface immediately.
 
@@ -14,20 +14,20 @@
 
 | Old | New |
 |-----|-----|
-| `~/claude/quarkus-workitems/` | `~/claude/quarkus-workitems/` |
-| `mdproctor/quarkus-workitems` (GitHub) | `mdproctor/quarkus-workitems` |
-| `workitems-flow/` | `workitems-flow/` |
-| `quarkus-workitems-ledger/` | `quarkus-workitems-ledger/` |
-| `quarkus-workitems-examples/` | `quarkus-workitems-examples/` |
-| `quarkus-workitems-flow-examples/` | `quarkus-workitems-flow-examples/` |
-| groupId `io.quarkiverse.workitems` | `io.quarkiverse.workitems` |
-| artifactId `quarkus-workitems[-*]` | `quarkus-workitems[-*]` |
-| Java package `io.quarkiverse.workitems` | `io.quarkiverse.workitems` |
+| `~/claude/quarkus-work/` | `~/claude/quarkus-work/` |
+| `mdproctor/quarkus-work` (GitHub) | `mdproctor/quarkus-work` |
+| `work-flow/` | `work-flow/` |
+| `quarkus-work-ledger/` | `quarkus-work-ledger/` |
+| `quarkus-work-examples/` | `quarkus-work-examples/` |
+| `quarkus-work-flow-examples/` | `quarkus-work-flow-examples/` |
+| groupId `io.quarkiverse.work` | `io.quarkiverse.work` |
+| artifactId `quarkus-work[-*]` | `quarkus-work[-*]` |
+| Java package `io.quarkiverse.work` | `io.quarkiverse.work` |
 | Class `TarkusConfig` | `WorkItemsConfig` |
 | Class `TarkusProcessor` | `WorkItemsProcessor` |
 | Class `WorkItemsFlow` | `WorkItemsFlow` |
 | Class `WorkItemTaskBuilder` | `WorkItemTaskBuilder` |
-| Config prefix `quarkus.tarkus` | `quarkus.workitems` |
+| Config prefix `quarkus.tarkus` | `quarkus.work` |
 | Feature name `"tarkus"` | `"workitems"` |
 | REST path `/workitems` | `/workitems` |
 | REST path `/workitems/actors` | `/workitems/actors` |
@@ -42,20 +42,20 @@
 - [ ] **Step 1: Rename the GitHub repository**
 
 ```bash
-gh repo rename quarkus-workitems --repo mdproctor/quarkus-workitems --yes
+gh repo rename quarkus-work --repo mdproctor/quarkus-work --yes
 ```
 
-Expected output: `✓ Renamed repository to mdproctor/quarkus-workitems`
+Expected output: `✓ Renamed repository to mdproctor/quarkus-work`
 
 - [ ] **Step 2: Update the git remote in the local repository**
 
 ```bash
-cd /Users/mdproctor/claude/quarkus-workitems
-git remote set-url origin https://github.com/mdproctor/quarkus-workitems.git
+cd /Users/mdproctor/claude/quarkus-work
+git remote set-url origin https://github.com/mdproctor/quarkus-work.git
 git remote -v
 ```
 
-Expected: both fetch and push show `quarkus-workitems.git`
+Expected: both fetch and push show `quarkus-work.git`
 
 - [ ] **Step 3: Commit the remote URL change note**
 
@@ -65,19 +65,19 @@ No files changed — the remote update is not tracked by git. Continue to Task 1
 
 ## Task 1: Rename the project directory
 
-**⚠️ This task must be executed from OUTSIDE the project directory.** Claude Code's working directory will become invalid after the move. After this task, restart Claude Code pointing to the new path `~/claude/quarkus-workitems`.
+**⚠️ This task must be executed from OUTSIDE the project directory.** Claude Code's working directory will become invalid after the move. After this task, restart Claude Code pointing to the new path `~/claude/quarkus-work`.
 
 - [ ] **Step 1: Move the directory from a parent shell**
 
 ```bash
 cd ~/claude
-mv quarkus-workitems quarkus-workitems
+mv quarkus-work quarkus-work
 ```
 
 - [ ] **Step 2: Verify git history is intact**
 
 ```bash
-cd ~/claude/quarkus-workitems
+cd ~/claude/quarkus-work
 git log --oneline -3
 git status --short
 ```
@@ -90,9 +90,9 @@ Expected: git history present, working tree clean.
 git remote -v
 ```
 
-Expected: shows `quarkus-workitems.git` (already updated in Task 0).
+Expected: shows `quarkus-work.git` (already updated in Task 0).
 
-**After this step: restart Claude Code with the new working directory `~/claude/quarkus-workitems` before continuing.**
+**After this step: restart Claude Code with the new working directory `~/claude/quarkus-work` before continuing.**
 
 ---
 
@@ -100,30 +100,30 @@ Expected: shows `quarkus-workitems.git` (already updated in Task 0).
 
 **Files modified:** `pom.xml` (parent), module directories renamed with `git mv`
 
-Working directory for all commands: `/Users/mdproctor/claude/quarkus-workitems`
+Working directory for all commands: `/Users/mdproctor/claude/quarkus-work`
 
-- [ ] **Step 1: Rename `workitems-flow/` → `workitems-flow/`**
+- [ ] **Step 1: Rename `work-flow/` → `work-flow/`**
 
 ```bash
-git mv workitems-flow workitems-flow
+git mv work-flow work-flow
 ```
 
-- [ ] **Step 2: Rename `quarkus-workitems-ledger/` → `quarkus-workitems-ledger/`**
+- [ ] **Step 2: Rename `quarkus-work-ledger/` → `quarkus-work-ledger/`**
 
 ```bash
-git mv quarkus-workitems-ledger quarkus-workitems-ledger
+git mv quarkus-work-ledger quarkus-work-ledger
 ```
 
-- [ ] **Step 3: Rename `quarkus-workitems-examples/` → `quarkus-workitems-examples/`**
+- [ ] **Step 3: Rename `quarkus-work-examples/` → `quarkus-work-examples/`**
 
 ```bash
-git mv quarkus-workitems-examples quarkus-workitems-examples
+git mv quarkus-work-examples quarkus-work-examples
 ```
 
-- [ ] **Step 4: Rename `quarkus-workitems-flow-examples/` → `quarkus-workitems-flow-examples/`**
+- [ ] **Step 4: Rename `quarkus-work-flow-examples/` → `quarkus-work-flow-examples/`**
 
 ```bash
-git mv quarkus-workitems-flow-examples quarkus-workitems-flow-examples
+git mv quarkus-work-flow-examples quarkus-work-flow-examples
 ```
 
 - [ ] **Step 5: Update parent `pom.xml` module list**
@@ -135,10 +135,10 @@ In `pom.xml`, replace the `<modules>` section with:
     <module>runtime</module>
     <module>deployment</module>
     <module>testing</module>
-    <module>workitems-flow</module>
-    <module>quarkus-workitems-ledger</module>
-    <module>quarkus-workitems-examples</module>
-    <module>quarkus-workitems-flow-examples</module>
+    <module>work-flow</module>
+    <module>quarkus-work-ledger</module>
+    <module>quarkus-work-examples</module>
+    <module>quarkus-work-flow-examples</module>
     <module>integration-tests</module>
   </modules>
 ```
@@ -159,10 +159,10 @@ git commit -m "refactor: rename module directories tarkus→workitems"
 - Modify: `runtime/pom.xml`
 - Modify: `deployment/pom.xml`
 - Modify: `testing/pom.xml`
-- Modify: `workitems-flow/pom.xml`
-- Modify: `quarkus-workitems-ledger/pom.xml`
-- Modify: `quarkus-workitems-examples/pom.xml`
-- Modify: `quarkus-workitems-flow-examples/pom.xml`
+- Modify: `work-flow/pom.xml`
+- Modify: `quarkus-work-ledger/pom.xml`
+- Modify: `quarkus-work-examples/pom.xml`
+- Modify: `quarkus-work-flow-examples/pom.xml`
 - Modify: `integration-tests/pom.xml`
 
 The safest approach is a single bulk `sed` across all pom files, then manual review.
@@ -171,16 +171,16 @@ The safest approach is a single bulk `sed` across all pom files, then manual rev
 
 ```bash
 find . -name "pom.xml" -not -path "*/target/*" -exec sed -i '' \
-  -e 's|io\.quarkiverse\.tarkus|io.quarkiverse.workitems|g' \
-  -e 's|quarkus-workitems-parent|quarkus-workitems-parent|g' \
-  -e 's|<artifactId>quarkus-workitems</artifactId>|<artifactId>quarkus-workitems</artifactId>|g' \
-  -e 's|<artifactId>quarkus-workitems-deployment</artifactId>|<artifactId>quarkus-workitems-deployment</artifactId>|g' \
-  -e 's|<artifactId>quarkus-workitems-testing</artifactId>|<artifactId>quarkus-workitems-testing</artifactId>|g' \
-  -e 's|<artifactId>quarkus-workitems-flow</artifactId>|<artifactId>quarkus-workitems-flow</artifactId>|g' \
-  -e 's|<artifactId>quarkus-workitems-ledger</artifactId>|<artifactId>quarkus-workitems-ledger</artifactId>|g' \
-  -e 's|<artifactId>quarkus-workitems-examples</artifactId>|<artifactId>quarkus-workitems-examples</artifactId>|g' \
-  -e 's|<artifactId>quarkus-workitems-flow-examples</artifactId>|<artifactId>quarkus-workitems-flow-examples</artifactId>|g' \
-  -e 's|<artifactId>quarkus-workitems-integration-tests</artifactId>|<artifactId>quarkus-workitems-integration-tests</artifactId>|g' \
+  -e 's|io\.quarkiverse\.tarkus|io.quarkiverse.work|g' \
+  -e 's|quarkus-work-parent|quarkus-work-parent|g' \
+  -e 's|<artifactId>quarkus-work</artifactId>|<artifactId>quarkus-work</artifactId>|g' \
+  -e 's|<artifactId>quarkus-work-deployment</artifactId>|<artifactId>quarkus-work-deployment</artifactId>|g' \
+  -e 's|<artifactId>quarkus-work-testing</artifactId>|<artifactId>quarkus-work-testing</artifactId>|g' \
+  -e 's|<artifactId>quarkus-work-flow</artifactId>|<artifactId>quarkus-work-flow</artifactId>|g' \
+  -e 's|<artifactId>quarkus-work-ledger</artifactId>|<artifactId>quarkus-work-ledger</artifactId>|g' \
+  -e 's|<artifactId>quarkus-work-examples</artifactId>|<artifactId>quarkus-work-examples</artifactId>|g' \
+  -e 's|<artifactId>quarkus-work-flow-examples</artifactId>|<artifactId>quarkus-work-flow-examples</artifactId>|g' \
+  -e 's|<artifactId>quarkus-work-integration-tests</artifactId>|<artifactId>quarkus-work-integration-tests</artifactId>|g' \
   {} \;
 ```
 
@@ -190,9 +190,9 @@ In `pom.xml`, update the `<scm>` block:
 
 ```xml
   <scm>
-    <connection>scm:git:git@github.com:mdproctor/quarkus-workitems.git</connection>
-    <developerConnection>scm:git:git@github.com:mdproctor/quarkus-workitems.git</developerConnection>
-    <url>https://github.com/mdproctor/quarkus-workitems</url>
+    <connection>scm:git:git@github.com:mdproctor/quarkus-work.git</connection>
+    <developerConnection>scm:git:git@github.com:mdproctor/quarkus-work.git</developerConnection>
+    <url>https://github.com/mdproctor/quarkus-work</url>
     <tag>HEAD</tag>
   </scm>
 ```
@@ -201,10 +201,10 @@ In `pom.xml`, update the `<scm>` block:
 
 In `pom.xml`, update:
 ```xml
-  <artifactId>quarkus-workitems-parent</artifactId>
+  <artifactId>quarkus-work-parent</artifactId>
   <name>Quarkus WorkItems - Parent</name>
   <description>Human-scale WorkItem lifecycle management ...</description>
-  <url>https://github.com/mdproctor/quarkus-workitems</url>
+  <url>https://github.com/mdproctor/quarkus-work</url>
 ```
 
 - [ ] **Step 4: Verify pom files parse correctly**
@@ -219,7 +219,7 @@ Expected: BUILD SUCCESS (validation only, no compilation).
 
 ```bash
 git add -A
-git commit -m "refactor(pom): rename Maven coordinates io.quarkiverse.workitems→workitems"
+git commit -m "refactor(pom): rename Maven coordinates io.quarkiverse.work→workitems"
 ```
 
 ---
@@ -264,58 +264,58 @@ git mv testing/src/main/java/io/quarkiverse/tarkus/testing \
 rmdir testing/src/main/java/io/quarkiverse/tarkus 2>/dev/null || true
 ```
 
-- [ ] **Step 5: Rename workitems-flow source directory**
+- [ ] **Step 5: Rename work-flow source directory**
 
 ```bash
-mkdir -p workitems-flow/src/main/java/io/quarkiverse/workitems
-git mv workitems-flow/src/main/java/io/quarkiverse/tarkus/flow \
-        workitems-flow/src/main/java/io/quarkiverse/workitems/flow
-rmdir workitems-flow/src/main/java/io/quarkiverse/tarkus 2>/dev/null || true
+mkdir -p work-flow/src/main/java/io/quarkiverse/workitems
+git mv work-flow/src/main/java/io/quarkiverse/tarkus/flow \
+        work-flow/src/main/java/io/quarkiverse/workitems/flow
+rmdir work-flow/src/main/java/io/quarkiverse/tarkus 2>/dev/null || true
 
-mkdir -p workitems-flow/src/test/java/io/quarkiverse/workitems
-git mv workitems-flow/src/test/java/io/quarkiverse/tarkus/flow \
-        workitems-flow/src/test/java/io/quarkiverse/workitems/flow
-rmdir workitems-flow/src/test/java/io/quarkiverse/tarkus 2>/dev/null || true
+mkdir -p work-flow/src/test/java/io/quarkiverse/workitems
+git mv work-flow/src/test/java/io/quarkiverse/tarkus/flow \
+        work-flow/src/test/java/io/quarkiverse/workitems/flow
+rmdir work-flow/src/test/java/io/quarkiverse/tarkus 2>/dev/null || true
 ```
 
 - [ ] **Step 6: Rename ledger source directory**
 
 ```bash
-mkdir -p quarkus-workitems-ledger/src/main/java/io/quarkiverse/workitems
-git mv quarkus-workitems-ledger/src/main/java/io/quarkiverse/tarkus/ledger \
-        quarkus-workitems-ledger/src/main/java/io/quarkiverse/workitems/ledger
-rmdir quarkus-workitems-ledger/src/main/java/io/quarkiverse/tarkus 2>/dev/null || true
+mkdir -p quarkus-work-ledger/src/main/java/io/quarkiverse/workitems
+git mv quarkus-work-ledger/src/main/java/io/quarkiverse/tarkus/ledger \
+        quarkus-work-ledger/src/main/java/io/quarkiverse/workitems/ledger
+rmdir quarkus-work-ledger/src/main/java/io/quarkiverse/tarkus 2>/dev/null || true
 
-mkdir -p quarkus-workitems-ledger/src/test/java/io/quarkiverse/workitems
-git mv quarkus-workitems-ledger/src/test/java/io/quarkiverse/tarkus/ledger \
-        quarkus-workitems-ledger/src/test/java/io/quarkiverse/workitems/ledger
-rmdir quarkus-workitems-ledger/src/test/java/io/quarkiverse/tarkus 2>/dev/null || true
+mkdir -p quarkus-work-ledger/src/test/java/io/quarkiverse/workitems
+git mv quarkus-work-ledger/src/test/java/io/quarkiverse/tarkus/ledger \
+        quarkus-work-ledger/src/test/java/io/quarkiverse/workitems/ledger
+rmdir quarkus-work-ledger/src/test/java/io/quarkiverse/tarkus 2>/dev/null || true
 ```
 
 - [ ] **Step 7: Rename examples source directories**
 
 ```bash
 # workitems-examples
-mkdir -p quarkus-workitems-examples/src/main/java/io/quarkiverse/workitems
-git mv quarkus-workitems-examples/src/main/java/io/quarkiverse/tarkus/examples \
-        quarkus-workitems-examples/src/main/java/io/quarkiverse/workitems/examples
-rmdir quarkus-workitems-examples/src/main/java/io/quarkiverse/tarkus 2>/dev/null || true
+mkdir -p quarkus-work-examples/src/main/java/io/quarkiverse/workitems
+git mv quarkus-work-examples/src/main/java/io/quarkiverse/tarkus/examples \
+        quarkus-work-examples/src/main/java/io/quarkiverse/workitems/examples
+rmdir quarkus-work-examples/src/main/java/io/quarkiverse/tarkus 2>/dev/null || true
 
-mkdir -p quarkus-workitems-examples/src/test/java/io/quarkiverse/workitems
-git mv quarkus-workitems-examples/src/test/java/io/quarkiverse/tarkus/examples \
-        quarkus-workitems-examples/src/test/java/io/quarkiverse/workitems/examples
-rmdir quarkus-workitems-examples/src/test/java/io/quarkiverse/tarkus 2>/dev/null || true
+mkdir -p quarkus-work-examples/src/test/java/io/quarkiverse/workitems
+git mv quarkus-work-examples/src/test/java/io/quarkiverse/tarkus/examples \
+        quarkus-work-examples/src/test/java/io/quarkiverse/workitems/examples
+rmdir quarkus-work-examples/src/test/java/io/quarkiverse/tarkus 2>/dev/null || true
 
-# workitems-flow-examples
-mkdir -p quarkus-workitems-flow-examples/src/main/java/io/quarkiverse/workitems
-git mv quarkus-workitems-flow-examples/src/main/java/io/quarkiverse/tarkus/examples \
-        quarkus-workitems-flow-examples/src/main/java/io/quarkiverse/workitems/examples
-rmdir quarkus-workitems-flow-examples/src/main/java/io/quarkiverse/tarkus 2>/dev/null || true
+# work-flow-examples
+mkdir -p quarkus-work-flow-examples/src/main/java/io/quarkiverse/workitems
+git mv quarkus-work-flow-examples/src/main/java/io/quarkiverse/tarkus/examples \
+        quarkus-work-flow-examples/src/main/java/io/quarkiverse/workitems/examples
+rmdir quarkus-work-flow-examples/src/main/java/io/quarkiverse/tarkus 2>/dev/null || true
 
-mkdir -p quarkus-workitems-flow-examples/src/test/java/io/quarkiverse/workitems
-git mv quarkus-workitems-flow-examples/src/test/java/io/quarkiverse/tarkus/examples \
-        quarkus-workitems-flow-examples/src/test/java/io/quarkiverse/workitems/examples
-rmdir quarkus-workitems-flow-examples/src/test/java/io/quarkiverse/tarkus 2>/dev/null || true
+mkdir -p quarkus-work-flow-examples/src/test/java/io/quarkiverse/workitems
+git mv quarkus-work-flow-examples/src/test/java/io/quarkiverse/tarkus/examples \
+        quarkus-work-flow-examples/src/test/java/io/quarkiverse/workitems/examples
+rmdir quarkus-work-flow-examples/src/test/java/io/quarkiverse/tarkus 2>/dev/null || true
 ```
 
 - [ ] **Step 8: Rename integration-tests source directory**
@@ -337,13 +337,13 @@ git commit -m "refactor: move Java source directories tarkus→workitems"
 
 ## Task 5: Update all Java package declarations and imports
 
-All `.java` files now live at the new path but still contain `io.quarkiverse.workitems` in their `package` and `import` statements. Fix with bulk `sed`.
+All `.java` files now live at the new path but still contain `io.quarkiverse.work` in their `package` and `import` statements. Fix with bulk `sed`.
 
 - [ ] **Step 1: Bulk replace package and import statements**
 
 ```bash
 find . -name "*.java" -not -path "*/target/*" -exec sed -i '' \
-  's|io\.quarkiverse\.tarkus|io.quarkiverse.workitems|g' {} \;
+  's|io\.quarkiverse\.tarkus|io.quarkiverse.work|g' {} \;
 ```
 
 - [ ] **Step 2: Verify no stale references remain in source**
@@ -361,7 +361,7 @@ Expected: no output. If any remain, they are in `target/` or missed — investig
 head -5 runtime/src/main/java/io/quarkiverse/workitems/runtime/model/WorkItem.java
 ```
 
-Expected: `package io.quarkiverse.workitems.runtime.model;`
+Expected: `package io.quarkiverse.work.runtime.model;`
 
 - [ ] **Step 4: Commit**
 
@@ -379,8 +379,8 @@ Rename four classes: `TarkusConfig`, `TarkusProcessor`, `WorkItemsFlow`, `WorkIt
 **Files:**
 - Rename + modify: `runtime/.../config/TarkusConfig.java` → `WorkItemsConfig.java`
 - Rename + modify: `deployment/.../deployment/TarkusProcessor.java` → `WorkItemsProcessor.java`
-- Rename + modify: `workitems-flow/.../flow/WorkItemsFlow.java` → `WorkItemsFlow.java`
-- Rename + modify: `workitems-flow/.../flow/WorkItemTaskBuilder.java` → `WorkItemTaskBuilder.java`
+- Rename + modify: `work-flow/.../flow/WorkItemsFlow.java` → `WorkItemsFlow.java`
+- Rename + modify: `work-flow/.../flow/WorkItemTaskBuilder.java` → `WorkItemTaskBuilder.java`
 - All files that import or reference these class names
 
 - [ ] **Step 1: Rename TarkusConfig → WorkItemsConfig**
@@ -400,15 +400,15 @@ git mv deployment/src/main/java/io/quarkiverse/workitems/deployment/TarkusProces
 - [ ] **Step 3: Rename WorkItemsFlow → WorkItemsFlow**
 
 ```bash
-git mv workitems-flow/src/main/java/io/quarkiverse/workitems/flow/WorkItemsFlow.java \
-        workitems-flow/src/main/java/io/quarkiverse/workitems/flow/WorkItemsFlow.java
+git mv work-flow/src/main/java/io/quarkiverse/workitems/flow/WorkItemsFlow.java \
+        work-flow/src/main/java/io/quarkiverse/workitems/flow/WorkItemsFlow.java
 ```
 
 - [ ] **Step 4: Rename WorkItemTaskBuilder → WorkItemTaskBuilder**
 
 ```bash
-git mv workitems-flow/src/main/java/io/quarkiverse/workitems/flow/WorkItemTaskBuilder.java \
-        workitems-flow/src/main/java/io/quarkiverse/workitems/flow/WorkItemTaskBuilder.java
+git mv work-flow/src/main/java/io/quarkiverse/workitems/flow/WorkItemTaskBuilder.java \
+        work-flow/src/main/java/io/quarkiverse/workitems/flow/WorkItemTaskBuilder.java
 ```
 
 - [ ] **Step 5: Update all class name references across Java source**
@@ -424,23 +424,23 @@ find . -name "*.java" -not -path "*/target/*" -exec sed -i '' \
 
 - [ ] **Step 6: Update the test workflow class name reference**
 
-The test file `workitems-flow/src/test/java/.../flow/TestTarkusWorkflow.java` extends `WorkItemsFlow`. Rename the test file too:
+The test file `work-flow/src/test/java/.../flow/TestTarkusWorkflow.java` extends `WorkItemsFlow`. Rename the test file too:
 
 ```bash
-git mv workitems-flow/src/test/java/io/quarkiverse/workitems/flow/TestTarkusWorkflow.java \
-        workitems-flow/src/test/java/io/quarkiverse/workitems/flow/TestWorkItemsWorkflow.java
+git mv work-flow/src/test/java/io/quarkiverse/workitems/flow/TestTarkusWorkflow.java \
+        work-flow/src/test/java/io/quarkiverse/workitems/flow/TestWorkItemsWorkflow.java
 ```
 
 Then fix the class name inside:
 ```bash
 sed -i '' 's|class TestTarkusWorkflow|class TestWorkItemsWorkflow|g' \
-  workitems-flow/src/test/java/io/quarkiverse/workitems/flow/TestWorkItemsWorkflow.java
+  work-flow/src/test/java/io/quarkiverse/workitems/flow/TestWorkItemsWorkflow.java
 ```
 
 Update references to `TestTarkusWorkflow` in `HumanTaskIntegrationTest.java`:
 ```bash
 sed -i '' 's|TestTarkusWorkflow|TestWorkItemsWorkflow|g' \
-  workitems-flow/src/test/java/io/quarkiverse/workitems/flow/HumanTaskIntegrationTest.java
+  work-flow/src/test/java/io/quarkiverse/workitems/flow/HumanTaskIntegrationTest.java
 ```
 
 - [ ] **Step 7: Verify no Tarkus class name references remain**
@@ -465,10 +465,10 @@ git commit -m "refactor: rename TarkusConfig/Processor/Flow/TaskBuilder → Work
 
 **Files:**
 - Modify: `runtime/src/main/java/io/quarkiverse/workitems/runtime/config/WorkItemsConfig.java`
-- Modify: `workitems-flow/src/main/java/io/quarkiverse/workitems/deployment/WorkItemsProcessor.java`
+- Modify: `work-flow/src/main/java/io/quarkiverse/workitems/deployment/WorkItemsProcessor.java`
 - Modify: `runtime/src/main/java/io/quarkiverse/workitems/runtime/api/WorkItemResource.java`
-- Modify: `quarkus-workitems-ledger/src/main/java/io/quarkiverse/workitems/ledger/api/LedgerResource.java`
-- Modify: `quarkus-workitems-ledger/src/main/java/io/quarkiverse/workitems/ledger/api/ActorTrustResource.java`
+- Modify: `quarkus-work-ledger/src/main/java/io/quarkiverse/workitems/ledger/api/LedgerResource.java`
+- Modify: `quarkus-work-ledger/src/main/java/io/quarkiverse/workitems/ledger/api/ActorTrustResource.java`
 - Modify: all `application.properties` files
 
 - [ ] **Step 1: Update ConfigMapping prefix in WorkItemsConfig**
@@ -481,7 +481,7 @@ Replace:
 ```
 With:
 ```java
-@ConfigMapping(prefix = "quarkus.workitems")
+@ConfigMapping(prefix = "quarkus.work")
 ```
 
 - [ ] **Step 2: Update feature name in WorkItemsProcessor**
@@ -506,25 +506,25 @@ sed -i '' 's|@Path("/workitems")|@Path("/workitems")|g' \
 
 # LedgerResource: /workitems/{id} → /workitems/{id}
 sed -i '' 's|@Path("/workitems/{id}")|@Path("/workitems/{id}")|g' \
-  quarkus-workitems-ledger/src/main/java/io/quarkiverse/workitems/ledger/api/LedgerResource.java
+  quarkus-work-ledger/src/main/java/io/quarkiverse/workitems/ledger/api/LedgerResource.java
 
 # ActorTrustResource: /workitems/actors → /workitems/actors
 sed -i '' 's|@Path("/workitems/actors")|@Path("/workitems/actors")|g' \
-  quarkus-workitems-ledger/src/main/java/io/quarkiverse/workitems/ledger/api/ActorTrustResource.java
+  quarkus-work-ledger/src/main/java/io/quarkiverse/workitems/ledger/api/ActorTrustResource.java
 ```
 
 - [ ] **Step 4: Update config prefix in all application.properties (non-target)**
 
 ```bash
 find . -name "application.properties" -not -path "*/target/*" -exec sed -i '' \
-  's|quarkus\.tarkus\.|quarkus.workitems.|g' {} \;
+  's|quarkus\.tarkus\.|quarkus.work.|g' {} \;
 ```
 
 - [ ] **Step 5: Update config prefix in any Javadoc or string literals**
 
 ```bash
 find . -name "*.java" -not -path "*/target/*" -exec sed -i '' \
-  's|quarkus\.tarkus\.|quarkus.workitems.|g' {} \;
+  's|quarkus\.tarkus\.|quarkus.work.|g' {} \;
 ```
 
 - [ ] **Step 6: Update REST path references in tests and integration tests**
@@ -565,14 +565,14 @@ JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn clean install -DskipTests 2>&1 | t
 Expected: BUILD SUCCESS across all 9 modules. If compilation fails, read the error, identify which class or import is wrong, fix with targeted `sed` or manual edit, and retry.
 
 Common failure patterns:
-- Remaining `io.quarkiverse.workitems` in a file missed by the bulk sed → `grep -r "io\.quarkiverse\.tarkus" --include="*.java" . | grep -v target`
+- Remaining `io.quarkiverse.work` in a file missed by the bulk sed → `grep -r "io\.quarkiverse\.tarkus" --include="*.java" . | grep -v target`
 - `TarkusConfig`/`WorkItemsFlow` reference not replaced → `grep -r "Tarkus[A-Z]" --include="*.java" . | grep -v target`
 - Flyway migration directory mismatch → check `runtime/src/main/resources/db/migration/`
 
 - [ ] **Step 3: Run all tests**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl runtime,quarkus-workitems-ledger,workitems-flow,quarkus-workitems-examples,quarkus-workitems-flow-examples 2>&1 | grep -E "Tests run|BUILD|FAIL"
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl runtime,quarkus-work-ledger,work-flow,quarkus-work-examples,quarkus-work-flow-examples 2>&1 | grep -E "Tests run|BUILD|FAIL"
 ```
 
 Expected: all modules BUILD SUCCESS, 0 failures.
@@ -581,7 +581,7 @@ Expected: all modules BUILD SUCCESS, 0 failures.
 
 Tests most likely to fail:
 - REST Assured tests hitting `/workitems` — check for hardcoded path strings in test `@Test` methods
-- `@QuarkusTest` config binding failures — `quarkus.workitems.*` property in test application.properties not yet renamed
+- `@QuarkusTest` config binding failures — `quarkus.work.*` property in test application.properties not yet renamed
 - Class injection failures (`@Inject WorkItemsConfig`) — check field types match renamed class
 
 Fix, then re-run the failing module only:
@@ -608,22 +608,22 @@ git add -A && git commit -m "fix: post-rename compilation and test fixes"
 - Modify: `HANDOFF.md`
 - Modify: `adr/0001-extract-ledger-infrastructure-to-quarkus-ledger.md`
 - Modify: `adr/INDEX.md`
-- Modify: `workitems-flow/README.md`
-- Modify: `quarkus-workitems-examples/README.md`
-- Modify: `quarkus-workitems-flow-examples/README.md`
+- Modify: `work-flow/README.md`
+- Modify: `quarkus-work-examples/README.md`
+- Modify: `quarkus-work-flow-examples/README.md`
 - Modify: `blog/*.md`
 - Modify: `docs/specs/*.md`
 - Modify: `docs/superpowers/specs/*.md`
 - Modify: `docs/superpowers/plans/*.md`
 
-- [ ] **Step 1: Bulk replace "quarkus-workitems" and "Quarkus WorkItems" in all markdown**
+- [ ] **Step 1: Bulk replace "quarkus-work" and "Quarkus WorkItems" in all markdown**
 
 ```bash
 find . -name "*.md" -not -path "*/target/*" -exec sed -i '' \
-  -e 's|quarkus-workitems|quarkus-workitems|g' \
+  -e 's|quarkus-work|quarkus-work|g' \
   -e 's|Quarkus WorkItems|Quarkus WorkItems|g' \
-  -e 's|quarkus\.tarkus\.|quarkus.workitems.|g' \
-  -e 's|io\.quarkiverse\.tarkus|io.quarkiverse.workitems|g' \
+  -e 's|quarkus\.tarkus\.|quarkus.work.|g' \
+  -e 's|io\.quarkiverse\.tarkus|io.quarkiverse.work|g' \
   -e 's|/workitems|/workitems|g' \
   -e 's|/workitems/actors|/workitems/actors|g' \
   {} \;
@@ -633,22 +633,22 @@ find . -name "*.md" -not -path "*/target/*" -exec sed -i '' \
 
 In `CLAUDE.md`, find and update the GitHub repo line:
 ```
-**GitHub repo:** mdproctor/quarkus-workitems
+**GitHub repo:** mdproctor/quarkus-work
 ```
 
 Also update the Build and Test section references to renamed modules:
 ```bash
 # Run tests (flow integration)
-JAVA_HOME=$(...) mvn test -pl workitems-flow
+JAVA_HOME=$(...) mvn test -pl work-flow
 
 # Run tests (examples module)  
-JAVA_HOME=$(...) mvn test -pl quarkus-workitems-examples
+JAVA_HOME=$(...) mvn test -pl quarkus-work-examples
 ```
 
 - [ ] **Step 3: Replace remaining "Tarkus" references in markdown**
 
 ```bash
-# Replace "Tarkus" (capitalized, as a proper noun for the extension) but NOT "workitems-flow" 
+# Replace "Tarkus" (capitalized, as a proper noun for the extension) but NOT "work-flow" 
 # (already handled above) or identifiers that are correctly named
 find . -name "*.md" -not -path "*/target/*" -exec sed -i '' \
   -e 's|\bTarkus\b|WorkItems|g' \
@@ -666,13 +666,13 @@ Fix any oddities manually.
 
 - [ ] **Step 4: Update HANDOFF.md**
 
-The HANDOFF.md will contain references to `quarkus-workitems`. After the bulk sed, verify it reads correctly and update the "What Changed This Session" section to note the rename.
+The HANDOFF.md will contain references to `quarkus-work`. After the bulk sed, verify it reads correctly and update the "What Changed This Session" section to note the rename.
 
 - [ ] **Step 5: Commit all doc updates**
 
 ```bash
 git add -A
-git commit -m "docs: update all documentation for quarkus-workitems→quarkus-workitems rename"
+git commit -m "docs: update all documentation for quarkus-work→quarkus-work rename"
 ```
 
 ---
@@ -681,10 +681,10 @@ git commit -m "docs: update all documentation for quarkus-workitems→quarkus-wo
 
 - [ ] **Step 1: Update CLAUDE.md reference to memory path (if any)**
 
-Check if CLAUDE.md references the project path `quarkus-workitems` anywhere:
+Check if CLAUDE.md references the project path `quarkus-work` anywhere:
 
 ```bash
-grep -n "quarkus-workitems\|quarkus-workitems" CLAUDE.md | head -10
+grep -n "quarkus-work\|quarkus-work" CLAUDE.md | head -10
 ```
 
 Fix any remaining references manually.
@@ -693,7 +693,7 @@ Fix any remaining references manually.
 
 ```bash
 grep -r "tarkus\|Tarkus" --include="*.java" --include="*.properties" \
-  $(find . -not -path "*/target/*" -not -path "*/.git/*") | grep -v "quarkus-workitems\|workitems" | head -20
+  $(find . -not -path "*/target/*" -not -path "*/.git/*") | grep -v "quarkus-work\|workitems" | head -20
 ```
 
 Expected: no output (or only in intentional contexts like commit messages or external library names that shouldn't change).
@@ -712,7 +712,7 @@ Expected: BUILD SUCCESS, all tests pass.
 git push origin main
 ```
 
-Expected: push succeeds to `https://github.com/mdproctor/quarkus-workitems.git`
+Expected: push succeeds to `https://github.com/mdproctor/quarkus-work.git`
 
 - [ ] **Step 5: Final commit summary**
 
@@ -734,7 +734,7 @@ Verify the commit trail makes sense. Done.
 - ✅ Java source directory moves (Task 4)
 - ✅ Java package declarations and imports (Task 5)
 - ✅ Class renames: TarkusConfig, TarkusProcessor, WorkItemsFlow, WorkItemTaskBuilder (Task 6)
-- ✅ Config prefix `quarkus.tarkus` → `quarkus.workitems` (Task 7)
+- ✅ Config prefix `quarkus.tarkus` → `quarkus.work` (Task 7)
 - ✅ Feature name `"tarkus"` → `"workitems"` (Task 7)
 - ✅ REST paths `/workitems` → `/workitems`, `/workitems/actors` → `/workitems/actors` (Task 7)
 - ✅ All application.properties (Task 7)
@@ -745,7 +745,7 @@ Verify the commit trail makes sense. Done.
 - ✅ Final push (Task 10)
 
 ### Known risks not covered by the plan
-- `META-INF/maven/io.quarkiverse.workitems/quarkus-workitems/pom.xml` — this is a generated file in the installed jar, not a source file. It will regenerate correctly after `mvn clean install`. Do not edit it manually.
-- `quarkus-ledger` dependency: `io.quarkiverse.ledger:quarkus-ledger` is a separate project — its coordinates do NOT change. The `quarkus-workitems-ledger` module's dependency on it stays as `io.quarkiverse.ledger`.
-- GitHub issue URLs embedded in commit messages or docs reference `mdproctor/quarkus-workitems` — GitHub auto-redirects these. Leave them as historical record.
-- The `~/.claude/projects/-Users-mdproctor-claude-quarkus-workitems/` directory contains conversation history files (`.jsonl`), not memory. No migration needed — Claude will create a new project entry for the renamed path automatically.
+- `META-INF/maven/io.quarkiverse.work/quarkus-work/pom.xml` — this is a generated file in the installed jar, not a source file. It will regenerate correctly after `mvn clean install`. Do not edit it manually.
+- `quarkus-ledger` dependency: `io.quarkiverse.ledger:quarkus-ledger` is a separate project — its coordinates do NOT change. The `quarkus-work-ledger` module's dependency on it stays as `io.quarkiverse.ledger`.
+- GitHub issue URLs embedded in commit messages or docs reference `mdproctor/quarkus-work` — GitHub auto-redirects these. Leave them as historical record.
+- The `~/.claude/projects/-Users-mdproctor-claude-quarkus-work/` directory contains conversation history files (`.jsonl`), not memory. No migration needed — Claude will create a new project entry for the renamed path automatically.

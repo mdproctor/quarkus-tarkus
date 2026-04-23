@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add a pluggable semantic skill matching stack to WorkItems: `SkillProfile` + `SkillProfileProvider` + `SkillMatcher` SPIs in `quarkus-work-api`, three built-in providers and an LangChain4j embedding matcher in `quarkus-workitems-ai`, and a `WorkerSkillProfile` entity with REST API.
+**Goal:** Add a pluggable semantic skill matching stack to WorkItems: `SkillProfile` + `SkillProfileProvider` + `SkillMatcher` SPIs in `quarkus-work-api`, three built-in providers and an LangChain4j embedding matcher in `quarkus-work-ai`, and a `WorkerSkillProfile` entity with REST API.
 
 **Architecture:** `SelectionContext` gains `title` and `description` fields so strategies can see what the work is. `SemanticWorkerSelectionStrategy` (auto-activated via `@Alternative @Priority(1)`) gets each candidate's `SkillProfile` from the active provider, scores it against the context using the active `SkillMatcher`, and assigns to the highest scorer above a threshold. All three layers (profile source, matcher, strategy) are independently swappable via CDI.
 
@@ -25,7 +25,7 @@ src/test/java/io/quarkiverse/work/api/
   SelectionContextTest.java    MODIFIED: update for new fields
 ```
 
-### New in `quarkus-workitems-ai/`
+### New in `quarkus-work-ai/`
 ```
 src/main/java/io/quarkiverse/workitems/ai/
   config/WorkItemsAiConfig.java           MODIFIED: add semantic() sub-group
@@ -57,7 +57,7 @@ src/test/java/io/quarkiverse/workitems/runtime/service/WorkItemAssignmentService
   Update tests that construct SelectionContext directly
 ```
 
-### Modified: `quarkus-workitems-ai/pom.xml`
+### Modified: `quarkus-work-ai/pom.xml`
 Add `quarkus-langchain4j-core` compile dependency.
 
 ---
@@ -239,7 +239,7 @@ import java.util.Set;
  * SPI for building a worker's {@link SkillProfile}.
  *
  * <p>Implement as {@code @ApplicationScoped @Alternative @Priority(1)} to override
- * the active built-in. Built-in implementations (in quarkus-workitems-ai):
+ * the active built-in. Built-in implementations (in quarkus-work-ai):
  * {@code CapabilitiesSkillProfileProvider}, {@code WorkerProfileSkillProfileProvider},
  * {@code ResolutionHistorySkillProfileProvider}.
  *
@@ -271,7 +271,7 @@ package io.quarkiverse.work.api;
  *
  * <p>Returns a score where higher = better match. The scale is implementation-defined
  * (e.g. cosine similarity ∈ [−1, 1], Jaccard similarity ∈ [0, 1]). The configured
- * threshold in {@code quarkus.workitems.ai.semantic.score-threshold} must use the
+ * threshold in {@code quarkus.work.ai.semantic.score-threshold} must use the
  * same scale.
  *
  * <p>Implement as {@code @ApplicationScoped @Alternative @Priority(1)} to override
@@ -325,7 +325,7 @@ EOF
 - Modify: `quarkus-work-api/src/test/java/io/quarkiverse/work/api/SelectionContextTest.java`
 - Modify: `runtime/src/main/java/io/quarkiverse/workitems/runtime/service/WorkItemAssignmentService.java`
 - Modify: `runtime/src/test/java/io/quarkiverse/workitems/runtime/service/WorkItemAssignmentServiceTest.java`
-- Modify: tests in `quarkus-work-core/` and `workitems-flow/` that construct SelectionContext
+- Modify: tests in `quarkus-work-core/` and `work-flow/` that construct SelectionContext
 
 - [ ] **Step 1: Update SelectionContext**
 
@@ -363,8 +363,8 @@ public record SelectionContext(
 
 ```bash
 grep -rn "new SelectionContext(" \
-  quarkus-work-core/src runtime/src workitems-flow/src \
-  quarkus-workitems-ai/src quarkus-workitems-queues/src 2>/dev/null
+  quarkus-work-core/src runtime/src work-flow/src \
+  quarkus-work-ai/src quarkus-work-queues/src 2>/dev/null
 ```
 
 - [ ] **Step 3: Update each construction site**
@@ -414,7 +414,7 @@ void record_allowsNullFields() {
 
 ```bash
 JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn compile \
-  -pl quarkus-work-api,quarkus-work-core,runtime,quarkus-workitems-ai,workitems-flow \
+  -pl quarkus-work-api,quarkus-work-core,runtime,quarkus-work-ai,work-flow \
   --no-transfer-progress 2>&1 | tail -10
 ```
 Fix any remaining construction sites if compile fails.
@@ -429,7 +429,7 @@ Expected: all existing tests pass (no regressions).
 - [ ] **Step 6: Commit**
 
 ```bash
-git add quarkus-work-api/ quarkus-work-core/ runtime/ workitems-flow/
+git add quarkus-work-api/ quarkus-work-core/ runtime/ work-flow/
 git commit -m "$(cat <<'EOF'
 feat(work-api): extend SelectionContext with title and description
 
@@ -449,13 +449,13 @@ EOF
 ### Task 5: WorkerSkillProfile entity, Flyway migration, and pom update
 
 **Files:**
-- Modify: `quarkus-workitems-ai/pom.xml`
-- Create: `quarkus-workitems-ai/src/main/java/io/quarkiverse/workitems/ai/skill/WorkerSkillProfile.java`
-- Create: `quarkus-workitems-ai/src/main/resources/db/migration/V14__worker_skill_profile.sql`
+- Modify: `quarkus-work-ai/pom.xml`
+- Create: `quarkus-work-ai/src/main/java/io/quarkiverse/workitems/ai/skill/WorkerSkillProfile.java`
+- Create: `quarkus-work-ai/src/main/resources/db/migration/V14__worker_skill_profile.sql`
 
 - [ ] **Step 1: Add quarkus-langchain4j-core to pom.xml**
 
-In `quarkus-workitems-ai/pom.xml`, add under `<dependencies>` before the first `<dependency>`:
+In `quarkus-work-ai/pom.xml`, add under `<dependencies>` before the first `<dependency>`:
 ```xml
 <!-- LangChain4j core — EmbeddingModel SPI; consuming app configures provider -->
 <dependency>
@@ -486,13 +486,13 @@ In `quarkus-workitems-ai/pom.xml`, add under `<dependencies>` before the first `
 Also check that `quarkus-langchain4j-core` version is managed — check if it is in the BOM:
 ```bash
 JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn dependency:resolve \
-  -pl quarkus-workitems-ai --no-transfer-progress 2>&1 | grep "langchain4j" | head -5
+  -pl quarkus-work-ai --no-transfer-progress 2>&1 | grep "langchain4j" | head -5
 ```
 If not found in BOM, add the version to the parent pom's `<dependencyManagement>` section using the latest quarkus-langchain4j compatible with Quarkus 3.32.2 (check https://mvnrepository.com/artifact/io.quarkiverse.langchain4j/quarkus-langchain4j-core for the matching version — typically `0.22.x`).
 
 - [ ] **Step 2: Create V14 migration**
 
-`quarkus-workitems-ai/src/main/resources/db/migration/V14__worker_skill_profile.sql`:
+`quarkus-work-ai/src/main/resources/db/migration/V14__worker_skill_profile.sql`:
 ```sql
 CREATE TABLE worker_skill_profile (
     worker_id   VARCHAR(255) NOT NULL,
@@ -505,9 +505,9 @@ CREATE TABLE worker_skill_profile (
 
 - [ ] **Step 3: Write the failing entity test**
 
-`quarkus-workitems-ai/src/test/java/io/quarkiverse/workitems/ai/skill/WorkerSkillProfileTest.java`:
+`quarkus-work-ai/src/test/java/io/quarkiverse/workitems/ai/skill/WorkerSkillProfileTest.java`:
 ```java
-package io.quarkiverse.workitems.ai.skill;
+package io.quarkiverse.work.ai.skill;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Instant;
@@ -549,15 +549,15 @@ class WorkerSkillProfileTest {
 - [ ] **Step 4: Run — expect compile failure**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-ai \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-ai \
   -Dtest=WorkerSkillProfileTest --no-transfer-progress 2>&1 | tail -5
 ```
 
 - [ ] **Step 5: Implement WorkerSkillProfile**
 
-`quarkus-workitems-ai/src/main/java/io/quarkiverse/workitems/ai/skill/WorkerSkillProfile.java`:
+`quarkus-work-ai/src/main/java/io/quarkiverse/workitems/ai/skill/WorkerSkillProfile.java`:
 ```java
-package io.quarkiverse.workitems.ai.skill;
+package io.quarkiverse.work.ai.skill;
 
 import java.time.Instant;
 
@@ -613,7 +613,7 @@ public class WorkerSkillProfile extends PanacheEntityBase {
 - [ ] **Step 6: Run entity test — expect GREEN**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-ai \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-ai \
   -Dtest=WorkerSkillProfileTest --no-transfer-progress 2>&1 | tail -5
 ```
 Expected: 3 tests pass.
@@ -621,7 +621,7 @@ Expected: 3 tests pass.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add quarkus-workitems-ai/
+git add quarkus-work-ai/
 git commit -m "$(cat <<'EOF'
 feat(workitems-ai): add WorkerSkillProfile entity and V14 migration
 
@@ -639,14 +639,14 @@ EOF
 ### Task 6: WorkerSkillProfileResource REST API
 
 **Files:**
-- Create: `quarkus-workitems-ai/src/main/java/io/quarkiverse/workitems/ai/skill/WorkerSkillProfileResource.java`
-- Create: `quarkus-workitems-ai/src/test/java/io/quarkiverse/workitems/ai/skill/WorkerSkillProfileResourceTest.java`
+- Create: `quarkus-work-ai/src/main/java/io/quarkiverse/workitems/ai/skill/WorkerSkillProfileResource.java`
+- Create: `quarkus-work-ai/src/test/java/io/quarkiverse/workitems/ai/skill/WorkerSkillProfileResourceTest.java`
 
 - [ ] **Step 1: Write failing @QuarkusTest first**
 
-`quarkus-workitems-ai/src/test/java/io/quarkiverse/workitems/ai/skill/WorkerSkillProfileResourceTest.java`:
+`quarkus-work-ai/src/test/java/io/quarkiverse/workitems/ai/skill/WorkerSkillProfileResourceTest.java`:
 ```java
-package io.quarkiverse.workitems.ai.skill;
+package io.quarkiverse.work.ai.skill;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -750,15 +750,15 @@ class WorkerSkillProfileResourceTest {
 - [ ] **Step 2: Run — expect compile failure**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-ai \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-ai \
   -Dtest=WorkerSkillProfileResourceTest --no-transfer-progress 2>&1 | tail -10
 ```
 
 - [ ] **Step 3: Implement WorkerSkillProfileResource**
 
-`quarkus-workitems-ai/src/main/java/io/quarkiverse/workitems/ai/skill/WorkerSkillProfileResource.java`:
+`quarkus-work-ai/src/main/java/io/quarkiverse/workitems/ai/skill/WorkerSkillProfileResource.java`:
 ```java
-package io.quarkiverse.workitems.ai.skill;
+package io.quarkiverse.work.ai.skill;
 
 import java.util.List;
 
@@ -832,7 +832,7 @@ public class WorkerSkillProfileResource {
 
 - [ ] **Step 4: Add test application.properties if not present**
 
-Check `quarkus-workitems-ai/src/test/resources/application.properties`. If it doesn't exist, create it:
+Check `quarkus-work-ai/src/test/resources/application.properties`. If it doesn't exist, create it:
 ```properties
 quarkus.datasource.db-kind=h2
 quarkus.datasource.jdbc.url=jdbc:h2:mem:aitest;DB_CLOSE_DELAY=-1
@@ -843,7 +843,7 @@ quarkus.http.test-port=0
 - [ ] **Step 5: Run @QuarkusTest — expect GREEN**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-ai \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-ai \
   -Dtest=WorkerSkillProfileResourceTest --no-transfer-progress 2>&1 | tail -10
 ```
 Expected: 7 tests pass.
@@ -851,7 +851,7 @@ Expected: 7 tests pass.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add quarkus-workitems-ai/
+git add quarkus-work-ai/
 git commit -m "$(cat <<'EOF'
 feat(workitems-ai): add WorkerSkillProfileResource REST API
 
@@ -871,13 +871,13 @@ EOF
 ### Task 7: CapabilitiesSkillProfileProvider
 
 **Files:**
-- Create: `quarkus-workitems-ai/src/main/java/io/quarkiverse/workitems/ai/skill/CapabilitiesSkillProfileProvider.java`
-- Create (test): `quarkus-workitems-ai/src/test/java/io/quarkiverse/workitems/ai/skill/CapabilitiesSkillProfileProviderTest.java`
+- Create: `quarkus-work-ai/src/main/java/io/quarkiverse/workitems/ai/skill/CapabilitiesSkillProfileProvider.java`
+- Create (test): `quarkus-work-ai/src/test/java/io/quarkiverse/workitems/ai/skill/CapabilitiesSkillProfileProviderTest.java`
 
 - [ ] **Step 1: Write failing test**
 
 ```java
-package io.quarkiverse.workitems.ai.skill;
+package io.quarkiverse.work.ai.skill;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Set;
@@ -925,14 +925,14 @@ class CapabilitiesSkillProfileProviderTest {
 - [ ] **Step 2: Run — expect compile failure**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-ai \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-ai \
   -Dtest=CapabilitiesSkillProfileProviderTest --no-transfer-progress 2>&1 | tail -5
 ```
 
 - [ ] **Step 3: Implement CapabilitiesSkillProfileProvider**
 
 ```java
-package io.quarkiverse.workitems.ai.skill;
+package io.quarkiverse.work.ai.skill;
 
 import java.util.Set;
 
@@ -964,7 +964,7 @@ public class CapabilitiesSkillProfileProvider implements SkillProfileProvider {
 - [ ] **Step 4: Run — expect GREEN**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-ai \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-ai \
   -Dtest=CapabilitiesSkillProfileProviderTest --no-transfer-progress 2>&1 | tail -5
 ```
 Expected: 5 tests pass.
@@ -972,7 +972,7 @@ Expected: 5 tests pass.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add quarkus-workitems-ai/
+git add quarkus-work-ai/
 git commit -m "$(cat <<'EOF'
 feat(workitems-ai): add CapabilitiesSkillProfileProvider
 
@@ -989,14 +989,14 @@ EOF
 ### Task 8: WorkerProfileSkillProfileProvider
 
 **Files:**
-- Create: `quarkus-workitems-ai/src/main/java/io/quarkiverse/workitems/ai/skill/WorkerProfileSkillProfileProvider.java`
+- Create: `quarkus-work-ai/src/main/java/io/quarkiverse/workitems/ai/skill/WorkerProfileSkillProfileProvider.java`
 - Add tests to existing test file
 
 - [ ] **Step 1: Write failing test**
 
-`quarkus-workitems-ai/src/test/java/io/quarkiverse/workitems/ai/skill/WorkerProfileSkillProfileProviderTest.java`:
+`quarkus-work-ai/src/test/java/io/quarkiverse/workitems/ai/skill/WorkerProfileSkillProfileProviderTest.java`:
 ```java
-package io.quarkiverse.workitems.ai.skill;
+package io.quarkiverse.work.ai.skill;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -1056,14 +1056,14 @@ class WorkerProfileSkillProfileProviderTest {
 - [ ] **Step 2: Run — expect compile failure**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-ai \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-ai \
   -Dtest=WorkerProfileSkillProfileProviderTest --no-transfer-progress 2>&1 | tail -5
 ```
 
 - [ ] **Step 3: Implement WorkerProfileSkillProfileProvider**
 
 ```java
-package io.quarkiverse.workitems.ai.skill;
+package io.quarkiverse.work.ai.skill;
 
 import java.util.Optional;
 import java.util.Set;
@@ -1108,7 +1108,7 @@ public class WorkerProfileSkillProfileProvider implements SkillProfileProvider {
 - [ ] **Step 4: Run — expect GREEN**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-ai \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-ai \
   -Dtest=WorkerProfileSkillProfileProviderTest --no-transfer-progress 2>&1 | tail -5
 ```
 Expected: 3 tests pass.
@@ -1116,7 +1116,7 @@ Expected: 3 tests pass.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add quarkus-workitems-ai/
+git add quarkus-work-ai/
 git commit -m "$(cat <<'EOF'
 feat(workitems-ai): add WorkerProfileSkillProfileProvider
 
@@ -1133,13 +1133,13 @@ EOF
 ### Task 9: ResolutionHistorySkillProfileProvider
 
 **Files:**
-- Create: `quarkus-workitems-ai/src/main/java/io/quarkiverse/workitems/ai/skill/ResolutionHistorySkillProfileProvider.java`
-- Create (test): `quarkus-workitems-ai/src/test/java/io/quarkiverse/workitems/ai/skill/ResolutionHistorySkillProfileProviderTest.java`
+- Create: `quarkus-work-ai/src/main/java/io/quarkiverse/workitems/ai/skill/ResolutionHistorySkillProfileProvider.java`
+- Create (test): `quarkus-work-ai/src/test/java/io/quarkiverse/workitems/ai/skill/ResolutionHistorySkillProfileProviderTest.java`
 
 - [ ] **Step 1: Write failing test**
 
 ```java
-package io.quarkiverse.workitems.ai.skill;
+package io.quarkiverse.work.ai.skill;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -1150,9 +1150,9 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.workitems.runtime.model.WorkItem;
-import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
-import io.quarkiverse.workitems.testing.InMemoryWorkItemStore;
+import io.quarkiverse.work.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.model.WorkItemStatus;
+import io.quarkiverse.work.testing.InMemoryWorkItemStore;
 
 class ResolutionHistorySkillProfileProviderTest {
 
@@ -1237,14 +1237,14 @@ class ResolutionHistorySkillProfileProviderTest {
 - [ ] **Step 2: Run — expect compile failure**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-ai \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-ai \
   -Dtest=ResolutionHistorySkillProfileProviderTest --no-transfer-progress 2>&1 | tail -5
 ```
 
 - [ ] **Step 3: Implement ResolutionHistorySkillProfileProvider**
 
 ```java
-package io.quarkiverse.workitems.ai.skill;
+package io.quarkiverse.work.ai.skill;
 
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -1259,15 +1259,15 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import io.quarkiverse.work.api.SkillProfile;
 import io.quarkiverse.work.api.SkillProfileProvider;
-import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
-import io.quarkiverse.workitems.runtime.repository.WorkItemQuery;
-import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
+import io.quarkiverse.work.runtime.model.WorkItemStatus;
+import io.quarkiverse.work.runtime.repository.WorkItemQuery;
+import io.quarkiverse.work.runtime.repository.WorkItemStore;
 
 /**
  * Builds a {@link SkillProfile} from a worker's completed WorkItem history.
  *
  * <p>Aggregates category frequencies from the most recent N completed items
- * (config: {@code quarkus.workitems.ai.semantic.history-limit}, default 50).
+ * (config: {@code quarkus.work.ai.semantic.history-limit}, default 50).
  * Example narrative: {@code "Completed work: legal×23, nda×18, finance×4"}.
  *
  * <p>Activate by declaring as {@code @Alternative @Priority(1)}.
@@ -1281,7 +1281,7 @@ public class ResolutionHistorySkillProfileProvider implements SkillProfileProvid
     @Inject
     public ResolutionHistorySkillProfileProvider(
             final WorkItemStore workItemStore,
-            @ConfigProperty(name = "quarkus.workitems.ai.semantic.history-limit",
+            @ConfigProperty(name = "quarkus.work.ai.semantic.history-limit",
                             defaultValue = "50") final int historyLimit) {
         this.workItemStore = workItemStore;
         this.historyLimit = historyLimit;
@@ -1330,7 +1330,7 @@ public class ResolutionHistorySkillProfileProvider implements SkillProfileProvid
 - [ ] **Step 4: Run — expect GREEN**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-ai \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-ai \
   -Dtest=ResolutionHistorySkillProfileProviderTest --no-transfer-progress 2>&1 | tail -5
 ```
 Expected: 5 tests pass.
@@ -1338,7 +1338,7 @@ Expected: 5 tests pass.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add quarkus-workitems-ai/
+git add quarkus-work-ai/
 git commit -m "$(cat <<'EOF'
 feat(workitems-ai): add ResolutionHistorySkillProfileProvider
 
@@ -1358,13 +1358,13 @@ EOF
 ### Task 10: EmbeddingSkillMatcher with cosine similarity
 
 **Files:**
-- Create: `quarkus-workitems-ai/src/main/java/io/quarkiverse/workitems/ai/skill/EmbeddingSkillMatcher.java`
-- Create (test): `quarkus-workitems-ai/src/test/java/io/quarkiverse/workitems/ai/skill/EmbeddingSkillMatcherTest.java`
+- Create: `quarkus-work-ai/src/main/java/io/quarkiverse/workitems/ai/skill/EmbeddingSkillMatcher.java`
+- Create (test): `quarkus-work-ai/src/test/java/io/quarkiverse/workitems/ai/skill/EmbeddingSkillMatcherTest.java`
 
 - [ ] **Step 1: Write failing test**
 
 ```java
-package io.quarkiverse.workitems.ai.skill;
+package io.quarkiverse.work.ai.skill;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -1473,14 +1473,14 @@ class EmbeddingSkillMatcherTest {
 - [ ] **Step 2: Run — expect compile failure**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-ai \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-ai \
   -Dtest=EmbeddingSkillMatcherTest --no-transfer-progress 2>&1 | tail -5
 ```
 
 - [ ] **Step 3: Implement EmbeddingSkillMatcher**
 
 ```java
-package io.quarkiverse.workitems.ai.skill;
+package io.quarkiverse.work.ai.skill;
 
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -1565,7 +1565,7 @@ public class EmbeddingSkillMatcher implements SkillMatcher {
 - [ ] **Step 4: Run — expect GREEN**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-ai \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-ai \
   -Dtest=EmbeddingSkillMatcherTest --no-transfer-progress 2>&1 | tail -5
 ```
 Expected: 6 tests pass.
@@ -1573,7 +1573,7 @@ Expected: 6 tests pass.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add quarkus-workitems-ai/
+git add quarkus-work-ai/
 git commit -m "$(cat <<'EOF'
 feat(workitems-ai): add EmbeddingSkillMatcher
 
@@ -1593,30 +1593,30 @@ EOF
 ### Task 11: WorkItemsAiConfig semantic sub-group
 
 **Files:**
-- Modify: `quarkus-workitems-ai/src/main/java/io/quarkiverse/workitems/ai/config/WorkItemsAiConfig.java`
+- Modify: `quarkus-work-ai/src/main/java/io/quarkiverse/workitems/ai/config/WorkItemsAiConfig.java`
 
 - [ ] **Step 1: Update WorkItemsAiConfig**
 
 Replace the file:
 ```java
-package io.quarkiverse.workitems.ai.config;
+package io.quarkiverse.work.ai.config;
 
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 
 /**
- * Configuration for the quarkus-workitems-ai module.
+ * Configuration for the quarkus-work-ai module.
  *
  * <pre>
- * quarkus.workitems.ai.confidence-threshold=0.7
- * quarkus.workitems.ai.low-confidence-filter.enabled=true
- * quarkus.workitems.ai.semantic.enabled=true
- * quarkus.workitems.ai.semantic.score-threshold=0.0
- * quarkus.workitems.ai.semantic.history-limit=50
+ * quarkus.work.ai.confidence-threshold=0.7
+ * quarkus.work.ai.low-confidence-filter.enabled=true
+ * quarkus.work.ai.semantic.enabled=true
+ * quarkus.work.ai.semantic.score-threshold=0.0
+ * quarkus.work.ai.semantic.history-limit=50
  * </pre>
  */
-@ConfigMapping(prefix = "quarkus.workitems.ai")
+@ConfigMapping(prefix = "quarkus.work.ai")
 public interface WorkItemsAiConfig {
 
     /**
@@ -1681,7 +1681,7 @@ public interface WorkItemsAiConfig {
 - [ ] **Step 2: Run existing ai tests — expect GREEN**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-ai \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-ai \
   --no-transfer-progress 2>&1 | tail -8
 ```
 Expected: all existing tests pass (Javadoc on all config methods required by quarkus-extension-processor).
@@ -1689,7 +1689,7 @@ Expected: all existing tests pass (Javadoc on all config methods required by qua
 - [ ] **Step 3: Commit**
 
 ```bash
-git add quarkus-workitems-ai/src/main/java/io/quarkiverse/workitems/ai/config/
+git add quarkus-work-ai/src/main/java/io/quarkiverse/workitems/ai/config/
 git commit -m "$(cat <<'EOF'
 feat(workitems-ai): add semantic config sub-group to WorkItemsAiConfig
 
@@ -1706,14 +1706,14 @@ EOF
 ### Task 12: SemanticWorkerSelectionStrategy
 
 **Files:**
-- Create: `quarkus-workitems-ai/src/main/java/io/quarkiverse/workitems/ai/skill/SemanticWorkerSelectionStrategy.java`
-- Create (test): `quarkus-workitems-ai/src/test/java/io/quarkiverse/workitems/ai/skill/SemanticStrategyTest.java`
+- Create: `quarkus-work-ai/src/main/java/io/quarkiverse/workitems/ai/skill/SemanticWorkerSelectionStrategy.java`
+- Create (test): `quarkus-work-ai/src/test/java/io/quarkiverse/workitems/ai/skill/SemanticStrategyTest.java`
 
 - [ ] **Step 1: Write failing unit tests**
 
-`quarkus-workitems-ai/src/test/java/io/quarkiverse/workitems/ai/skill/SemanticStrategyTest.java`:
+`quarkus-work-ai/src/test/java/io/quarkiverse/workitems/ai/skill/SemanticStrategyTest.java`:
 ```java
-package io.quarkiverse.workitems.ai.skill;
+package io.quarkiverse.work.ai.skill;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -1863,14 +1863,14 @@ class SemanticStrategyTest {
 - [ ] **Step 2: Run — expect compile failure**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-ai \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-ai \
   -Dtest=SemanticStrategyTest --no-transfer-progress 2>&1 | tail -5
 ```
 
 - [ ] **Step 3: Implement SemanticWorkerSelectionStrategy**
 
 ```java
-package io.quarkiverse.workitems.ai.skill;
+package io.quarkiverse.work.ai.skill;
 
 import java.util.Comparator;
 import java.util.List;
@@ -1889,17 +1889,17 @@ import io.quarkiverse.work.api.SkillProfile;
 import io.quarkiverse.work.api.SkillProfileProvider;
 import io.quarkiverse.work.api.WorkerCandidate;
 import io.quarkiverse.work.api.WorkerSelectionStrategy;
-import io.quarkiverse.workitems.ai.config.WorkItemsAiConfig;
+import io.quarkiverse.work.ai.config.WorkItemsAiConfig;
 
 /**
  * Assigns work to the candidate whose skill profile best matches the work item's
  * semantic content.
  *
- * <p>Auto-activates when {@code quarkus-workitems-ai} is on the classpath —
+ * <p>Auto-activates when {@code quarkus-work-ai} is on the classpath —
  * {@code @Alternative @Priority(1)} overrides the config-selected built-in strategy
  * without requiring a beans.xml entry.
  *
- * <p>When disabled ({@code quarkus.workitems.ai.semantic.enabled=false}) or when
+ * <p>When disabled ({@code quarkus.work.ai.semantic.enabled=false}) or when
  * all candidates score below the threshold, returns {@code noChange()} so the WorkItem
  * remains in the open pool for claim-first behaviour.
  */
@@ -1971,7 +1971,7 @@ public class SemanticWorkerSelectionStrategy implements WorkerSelectionStrategy 
 - [ ] **Step 4: Run unit tests — expect GREEN**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-ai \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-ai \
   -Dtest=SemanticStrategyTest --no-transfer-progress 2>&1 | tail -5
 ```
 Expected: 8 tests pass.
@@ -1979,7 +1979,7 @@ Expected: 8 tests pass.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add quarkus-workitems-ai/
+git add quarkus-work-ai/
 git commit -m "$(cat <<'EOF'
 feat(workitems-ai): add SemanticWorkerSelectionStrategy
 
@@ -1999,14 +1999,14 @@ EOF
 ### Task 13: End-to-end SemanticRoutingIT
 
 **Files:**
-- Create: `quarkus-workitems-ai/src/test/java/io/quarkiverse/workitems/ai/skill/SemanticRoutingIT.java`
+- Create: `quarkus-work-ai/src/test/java/io/quarkiverse/workitems/ai/skill/SemanticRoutingIT.java`
 
 This test creates two workers with profiles, creates a WorkItem, and verifies the semantically closer candidate is pre-assigned. It uses a stub `EmbeddingModel` that returns fixed vectors.
 
 - [ ] **Step 1: Write the integration test**
 
 ```java
-package io.quarkiverse.workitems.ai.skill;
+package io.quarkiverse.work.ai.skill;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -2021,8 +2021,8 @@ import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.workitems.runtime.model.WorkItem;
-import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
+import io.quarkiverse.work.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.repository.WorkItemStore;
 import jakarta.inject.Inject;
 
 @QuarkusTest
@@ -2038,8 +2038,8 @@ class SemanticRoutingIT {
         @Override
         public java.util.Map<String, String> getConfigOverrides() {
             return java.util.Map.of(
-                "quarkus.workitems.ai.semantic.enabled", "true",
-                "quarkus.workitems.ai.semantic.score-threshold", "0.0"
+                "quarkus.work.ai.semantic.enabled", "true",
+                "quarkus.work.ai.semantic.score-threshold", "0.0"
             );
         }
     }
@@ -2117,7 +2117,7 @@ class SemanticRoutingIT {
 - [ ] **Step 2: Run the integration test**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-ai \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-ai \
   -Dtest=SemanticRoutingIT --no-transfer-progress 2>&1 | tail -15
 ```
 Expected: tests pass. The routing assertion is conservative (documented as requiring a configured model) — the key check is that WorkItem creation succeeds with the semantic strategy active.
@@ -2125,7 +2125,7 @@ Expected: tests pass. The routing assertion is conservative (documented as requi
 - [ ] **Step 3: Commit**
 
 ```bash
-git add quarkus-workitems-ai/
+git add quarkus-work-ai/
 git commit -m "$(cat <<'EOF'
 test(workitems-ai): add SemanticRoutingIT end-to-end integration test
 
@@ -2148,7 +2148,7 @@ EOF
 
 ```bash
 JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test \
-  -pl quarkus-work-api,quarkus-work-core,runtime,quarkus-workitems-ai,workitems-flow \
+  -pl quarkus-work-api,quarkus-work-core,runtime,quarkus-work-ai,work-flow \
   --no-transfer-progress 2>&1 | grep -E "Tests run:|BUILD" | tail -20
 ```
 Expected: all modules pass, 0 failures.
@@ -2157,16 +2157,16 @@ Expected: all modules pass, 0 failures.
 
 ```bash
 # 1. No SelectionContext with old 5-arg constructor remains
-grep -rn "new SelectionContext(" quarkus-work-core/src runtime/src workitems-flow/src \
-  quarkus-workitems-ai/src 2>/dev/null | grep -v "null, null)" | grep -v "//\|test"
+grep -rn "new SelectionContext(" quarkus-work-core/src runtime/src work-flow/src \
+  quarkus-work-ai/src 2>/dev/null | grep -v "null, null)" | grep -v "//\|test"
 
 # 2. SemanticStrategy has @Alternative @Priority(1)
 grep -n "Alternative\|Priority" \
-  quarkus-workitems-ai/src/main/java/io/quarkiverse/workitems/ai/skill/SemanticWorkerSelectionStrategy.java
+  quarkus-work-ai/src/main/java/io/quarkiverse/workitems/ai/skill/SemanticWorkerSelectionStrategy.java
 
 # 3. EmbeddingSkillMatcher catches exceptions and returns -1.0
 grep -n "catch\|-1.0" \
-  quarkus-workitems-ai/src/main/java/io/quarkiverse/workitems/ai/skill/EmbeddingSkillMatcher.java
+  quarkus-work-ai/src/main/java/io/quarkiverse/workitems/ai/skill/EmbeddingSkillMatcher.java
 
 # 4. WorkItemAssignmentService populates title+description
 grep -n "workItem.title\|workItem.description" \
@@ -2178,7 +2178,7 @@ All should return expected output. Fix any issues.
 
 ```bash
 JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn install -DskipTests \
-  -pl quarkus-work-api,quarkus-work-core,runtime,deployment,testing,quarkus-workitems-ai \
+  -pl quarkus-work-api,quarkus-work-core,runtime,deployment,testing,quarkus-work-ai \
   --no-transfer-progress 2>&1 | tail -5
 ```
 Expected: BUILD SUCCESS. CaseHub can now use `SkillProfile`, `SkillProfileProvider`, `SkillMatcher`.
@@ -2194,7 +2194,7 @@ Expected: BUILD SUCCESS. CaseHub can now use `SkillProfile`, `SkillProfileProvid
 
 - [ ] **Step 1: Update CLAUDE.md**
 
-In the Project Structure tree, add under `quarkus-workitems-ai/`:
+In the Project Structure tree, add under `quarkus-work-ai/`:
 ```
 │   └── src/main/java/io/quarkiverse/workitems/ai/
 │       ├── config/WorkItemsAiConfig.java      — gains semantic() sub-group
@@ -2222,18 +2222,18 @@ Scan for any drift, stale references, or missing entries. Fix inline.
 - [ ] **Step 2: Update DESIGN.md**
 
 In the Services table, add:
-- `SemanticWorkerSelectionStrategy` — `quarkus-workitems-ai/skill` — auto-activating @Alternative: scores candidates via SkillProfileProvider + SkillMatcher, assigns best above threshold
+- `SemanticWorkerSelectionStrategy` — `quarkus-work-ai/skill` — auto-activating @Alternative: scores candidates via SkillProfileProvider + SkillMatcher, assigns best above threshold
 - `EmbeddingSkillMatcher` — same package — cosine similarity via LangChain4j EmbeddingModel
 - `WorkerProfileSkillProfileProvider` (and the other two providers) — same package
 
-In the Module table, add to the AI row description of `quarkus-workitems-ai`.
+In the Module table, add to the AI row description of `quarkus-work-ai`.
 
 In the Build Roadmap, add Phase 13 continuation:
 ```
 | **13b — Semantic Skill Matching** | ✅ Complete | SkillProfile + SkillProfileProvider + SkillMatcher SPIs; EmbeddingSkillMatcher (LangChain4j); 3 built-in providers; WorkerSkillProfile entity + REST; SemanticWorkerSelectionStrategy. Issues #119 #120 deferred. |
 ```
 
-Update test count table: `quarkus-workitems-ai` from 8 → actual count after this task.
+Update test count table: `quarkus-work-ai` from 8 → actual count after this task.
 
 Scan entire DESIGN.md for drift. Fix any stale API references.
 
@@ -2269,7 +2269,7 @@ EOF
 
 ```bash
 JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test \
-  -pl quarkus-work-api,quarkus-work-core,runtime,quarkus-workitems-ai \
+  -pl quarkus-work-api,quarkus-work-core,runtime,quarkus-work-ai \
   --no-transfer-progress 2>&1 | tail -10
 ```
 Expected: all pass, 0 failures.
@@ -2277,8 +2277,8 @@ Expected: all pass, 0 failures.
 - [ ] **Step 2: Close issue**
 
 ```bash
-gh issue close 121 --repo mdproctor/quarkus-workitems \
-  --comment "Implemented. SkillProfile + SkillProfileProvider + SkillMatcher in quarkus-work-api. EmbeddingSkillMatcher + 3 providers + WorkerSkillProfile entity + REST + SemanticWorkerSelectionStrategy in quarkus-workitems-ai. All tests passing. Refs #100."
+gh issue close 121 --repo mdproctor/quarkus-work \
+  --comment "Implemented. SkillProfile + SkillProfileProvider + SkillMatcher in quarkus-work-api. EmbeddingSkillMatcher + 3 providers + WorkerSkillProfile entity + REST + SemanticWorkerSelectionStrategy in quarkus-work-ai. All tests passing. Refs #100."
 ```
 
 - [ ] **Step 3: Merge to main**
@@ -2291,7 +2291,7 @@ git merge feature/semantic-matching --no-ff \
 SkillProfile + SkillProfileProvider + SkillMatcher SPIs added to quarkus-work-api.
 SelectionContext gains title + description. Three built-in providers (capabilities,
 DB profile, resolution history) + EmbeddingSkillMatcher (LangChain4j cosine similarity)
-+ SemanticWorkerSelectionStrategy (@Alternative @Priority(1)) in quarkus-workitems-ai.
++ SemanticWorkerSelectionStrategy (@Alternative @Priority(1)) in quarkus-work-ai.
 WorkerSkillProfile entity (V14) + REST API at /worker-skill-profiles.
 
 Issues #119 (composite provider) and #120 (fallback strategy) deferred.
@@ -2305,7 +2305,7 @@ Closes #121, Refs #100"
 git worktree remove --force .worktrees/semantic-matching
 git branch -d feature/semantic-matching
 JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn install -DskipTests \
-  --projects '!quarkus-workitems-ledger,!quarkus-workitems-examples' \
+  --projects '!quarkus-work-ledger,!quarkus-work-examples' \
   --no-transfer-progress 2>&1 | tail -5
 ```
 Expected: BUILD SUCCESS. All artifacts updated in local Maven repo.

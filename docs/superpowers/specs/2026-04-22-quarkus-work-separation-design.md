@@ -1,4 +1,4 @@
-# quarkus-work / quarkus-workitems Separation — Design Spec
+# quarkus-work / quarkus-work Separation — Design Spec
 **Date:** 2026-04-22
 **Status:** Approved for implementation
 
@@ -6,7 +6,7 @@
 
 ## Context and Motivation
 
-`quarkus-workitems-api` was created as a shared SPI layer so CaseHub could depend on routing
+`quarkus-work-api` was created as a shared SPI layer so CaseHub could depend on routing
 contracts without pulling in the full WorkItems stack. That worked for types. The insight driving
 this design is that routing *implementations* (`LeastLoadedStrategy`, `WorkAssignmentOrchestrator`)
 and the reactive filter engine are also generic — they belong below the WorkItems inbox layer, not
@@ -26,7 +26,7 @@ are specialisations.
 Four modules after the refactor:
 
 ```
-quarkus-work-api        (renamed from quarkus-workitems-api)
+quarkus-work-api        (renamed from quarkus-work-api)
   groupId: io.quarkiverse.work
   Pure Java, zero dependencies.
   All SPI contracts — the shared language between systems.
@@ -37,14 +37,14 @@ quarkus-work-core       (new)
   All generic implementations: WorkBroker, built-in strategies, filter engine.
   No WorkItem entity, no human-inbox specifics.
 
-quarkus-workitems       (unchanged extension)
-  groupId: io.quarkiverse.workitems
+quarkus-work       (unchanged extension)
+  groupId: io.quarkiverse.work
   WorkItem entity, lifecycle service, REST API, labels, queues, audit.
   Implements the SPIs defined in quarkus-work-api.
   Thin human-inbox layer on top of quarkus-work-core.
 
-quarkus-workitems-filter-registry  →  deleted (absorbed into quarkus-work-core)
-quarkus-workitems-api              →  deleted (renamed to quarkus-work-api)
+quarkus-work-filter-registry  →  deleted (absorbed into quarkus-work-core)
+quarkus-work-api              →  deleted (renamed to quarkus-work-api)
 ```
 
 Dependency graph (acyclic):
@@ -55,11 +55,11 @@ quarkus-work-api        ← pure Java, zero deps
 quarkus-work-core           casehub-engine
   (Jandex library)            (work-api dep only, or work-core)
        ↑                           ↑
-quarkus-workitems         quarkus-workitems-casehub (future)
+quarkus-work         quarkus-work-casehub (future)
   (extension)
        ↑
-quarkus-workitems-ai, -ledger, -queues, -issue-tracker, -persistence-mongodb
-  (unchanged dependencies on quarkus-workitems)
+quarkus-work-ai, -ledger, -queues, -issue-tracker, -persistence-mongodb
+  (unchanged dependencies on quarkus-work)
 ```
 
 ---
@@ -97,7 +97,7 @@ public abstract class WorkLifecycleEvent {
 }
 ```
 CDI observers declared as `@Observes WorkLifecycleEvent` receive any subtype — including
-`WorkItemLifecycleEvent` from quarkus-workitems, or a future CaseHub event type.
+`WorkItemLifecycleEvent` from quarkus-work, or a future CaseHub event type.
 
 **`WorkloadProvider` interface** — data-access SPI for populating candidate workload before routing:
 ```java
@@ -106,15 +106,15 @@ public interface WorkloadProvider {
 }
 ```
 `WorkBroker` calls this to populate `WorkerCandidate.activeWorkItemCount`. Each system provides
-its own implementation (`JpaWorkloadProvider` in quarkus-workitems, CaseHub's own impl).
+its own implementation (`JpaWorkloadProvider` in quarkus-work, CaseHub's own impl).
 
-**`EscalationPolicy` interface** — moved from quarkus-workitems runtime, genericised:
+**`EscalationPolicy` interface** — moved from quarkus-work runtime, genericised:
 ```java
 public interface EscalationPolicy {
     void escalate(WorkLifecycleEvent event);
 }
 ```
-Implementations stay in quarkus-workitems and downcast `event.source()` to `WorkItem`.
+Implementations stay in quarkus-work and downcast `event.source()` to `WorkItem`.
 
 ---
 
@@ -123,7 +123,7 @@ Implementations stay in quarkus-workitems and downcast `event.source()` to `Work
 Package root: `io.quarkiverse.work.core`
 
 Jandex-indexed library module. Has Quarkus CDI, Panache, and REST dependencies. No deployment
-module — the consuming extension (quarkus-workitems, CaseHub) provides the CDI container.
+module — the consuming extension (quarkus-work, CaseHub) provides the CDI container.
 
 ### Assignment routing
 
@@ -144,7 +144,7 @@ WorkBroker.assign(SelectionContext, AssignmentTrigger, List<WorkerCandidate>):
 - Resolving candidates via `WorkerRegistry` and populating `activeWorkItemCount` via `WorkloadProvider`
 - Applying the returned `AssignmentDecision` back to their domain object
 
-**`LeastLoadedStrategy`** — moved verbatim from quarkus-workitems runtime. No changes (already
+**`LeastLoadedStrategy`** — moved verbatim from quarkus-work runtime. No changes (already
 operates only on `SelectionContext + List<WorkerCandidate>`).
 
 **`ClaimFirstStrategy`** — moved verbatim. Returns `noChange()`.
@@ -153,7 +153,7 @@ operates only on `SelectionContext + List<WorkerCandidate>`).
 
 ### Filter engine
 
-All content from `quarkus-workitems-filter-registry`, with one change:
+All content from `quarkus-work-filter-registry`, with one change:
 `FilterRegistryEngine` changes its observer from `@Observes WorkItemLifecycleEvent` to
 `@Observes WorkLifecycleEvent`. All other code moves verbatim.
 
@@ -164,18 +164,18 @@ All content from `quarkus-workitems-filter-registry`, with one change:
 | `FilterEvent` | Moved from filter-registry |
 | `ActionDescriptor` | Moved from filter-registry |
 | `FilterRegistryEngine` | Moved + observer type changed to WorkLifecycleEvent |
-| `JexlConditionEvaluator` | Moved; `toMap(WorkItem)` method removed (moved to `WorkItemContextBuilder` in quarkus-workitems to avoid circular dep) |
+| `JexlConditionEvaluator` | Moved; `toMap(WorkItem)` method removed (moved to `WorkItemContextBuilder` in quarkus-work to avoid circular dep) |
 | `PermanentFilterRegistry` | Moved verbatim |
 | `DynamicFilterRegistry` | Moved verbatim |
 | `FilterRule` entity | Moved verbatim |
 | `FilterRuleResource` | Moved verbatim |
 
-Flyway migration `V3001__filter_rules.sql` moves from `quarkus-workitems-filter-registry` to
+Flyway migration `V3001__filter_rules.sql` moves from `quarkus-work-filter-registry` to
 `quarkus-work-core` resources. No delta migration needed (no installs).
 
 ---
 
-## `quarkus-workitems` After the Split
+## `quarkus-work` After the Split
 
 ### New types
 
@@ -185,10 +185,10 @@ Implements the three abstract methods:
 - `context()` — calls `WorkItemContextBuilder.toMap(workItem)` and returns the result
 - `source()` — returns the `WorkItem` entity
 
-**`WorkItemContextBuilder`** — new utility class in `quarkus-workitems`. Has the static
+**`WorkItemContextBuilder`** — new utility class in `quarkus-work`. Has the static
 `toMap(WorkItem)` method currently on `JexlConditionEvaluator` in filter-registry. This avoids a
 circular dependency: `JexlConditionEvaluator` in `quarkus-work-core` cannot reference `WorkItem`
-(which lives in `quarkus-workitems`), so the map-building logic stays in `quarkus-workitems`.
+(which lives in `quarkus-work`), so the map-building logic stays in `quarkus-work`.
 The drift-protection test (`toMap_containsAllPublicNonStaticWorkItemFields`) moves here too.
 
 **`JpaWorkloadProvider implements WorkloadProvider`** (`@ApplicationScoped`) — counts active
@@ -213,7 +213,7 @@ the interface from `quarkus-work-api`.
 **`NotifyEscalationPolicy`, `AutoRejectEscalationPolicy`, `ReassignEscalationPolicy`** — implement
 `EscalationPolicy.escalate(WorkLifecycleEvent)` and downcast `event.source()` to `WorkItem`.
 
-### Filter actions (stay in quarkus-workitems)
+### Filter actions (stay in quarkus-work)
 
 `ApplyLabelAction`, `OverrideCandidateGroupsAction`, `SetPriorityAction` — implement
 `FilterAction` from `quarkus-work-core`, downcast `event.source()` to `WorkItem`.
@@ -222,8 +222,8 @@ the interface from `quarkus-work-api`.
 
 | Change | Direction |
 |---|---|
-| `quarkus-workitems-api` dependency | removed |
-| `quarkus-workitems-filter-registry` dependency | removed |
+| `quarkus-work-api` dependency | removed |
+| `quarkus-work-filter-registry` dependency | removed |
 | `quarkus-work-core` dependency | added (compile) |
 
 ---
@@ -232,12 +232,12 @@ the interface from `quarkus-work-api`.
 
 | Module | Change |
 |---|---|
-| `quarkus-workitems-ai` | Import `FilterDefinition` from `io.quarkiverse.work.core.filter` instead of `io.quarkiverse.workitems.filterregistry.spi`. One import line. |
-| `quarkus-workitems-ledger` | No change — observes `WorkItemLifecycleEvent` (concrete type), which still exists in quarkus-workitems. |
-| `quarkus-workitems-queues` | No change. |
-| `quarkus-workitems-persistence-mongodb` | No change. |
-| `workitems-flow` | No change. |
-| `quarkus-workitems-issue-tracker` | No change. |
+| `quarkus-work-ai` | Import `FilterDefinition` from `io.quarkiverse.work.core.filter` instead of `io.quarkiverse.work.filterregistry.spi`. One import line. |
+| `quarkus-work-ledger` | No change — observes `WorkItemLifecycleEvent` (concrete type), which still exists in quarkus-work. |
+| `quarkus-work-queues` | No change. |
+| `quarkus-work-persistence-mongodb` | No change. |
+| `work-flow` | No change. |
+| `quarkus-work-issue-tracker` | No change. |
 | All example/dashboard modules | No change. |
 
 ---
@@ -251,13 +251,13 @@ After this ships, CaseHub can:
 4. Extend `WorkLifecycleEvent` for its own task lifecycle events
 5. Drop its own `TaskBroker` implementation and delegate to `WorkBroker`
 
-The `quarkus-workitems-casehub` adapter (blocked, future) bridges remaining gaps.
+The `quarkus-work-casehub` adapter (blocked, future) bridges remaining gaps.
 
 ---
 
 ## Out of Scope
 
-- Renaming the repo or parent artifact ID (`quarkus-workitems-parent`) — deferred until CaseHub alignment is stable
+- Renaming the repo or parent artifact ID (`quarkus-work-parent`) — deferred until CaseHub alignment is stable
 - `RoundRobinStrategy` — remains deferred (stateful cursor, issue #117)
 - Semantic embedding SPI — future Epic #100 feature; will land in `quarkus-work-api` when designed
-- `quarkus-workitems-casehub` adapter — blocked on CaseHub stability
+- `quarkus-work-casehub` adapter — blocked on CaseHub stability
