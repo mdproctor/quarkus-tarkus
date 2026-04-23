@@ -26,7 +26,7 @@ Using `WorkItem` avoids naming conflicts and accurately describes what WorkItems
 
 | Element | Value |
 |---|---|
-| GitHub repo | `mdproctor/quarkus-workitems` (→ `quarkiverse/quarkus-workitems` when submitted) |
+| GitHub repo | `mdproctor/quarkus-work` (→ `quarkiverse/quarkus-workitems` when submitted) |
 | groupId | `io.quarkiverse.workitems` |
 | Parent artifactId | `quarkus-workitems-parent` |
 | Runtime artifactId | `quarkus-workitems` |
@@ -253,7 +253,7 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home
 ## Work Tracking
 
 **Issue tracking:** enabled
-**GitHub repo:** mdproctor/quarkus-workitems
+**GitHub repo:** mdproctor/quarkus-work
 
 **Active epics** — priority order for market leadership:
 

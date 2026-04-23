@@ -17,6 +17,7 @@ import io.quarkiverse.work.api.SkillProfile;
 import io.quarkiverse.work.api.SkillProfileProvider;
 import io.quarkiverse.work.api.WorkerCandidate;
 import io.quarkiverse.work.api.WorkerSelectionStrategy;
+import io.quarkiverse.work.core.strategy.LeastLoadedStrategy;
 import io.quarkiverse.workitems.ai.config.WorkItemsAiConfig;
 
 /**
@@ -30,8 +31,8 @@ import io.quarkiverse.workitems.ai.config.WorkItemsAiConfig;
  *
  * <p>
  * When disabled ({@code quarkus.workitems.ai.semantic.enabled=false}) or when
- * all candidates score below the threshold, returns {@code noChange()} so the WorkItem
- * remains in the open pool for claim-first behaviour.
+ * all candidates score below the threshold, falls back to {@link LeastLoadedStrategy}
+ * so workload-aware routing still fires even when AI is unavailable.
  */
 @ApplicationScoped
 @Alternative
@@ -42,6 +43,7 @@ public class SemanticWorkerSelectionStrategy implements WorkerSelectionStrategy 
 
     private final SkillProfileProvider profileProvider;
     private final SkillMatcher matcher;
+    private final LeastLoadedStrategy fallback;
     private final boolean enabled;
     private final double scoreThreshold;
 
@@ -49,18 +51,22 @@ public class SemanticWorkerSelectionStrategy implements WorkerSelectionStrategy 
     public SemanticWorkerSelectionStrategy(
             final SkillProfileProvider profileProvider,
             final SkillMatcher matcher,
+            final LeastLoadedStrategy fallback,
             final WorkItemsAiConfig config) {
         this.profileProvider = profileProvider;
         this.matcher = matcher;
+        this.fallback = fallback;
         this.enabled = config.semantic().enabled();
         this.scoreThreshold = config.semantic().scoreThreshold();
     }
 
     /** Package-private constructor for unit tests — bypasses CDI and config. */
     SemanticWorkerSelectionStrategy(final SkillProfileProvider profileProvider,
-            final SkillMatcher matcher, final boolean enabled, final double scoreThreshold) {
+            final SkillMatcher matcher, final LeastLoadedStrategy fallback,
+            final boolean enabled, final double scoreThreshold) {
         this.profileProvider = profileProvider;
         this.matcher = matcher;
+        this.fallback = fallback;
         this.enabled = enabled;
         this.scoreThreshold = scoreThreshold;
     }
@@ -69,7 +75,7 @@ public class SemanticWorkerSelectionStrategy implements WorkerSelectionStrategy 
     public AssignmentDecision select(final SelectionContext context,
             final List<WorkerCandidate> candidates) {
         if (!enabled || candidates.isEmpty()) {
-            return AssignmentDecision.noChange();
+            return fallback.select(context, candidates);
         }
         try {
             return candidates.stream()
@@ -84,13 +90,14 @@ public class SemanticWorkerSelectionStrategy implements WorkerSelectionStrategy 
                     .map(cs -> AssignmentDecision.assignTo(cs.candidate.id()))
                     .orElseGet(() -> {
                         LOG.warnf("SemanticWorkerSelectionStrategy: no candidate scored above "
-                                + "threshold %.2f — returning noChange()", scoreThreshold);
-                        return AssignmentDecision.noChange();
+                                + "threshold %.2f — falling back to LeastLoadedStrategy",
+                                scoreThreshold);
+                        return fallback.select(context, candidates);
                     });
         } catch (final Exception e) {
-            LOG.warnf("SemanticWorkerSelectionStrategy failed: %s — returning noChange()",
-                    e.getMessage());
-            return AssignmentDecision.noChange();
+            LOG.warnf("SemanticWorkerSelectionStrategy failed: %s — falling back to "
+                    + "LeastLoadedStrategy", e.getMessage());
+            return fallback.select(context, candidates);
         }
     }
 

@@ -31,7 +31,8 @@ class SemanticStrategyTest {
     private SemanticWorkerSelectionStrategy strategy(
             final SkillProfileProvider provider, final SkillMatcher matcher,
             final boolean enabled, final double threshold) {
-        return new SemanticWorkerSelectionStrategy(provider, matcher, enabled, threshold);
+        return new SemanticWorkerSelectionStrategy(provider, matcher,
+                new io.quarkiverse.work.core.strategy.LeastLoadedStrategy(), enabled, threshold);
     }
 
     @Test
@@ -46,14 +47,15 @@ class SemanticStrategyTest {
     }
 
     @Test
-    void allBelowThreshold_returnsNoChange() {
+    void allBelowThreshold_fallsBackToLeastLoaded() {
         final SkillProfileProvider provider = (id, caps) -> SkillProfile.ofNarrative(id);
         final SkillMatcher matcher = (profile, c) -> -0.5;
 
         final var result = strategy(provider, matcher, true, 0.0)
                 .select(ctx, List.of(candidate("alice"), candidate("bob")));
 
-        assertThat(result.isNoOp()).isTrue();
+        // LeastLoadedStrategy assigns to one of the candidates (both at count=0)
+        assertThat(result.assigneeId()).isNotNull();
     }
 
     @Test
@@ -64,26 +66,25 @@ class SemanticStrategyTest {
         final var result = strategy(provider, matcher, true, 0.0)
                 .select(ctx, List.of());
 
+        // LeastLoadedStrategy also returns noChange() for empty candidates
         assertThat(result.isNoOp()).isTrue();
     }
 
     @Test
-    void disabled_returnsNoChangeImmediately() {
-        final SkillProfileProvider provider = (id, caps) -> {
-            throw new RuntimeException("should not be called");
-        };
+    void disabled_fallsBackToLeastLoaded() {
+        // When disabled, semantic scoring is skipped entirely — LeastLoaded takes over
         final SkillMatcher matcher = (profile, c) -> {
             throw new RuntimeException("should not be called");
         };
 
-        final var result = strategy(provider, matcher, false, 0.0)
+        final var result = strategy((id, caps) -> SkillProfile.ofNarrative(""), matcher, false, 0.0)
                 .select(ctx, List.of(candidate("alice")));
 
-        assertThat(result.isNoOp()).isTrue();
+        assertThat(result.assigneeId()).isEqualTo("alice");
     }
 
     @Test
-    void matcherThrows_returnsNoChange() {
+    void matcherThrows_fallsBackToLeastLoaded() {
         final SkillProfileProvider provider = (id, caps) -> SkillProfile.ofNarrative(id);
         final SkillMatcher matcher = (profile, c) -> {
             throw new RuntimeException("model down");
@@ -92,7 +93,7 @@ class SemanticStrategyTest {
         final var result = strategy(provider, matcher, true, 0.0)
                 .select(ctx, List.of(candidate("alice")));
 
-        assertThat(result.isNoOp()).isTrue();
+        assertThat(result.assigneeId()).isEqualTo("alice");
     }
 
     @Test
@@ -118,13 +119,13 @@ class SemanticStrategyTest {
     }
 
     @Test
-    void singleCandidate_belowThreshold_noChange() {
+    void singleCandidate_belowThreshold_fallsBackToLeastLoaded() {
         final SkillProfileProvider provider = (id, caps) -> SkillProfile.ofNarrative(id);
         final SkillMatcher matcher = (profile, c) -> 0.3;
 
         final var result = strategy(provider, matcher, true, 0.5)
                 .select(ctx, List.of(candidate("alice")));
 
-        assertThat(result.isNoOp()).isTrue();
+        assertThat(result.assigneeId()).isEqualTo("alice");
     }
 }
