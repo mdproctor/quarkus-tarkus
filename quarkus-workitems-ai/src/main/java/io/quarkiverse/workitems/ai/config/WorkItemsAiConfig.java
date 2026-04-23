@@ -14,6 +14,8 @@ import io.smallrye.config.WithName;
  * quarkus.workitems.ai.semantic.score-threshold=0.0
  * quarkus.workitems.ai.semantic.history-limit=50
  * quarkus.workitems.ai.suggestion.history-limit=5
+ * quarkus.workitems.ai.escalation-summary.enabled=true
+ * quarkus.workitems.ai.escalation-summary.audit-limit=10
  * </pre>
  */
 @ConfigMapping(prefix = "quarkus.workitems.ai")
@@ -51,6 +53,14 @@ public interface WorkItemsAiConfig {
      * @return the suggestion configuration group
      */
     SuggestionConfig suggestion();
+
+    /**
+     * Configuration for LLM-generated escalation summaries.
+     *
+     * @return the escalation summary configuration group
+     */
+    @WithName("escalation-summary")
+    EscalationSummaryConfig escalationSummary();
 
     /** Configuration for the low-confidence routing filter. */
     interface LowConfidenceFilterConfig {
@@ -115,5 +125,30 @@ public interface WorkItemsAiConfig {
         @WithName("history-limit")
         @WithDefault("5")
         int historyLimit();
+    }
+
+    /** Configuration for LLM-generated escalation summaries. */
+    interface EscalationSummaryConfig {
+
+        /**
+         * Whether escalation summarisation is active. When false, no summary is generated
+         * even if a {@code ChatModel} is configured.
+         * Default: true.
+         *
+         * @return true if summaries should be generated on escalation events
+         */
+        @WithDefault("true")
+        boolean enabled();
+
+        /**
+         * Maximum number of audit entries included in the escalation summary prompt.
+         * Most recent entries are used first.
+         * Default: 10.
+         *
+         * @return the audit entry limit
+         */
+        @WithName("audit-limit")
+        @WithDefault("10")
+        int auditLimit();
     }
 }
