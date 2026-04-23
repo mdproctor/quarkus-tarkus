@@ -3,72 +3,91 @@
 
 ## Project Status
 
-5 examples tests passing. Epic #122 complete.
+77+ AI module tests, 548 runtime tests, 14 examples tests. All green.
 
 | Module | Tests |
 |---|---|
-| quarkus-work-api | 23 |
-| quarkus-work-core | 38 |
+| quarkus-work-api | 27 |
+| quarkus-work-core | 53 |
 | runtime | 548 |
-| quarkus-workitems-ai | 48 |
-| quarkus-workitems-examples | 5 (was 4) |
+| quarkus-workitems-ai | 77 |
+| quarkus-workitems-examples | 14 |
 | (others unchanged) | — |
 
 ## What Was Built This Session
 
-**Epic #122 — Documentation and examples coverage (all 5 sub-tasks closed)**
+### Epic #100 AI-Native Features — CLOSED
 
-**#E — Semantic routing example scenario**
+All remaining child issues closed:
 
-`quarkus-workitems-examples/src/main/java/.../examples/semantic/`:
-- `NdaReviewScenario` — POST /examples/semantic/run: seeds WorkerSkillProfile rows for legal-specialist and finance-analyst, creates NDA review WorkItem with both as candidateUsers, verifies routing to legal-specialist, starts and completes
-- `KeywordSkillMatcher` — `@Alternative @Priority(2)`, keyword overlap scoring, overrides EmbeddingSkillMatcher, no external AI provider needed
-- `SemanticRoutingResponse` — response record: scenario, steps, workItemId, assignedTo, resolvedBy, auditTrail
-- `NdaReviewScenarioTest` — headless @QuarkusTest
+| Issue | Feature | Commit |
+|---|---|---|
+| #119 | `CompositeSkillProfileProvider` — concatenates narratives from all active providers | `c11908b` |
+| #120 | `SemanticWorkerSelectionStrategy` fallback to `LeastLoadedStrategy` on embedding failure | `c11908b` |
+| #124 | `GET /workitems/{id}/resolution-suggestion` — LLM few-shot from past completions | `7d7321e` |
+| #126 | Escalation summarisation — LLM briefing on EXPIRED/CLAIM_EXPIRED events | `58dc06f` |
 
-Examples module pom: added `quarkus-workitems-ai` dependency + Jandex plugin on AI module.
+### Epic #122 Documentation & Examples — CLOSED
 
-**#B — Integration guide Section 9: semantic skill matching**
-**#A — Integration guide Section 8: quarkus-work substrate SPI layer**
-**#C — API reference: /worker-skill-profiles endpoints**
-**#D — Primary spec updated** (EscalationPolicy signature, architecture diagram, build roadmap)
+All 9 example scenarios shipped + `docs/examples-guide.md` with why-not-just-what docs.
 
-**Ledger drift repair (unplanned but necessary)**
+### ClaimSlaPolicy wired (#125) — `dd6bbf8`
 
-Triggered by reinstalling `quarkus-ledger` sibling to fix a `LedgerMerkleFrontier.persist()` API change. Required:
-- `JpaWorkItemLedgerEntryRepository` — rewritten to use EntityManager + JPQL (Panache statics gone from LedgerEntry/LedgerAttestation in new quarkus-ledger)
-- `LedgerEventCapture` — LedgerMerkleFrontier ops migrated to EntityManager named queries
-- `LedgerResource` — `findById` → `findEntryById` (renamed in LedgerEntryRepository interface)
-- `quarkus-ledger/TrustScoreJob` + `JpaLedgerEntryRepository` — removed `@PersistenceUnit("qhorus")` (Qhorus-specific annotation was failing CDI validation in non-Qhorus contexts)
-- Existing example tests — hash chain check updated: `previousHash` field removed from LedgerEntry (Merkle MMR owns chain now), tests now verify `digest` presence
+Four pool-deadline strategies exist in quarkus-work-core (Continuation, Fresh, Single, Phase).
+Now actually called: `WorkItemService.release/delegate` and `ClaimDeadlineJob` reset
+`claimDeadline` via the active policy. V15 migration adds `accumulated_unclaimed_seconds`
+and `last_returned_to_pool_at` to `work_item`.
 
-## Immediate Next Step
+### CaseHub alignment (linked: casehubio/engine#122)
 
-Continue **Epic #100** — AI-suggested resolution:
-`GET /workitems/{id}/resolution-suggestion` — LLM call with similar past completed WorkItems as context. Lives in `quarkus-workitems-ai`. Design: call WorkItemStore for N most similar completed items (same category, or embedding similarity), pass as few-shot examples to a ChatLanguageModel, return suggested resolution JSON.
+ClaimSlaPolicy wiring done. FreshClockPolicy, SingleBudgetPolicy, PhaseClockPolicy marked
+`@Alternative` — ContinuationPolicy is the sole default `@ApplicationScoped` bean.
 
-## Priority Roadmap
+### Ledger drift repair
 
-*Unchanged — see `CLAUDE.md` Work Tracking section*
+quarkus-ledger switched from Panache to plain EntityManager — fixed throughout:
+`JpaWorkItemLedgerEntryRepository`, `LedgerEventCapture`, `LedgerResource`.
+Removed `@PersistenceUnit("qhorus")` from `TrustScoreJob` and `JpaLedgerEntryRepository`
+in quarkus-ledger sibling (was Qhorus-specific, broke workitems context).
 
-## Open Issues
+### Queues migration fix
 
-| Status | Detail |
-|---|---|
-| #119 open | CompositeSkillProfileProvider — merge profiles from multiple sources (deferred) |
-| #120 open | SemanticWorkerSelectionStrategy fallback to LeastLoaded on embedding failure (deferred) |
-| #117 deferred | RoundRobinStrategy (stateful cursor) |
-| #79, #39 blocked | External integrations and provenance |
-| Ledger drift | `quarkus-workitems-ledger` tests (LedgerIntegrationTest etc.) still use old WorkItemCreateRequest 15-arg constructor — need updating. These tests in the ledger module itself, not the examples module. |
+`quarkus-workitems-queues` V2001 renamed to V2002 (conflict with ledger V2001).
+
+## Closed This Session
+
+Epics: #100, #98, #102, #122
+
+Issues: #107, #108, #112–#116, #119, #120, #123–#126
+
+## Open — Priority Order
+
+| Priority | # | Epic | Status |
+|---|---|---|---|
+| 1 | #101 | Business-Hours Deadlines — `BusinessCalendar` SPI | not started |
+| 2 | #103 | Notifications — webhooks on lifecycle events | not started |
+| 3 | #104 | SLA Compliance Reporting — breach rate reports | not started |
+| 4 | #105 | Subprocess Spawning — template-driven child WorkItems | not started |
+| 5 | #106 | Multi-Instance Tasks — M-of-N parallel completion | not started |
+| — | #92 | Distributed WorkItems / SSE (#93) | future |
+| — | #79, #39 | External integrations, ProvenanceLink | blocked |
+| — | #117 | RoundRobinStrategy | deferred |
+
+## Deferred / Carry-Forward
+
+- `quarkus-workitems-ledger` tests (`LedgerIntegrationTest` etc.) use old 15-arg
+  `WorkItemCreateRequest` constructor — need updating (separate session)
+- `ClaimSlaPolicy` — no config-driven policy selection yet; users choose via CDI `@Alternative @Priority`
+- Embedding model for `EmbeddingSkillMatcher` — degrades to LeastLoaded fallback when not configured (correct behaviour now, thanks to #120)
 
 ## References
 
 | What | Path |
 |---|---|
 | Design tracker | `docs/DESIGN.md` |
-| Integration guide (new §8, §9) | `docs/integration-guide.md` |
-| API reference (new /worker-skill-profiles) | `docs/api-reference.md` |
-| Primary spec (updated) | `docs/specs/2026-04-14-tarkus-design.md` |
-| Semantic routing scenario | `quarkus-workitems-examples/src/main/java/.../examples/semantic/` |
-| AI skill/ package | `quarkus-workitems-ai/src/main/java/io/quarkiverse/workitems/ai/skill/` |
+| Examples guide | `docs/examples-guide.md` |
+| Integration guide (§8 quarkus-work, §9 semantic) | `docs/integration-guide.md` |
+| API reference (/worker-skill-profiles, /resolution-suggestion, /escalation-summaries) | `docs/api-reference.md` |
+| AI module | `quarkus-workitems-ai/src/main/java/io/quarkiverse/workitems/ai/` |
+| ClaimSlaPolicy impls | `quarkus-work-core/src/main/java/io/quarkiverse/work/core/policy/` |
 | Epic priority table | `CLAUDE.md` Work Tracking section |
