@@ -31,7 +31,7 @@ Maven multi-module layout following Quarkiverse conventions:
 | Module | Artifact | Purpose |
 |---|---|---|
 | Parent | `quarkus-workitems-parent` | BOM, version management |
-| API | `quarkus-work-api` | Pure Java SPI contracts — `WorkerCandidate`, `SelectionContext`, `AssignmentDecision`, `AssignmentTrigger`, `WorkerSelectionStrategy`, `WorkerRegistry`, `WorkEventType`, `WorkLifecycleEvent`, `WorkloadProvider`, `EscalationPolicy`. groupId `io.quarkiverse.work`. Zero runtime dependencies. CaseHub and other systems depend on this without pulling in the WorkItems stack. |
+| API | `quarkus-work-api` | Pure Java SPI contracts — `WorkerCandidate`, `SelectionContext` (workItemId, title, description, category, requiredCapabilities, candidateUsers, candidateGroups), `AssignmentDecision`, `AssignmentTrigger`, `WorkerSelectionStrategy`, `WorkerRegistry`, `WorkEventType`, `WorkLifecycleEvent`, `WorkloadProvider`, `EscalationPolicy`, `SkillProfile`, `SkillProfileProvider`, `SkillMatcher`. groupId `io.quarkiverse.work`. Zero runtime dependencies. CaseHub and other systems depend on this without pulling in the WorkItems stack. |
 | Core | `quarkus-work-core` | Generic work management implementations — `WorkBroker` (generic assignment orchestrator, replaces CaseHub's TaskBroker concept), `LeastLoadedStrategy`, `ClaimFirstStrategy`, `NoOpWorkerRegistry`, filter engine (`FilterAction` SPI, `FilterRegistryEngine` observing `WorkLifecycleEvent`, `JexlConditionEvaluator`, `PermanentFilterRegistry`, `DynamicFilterRegistry`, `FilterRule`, `FilterRuleResource`). Jandex-indexed library, groupId `io.quarkiverse.work`. |
 | Runtime | `quarkus-workitems` | Core — WorkItem model, storage SPI, JPA defaults, service, REST API, lifecycle engine, labels, vocabulary. Includes `WorkItemContextBuilder`, `JpaWorkloadProvider` (implements `WorkloadProvider`), and runtime actions in `runtime/action/` (`ApplyLabelAction`, `OverrideCandidateGroupsAction`, `SetPriorityAction`). |
 | Deployment | `quarkus-workitems-deployment` | Build-time processor — feature registration, native config |
@@ -47,7 +47,7 @@ Maven multi-module layout following Quarkiverse conventions:
 | *(future)* | `quarkus-workitems-casehub` | CaseHub `WorkerRegistry` adapter (blocked: CaseHub not ready) |
 | *(future)* | `quarkus-workitems-qhorus` | Qhorus MCP tools (blocked: Qhorus not ready) |
 | MongoDB | `quarkus-workitems-persistence-mongodb` | MongoDB-backed `WorkItemStore` + `AuditEntryStore`. `candidateGroups`/`candidateUsers` stored as arrays; `WorkItemQuery` → MongoDB `Document` filter; `$regex` for label patterns. 27 tests via Dev Services. |
-| AI | `quarkus-workitems-ai` | `LowConfidenceFilterProducer` — CDI-produced permanent filter applying `ai/low-confidence` label (INFERRED) when `confidenceScore < threshold`. Config: `quarkus.workitems.ai.confidence-threshold` (default 0.7), `quarkus.workitems.ai.low-confidence-filter.enabled` (default true). |
+| AI | `quarkus-workitems-ai` | `LowConfidenceFilterProducer` — CDI-produced permanent filter applying `ai/low-confidence` label (INFERRED) when `confidenceScore < threshold`. Config: `quarkus.workitems.ai.confidence-threshold` (default 0.7), `quarkus.workitems.ai.low-confidence-filter.enabled` (default true). Semantic skill matching: `WorkerSkillProfile` entity (V14 Flyway migration) + REST API at `/worker-skill-profiles` (CRUD); `SemanticWorkerSelectionStrategy` (`@Alternative @Priority(1)` — auto-activates when module on classpath, embeds WorkItem title+description and worker skill narrative, scores candidates by cosine similarity); `EmbeddingSkillMatcher` (`dev.langchain4j` cosine similarity, `Instance<EmbeddingModel>` optional injection — scores -1.0 when no model); `WorkerProfileSkillProfileProvider` (default, DB-backed); `CapabilitiesSkillProfileProvider` (`@Alternative` — joins capability tags); `ResolutionHistorySkillProfileProvider` (`@Alternative` — aggregates completion history). |
 | *(future)* | `quarkus-workitems-redis` | Redis-backed `WorkItemStore` |
 
 ---
@@ -353,6 +353,7 @@ Consuming app owns all datasource config.
 | **11 — Confidence-Gated Routing** | ✅ Complete | Epic #100: `confidenceScore` on WorkItem + V13 (#112 ✅), `quarkus-workitems-filter-registry` module with `FilterAction` SPI + JEXL engine + permanent/dynamic registry (#113 ✅), `quarkus-workitems-ai` `LowConfidenceFilterProducer` (#114 ✅). |
 | **12 — WorkerSelectionStrategy** | ✅ Complete | Epics #100/#102: `quarkus-workitems-api` shared SPI module (#115 ✅), `WorkItemAssignmentService` + `LeastLoadedStrategy` + `ClaimFirstStrategy` + `NoOpWorkerRegistry` wired into create/release/delegate (#116 ✅). `RoundRobinStrategy` deferred (#117). |
 | **13 — quarkus-work separation** | ✅ Complete | `quarkus-work-api` (shared SPI contracts) and `quarkus-work-core` (WorkBroker + generic filter engine) extracted. `quarkus-workitems-api` renamed to `quarkus-work-api`; `quarkus-workitems-filter-registry` dissolved into `quarkus-work-core`. CaseHub can now depend on `quarkus-work-core` for `WorkBroker` without pulling in human-inbox specifics. Issue #118. |
+| **13b — Semantic Skill Matching** | ✅ Complete | `SkillProfile` + `SkillProfileProvider` + `SkillMatcher` SPIs in `quarkus-work-api`. `SelectionContext` gains `title` and `description`. `EmbeddingSkillMatcher` (`dev.langchain4j` cosine similarity). `WorkerProfileSkillProfileProvider` (default, DB-backed), `CapabilitiesSkillProfileProvider` + `ResolutionHistorySkillProfileProvider` (`@Alternative`). `SemanticWorkerSelectionStrategy` auto-activates via `@Alternative @Priority(1)`. `WorkerSkillProfile` entity + REST API at `/worker-skill-profiles`. Flyway V14. 48 tests in `quarkus-workitems-ai` (was 8). Issues #119 (composite provider) and #120 (fallback strategy) filed for future iteration. Issue #121. |
 | **10 — CaseHub integration** | ⏸ Blocked | `quarkus-workitems-casehub` — CaseHub WorkerRegistry adapter (awaiting CaseHub stable API) |
 | **10 — Qhorus integration** | ⏸ Blocked | `quarkus-workitems-qhorus` — MCP tools (awaiting Qhorus stable API) |
 | **11 — ProvenanceLink** | ⏸ Blocked | Typed PROV-O causal graph — awaiting CaseHub + Qhorus integrations (issue #39) |
@@ -389,7 +390,7 @@ Three tiers:
 | workitems-flow | 32 |
 | quarkus-workitems-ledger | 75 |
 | quarkus-workitems-queues | 82 |
-| quarkus-workitems-ai | 8 |
+| quarkus-workitems-ai | 48 |
 | quarkus-workitems-examples | 37 |
 | quarkus-workitems-flow-examples | 2 |
 | quarkus-workitems-queues-examples | 37 |
@@ -398,4 +399,4 @@ Three tiers:
 | quarkus-workitems-issue-tracker | 23 |
 | testing | 16 |
 | integration-tests | 19 (native) |
-| **Total** | **979+** |
+| **Total** | **1019+** |
