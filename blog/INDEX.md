@@ -7,3 +7,4 @@
 | [2026-04-15-mdp02-examples-that-prove-it.md](2026-04-15-mdp02-examples-that-prove-it.md) | 2026-04-15 | Examples that prove it — four runnable scenarios covering every ledger capability |
 | [2026-04-18-mdp01-aligning-with-the-sdk.md](2026-04-18-mdp01-aligning-with-the-sdk.md) | 2026-04-18 | Aligning with the SDK — storage, expressions, and a hidden test class |
 | [2026-04-21-mdp01-filter-that-grew-into-contract.md](2026-04-21-mdp01-filter-that-grew-into-contract.md) | 2026-04-21 | Three epics shipped; confidence-gating grew into a filter engine and a shared CaseHub contract |
+| [2026-04-22-mdp01-substrate-and-what-grows.md](2026-04-22-mdp01-substrate-and-what-grows.md) | 2026-04-22 | Extracting quarkus-work-api/core as a generic work substrate; semantic skill matching with LangChain4j |
