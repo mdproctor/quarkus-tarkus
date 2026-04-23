@@ -93,6 +93,12 @@
       <artifactId>json-schema-validator</artifactId>
     </dependency>
 
+    <!-- JEXL expression evaluator for FilterRegistryEngine condition evaluation -->
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-jexl3</artifactId>
+    </dependency>
+
     <!-- Testing -->
     <dependency>
       <groupId>io.quarkus</groupId>

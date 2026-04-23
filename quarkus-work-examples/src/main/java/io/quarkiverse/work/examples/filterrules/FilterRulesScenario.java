@@ -12,7 +12,7 @@ import jakarta.ws.rs.core.MediaType;
 
 import org.jboss.logging.Logger;
 
-import io.quarkiverse.work.core.filter.FilterRule;
+import io.quarkiverse.work.runtime.filter.FilterRule;
 import io.quarkiverse.work.examples.StepLog;
 import io.quarkiverse.work.runtime.api.AuditEntryResponse;
 import io.quarkiverse.work.runtime.model.AuditEntry;

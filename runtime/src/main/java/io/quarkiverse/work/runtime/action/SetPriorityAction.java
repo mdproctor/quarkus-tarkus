@@ -4,7 +4,7 @@ import java.util.Map;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.quarkiverse.work.core.filter.FilterAction;
+import io.quarkiverse.work.runtime.filter.FilterAction;
 import io.quarkiverse.work.runtime.model.WorkItem;
 import io.quarkiverse.work.runtime.model.WorkItemPriority;
 
