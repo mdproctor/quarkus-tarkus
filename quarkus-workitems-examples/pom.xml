@@ -28,6 +28,11 @@ logs a narrative to stdout, and returns the full ledger trail as JSON.</descript
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>io.quarkiverse.workitems</groupId>
+      <artifactId>quarkus-workitems-ai</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-jdbc-h2</artifactId>
     </dependency>

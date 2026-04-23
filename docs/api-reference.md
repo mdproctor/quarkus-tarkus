@@ -997,3 +997,141 @@ Returned by `GET /workitems/actors/{actorId}/trust`.
 | `attestationPositive` | int | Total count of positive attestations (`SOUND` or `ENDORSED`) received |
 | `attestationNegative` | int | Total count of negative attestations (`FLAGGED` or `CHALLENGED`) received |
 | `lastComputedAt` | ISO-8601 instant | When this score was last computed |
+
+---
+
+## Worker Skill Profile API (quarkus-workitems-ai)
+
+Requires `quarkus-workitems-ai` on the classpath. Profiles feed `WorkerProfileSkillProfileProvider` so `SemanticWorkerSelectionStrategy` can match workers to work items by narrative similarity.
+
+### POST /worker-skill-profiles
+
+Upsert a worker skill profile. If a profile already exists for the given `workerId`, its narrative is updated.
+
+**Request body:**
+
+```json
+{
+  "workerId": "alice",
+  "narrative": "Expert in NDA review, contract negotiation, intellectual property law, and legal compliance"
+}
+```
+
+| Field | Required | Description |
+|---|---|---|
+| `workerId` | Yes | Worker identifier (any string); used as the primary key |
+| `narrative` | No | Free-text description of the worker's skills and expertise |
+
+**Responses:**
+
+| Status | Description |
+|---|---|
+| `201 Created` | Profile created or updated |
+| `400 Bad Request` | `workerId` is missing or blank |
+
+**Example:**
+
+```bash
+curl -X POST /worker-skill-profiles \
+  -H "Content-Type: application/json" \
+  -d '{"workerId": "alice", "narrative": "Expert in NDA review and contract law"}'
+```
+
+---
+
+### GET /worker-skill-profiles
+
+Return all worker skill profiles.
+
+**Response:** array of skill profile objects.
+
+**Example response:**
+
+```json
+[
+  {
+    "workerId": "alice",
+    "narrative": "Expert in NDA review and contract law",
+    "createdAt": "2026-04-23T09:00:00Z",
+    "updatedAt": "2026-04-23T09:00:00Z"
+  },
+  {
+    "workerId": "bob",
+    "narrative": "Specialist in financial analysis and budgeting",
+    "createdAt": "2026-04-23T09:01:00Z",
+    "updatedAt": "2026-04-23T09:01:00Z"
+  }
+]
+```
+
+---
+
+### GET /worker-skill-profiles/{workerId}
+
+Return the skill profile for a specific worker.
+
+**Path parameters:**
+
+| Parameter | Description |
+|---|---|
+| `workerId` | The worker identifier |
+
+**Responses:**
+
+| Status | Description |
+|---|---|
+| `200 OK` | Profile returned |
+| `404 Not Found` | No profile exists for this workerId |
+
+**Example:**
+
+```bash
+curl /worker-skill-profiles/alice
+```
+
+**Example response:**
+
+```json
+{
+  "workerId": "alice",
+  "narrative": "Expert in NDA review and contract law",
+  "createdAt": "2026-04-23T09:00:00Z",
+  "updatedAt": "2026-04-23T09:00:00Z"
+}
+```
+
+---
+
+### DELETE /worker-skill-profiles/{workerId}
+
+Delete the skill profile for a specific worker.
+
+**Path parameters:**
+
+| Parameter | Description |
+|---|---|
+| `workerId` | The worker identifier |
+
+**Responses:**
+
+| Status | Description |
+|---|---|
+| `204 No Content` | Profile deleted |
+| `404 Not Found` | No profile exists for this workerId |
+
+**Example:**
+
+```bash
+curl -X DELETE /worker-skill-profiles/alice
+```
+
+---
+
+### WorkerSkillProfile schema
+
+| Field | Type | Description |
+|---|---|---|
+| `workerId` | string | Primary key — the worker's identity string |
+| `narrative` | string | Free-text skill description used by the embedding matcher |
+| `createdAt` | ISO-8601 instant | When the profile was first created |
+| `updatedAt` | ISO-8601 instant | When the profile was last updated |

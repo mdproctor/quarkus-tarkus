@@ -145,7 +145,7 @@ public class LedgerResource {
         }
 
         // Verify the entry exists and belongs to this WorkItem
-        final WorkItemLedgerEntry entry = ledgerRepo.findById(entryId)
+        final WorkItemLedgerEntry entry = ledgerRepo.findEntryById(entryId)
                 .filter(e -> e instanceof WorkItemLedgerEntry)
                 .map(e -> (WorkItemLedgerEntry) e)
                 .filter(e -> workItemId.equals(e.subjectId))

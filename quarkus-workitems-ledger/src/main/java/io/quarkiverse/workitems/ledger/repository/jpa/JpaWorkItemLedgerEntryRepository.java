@@ -10,6 +10,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
 
 import io.quarkiverse.ledger.runtime.model.LedgerAttestation;
 import io.quarkiverse.ledger.runtime.model.LedgerEntry;
@@ -18,74 +20,105 @@ import io.quarkiverse.workitems.ledger.model.WorkItemLedgerEntry;
 import io.quarkiverse.workitems.ledger.repository.WorkItemLedgerEntryRepository;
 
 /**
- * Hibernate ORM / Panache implementation of {@link WorkItemLedgerEntryRepository}.
+ * Hibernate ORM / EntityManager implementation of {@link WorkItemLedgerEntryRepository}.
  *
  * <p>
- * This bean does NOT extend {@code JpaLedgerEntryRepository} from quarkus-ledger in order
- * to avoid CDI ambiguity — both would implement {@code LedgerEntryRepository} and the
- * container would see two eligible beans. Instead, this class directly implements
- * {@link WorkItemLedgerEntryRepository} in full, with typed Panache queries for
- * {@link WorkItemLedgerEntry} where specificity is needed.
+ * Uses EntityManager directly — {@link LedgerEntry} and its subclasses are plain JPA
+ * entities (not Panache), so all queries go through JPQL or named queries.
  */
 @ApplicationScoped
 public class JpaWorkItemLedgerEntryRepository implements WorkItemLedgerEntryRepository {
 
+    @Inject
+    EntityManager em;
+
     /** {@inheritDoc} */
     @Override
     public LedgerEntry save(final LedgerEntry entry) {
-        entry.persist();
+        em.persist(entry);
         return entry;
     }
 
     /** {@inheritDoc} */
     @Override
     public List<WorkItemLedgerEntry> findByWorkItemId(final UUID workItemId) {
-        return WorkItemLedgerEntry.list("subjectId = ?1 ORDER BY sequenceNumber ASC", workItemId);
+        return em.createQuery(
+                "SELECT e FROM WorkItemLedgerEntry e WHERE e.subjectId = :subjectId ORDER BY e.sequenceNumber ASC",
+                WorkItemLedgerEntry.class)
+                .setParameter("subjectId", workItemId)
+                .getResultList();
     }
 
     /** {@inheritDoc} */
     @Override
     public Optional<WorkItemLedgerEntry> findLatestByWorkItemId(final UUID workItemId) {
-        return WorkItemLedgerEntry.find("subjectId = ?1 ORDER BY sequenceNumber DESC", workItemId)
-                .firstResultOptional();
+        return em.createQuery(
+                "SELECT e FROM WorkItemLedgerEntry e WHERE e.subjectId = :subjectId ORDER BY e.sequenceNumber DESC",
+                WorkItemLedgerEntry.class)
+                .setParameter("subjectId", workItemId)
+                .setMaxResults(1)
+                .getResultStream()
+                .findFirst();
     }
 
     /** {@inheritDoc} */
     @Override
     public List<LedgerEntry> findBySubjectId(final UUID subjectId) {
-        return LedgerEntry.list("subjectId = ?1 ORDER BY sequenceNumber ASC", subjectId);
+        return em.createQuery(
+                "SELECT e FROM LedgerEntry e WHERE e.subjectId = :subjectId ORDER BY e.sequenceNumber ASC",
+                LedgerEntry.class)
+                .setParameter("subjectId", subjectId)
+                .getResultList();
     }
 
     /** {@inheritDoc} */
     @Override
     public Optional<LedgerEntry> findLatestBySubjectId(final UUID subjectId) {
-        return LedgerEntry.find("subjectId = ?1 ORDER BY sequenceNumber DESC", subjectId)
-                .firstResultOptional();
+        return em.createQuery(
+                "SELECT e FROM LedgerEntry e WHERE e.subjectId = :subjectId ORDER BY e.sequenceNumber DESC",
+                LedgerEntry.class)
+                .setParameter("subjectId", subjectId)
+                .setMaxResults(1)
+                .getResultStream()
+                .findFirst();
     }
 
     /** {@inheritDoc} */
     @Override
-    public Optional<LedgerEntry> findById(final UUID id) {
-        return Optional.ofNullable(LedgerEntry.findById(id));
+    public Optional<LedgerEntry> findEntryById(final UUID id) {
+        return Optional.ofNullable(em.find(LedgerEntry.class, id));
     }
 
     /** {@inheritDoc} */
     @Override
     public List<LedgerAttestation> findAttestationsByEntryId(final UUID ledgerEntryId) {
-        return LedgerAttestation.list("ledgerEntryId = ?1 ORDER BY occurredAt ASC", ledgerEntryId);
+        return em.createNamedQuery("LedgerAttestation.findByEntryId", LedgerAttestation.class)
+                .setParameter("entryId", ledgerEntryId)
+                .getResultList();
     }
 
     /** {@inheritDoc} */
     @Override
     public LedgerAttestation saveAttestation(final LedgerAttestation attestation) {
-        attestation.persist();
+        em.persist(attestation);
         return attestation;
     }
 
     /** {@inheritDoc} */
     @Override
+    public List<LedgerEntry> listAll() {
+        return em.createQuery("SELECT e FROM LedgerEntry e ORDER BY e.occurredAt ASC", LedgerEntry.class)
+                .getResultList();
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public List<LedgerEntry> findAllEvents() {
-        return LedgerEntry.find("entryType = ?1", LedgerEntryType.EVENT).list();
+        return em.createQuery(
+                "SELECT e FROM LedgerEntry e WHERE e.entryType = :type ORDER BY e.occurredAt ASC",
+                LedgerEntry.class)
+                .setParameter("type", LedgerEntryType.EVENT)
+                .getResultList();
     }
 
     /** {@inheritDoc} */
@@ -94,14 +127,22 @@ public class JpaWorkItemLedgerEntryRepository implements WorkItemLedgerEntryRepo
         if (entryIds.isEmpty()) {
             return Collections.emptyMap();
         }
-        final List<LedgerAttestation> all = LedgerAttestation.list("ledgerEntryId IN ?1", entryIds);
+        final List<LedgerAttestation> all = em
+                .createNamedQuery("LedgerAttestation.findByEntryIds", LedgerAttestation.class)
+                .setParameter("entryIds", entryIds)
+                .getResultList();
         return all.stream().collect(Collectors.groupingBy(a -> a.ledgerEntryId));
     }
 
     /** {@inheritDoc} */
     @Override
     public List<LedgerEntry> findByTimeRange(final Instant from, final Instant to) {
-        return LedgerEntry.list("occurredAt >= ?1 AND occurredAt <= ?2 ORDER BY occurredAt ASC", from, to);
+        return em.createQuery(
+                "SELECT e FROM LedgerEntry e WHERE e.occurredAt >= :from AND e.occurredAt <= :to ORDER BY e.occurredAt ASC",
+                LedgerEntry.class)
+                .setParameter("from", from)
+                .setParameter("to", to)
+                .getResultList();
     }
 
     /** {@inheritDoc} */
@@ -114,16 +155,24 @@ public class JpaWorkItemLedgerEntryRepository implements WorkItemLedgerEntryRepo
     /** {@inheritDoc} */
     @Override
     public List<LedgerEntry> findByActorId(final String actorId, final Instant from, final Instant to) {
-        return LedgerEntry.list(
-                "actorId = ?1 AND occurredAt >= ?2 AND occurredAt <= ?3 ORDER BY occurredAt ASC",
-                actorId, from, to);
+        return em.createQuery(
+                "SELECT e FROM LedgerEntry e WHERE e.actorId = :actorId AND e.occurredAt >= :from AND e.occurredAt <= :to ORDER BY e.occurredAt ASC",
+                LedgerEntry.class)
+                .setParameter("actorId", actorId)
+                .setParameter("from", from)
+                .setParameter("to", to)
+                .getResultList();
     }
 
     /** {@inheritDoc} */
     @Override
     public List<LedgerEntry> findByActorRole(final String actorRole, final Instant from, final Instant to) {
-        return LedgerEntry.list(
-                "actorRole = ?1 AND occurredAt >= ?2 AND occurredAt <= ?3 ORDER BY occurredAt ASC",
-                actorRole, from, to);
+        return em.createQuery(
+                "SELECT e FROM LedgerEntry e WHERE e.actorRole = :actorRole AND e.occurredAt >= :from AND e.occurredAt <= :to ORDER BY e.occurredAt ASC",
+                LedgerEntry.class)
+                .setParameter("actorRole", actorRole)
+                .setParameter("from", from)
+                .setParameter("to", to)
+                .getResultList();
     }
 }

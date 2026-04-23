@@ -1,6 +1,6 @@
 # Quarkus WorkItems — Integration Guide
 
-This guide covers seven integration patterns: standalone REST, Quarkus-Flow workflow suspension, CDI lifecycle event observation, custom escalation policies, unit testing without a datasource, the optional ledger module, and the `WorkItemsFlow` DSL for embedding WorkItem steps directly in workflow definitions.
+This guide covers nine integration patterns: standalone REST, Quarkus-Flow workflow suspension, CDI lifecycle event observation, custom escalation policies, unit testing without a datasource, the optional ledger module, the `WorkItemsFlow` DSL, the `quarkus-work` substrate SPI layer, and semantic skill matching via `quarkus-workitems-ai`.
 
 ---
 
@@ -576,3 +576,224 @@ public class ApprovalWorkflow extends Flow {
 ```
 
 Both `requestApproval()` (direct assignee) and `requestGroupApproval()` (candidate groups) return `Uni<String>`. The returned string is the resolution JSON submitted by the human via `PUT /{id}/complete`.
+
+---
+
+## Section 8: The quarkus-work Substrate (SPI Layer)
+
+`quarkus-work-api` and `quarkus-work-core` are two lightweight modules that sit below the WorkItems extension. They define the generic routing SPIs used by WorkItems, CaseHub, and any other work-management domain.
+
+### Why they exist
+
+WorkItems previously defined its own strategy and event interfaces inside the runtime module. Extracting them into `quarkus-work-api` lets CaseHub adopt the same `WorkerSelectionStrategy`, `WorkerRegistry`, `WorkloadProvider`, and `EscalationPolicy` SPIs without depending on WorkItems. Cross-domain tools like `quarkus-workitems-ai` implement the SPIs once and serve both domains.
+
+### Module layout
+
+| Module | GroupId | Purpose |
+|---|---|---|
+| `quarkus-work-api` | `io.quarkiverse.work` | Pure-Java SPI interfaces and value objects — no CDI, no Quarkus, no persistence |
+| `quarkus-work-core` | `io.quarkiverse.work` | Jandex library — `WorkBroker`, built-in strategies, filter engine |
+| `quarkus-workitems` | `io.quarkiverse.workitems` | Quarkus extension — assembles everything, provides JPA entities and REST API |
+
+### Depending on quarkus-work-api directly
+
+If you only need the SPIs (to implement a custom strategy or registry) depend on `quarkus-work-api` rather than the full `quarkus-workitems` runtime:
+
+```xml
+<dependency>
+  <groupId>io.quarkiverse.work</groupId>
+  <artifactId>quarkus-work-api</artifactId>
+  <version>${quarkus.workitems.version}</version>
+</dependency>
+```
+
+This avoids a transitive dependency on Quarkus Hibernate ORM, Flyway, and all WorkItem JPA entities.
+
+### How WorkBroker dispatches assignment
+
+`WorkBroker` (in `quarkus-work-core`) is the generic assignment engine. `WorkItemAssignmentService` calls it on every WorkItem creation, release, and delegation:
+
+1. Build `SelectionContext` from the WorkItem fields (`category`, `priority`, `title`, `description`, `candidateUsers`, `candidateGroups`, `requiredCapabilities`).
+2. Resolve `WorkerCandidate` list from `candidateUsers` + `WorkerRegistry.resolveGroup()`.
+3. Populate `activeWorkItemCount` for each candidate via `WorkloadProvider.getActiveWorkCount()`.
+4. Invoke the active `WorkerSelectionStrategy.select(context, candidates)`.
+5. Apply the returned `AssignmentDecision` (set `assigneeId`, update candidate lists, or no-op).
+
+### Observing WorkLifecycleEvent
+
+`WorkItemLifecycleEvent` extends `WorkLifecycleEvent`. CDI observers on the abstract base type receive all WorkItem lifecycle events:
+
+```java
+void onAny(@Observes WorkLifecycleEvent event) {
+    // receives CREATED, ASSIGNED, STARTED, COMPLETED, ...
+    log.infof("Event %s on %s", event.eventType(), event.sourceUri());
+}
+
+void onCreated(@Observes @WorkEventType(WorkEventType.CREATED) WorkLifecycleEvent event) {
+    // targeted observer — only fires on creation
+}
+```
+
+Call `event.source()` to get the `WorkItem` entity. Call `event.sourceUri()` to get the URI string — do not confuse the two: `source()` returns `Object` typed as the work unit, not a string.
+
+### EscalationPolicy — single-method interface
+
+`EscalationPolicy` has one method: `escalate(WorkLifecycleEvent event)`. Check `event.eventType()` to distinguish expiry (`WorkEventType.EXPIRED`, fired by `ExpiryCleanupJob`) from claim deadline (`WorkEventType.CLAIM_EXPIRED`, fired by `ClaimDeadlineJob`):
+
+```java
+@ApplicationScoped
+public class PagerDutyEscalation implements EscalationPolicy {
+
+    @Override
+    public void escalate(WorkLifecycleEvent event) {
+        if (event.eventType() == WorkEventType.EXPIRED) {
+            pagerDuty.alert("WorkItem expired: " + event.sourceUri());
+        } else if (event.eventType() == WorkEventType.CLAIM_EXPIRED) {
+            pagerDuty.alert("Claim deadline missed: " + event.sourceUri());
+        }
+    }
+}
+```
+
+### Implementing WorkloadProvider
+
+`WorkloadProvider` lets strategies make load-aware routing decisions. The default implementation (`JpaWorkloadProvider`) queries the JPA store. Override it when you have a custom `WorkItemStore`:
+
+```java
+@ApplicationScoped
+@Alternative
+@Priority(1)
+public class RedisWorkloadProvider implements WorkloadProvider {
+
+    @Override
+    public int getActiveWorkCount(String workerId) {
+        return redis.get("workload:" + workerId, Integer.class).orElse(0);
+    }
+}
+```
+
+---
+
+## Section 9: Semantic Skill Matching (quarkus-workitems-ai)
+
+`quarkus-workitems-ai` adds AI-native routing to WorkItems. When it is on the classpath, `SemanticWorkerSelectionStrategy` activates automatically and routes each WorkItem to the candidate whose skill profile best matches the work item's semantic content.
+
+### Dependency
+
+```xml
+<dependency>
+  <groupId>io.quarkiverse.workitems</groupId>
+  <artifactId>quarkus-workitems-ai</artifactId>
+  <version>${quarkus.workitems.version}</version>
+</dependency>
+```
+
+No configuration is required to activate semantic routing — the module's presence on the classpath is enough.
+
+### How it auto-activates
+
+`SemanticWorkerSelectionStrategy` is annotated `@Alternative @Priority(1)`. Quarkus Arc auto-activates all `@Alternative @Priority` beans globally, so the strategy takes over from the config-selected built-in (claim-first or least-loaded) the moment the JAR is present.
+
+The strategy is bypassed (`noChange()` returned) in three cases:
+- `quarkus.workitems.ai.semantic.enabled=false`
+- The candidate list is empty (no `candidateUsers` or `candidateGroups` resolved)
+- No candidate scores above the configured threshold (default 0.0 — any positive score qualifies)
+
+### Populating WorkerSkillProfile via REST
+
+Worker skill profiles describe what each worker is good at in plain prose:
+
+```bash
+curl -X POST /worker-skill-profiles \
+  -H "Content-Type: application/json" \
+  -d '{"workerId": "alice", "narrative": "Expert in NDA review, contract negotiation, and IP law"}'
+
+curl -X POST /worker-skill-profiles \
+  -H "Content-Type: application/json" \
+  -d '{"workerId": "bob", "narrative": "Specialist in financial analysis, budgeting, and expense reports"}'
+```
+
+The endpoint is an upsert — re-posting the same `workerId` updates the narrative.
+
+### Configuring a LangChain4j embedding provider
+
+By default, `EmbeddingSkillMatcher` uses cosine similarity of embeddings. To provide a real embedding model, add a LangChain4j provider to your application and configure it:
+
+```xml
+<!-- OpenAI embeddings -->
+<dependency>
+  <groupId>io.quarkiverse.langchain4j</groupId>
+  <artifactId>quarkus-langchain4j-openai</artifactId>
+</dependency>
+```
+
+```properties
+quarkus.langchain4j.openai.api-key=${OPENAI_API_KEY}
+quarkus.langchain4j.openai.embedding-model.model-name=text-embedding-3-small
+```
+
+Without a configured provider, `EmbeddingSkillMatcher` returns `-1.0` for every candidate (graceful degradation — no routing failure, WorkItem stays PENDING for claim-first pickup).
+
+### The three built-in SkillProfileProvider implementations
+
+| Bean | Default? | Source of skill data |
+|---|---|---|
+| `WorkerProfileSkillProfileProvider` | Yes | `WorkerSkillProfile` entity (REST-managed narratives) |
+| `CapabilitiesSkillProfileProvider` | No (`@Alternative`) | `WorkerCandidate.capabilities()` set — join of capability tags |
+| `ResolutionHistorySkillProfileProvider` | No (`@Alternative`) | Aggregated text from the worker's past completed WorkItems |
+
+Activate an alternative via `@Alternative @Priority(1)` on the bean:
+
+```java
+@ApplicationScoped
+@Alternative
+@Priority(1)
+public class MySkillProfileProvider implements SkillProfileProvider { ... }
+```
+
+### Implementing a custom SkillMatcher
+
+Override `EmbeddingSkillMatcher` by providing a custom `SkillMatcher` with higher priority:
+
+```java
+@ApplicationScoped
+@Alternative
+@Priority(2)   // higher than EmbeddingSkillMatcher (no @Priority = lowest)
+public class KeywordSkillMatcher implements SkillMatcher {
+
+    @Override
+    public double score(SkillProfile profile, SelectionContext context) {
+        Set<String> profileWords = tokenize(profile.narrative());
+        Set<String> contextWords = tokenize(context.title() + " " + context.description());
+        long matches = contextWords.stream().filter(profileWords::contains).count();
+        return contextWords.isEmpty() ? 0.0 : (double) matches / contextWords.size();
+    }
+}
+```
+
+### Configuration reference
+
+| Property | Default | Description |
+|---|---|---|
+| `quarkus.workitems.ai.semantic.enabled` | `true` | Enable or disable semantic routing |
+| `quarkus.workitems.ai.semantic.score-threshold` | `0.0` | Minimum score for a candidate to be eligible; any positive score qualifies |
+| `quarkus.workitems.ai.semantic.history-limit` | `50` | Max past completed WorkItems for `ResolutionHistorySkillProfileProvider` |
+| `quarkus.workitems.ai.confidence-threshold` | `0.7` | AI-created WorkItems below this score receive the `ai/low-confidence` label |
+
+### Gotcha: use langchain4j-core, not quarkus-langchain4j-core in library modules
+
+If you implement a custom `SkillMatcher` or `SkillProfileProvider` in a library module (not a full Quarkus application), depend on the plain Java library:
+
+```xml
+<!-- Correct — plain Java library, no Quarkus extension activation -->
+<dependency>
+  <groupId>dev.langchain4j</groupId>
+  <artifactId>langchain4j-core</artifactId>
+</dependency>
+```
+
+Do **not** use `io.quarkiverse.langchain4j:quarkus-langchain4j-core` — the Quarkus extension stalls `@QuarkusTest` augmentation when no provider is configured.
+
+### See also
+
+The `quarkus-workitems-examples` module has a runnable scenario (`POST /examples/semantic/run`) demonstrating NDA review routed to a legal specialist over a finance analyst using a deterministic keyword-based matcher. It runs headlessly without any external AI provider.
