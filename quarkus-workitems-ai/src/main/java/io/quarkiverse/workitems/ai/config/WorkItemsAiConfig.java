@@ -13,6 +13,7 @@ import io.smallrye.config.WithName;
  * quarkus.workitems.ai.semantic.enabled=true
  * quarkus.workitems.ai.semantic.score-threshold=0.0
  * quarkus.workitems.ai.semantic.history-limit=50
+ * quarkus.workitems.ai.suggestion.history-limit=5
  * </pre>
  */
 @ConfigMapping(prefix = "quarkus.workitems.ai")
@@ -43,6 +44,13 @@ public interface WorkItemsAiConfig {
      * @return the semantic matching configuration group
      */
     SemanticConfig semantic();
+
+    /**
+     * Configuration for AI-assisted resolution suggestions.
+     *
+     * @return the suggestion configuration group
+     */
+    SuggestionConfig suggestion();
 
     /** Configuration for the low-confidence routing filter. */
     interface LowConfidenceFilterConfig {
@@ -91,6 +99,21 @@ public interface WorkItemsAiConfig {
          */
         @WithName("history-limit")
         @WithDefault("50")
+        int historyLimit();
+    }
+
+    /** Configuration for AI-assisted resolution suggestions. */
+    interface SuggestionConfig {
+
+        /**
+         * Maximum number of past completed WorkItems to include as few-shot examples
+         * in the resolution suggestion prompt. Most recently completed items are used first.
+         * Default: 5.
+         *
+         * @return the history limit
+         */
+        @WithName("history-limit")
+        @WithDefault("5")
         int historyLimit();
     }
 }
