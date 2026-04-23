@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Alternative;
 import jakarta.inject.Inject;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -25,9 +26,10 @@ import io.quarkiverse.workitems.runtime.repository.WorkItemStore;
  * <p>
  * Aggregates category frequencies from the most recent N completed items.
  * Example narrative: {@code "Completed work: legal×23, nda×18, finance×4"}.
- * Activate by declaring as {@code @Alternative @Priority(1)}.
+ * Activate by declaring {@code @Alternative @Priority(1)} on a producer or subclass.
  */
 @ApplicationScoped
+@Alternative
 public class ResolutionHistorySkillProfileProvider implements SkillProfileProvider {
 
     private final WorkItemStore workItemStore;

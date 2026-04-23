@@ -3,6 +3,7 @@ package io.quarkiverse.workitems.ai.skill;
 import java.util.Set;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Alternative;
 
 import io.quarkiverse.work.api.SkillProfile;
 import io.quarkiverse.work.api.SkillProfileProvider;
@@ -13,9 +14,10 @@ import io.quarkiverse.work.api.SkillProfileProvider;
  * <p>
  * Example output: {@code "legal, nda-review, gdpr"}.
  * Zero DB access — useful as a baseline when no richer profile data is available.
- * Activate by declaring as {@code @Alternative @Priority(1)}.
+ * Activate by declaring {@code @Alternative @Priority(1)} on a producer or subclass.
  */
 @ApplicationScoped
+@Alternative
 public class CapabilitiesSkillProfileProvider implements SkillProfileProvider {
 
     @Override
