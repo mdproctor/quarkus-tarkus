@@ -166,9 +166,10 @@ public class WorkItemSpawnService implements SpawnPort {
         }
 
         if (cascadeChildren) {
+            final String createdByMarker = "system:spawn:" + groupId;
             WorkItemRelation.findByTargetAndType(group.parentId, WorkItemRelationType.PART_OF)
                     .stream()
-                    .filter(r -> !r.createdAt.isBefore(group.createdAt.minusSeconds(1)))
+                    .filter(r -> createdByMarker.equals(r.createdBy))
                     .forEach(r -> workItemStore.get(r.sourceId).ifPresent(child -> {
                         if (child.status == io.quarkiverse.work.runtime.model.WorkItemStatus.PENDING) {
                             workItemService.cancel(child.id, "system:spawn",
