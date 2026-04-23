@@ -3,6 +3,7 @@ package io.quarkiverse.work.core.policy;
 import java.time.Instant;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Alternative;
 
 import io.quarkiverse.work.api.ClaimSlaContext;
 import io.quarkiverse.work.api.ClaimSlaPolicy;
@@ -20,6 +21,7 @@ import io.quarkiverse.work.api.ClaimSlaPolicy;
  * claimed within a fixed window from when it was first raised, with no extensions.
  */
 @ApplicationScoped
+@Alternative
 public class SingleBudgetPolicy implements ClaimSlaPolicy {
 
     @Override

@@ -1,5 +1,6 @@
 package io.quarkiverse.workitems.runtime.service;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
@@ -10,6 +11,8 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
 import io.quarkiverse.work.api.AssignmentTrigger;
+import io.quarkiverse.work.api.ClaimSlaContext;
+import io.quarkiverse.work.api.ClaimSlaPolicy;
 import io.quarkiverse.workitems.runtime.config.WorkItemsConfig;
 import io.quarkiverse.workitems.runtime.event.WorkItemLifecycleEvent;
 import io.quarkiverse.workitems.runtime.model.AuditEntry;
@@ -30,6 +33,7 @@ public class WorkItemService {
     private final AuditEntryStore auditStore;
     private final WorkItemsConfig config;
     private final WorkItemAssignmentService assignmentService;
+    private final ClaimSlaPolicy claimSlaPolicy;
 
     @Inject
     Event<WorkItemLifecycleEvent> lifecycleEvent;
@@ -38,11 +42,13 @@ public class WorkItemService {
     public WorkItemService(final WorkItemStore workItemStore,
             final AuditEntryStore auditStore,
             final WorkItemsConfig config,
-            final WorkItemAssignmentService assignmentService) {
+            final WorkItemAssignmentService assignmentService,
+            final ClaimSlaPolicy claimSlaPolicy) {
         this.workItemStore = workItemStore;
         this.auditStore = auditStore;
         this.config = config;
         this.assignmentService = assignmentService;
+        this.claimSlaPolicy = claimSlaPolicy;
     }
 
     @Transactional
@@ -76,6 +82,10 @@ public class WorkItemService {
             item.claimDeadline = now.plus(config.defaultClaimHours(), ChronoUnit.HOURS);
         }
 
+        // Claim SLA tracking — item enters pool at creation time
+        item.accumulatedUnclaimedSeconds = 0L;
+        item.lastReturnedToPoolAt = now;
+
         // Labels: only MANUAL labels accepted at creation time
         if (request.labels() != null) {
             for (var labelReq : request.labels()) {
@@ -102,9 +112,15 @@ public class WorkItemService {
         if (item.status != WorkItemStatus.PENDING) {
             throw new IllegalStateException("Cannot claim WorkItem in status: " + item.status);
         }
+        final Instant now = Instant.now();
+        // Accumulate time spent in the unclaimed pool for this phase
+        if (item.lastReturnedToPoolAt != null) {
+            item.accumulatedUnclaimedSeconds += Duration.between(item.lastReturnedToPoolAt, now).toSeconds();
+            item.lastReturnedToPoolAt = null;
+        }
         item.status = WorkItemStatus.ASSIGNED;
         item.assigneeId = claimantId;
-        item.assignedAt = Instant.now();
+        item.assignedAt = now;
         final WorkItem saved = workItemStore.put(item);
         audit(saved.id, "ASSIGNED", claimantId, null);
         if (lifecycleEvent != null) {
@@ -236,6 +252,9 @@ public class WorkItemService {
         if (item.assigneeId == null || item.assigneeId.equals(actorId)) {
             item.assigneeId = toAssigneeId;
             item.status = WorkItemStatus.PENDING;
+            final Instant now = Instant.now();
+            item.lastReturnedToPoolAt = now;
+            item.claimDeadline = claimSlaPolicy.computePoolDeadline(buildClaimSlaContext(item, now));
         }
         final WorkItem saved = workItemStore.put(item);
         audit(saved.id, "DELEGATED", actorId, "to:" + saved.assigneeId);
@@ -251,8 +270,11 @@ public class WorkItemService {
         if (item.status != WorkItemStatus.ASSIGNED) {
             throw new IllegalStateException("Cannot release WorkItem in status: " + item.status);
         }
+        final Instant now = Instant.now();
         item.status = WorkItemStatus.PENDING;
         item.assigneeId = null;
+        item.lastReturnedToPoolAt = now;
+        item.claimDeadline = claimSlaPolicy.computePoolDeadline(buildClaimSlaContext(item, now));
         assignmentService.assign(item, AssignmentTrigger.RELEASED);
         final WorkItem saved = workItemStore.put(item);
         audit(saved.id, "RELEASED", actorId, null);
@@ -386,6 +408,15 @@ public class WorkItemService {
         }
 
         return clone;
+    }
+
+    private ClaimSlaContext buildClaimSlaContext(final WorkItem item, final Instant now) {
+        final Duration totalPoolSla = config.defaultClaimHours() > 0
+                ? Duration.ofHours(config.defaultClaimHours())
+                : Duration.ofHours(24);
+        final Duration accumulated = Duration.ofSeconds(item.accumulatedUnclaimedSeconds);
+        final Instant submitted = item.createdAt != null ? item.createdAt : now;
+        return new ClaimSlaContext(submitted, totalPoolSla, accumulated, now);
     }
 
     private WorkItem requireWorkItem(final UUID id) {

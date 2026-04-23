@@ -202,7 +202,8 @@ class WorkItemServiceTest {
                         (ctx, candidates) -> AssignmentDecision.noChange(),
                         group -> List.of(),
                         workerId -> 0,
-                        new WorkBroker()));
+                        new WorkBroker()),
+                new io.quarkiverse.work.core.policy.ContinuationPolicy());
     }
 
     private WorkItemCreateRequest basicRequest() {
@@ -985,7 +986,8 @@ class WorkItemServiceTest {
                         (ctx, candidates) -> AssignmentDecision.noChange(),
                         group -> List.of(),
                         workerId -> 0,
-                        new WorkBroker()));
+                        new WorkBroker()),
+                new io.quarkiverse.work.core.policy.ContinuationPolicy());
         WorkItem wi = svc.create(basicRequest());
         assertThat(wi.claimDeadline).isNull();
     }
