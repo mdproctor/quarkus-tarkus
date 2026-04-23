@@ -18,5 +18,7 @@ public enum WorkEventType {
     EXPIRED,
     /** Claim deadline passed without the work being claimed. */
     CLAIM_EXPIRED,
+    /** Child WorkItems were spawned from this work unit. */
+    SPAWNED,
     ESCALATED
 }
