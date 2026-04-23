@@ -3,6 +3,7 @@ package io.quarkiverse.work.core.policy;
 import java.time.Instant;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Alternative;
 
 import io.quarkiverse.work.api.ClaimSlaContext;
 import io.quarkiverse.work.api.ClaimSlaPolicy;
@@ -24,6 +25,7 @@ import io.quarkiverse.work.api.ClaimSlaPolicy;
  * (each gets the full window) but still enforce an absolute outer bound.
  */
 @ApplicationScoped
+@Alternative
 public class PhaseClockPolicy implements ClaimSlaPolicy {
 
     private final int capMultiplier;

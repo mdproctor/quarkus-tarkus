@@ -201,6 +201,26 @@ public class WorkItem extends PanacheEntityBase {
     public Instant suspendedAt;
 
     // -------------------------------------------------------------------------
+    // Claim SLA tracking
+    // -------------------------------------------------------------------------
+
+    /**
+     * Total seconds this item has spent in the unclaimed pool across all previous
+     * PENDING phases. Updated when the item is claimed; used by {@link io.quarkiverse.work.api.ClaimSlaPolicy}
+     * to compute the remaining pool budget.
+     */
+    @Column(name = "accumulated_unclaimed_seconds", nullable = false)
+    public long accumulatedUnclaimedSeconds = 0L;
+
+    /**
+     * When this item most recently entered the unclaimed pool (PENDING state).
+     * Set to {@code createdAt} on creation; updated on release, delegation return, and
+     * after each claim-deadline expiry. Null while the item is held by a claimant.
+     */
+    @Column(name = "last_returned_to_pool_at")
+    public Instant lastReturnedToPoolAt;
+
+    // -------------------------------------------------------------------------
     // Labels
     // -------------------------------------------------------------------------
 

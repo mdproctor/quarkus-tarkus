@@ -59,6 +59,8 @@ public final class WorkItemContextBuilder {
         map.put("startedAt", workItem.startedAt);
         map.put("completedAt", workItem.completedAt);
         map.put("suspendedAt", workItem.suspendedAt);
+        map.put("accumulatedUnclaimedSeconds", workItem.accumulatedUnclaimedSeconds);
+        map.put("lastReturnedToPoolAt", workItem.lastReturnedToPoolAt);
         map.put("labels", workItem.labels);
         map.put("confidenceScore", workItem.confidenceScore);
         return map;

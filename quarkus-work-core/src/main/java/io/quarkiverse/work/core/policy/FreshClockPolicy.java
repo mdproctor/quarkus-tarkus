@@ -3,6 +3,7 @@ package io.quarkiverse.work.core.policy;
 import java.time.Instant;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Alternative;
 
 import io.quarkiverse.work.api.ClaimSlaContext;
 import io.quarkiverse.work.api.ClaimSlaPolicy;
@@ -20,6 +21,7 @@ import io.quarkiverse.work.api.ClaimSlaPolicy;
  * opportunity, and accumulated history should not affect the next window.
  */
 @ApplicationScoped
+@Alternative
 public class FreshClockPolicy implements ClaimSlaPolicy {
 
     @Override
