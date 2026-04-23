@@ -10,6 +10,9 @@ import io.smallrye.config.WithName;
  * <pre>
  * quarkus.workitems.ai.confidence-threshold=0.7
  * quarkus.workitems.ai.low-confidence-filter.enabled=true
+ * quarkus.workitems.ai.semantic.enabled=true
+ * quarkus.workitems.ai.semantic.score-threshold=0.0
+ * quarkus.workitems.ai.semantic.history-limit=50
  * </pre>
  */
 @ConfigMapping(prefix = "quarkus.workitems.ai")
@@ -34,6 +37,13 @@ public interface WorkItemsAiConfig {
     @WithName("low-confidence-filter")
     LowConfidenceFilterConfig lowConfidenceFilter();
 
+    /**
+     * Configuration for semantic skill matching.
+     *
+     * @return the semantic matching configuration group
+     */
+    SemanticConfig semantic();
+
     /** Configuration for the low-confidence routing filter. */
     interface LowConfidenceFilterConfig {
         /**
@@ -45,5 +55,42 @@ public interface WorkItemsAiConfig {
          */
         @WithDefault("true")
         boolean enabled();
+    }
+
+    /**
+     * Configuration for semantic skill matching via {@link io.quarkiverse.workitems.ai.skill.SemanticWorkerSelectionStrategy}.
+     */
+    interface SemanticConfig {
+        /**
+         * Whether semantic skill matching is active. When false, the strategy
+         * returns {@code noChange()} immediately without scoring candidates.
+         * Default: true.
+         *
+         * @return true if semantic matching should run
+         */
+        @WithDefault("true")
+        boolean enabled();
+
+        /**
+         * Minimum cosine similarity score for a candidate to receive pre-assignment.
+         * Candidates scoring at or below this threshold are excluded.
+         * Default: 0.0 (any positive similarity accepted).
+         *
+         * @return the minimum score threshold
+         */
+        @WithName("score-threshold")
+        @WithDefault("0.0")
+        double scoreThreshold();
+
+        /**
+         * Maximum number of past completed WorkItems to consider when building
+         * a resolution history skill profile. Most recent items are used first.
+         * Default: 50.
+         *
+         * @return the history limit
+         */
+        @WithName("history-limit")
+        @WithDefault("50")
+        int historyLimit();
     }
 }
