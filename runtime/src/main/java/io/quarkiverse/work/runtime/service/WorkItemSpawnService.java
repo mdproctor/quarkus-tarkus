@@ -82,13 +82,15 @@ public class WorkItemSpawnService implements SpawnPort {
         final WorkItemSpawnGroup existing = WorkItemSpawnGroup.findByParentAndKey(
                 request.parentId(), request.idempotencyKey());
         if (existing != null) {
+            final String createdByMarker = "system:spawn:" + existing.id;
             final List<SpawnedChild> existingChildren = WorkItemRelation
                     .findByTargetAndType(request.parentId(), WorkItemRelationType.PART_OF)
                     .stream()
-                    .filter(r -> !r.createdAt.isBefore(existing.createdAt.minusSeconds(1)))
-                    .map(r -> workItemStore.get(r.sourceId).orElse(null))
-                    .filter(wi -> wi != null)
-                    .map(wi -> new SpawnedChild(wi.id, wi.callerRef))
+                    .filter(r -> createdByMarker.equals(r.createdBy))
+                    .map(r -> {
+                        final WorkItem child = workItemStore.get(r.sourceId).orElseThrow();
+                        return new SpawnedChild(child.id, child.callerRef);
+                    })
                     .toList();
             return new SpawnResult(existing.id, existingChildren, false);
         }
@@ -114,10 +116,10 @@ public class WorkItemSpawnService implements SpawnPort {
                     null, // formKey — not on template
                     template.priority,
                     null, // assigneeId
-                    template.candidateGroups,
-                    template.candidateUsers,
-                    template.requiredCapabilities,
-                    "system:spawn",
+                    override(spec, "candidateGroups", template.candidateGroups),
+                    override(spec, "candidateUsers", template.candidateUsers),
+                    override(spec, "requiredCapabilities", template.requiredCapabilities),
+                    "system:spawn:" + group.id,
                     template.defaultPayload,
                     null, // claimDeadline
                     null, // expiresAt
@@ -133,7 +135,7 @@ public class WorkItemSpawnService implements SpawnPort {
             relation.sourceId = child.id;
             relation.targetId = request.parentId();
             relation.relationType = WorkItemRelationType.PART_OF;
-            relation.createdBy = "system:spawn";
+            relation.createdBy = "system:spawn:" + group.id;
             relation.persist();
 
             spawnedChildren.add(new SpawnedChild(child.id, spec.callerRef()));
@@ -164,9 +166,10 @@ public class WorkItemSpawnService implements SpawnPort {
         }
 
         if (cascadeChildren) {
+            final String createdByMarker = "system:spawn:" + groupId;
             WorkItemRelation.findByTargetAndType(group.parentId, WorkItemRelationType.PART_OF)
                     .stream()
-                    .filter(r -> !r.createdAt.isBefore(group.createdAt.minusSeconds(1)))
+                    .filter(r -> createdByMarker.equals(r.createdBy))
                     .forEach(r -> workItemStore.get(r.sourceId).ifPresent(child -> {
                         if (child.status == io.quarkiverse.work.runtime.model.WorkItemStatus.PENDING) {
                             workItemService.cancel(child.id, "system:spawn",
@@ -176,5 +179,22 @@ public class WorkItemSpawnService implements SpawnPort {
         }
 
         group.delete();
+    }
+
+    /**
+     * Returns the override value for {@code key} from the spec's overrides map,
+     * or {@code templateValue} when no override is present.
+     *
+     * @param spec the ChildSpec that may carry overrides
+     * @param key the field name to look up in the overrides map
+     * @param templateValue the template default to fall back to
+     * @return the override as a String, null if the override is explicitly null, or templateValue
+     */
+    private String override(final ChildSpec spec, final String key, final String templateValue) {
+        if (spec.overrides() != null && spec.overrides().containsKey(key)) {
+            final Object val = spec.overrides().get(key);
+            return val != null ? val.toString() : null;
+        }
+        return templateValue;
     }
 }

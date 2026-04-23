@@ -41,10 +41,11 @@ public class SpawnGroupResource {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity(Map.of("error", "Spawn group not found")).build();
         }
+        final String createdByMarker = "system:spawn:" + groupId;
         final List<Map<String, Object>> children = WorkItemRelation
                 .findByTargetAndType(group.parentId, WorkItemRelationType.PART_OF)
                 .stream()
-                .filter(r -> !r.createdAt.isBefore(group.createdAt.minusSeconds(1)))
+                .filter(r -> createdByMarker.equals(r.createdBy))
                 .map(r -> Map.<String, Object> of(
                         "workItemId", r.sourceId.toString(),
                         "createdAt", r.createdAt.toString()))
