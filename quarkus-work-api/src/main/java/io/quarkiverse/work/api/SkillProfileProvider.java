@@ -7,7 +7,7 @@ import java.util.Set;
  *
  * <p>
  * Implement as {@code @ApplicationScoped @Alternative @Priority(1)} to override
- * the active built-in. Built-in implementations (in quarkus-workitems-ai):
+ * the active built-in. Built-in implementations (in quarkus-work-ai):
  * {@code CapabilitiesSkillProfileProvider}, {@code WorkerProfileSkillProfileProvider},
  * {@code ResolutionHistorySkillProfileProvider}.
  *

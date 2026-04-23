@@ -1,6 +1,6 @@
 # Quarkus WorkItems — Examples Guide
 
-The `quarkus-workitems-examples` module is a runnable Quarkus application that demonstrates every significant WorkItems feature through concrete business scenarios. Each scenario is a single HTTP call that plays out a full story, logs a step-by-step narrative to stdout, and returns the resulting audit trail as JSON.
+The `quarkus-work-examples` module is a runnable Quarkus application that demonstrates every significant WorkItems feature through concrete business scenarios. Each scenario is a single HTTP call that plays out a full story, logs a step-by-step narrative to stdout, and returns the resulting audit trail as JSON.
 
 The goal is not to show the API surface in abstract — it is to show how WorkItems solves specific problems that every real system eventually runs into: compliance evidence, AI/human handoffs, routing without redeployment, structured expiry, and so on.
 
@@ -15,7 +15,7 @@ The goal is not to show the API surface in abstract — it is to show how WorkIt
 JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn install -DskipTests
 
 # Start in dev mode — H2 in-memory database, no external dependencies
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn quarkus:dev -pl quarkus-workitems-examples
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn quarkus:dev -pl quarkus-work-examples
 ```
 
 Quarkus starts on `http://localhost:8080`. All scenarios are ready immediately — no seed data required, no configuration beyond defaults.
@@ -55,7 +55,7 @@ curl -s -X POST http://localhost:8080/examples/queues/run      | jq '.scenario, 
 ### Run the test suite
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-examples
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-examples
 ```
 
 Each scenario has a corresponding `@QuarkusTest` that asserts the key invariants without a running server.
@@ -372,7 +372,7 @@ A production incident WorkItem is created with `expiresAt` set to one minute ago
 - `ExpiryCleanupJob.runCleanup()` → programmatic trigger (scheduler runs it automatically in production)
 - Audit entry: `event = "WorkItemExpired"`, `actor = "system:expiry-cleanup"`
 - `EscalationPolicy` SPI receives the `WorkLifecycleEvent` → plug in Slack, PagerDuty, email
-- `quarkus.workitems.cleanup.expiry-check-seconds` → controls scheduler interval
+- `quarkus.work.cleanup.expiry-check-seconds` → controls scheduler interval
 
 **When to use this pattern:**
 Incident response SLAs, regulatory response deadlines, customer-facing acknowledgement targets — any situation where a missed deadline requires more than just a status update; it requires someone to act.
@@ -428,7 +428,7 @@ An AI agent processes five contract review tasks overnight. Three are classified
 **Key WorkItems features:**
 - `confidenceScore` field on `WorkItemCreateRequest` → stored on the WorkItem
 - `LowConfidenceFilterProducer` → `FilterAction` that fires when `confidenceScore < threshold`
-- `quarkus.workitems.ai.low-confidence-threshold` → configurable threshold (default 0.75)
+- `quarkus.work.ai.low-confidence-threshold` → configurable threshold (default 0.75)
 - Applied label: `ai/low-confidence` → queryable via `GET /inbox?labelPattern=ai/low-confidence`
 - High-confidence items are untouched — no label, no interruption
 

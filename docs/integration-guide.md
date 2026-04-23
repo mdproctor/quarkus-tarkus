@@ -1,6 +1,6 @@
 # Quarkus WorkItems — Integration Guide
 
-This guide covers nine integration patterns: standalone REST, Quarkus-Flow workflow suspension, CDI lifecycle event observation, custom escalation policies, unit testing without a datasource, the optional ledger module, the `WorkItemsFlow` DSL, the `quarkus-work` substrate SPI layer, and semantic skill matching via `quarkus-workitems-ai`.
+This guide covers nine integration patterns: standalone REST, Quarkus-Flow workflow suspension, CDI lifecycle event observation, custom escalation policies, unit testing without a datasource, the optional ledger module, the `WorkItemsFlow` DSL, the `quarkus-work` substrate SPI layer, and semantic skill matching via `quarkus-work-ai`.
 
 ---
 
@@ -73,19 +73,19 @@ The response is a `WorkItemResponse[]` ordered by creation time. Frontends use `
 
 ## Section 2: Quarkus-Flow Integration
 
-The `quarkus-workitems-flow` module suspends a Quarkus-Flow workflow until a human resolves a WorkItem, then resumes the workflow with the resolution JSON. See [Section 7](#section-7-quarkus-flow-dsl-workitemsflow) for the higher-level `WorkItemsFlow` DSL, which is the preferred approach for new workflows.
+The `quarkus-work-flow` module suspends a Quarkus-Flow workflow until a human resolves a WorkItem, then resumes the workflow with the resolution JSON. See [Section 7](#section-7-quarkus-flow-dsl-workitemsflow) for the higher-level `WorkItemsFlow` DSL, which is the preferred approach for new workflows.
 
 ### Dependency
 
 ```xml
 <dependency>
-  <groupId>io.quarkiverse.workitems</groupId>
-  <artifactId>quarkus-workitems-flow</artifactId>
+  <groupId>io.quarkiverse.work</groupId>
+  <artifactId>quarkus-work-flow</artifactId>
   <version>1.0.0-SNAPSHOT</version>
 </dependency>
 ```
 
-This pulls in `quarkus-workitems` transitively.
+This pulls in `quarkus-work` transitively.
 
 ### How it works
 
@@ -93,7 +93,7 @@ This pulls in `quarkus-workitems` transitively.
 2. The bridge creates a WorkItem via `WorkItemService` and registers a `CompletableFuture` in `PendingWorkItemRegistry`, keyed by the WorkItem's UUID.
 3. The method returns a `Uni<String>` wrapping that `CompletableFuture`; Quarkus-Flow suspends the workflow on the `Uni`.
 4. A human sees the WorkItem in `GET /inbox`, claims it, and completes it via `PUT /{id}/complete`.
-5. `WorkItemService` fires a `WorkItemLifecycleEvent` with type `io.quarkiverse.workitems.workitem.completed`.
+5. `WorkItemService` fires a `WorkItemLifecycleEvent` with type `io.quarkiverse.work.workitem.completed`.
 6. `WorkItemFlowEventListener` observes the event and calls `PendingWorkItemRegistry.complete()`, resolving the `CompletableFuture` with the resolution JSON.
 7. The `Uni` completes and the flow resumes with the resolution as its output.
 
@@ -200,7 +200,7 @@ public class CompletionNotifier {
     NotificationService notifications;
 
     void onCompleted(@Observes WorkItemLifecycleEvent event) {
-        if (!"io.quarkiverse.workitems.workitem.completed".equals(event.type())) {
+        if (!"io.quarkiverse.work.workitem.completed".equals(event.type())) {
             return;
         }
         notifications.send(event.actor(),
@@ -208,7 +208,7 @@ public class CompletionNotifier {
     }
 
     void onExpired(@Observes WorkItemLifecycleEvent event) {
-        if (!"io.quarkiverse.workitems.workitem.expired".equals(event.type())) {
+        if (!"io.quarkiverse.work.workitem.expired".equals(event.type())) {
             return;
         }
         notifications.alertAdmin("WorkItem " + event.workItemId() + " has expired!");
@@ -218,13 +218,13 @@ public class CompletionNotifier {
 
 ### Event type reference
 
-All event types follow the pattern `io.quarkiverse.workitems.workitem.{action}` where `{action}` is the lowercase audit event name. See the [API Reference — Lifecycle event types](api-reference.md#lifecycle-event-types) for the full table.
+All event types follow the pattern `io.quarkiverse.work.workitem.{action}` where `{action}` is the lowercase audit event name. See the [API Reference — Lifecycle event types](api-reference.md#lifecycle-event-types) for the full table.
 
 ### WorkItemLifecycleEvent fields
 
 | Field | Type | Description |
 |---|---|---|
-| `type` | string | Full event type string (e.g. `io.quarkiverse.workitems.workitem.completed`) |
+| `type` | string | Full event type string (e.g. `io.quarkiverse.work.workitem.completed`) |
 | `source` | string | `/workitems/{workItemId}` |
 | `subject` | string | WorkItem UUID as string |
 | `workItemId` | UUID | WorkItem UUID |
@@ -273,27 +273,27 @@ public class SlackEscalationPolicy implements EscalationPolicy {
 }
 ```
 
-`@Alternative @Priority(1)` causes CDI to select your bean over WorkItems's default implementation. No `application.properties` change is needed for the bean selection itself, but the `quarkus.workitems.escalation-policy` property is still read by the built-in policies — set it to `notify` (or any value) so the config validation passes if the built-in beans are still on the classpath.
+`@Alternative @Priority(1)` causes CDI to select your bean over WorkItems's default implementation. No `application.properties` change is needed for the bean selection itself, but the `quarkus.work.escalation-policy` property is still read by the built-in policies — set it to `notify` (or any value) so the config validation passes if the built-in beans are still on the classpath.
 
 ```properties
-quarkus.workitems.escalation-policy=notify
-quarkus.workitems.claim-escalation-policy=notify
+quarkus.work.escalation-policy=notify
+quarkus.work.claim-escalation-policy=notify
 ```
 
-The expiry cleanup job (`ExpiryCleanupJob`) runs on the schedule configured by `quarkus.workitems.cleanup.expiry-check-seconds` (default 60s). It calls your `EscalationPolicy` bean once per breached WorkItem per scan.
+The expiry cleanup job (`ExpiryCleanupJob`) runs on the schedule configured by `quarkus.work.cleanup.expiry-check-seconds` (default 60s). It calls your `EscalationPolicy` bean once per breached WorkItem per scan.
 
 ---
 
-## Section 5: Unit Testing with quarkus-workitems-testing
+## Section 5: Unit Testing with quarkus-work-testing
 
-The `quarkus-workitems-testing` module provides in-memory implementations of `WorkItemStore` and `AuditEntryStore`. These override the default JPA implementations via `@Alternative @Priority(1)`, so no datasource or Flyway configuration is needed in tests.
+The `quarkus-work-testing` module provides in-memory implementations of `WorkItemStore` and `AuditEntryStore`. These override the default JPA implementations via `@Alternative @Priority(1)`, so no datasource or Flyway configuration is needed in tests.
 
 ### Dependency
 
 ```xml
 <dependency>
-  <groupId>io.quarkiverse.workitems</groupId>
-  <artifactId>quarkus-workitems-testing</artifactId>
+  <groupId>io.quarkiverse.work</groupId>
+  <artifactId>quarkus-work-testing</artifactId>
   <version>1.0.0-SNAPSHOT</version>
   <scope>test</scope>
 </dependency>
@@ -400,7 +400,7 @@ This approach gives instant test execution — no Quarkus boot, no H2, no Flyway
 
 ---
 
-## Section 6: Using the Ledger Module (quarkus-workitems-ledger)
+## Section 6: Using the Ledger Module (quarkus-work-ledger)
 
 The ledger module adds an optional accountability layer to  WorkItems.a per-WorkItem command/event ledger with a SHA-256 hash chain, decision context snapshots, peer attestations, and EigenTrust reputation scoring. The core extension is completely unchanged when the module is absent.
 
@@ -408,8 +408,8 @@ The ledger module adds an optional accountability layer to  WorkItems.a per-Work
 
 ```xml
 <dependency>
-  <groupId>io.quarkiverse.workitems</groupId>
-  <artifactId>quarkus-workitems-ledger</artifactId>
+  <groupId>io.quarkiverse.work</groupId>
+  <artifactId>quarkus-work-ledger</artifactId>
   <version>1.0.0-SNAPSHOT</version>
 </dependency>
 ```
@@ -437,33 +437,33 @@ POST /workitems/{id}/ledger/{entryId}/attestations
 GET /workitems/actors/{actorId}/trust
 ```
 
-See the [Ledger API section of the API Reference](api-reference.md#ledger-api-quarkus-workitems-ledger) for full schemas.
+See the [Ledger API section of the API Reference](api-reference.md#ledger-api-quarkus-work-ledger) for full schemas.
 
 ### Configuration
 
-All ledger configuration is under `quarkus.workitems.ledger`. Defaults when the module is present:
+All ledger configuration is under `quarkus.work.ledger`. Defaults when the module is present:
 
 ```properties
 # Master switch — set false to disable all ledger writes (default: true)
-quarkus.workitems.ledger.enabled=true
+quarkus.work.ledger.enabled=true
 
 # SHA-256 hash chain across entries for this WorkItem (default: true)
-quarkus.workitems.ledger.hash-chain.enabled=true
+quarkus.work.ledger.hash-chain.enabled=true
 
 # JSON snapshot of WorkItem state at each transition (default: true)
-quarkus.workitems.ledger.decision-context.enabled=true
+quarkus.work.ledger.decision-context.enabled=true
 
 # Structured evidence fields per entry (default: false — opt-in)
-quarkus.workitems.ledger.evidence.enabled=false
+quarkus.work.ledger.evidence.enabled=false
 
 # Peer attestation endpoint active (default: true)
-quarkus.workitems.ledger.attestations.enabled=true
+quarkus.work.ledger.attestations.enabled=true
 
 # EigenTrust reputation scoring — nightly computation (default: false — opt-in)
-quarkus.workitems.ledger.trust-score.enabled=false
+quarkus.work.ledger.trust-score.enabled=false
 
 # Trust-score-based routing suggestions via CDI events (default: false)
-quarkus.workitems.ledger.trust-score.routing-enabled=false
+quarkus.work.ledger.trust-score.routing-enabled=false
 ```
 
 ### Enabling trust scores
@@ -471,7 +471,7 @@ quarkus.workitems.ledger.trust-score.routing-enabled=false
 Trust scores require accumulated ledger history to be meaningful. Enable only after the system has been running long enough for scores to stabilise:
 
 ```properties
-quarkus.workitems.ledger.trust-score.enabled=true
+quarkus.work.ledger.trust-score.enabled=true
 ```
 
 A nightly scheduled job then computes EigenTrust-inspired scores from ledger history. After the first computation:
@@ -502,7 +502,7 @@ This sets `sourceEntityId`, `sourceEntityType`, and `sourceEntitySystem` on the 
 
 ## Section 7: Quarkus-Flow DSL (WorkItemsFlow)
 
-The `quarkus-workitems-flow` module provides `WorkItemsFlow` — a base class that extends `Flow` with a `workItem()` DSL method. This is the preferred way to embed WorkItem suspension steps in a workflow definition, giving a uniform style alongside `function()`, `agent()`, and other quarkus-flow task types.
+The `quarkus-work-flow` module provides `WorkItemsFlow` — a base class that extends `Flow` with a `workItem()` DSL method. This is the preferred way to embed WorkItem suspension steps in a workflow definition, giving a uniform style alongside `function()`, `agent()`, and other quarkus-flow task types.
 
 ### Extending WorkItemsFlow
 
@@ -585,7 +585,7 @@ Both `requestApproval()` (direct assignee) and `requestGroupApproval()` (candida
 
 ### Why they exist
 
-WorkItems previously defined its own strategy and event interfaces inside the runtime module. Extracting them into `quarkus-work-api` lets CaseHub adopt the same `WorkerSelectionStrategy`, `WorkerRegistry`, `WorkloadProvider`, and `EscalationPolicy` SPIs without depending on WorkItems. Cross-domain tools like `quarkus-workitems-ai` implement the SPIs once and serve both domains.
+WorkItems previously defined its own strategy and event interfaces inside the runtime module. Extracting them into `quarkus-work-api` lets CaseHub adopt the same `WorkerSelectionStrategy`, `WorkerRegistry`, `WorkloadProvider`, and `EscalationPolicy` SPIs without depending on WorkItems. Cross-domain tools like `quarkus-work-ai` implement the SPIs once and serve both domains.
 
 ### Module layout
 
@@ -593,17 +593,17 @@ WorkItems previously defined its own strategy and event interfaces inside the ru
 |---|---|---|
 | `quarkus-work-api` | `io.quarkiverse.work` | Pure-Java SPI interfaces and value objects — no CDI, no Quarkus, no persistence |
 | `quarkus-work-core` | `io.quarkiverse.work` | Jandex library — `WorkBroker`, built-in strategies, filter engine |
-| `quarkus-workitems` | `io.quarkiverse.workitems` | Quarkus extension — assembles everything, provides JPA entities and REST API |
+| `quarkus-work` | `io.quarkiverse.work` | Quarkus extension — assembles everything, provides JPA entities and REST API |
 
 ### Depending on quarkus-work-api directly
 
-If you only need the SPIs (to implement a custom strategy or registry) depend on `quarkus-work-api` rather than the full `quarkus-workitems` runtime:
+If you only need the SPIs (to implement a custom strategy or registry) depend on `quarkus-work-api` rather than the full `quarkus-work` runtime:
 
 ```xml
 <dependency>
   <groupId>io.quarkiverse.work</groupId>
   <artifactId>quarkus-work-api</artifactId>
-  <version>${quarkus.workitems.version}</version>
+  <version>${quarkus.work.version}</version>
 </dependency>
 ```
 
@@ -674,17 +674,17 @@ public class RedisWorkloadProvider implements WorkloadProvider {
 
 ---
 
-## Section 9: Semantic Skill Matching (quarkus-workitems-ai)
+## Section 9: Semantic Skill Matching (quarkus-work-ai)
 
-`quarkus-workitems-ai` adds AI-native routing to WorkItems. When it is on the classpath, `SemanticWorkerSelectionStrategy` activates automatically and routes each WorkItem to the candidate whose skill profile best matches the work item's semantic content.
+`quarkus-work-ai` adds AI-native routing to WorkItems. When it is on the classpath, `SemanticWorkerSelectionStrategy` activates automatically and routes each WorkItem to the candidate whose skill profile best matches the work item's semantic content.
 
 ### Dependency
 
 ```xml
 <dependency>
-  <groupId>io.quarkiverse.workitems</groupId>
-  <artifactId>quarkus-workitems-ai</artifactId>
-  <version>${quarkus.workitems.version}</version>
+  <groupId>io.quarkiverse.work</groupId>
+  <artifactId>quarkus-work-ai</artifactId>
+  <version>${quarkus.work.version}</version>
 </dependency>
 ```
 
@@ -695,7 +695,7 @@ No configuration is required to activate semantic routing — the module's prese
 `SemanticWorkerSelectionStrategy` is annotated `@Alternative @Priority(1)`. Quarkus Arc auto-activates all `@Alternative @Priority` beans globally, so the strategy takes over from the config-selected built-in (claim-first or least-loaded) the moment the JAR is present.
 
 The strategy is bypassed (`noChange()` returned) in three cases:
-- `quarkus.workitems.ai.semantic.enabled=false`
+- `quarkus.work.ai.semantic.enabled=false`
 - The candidate list is empty (no `candidateUsers` or `candidateGroups` resolved)
 - No candidate scores above the configured threshold (default 0.0 — any positive score qualifies)
 
@@ -775,10 +775,10 @@ public class KeywordSkillMatcher implements SkillMatcher {
 
 | Property | Default | Description |
 |---|---|---|
-| `quarkus.workitems.ai.semantic.enabled` | `true` | Enable or disable semantic routing |
-| `quarkus.workitems.ai.semantic.score-threshold` | `0.0` | Minimum score for a candidate to be eligible; any positive score qualifies |
-| `quarkus.workitems.ai.semantic.history-limit` | `50` | Max past completed WorkItems for `ResolutionHistorySkillProfileProvider` |
-| `quarkus.workitems.ai.confidence-threshold` | `0.7` | AI-created WorkItems below this score receive the `ai/low-confidence` label |
+| `quarkus.work.ai.semantic.enabled` | `true` | Enable or disable semantic routing |
+| `quarkus.work.ai.semantic.score-threshold` | `0.0` | Minimum score for a candidate to be eligible; any positive score qualifies |
+| `quarkus.work.ai.semantic.history-limit` | `50` | Max past completed WorkItems for `ResolutionHistorySkillProfileProvider` |
+| `quarkus.work.ai.confidence-threshold` | `0.7` | AI-created WorkItems below this score receive the `ai/low-confidence` label |
 
 ### Gotcha: use langchain4j-core, not quarkus-langchain4j-core in library modules
 
@@ -796,4 +796,4 @@ Do **not** use `io.quarkiverse.langchain4j:quarkus-langchain4j-core` — the Qua
 
 ### See also
 
-The `quarkus-workitems-examples` module has a runnable scenario (`POST /examples/semantic/run`) demonstrating NDA review routed to a legal specialist over a finance analyst using a deterministic keyword-based matcher. It runs headlessly without any external AI provider.
+The `quarkus-work-examples` module has a runnable scenario (`POST /examples/semantic/run`) demonstrating NDA review routed to a legal specialist over a finance analyst using a deterministic keyword-based matcher. It runs headlessly without any external AI provider.

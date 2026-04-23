@@ -1,0 +1,114 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>io.quarkiverse.work</groupId>
+    <artifactId>quarkus-work-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>quarkus-work-flow</artifactId>
+  <name>Quarkus WorkItems - Quarkus Flow Integration</name>
+  <description>CDI bridge for suspending Quarkus-Flow workflows on WorkItems and resuming them when a human resolves the item.</description>
+
+  <dependencies>
+
+    <!-- WorkItems runtime: WorkItemService, WorkItemLifecycleEvent, model classes -->
+    <dependency>
+      <groupId>io.quarkiverse.work</groupId>
+      <artifactId>quarkus-work</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <!-- CDI API — provided at runtime by Quarkus ARC -->
+    <dependency>
+      <groupId>jakarta.enterprise</groupId>
+      <artifactId>jakarta.enterprise.cdi-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Reactive: Uni<String> for workflow suspension -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-mutiny</artifactId>
+    </dependency>
+
+    <!-- Quarkus Flow: Flow base class and FuncDSL task builder -->
+    <dependency>
+      <groupId>io.quarkiverse.flow</groupId>
+      <artifactId>quarkus-flow</artifactId>
+      <version>0.7.1</version>
+    </dependency>
+
+    <!-- Quarkus Flow fluent func DSL (FuncDSL.function, FuncCallStep) -->
+    <dependency>
+      <groupId>io.serverlessworkflow</groupId>
+      <artifactId>serverlessworkflow-experimental-fluent-func</artifactId>
+    </dependency>
+
+    <!-- Testing -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Integration tests: WorkItems extension deployment needed for @QuarkusTest to activate WorkItemService CDI beans -->
+    <dependency>
+      <groupId>io.quarkiverse.work</groupId>
+      <artifactId>quarkus-work-deployment</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Integration tests: Quarkus Flow deployment needed to activate Flow/WorkItemsFlow workflow beans -->
+    <dependency>
+      <groupId>io.quarkiverse.flow</groupId>
+      <artifactId>quarkus-flow-deployment</artifactId>
+      <version>0.7.1</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Unit tests: mock HumanTaskFlowBridge in isolation -->
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Integration tests: JDBC driver for H2 in-memory database -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-jdbc-h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.smallrye</groupId>
+        <artifactId>jandex-maven-plugin</artifactId>
+        <version>3.3.1</version>
+        <executions>
+          <execution>
+            <id>make-index</id>
+            <goals>
+              <goal>jandex</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

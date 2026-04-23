@@ -26,15 +26,15 @@ Using `WorkItem` avoids naming conflicts and accurately describes what WorkItems
 
 | Element | Value |
 |---|---|
-| GitHub repo | `mdproctor/quarkus-work` (→ `quarkiverse/quarkus-workitems` when submitted) |
-| groupId | `io.quarkiverse.workitems` |
-| Parent artifactId | `quarkus-workitems-parent` |
-| Runtime artifactId | `quarkus-workitems` |
-| Deployment artifactId | `quarkus-workitems-deployment` |
-| Root Java package | `io.quarkiverse.workitems` |
-| Runtime subpackage | `io.quarkiverse.workitems.runtime` |
-| Deployment subpackage | `io.quarkiverse.workitems.deployment` |
-| Config prefix | `quarkus.workitems` |
+| GitHub repo | `mdproctor/quarkus-work` (→ `quarkiverse/quarkus-work` when submitted) |
+| groupId | `io.quarkiverse.work` |
+| Parent artifactId | `quarkus-work-parent` |
+| Runtime artifactId | `quarkus-work` |
+| Deployment artifactId | `quarkus-work-deployment` |
+| Root Java package | `io.quarkiverse.work` |
+| Runtime subpackage | `io.quarkiverse.work.runtime` |
+| Deployment subpackage | `io.quarkiverse.work.deployment` |
+| Config prefix | `quarkus.work` |
 | Feature name | `workitems` |
 
 ---
@@ -50,9 +50,9 @@ CaseHub (case orchestration)   Quarkus-Flow (workflow execution)   Qhorus (agent
                                         │
                               Quarkus WorkItems (WorkItem inbox)
                                         │
-                              quarkus-workitems-casehub   (optional adapter)
-                              quarkus-workitems-flow      (optional adapter)
-                              quarkus-workitems-qhorus    (optional adapter)
+                              quarkus-work-casehub   (optional adapter)
+                              quarkus-work-flow      (optional adapter)
+                              quarkus-work-qhorus    (optional adapter)
 ```
 
 WorkItems has **no dependency on CaseHub, Quarkus-Flow, or Qhorus** — it is the independent human task layer. The integration modules (future) depend on WorkItems, not vice versa.
@@ -68,7 +68,7 @@ WorkItems has **no dependency on CaseHub, Quarkus-Flow, or Qhorus** — it is th
 ## Project Structure
 
 ```
-quarkus-workitems/
+quarkus-work/
 ├── quarkus-work-api/                      — Pure-Java SPI module (groupId io.quarkiverse.work)
 │   └── src/main/java/io/quarkiverse/work/api/
 │       ├── WorkerCandidate.java           — candidate assignee value object
@@ -108,7 +108,7 @@ quarkus-workitems/
 │       │   ├── ApplyLabelAction.java      — FilterAction: apply label to WorkItem
 │       │   ├── OverrideCandidateGroupsAction.java — FilterAction: replace candidate groups
 │       │   └── SetPriorityAction.java     — FilterAction: set WorkItem priority
-│       ├── config/WorkItemsConfig.java    — @ConfigMapping(prefix = "quarkus.workitems")
+│       ├── config/WorkItemsConfig.java    — @ConfigMapping(prefix = "quarkus.work")
 │       ├── event/
 │       │   ├── WorkItemContextBuilder.java — toMap(WorkItem) for JEXL context maps
 │       │   ├── WorkItemEventBroadcaster.java — fires WorkItemLifecycleEvent via CDI
@@ -134,7 +134,7 @@ quarkus-workitems/
 ├── deployment/                            — Extension deployment (build-time) module
 │   └── src/main/java/io/quarkiverse/workitems/deployment/
 │       └── WorkItemsProcessor.java        — @BuildStep: FeatureBuildItem
-├── testing/                               — Test utilities module (quarkus-workitems-testing)
+├── testing/                               — Test utilities module (quarkus-work-testing)
 │   └── src/main/java/io/quarkiverse/workitems/testing/
 │       ├── InMemoryWorkItemStore.java     — ConcurrentHashMap-backed, no datasource needed
 │       └── InMemoryAuditEntryStore.java   — list-backed
@@ -146,15 +146,15 @@ quarkus-workitems/
 ```
 
 **Integration modules (built):**
-- `workitems-flow/` — Quarkus-Flow CDI bridge (`HumanTaskFlowBridge`, `PendingWorkItemRegistry`, `WorkItemFlowEventListener`)
-- `quarkus-workitems-ledger/` — optional accountability module (command/event ledger, hash chain, attestation, EigenTrust)
-- `quarkus-workitems-queues/` — optional label-based queue module (`WorkItemFilter`, `FilterChain`, `QueueView`, `WorkItemQueueState`)
+- `work-flow/` — Quarkus-Flow CDI bridge (`HumanTaskFlowBridge`, `PendingWorkItemRegistry`, `WorkItemFlowEventListener`)
+- `quarkus-work-ledger/` — optional accountability module (command/event ledger, hash chain, attestation, EigenTrust)
+- `quarkus-work-queues/` — optional label-based queue module (`WorkItemFilter`, `FilterChain`, `QueueView`, `WorkItemQueueState`)
   - `api/`: `FilterResource` (/filters), `QueueResource` (/queues), `QueueStateResource` (/workitems/{id}/relinquishable)
   - `model/`: `FilterScope`, `FilterAction`, `WorkItemFilter`, `FilterChain`, `QueueView`, `WorkItemQueueState`
   - `service/`: `WorkItemExpressionEvaluator` SPI, `ExpressionDescriptor`, `JexlConditionEvaluator`, `JqConditionEvaluator`, `WorkItemFilterBean`, `FilterEngine`, `FilterEngineImpl`, `FilterEvaluationObserver`
-- `quarkus-workitems-ai/` — AI-native features; `LowConfidenceFilterProducer` wires confidence-gating into `FilterRegistryEngine`; `SemanticWorkerSelectionStrategy` (@Alternative @Priority(1)) for embedding-based worker scoring; depends on `quarkus-work-core`
+- `quarkus-work-ai/` — AI-native features; `LowConfidenceFilterProducer` wires confidence-gating into `FilterRegistryEngine`; `SemanticWorkerSelectionStrategy` (@Alternative @Priority(1)) for embedding-based worker scoring; depends on `quarkus-work-core`
   - `skill/`: `WorkerSkillProfile` entity (V14 migration), `WorkerSkillProfileResource` (/worker-skill-profiles), `SemanticWorkerSelectionStrategy` (@Alternative @Priority(1) — auto-activates when module on classpath), `EmbeddingSkillMatcher` (cosine similarity via dev.langchain4j), `WorkerProfileSkillProfileProvider` (default, DB-backed), `CapabilitiesSkillProfileProvider` (@Alternative — joins capability tags), `ResolutionHistorySkillProfileProvider` (@Alternative — aggregates completion history)
-- `quarkus-workitems-examples/` — runnable scenario demos; 4 `@QuarkusTest` scenarios covering every ledger/audit capability, each runs via `POST /examples/{name}/run`
+- `quarkus-work-examples/` — runnable scenario demos; 4 `@QuarkusTest` scenarios covering every ledger/audit capability, each runs via `POST /examples/{name}/run`
 - `integration-tests/` — `@QuarkusIntegrationTest` suite and native image validation (19 tests, 0.084s native startup)
 
 **Future integration modules (not yet scaffolded):**
@@ -181,13 +181,13 @@ JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-core
 JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl runtime
 
 # Run tests (ledger module)
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-ledger
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-ledger
 
 # Run tests (queues module)
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-queues
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-queues
 
 # Run tests (examples module)
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-examples
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-examples
 
 # Run specific test
 JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -Dtest=ClassName -pl runtime
@@ -202,7 +202,7 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home \
 
 **Use `mvn` not `./mvnw`** — maven wrapper not configured on this machine.
 
-**`quarkus-ledger` prerequisite:** `quarkus-workitems-ledger` depends on `io.quarkiverse.ledger:quarkus-ledger:1.0.0-SNAPSHOT` — a sibling project at `~/claude/quarkus-ledger/`. If the build fails with "Could not find artifact", install it first:
+**`quarkus-ledger` prerequisite:** `quarkus-work-ledger` depends on `io.quarkiverse.ledger:quarkus-ledger:1.0.0-SNAPSHOT` — a sibling project at `~/claude/quarkus-ledger/`. If the build fails with "Could not find artifact", install it first:
 ```bash
 JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn install -DskipTests -f ~/claude/quarkus-ledger/pom.xml
 ```
@@ -262,7 +262,7 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home
 | 1 | #100 | AI-Native Features — confidence gating, semantic routing | **active** | #112 ✅ confidenceScore, #113 ✅ filter-registry, #114 ✅ LowConfidenceFilter, #115 ✅ quarkus-work-api SPI, #116 ✅ WorkItemAssignmentService+strategies, #118 ✅ quarkus-work-api/work-core separation, #121 ✅ semantic skill matching; remaining: AI-suggested resolution, escalation summarisation |
 | 2 | #101 | Business-Hours Deadlines — SLA in working hours | **active** | BusinessCalendar SPI |
 | 3 | #102 | Workload-Aware Routing — least-loaded assignment | ✅ complete | #115 ✅ shared SPI, #116 ✅ LeastLoadedStrategy wired. RoundRobinStrategy deferred (#117). |
-| 4 | #103 | Notifications — Slack/Teams/email/webhook on lifecycle events | **active** | quarkus-workitems-notifications module |
+| 4 | #103 | Notifications — Slack/Teams/email/webhook on lifecycle events | **active** | quarkus-work-notifications module |
 | 5 | #104 | SLA Compliance Reporting — breach rates, actor performance | **active** | GET /workitems/reports/sla-breaches |
 | 6 | #105 | Subprocess Spawning — template-driven child WorkItems | **active** | WorkItemSpawnRule entity |
 | 7 | #106 | Multi-Instance Tasks — M-of-N parallel completion | **active** | MultiInstanceConfig on template |

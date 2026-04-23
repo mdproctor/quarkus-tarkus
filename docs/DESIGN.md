@@ -3,7 +3,7 @@
 ## Overview
 
 Quarkus WorkItems provides human-scale WorkItem lifecycle management for the Quarkus
-ecosystem. Any Quarkus application adds `quarkus-workitems` as a dependency and gets a
+ecosystem. Any Quarkus application adds `quarkus-work` as a dependency and gets a
 human task inbox — WorkItems with expiry, delegation, escalation, priority, and audit
 trail — usable standalone or via optional integrations with Quarkus-Flow, CaseHub,
 and Qhorus.
@@ -30,25 +30,25 @@ Maven multi-module layout following Quarkiverse conventions:
 
 | Module | Artifact | Purpose |
 |---|---|---|
-| Parent | `quarkus-workitems-parent` | BOM, version management |
+| Parent | `quarkus-work-parent` | BOM, version management |
 | API | `quarkus-work-api` | Pure Java SPI contracts — `WorkerCandidate`, `SelectionContext` (workItemId, title, description, category, requiredCapabilities, candidateUsers, candidateGroups), `AssignmentDecision`, `AssignmentTrigger`, `WorkerSelectionStrategy`, `WorkerRegistry`, `WorkEventType`, `WorkLifecycleEvent`, `WorkloadProvider`, `EscalationPolicy`, `SkillProfile`, `SkillProfileProvider`, `SkillMatcher`. groupId `io.quarkiverse.work`. Zero runtime dependencies. CaseHub and other systems depend on this without pulling in the WorkItems stack. |
 | Core | `quarkus-work-core` | Generic work management implementations — `WorkBroker` (generic assignment orchestrator, replaces CaseHub's TaskBroker concept), `LeastLoadedStrategy`, `ClaimFirstStrategy`, `NoOpWorkerRegistry`, filter engine (`FilterAction` SPI, `FilterRegistryEngine` observing `WorkLifecycleEvent`, `JexlConditionEvaluator`, `PermanentFilterRegistry`, `DynamicFilterRegistry`, `FilterRule`, `FilterRuleResource`). Jandex-indexed library, groupId `io.quarkiverse.work`. |
-| Runtime | `quarkus-workitems` | Core — WorkItem model, storage SPI, JPA defaults, service, REST API, lifecycle engine, labels, vocabulary. Includes `WorkItemContextBuilder`, `JpaWorkloadProvider` (implements `WorkloadProvider`), and runtime actions in `runtime/action/` (`ApplyLabelAction`, `OverrideCandidateGroupsAction`, `SetPriorityAction`). |
-| Deployment | `quarkus-workitems-deployment` | Build-time processor — feature registration, native config |
-| Testing | `quarkus-workitems-testing` | `InMemoryWorkItemStore` + `InMemoryAuditEntryStore` — no datasource needed for unit tests |
-| Flow | `quarkus-workitems-flow` | Quarkus-Flow integration — `WorkItemsFlow` DSL base class, `HumanTaskFlowBridge`, `WorkItemFlowEventListener` |
-| Ledger | `quarkus-workitems-ledger` | Optional accountability module — command/event ledger, SHA-256 hash chain, peer attestation, EigenTrust reputation. Extends `io.quarkiverse.ledger:quarkus-ledger` (shared base library — see ADR-0001). Zero core impact when absent. |
-| Queues | `quarkus-workitems-queues` | Optional label-based work queues — `WorkItemFilter` (JEXL/JQ/Lambda), `FilterChain` derivation graph with cascade delete, `QueueView` named label-pattern queries with `additionalConditions` JEXL filtering, queue pickup (`PUT /workitems/{id}/pickup`), soft assignment (`relinquishable` flag). **Queue lifecycle events**: `WorkItemQueueEvent` CDI events (ADDED/REMOVED/CHANGED) with DB-backed `QueueMembershipTracker` (V2001 migration) for restart-consistent state. See ADR-0002. Zero core impact when absent. |
-| Queue Examples | `quarkus-workitems-queues-examples` | Real-world queue routing scenarios — support triage cascade, legal compliance, finance approval chain, security exec-escalation, document review pipeline. Run via `POST /queue-examples/{name}/run`. |
-| Queue Dashboard | `quarkus-workitems-queues-dashboard` | Tamboui terminal UI dashboard running inside Quarkus via `@QuarkusMain`. Shows live 3×3 queue board (tiers × states), step-by-step scenario control, console log. Observes `WorkItemLifecycleEvent` directly — zero polling delay. |
-| Examples | `quarkus-workitems-examples` | Runnable scenario demos — 4 `@QuarkusTest` scenarios covering every ledger/audit capability via `POST /examples/{name}/run` |
-| Flow Examples | `quarkus-workitems-flow-examples` | WorkItemsFlow DSL showcase — contract review workflow mixing automated `function()` and human `workItem()` steps |
+| Runtime | `quarkus-work` | Core — WorkItem model, storage SPI, JPA defaults, service, REST API, lifecycle engine, labels, vocabulary. Includes `WorkItemContextBuilder`, `JpaWorkloadProvider` (implements `WorkloadProvider`), and runtime actions in `runtime/action/` (`ApplyLabelAction`, `OverrideCandidateGroupsAction`, `SetPriorityAction`). |
+| Deployment | `quarkus-work-deployment` | Build-time processor — feature registration, native config |
+| Testing | `quarkus-work-testing` | `InMemoryWorkItemStore` + `InMemoryAuditEntryStore` — no datasource needed for unit tests |
+| Flow | `quarkus-work-flow` | Quarkus-Flow integration — `WorkItemsFlow` DSL base class, `HumanTaskFlowBridge`, `WorkItemFlowEventListener` |
+| Ledger | `quarkus-work-ledger` | Optional accountability module — command/event ledger, SHA-256 hash chain, peer attestation, EigenTrust reputation. Extends `io.quarkiverse.ledger:quarkus-ledger` (shared base library — see ADR-0001). Zero core impact when absent. |
+| Queues | `quarkus-work-queues` | Optional label-based work queues — `WorkItemFilter` (JEXL/JQ/Lambda), `FilterChain` derivation graph with cascade delete, `QueueView` named label-pattern queries with `additionalConditions` JEXL filtering, queue pickup (`PUT /workitems/{id}/pickup`), soft assignment (`relinquishable` flag). **Queue lifecycle events**: `WorkItemQueueEvent` CDI events (ADDED/REMOVED/CHANGED) with DB-backed `QueueMembershipTracker` (V2001 migration) for restart-consistent state. See ADR-0002. Zero core impact when absent. |
+| Queue Examples | `quarkus-work-queues-examples` | Real-world queue routing scenarios — support triage cascade, legal compliance, finance approval chain, security exec-escalation, document review pipeline. Run via `POST /queue-examples/{name}/run`. |
+| Queue Dashboard | `quarkus-work-queues-dashboard` | Tamboui terminal UI dashboard running inside Quarkus via `@QuarkusMain`. Shows live 3×3 queue board (tiers × states), step-by-step scenario control, console log. Observes `WorkItemLifecycleEvent` directly — zero polling delay. |
+| Examples | `quarkus-work-examples` | Runnable scenario demos — 4 `@QuarkusTest` scenarios covering every ledger/audit capability via `POST /examples/{name}/run` |
+| Flow Examples | `quarkus-work-flow-examples` | WorkItemsFlow DSL showcase — contract review workflow mixing automated `function()` and human `workItem()` steps |
 | Integration Tests | `integration-tests` | Black-box `@QuarkusIntegrationTest` suite and native image validation |
-| *(future)* | `quarkus-workitems-casehub` | CaseHub `WorkerRegistry` adapter (blocked: CaseHub not ready) |
-| *(future)* | `quarkus-workitems-qhorus` | Qhorus MCP tools (blocked: Qhorus not ready) |
-| MongoDB | `quarkus-workitems-persistence-mongodb` | MongoDB-backed `WorkItemStore` + `AuditEntryStore`. `candidateGroups`/`candidateUsers` stored as arrays; `WorkItemQuery` → MongoDB `Document` filter; `$regex` for label patterns. 27 tests via Dev Services. |
-| AI | `quarkus-workitems-ai` | `LowConfidenceFilterProducer` — CDI-produced permanent filter applying `ai/low-confidence` label (INFERRED) when `confidenceScore < threshold`. Config: `quarkus.workitems.ai.confidence-threshold` (default 0.7), `quarkus.workitems.ai.low-confidence-filter.enabled` (default true). Semantic skill matching: `WorkerSkillProfile` entity (V14 Flyway migration) + REST API at `/worker-skill-profiles` (CRUD); `SemanticWorkerSelectionStrategy` (`@Alternative @Priority(1)` — auto-activates when module on classpath, embeds WorkItem title+description and worker skill narrative, scores candidates by cosine similarity); `EmbeddingSkillMatcher` (`dev.langchain4j` cosine similarity, `Instance<EmbeddingModel>` optional injection — scores -1.0 when no model); `WorkerProfileSkillProfileProvider` (default, DB-backed); `CapabilitiesSkillProfileProvider` (`@Alternative` — joins capability tags); `ResolutionHistorySkillProfileProvider` (`@Alternative` — aggregates completion history). |
-| *(future)* | `quarkus-workitems-redis` | Redis-backed `WorkItemStore` |
+| *(future)* | `quarkus-work-casehub` | CaseHub `WorkerRegistry` adapter (blocked: CaseHub not ready) |
+| *(future)* | `quarkus-work-qhorus` | Qhorus MCP tools (blocked: Qhorus not ready) |
+| MongoDB | `quarkus-work-persistence-mongodb` | MongoDB-backed `WorkItemStore` + `AuditEntryStore`. `candidateGroups`/`candidateUsers` stored as arrays; `WorkItemQuery` → MongoDB `Document` filter; `$regex` for label patterns. 27 tests via Dev Services. |
+| AI | `quarkus-work-ai` | `LowConfidenceFilterProducer` — CDI-produced permanent filter applying `ai/low-confidence` label (INFERRED) when `confidenceScore < threshold`. Config: `quarkus.work.ai.confidence-threshold` (default 0.7), `quarkus.work.ai.low-confidence-filter.enabled` (default true). Semantic skill matching: `WorkerSkillProfile` entity (V14 Flyway migration) + REST API at `/worker-skill-profiles` (CRUD); `SemanticWorkerSelectionStrategy` (`@Alternative @Priority(1)` — auto-activates when module on classpath, embeds WorkItem title+description and worker skill narrative, scores candidates by cosine similarity); `EmbeddingSkillMatcher` (`dev.langchain4j` cosine similarity, `Instance<EmbeddingModel>` optional injection — scores -1.0 when no model); `WorkerProfileSkillProfileProvider` (default, DB-backed); `CapabilitiesSkillProfileProvider` (`@Alternative` — joins capability tags); `ResolutionHistorySkillProfileProvider` (`@Alternative` — aggregates completion history). |
+| *(future)* | `quarkus-work-redis` | Redis-backed `WorkItemStore` |
 
 ---
 
@@ -186,7 +186,7 @@ Two interfaces in `runtime.repository` allow pluggable persistence:
 | `AuditEntryStore` | `JpaAuditEntryStore` | append, findByWorkItemId |
 
 Default JPA implementations are `@ApplicationScoped`. Alternatives (in-memory, MongoDB, Redis)
-override via `@Alternative @Priority(1)`. The `quarkus-workitems-testing` module provides
+override via `@Alternative @Priority(1)`. The `quarkus-work-testing` module provides
 `InMemoryWorkItemStore` + `InMemoryAuditEntryStore` — no datasource required,
 enabling plain unit tests without `@QuarkusTest`.
 
@@ -199,8 +199,8 @@ enabling plain unit tests without `@QuarkusTest`.
 | `WorkItemService` | `runtime.service` | Create, assign, claim, complete, reject, delegate; enforces status transitions. Overloaded `complete(+rationale, +planRef)` and `reject(+rationale)` pass through to ledger for GDPR Article 22 compliance. |
 | `FormSchemaValidationService` | `runtime.service` | Pure JSON Schema draft-07 validator (networknt). No DB access — callers resolve the schema string. Returns `List<String>` violations; null/blank JSON → empty list (skip). Used by `WorkItemResource` on create (payload) and complete (resolution). |
 | `WorkItemAssignmentService` | `runtime.service` | Orchestrates worker selection on CREATED/RELEASED/DELEGATED. Resolves candidates from `candidateUsers` (direct) + `WorkerRegistry` (groups), populates `activeWorkItemCount`, filters by `requiredCapabilities`, calls `WorkerSelectionStrategy.select()`, applies `AssignmentDecision` (sets status=ASSIGNED + assignedAt when pre-assigning). |
-| `ClaimFirstStrategy` | `io.quarkiverse.work.core.strategy` | Default `WorkerSelectionStrategy` no-op — `AssignmentDecision.noChange()`; pool stays open for claim-first. Activated by `quarkus.workitems.routing.strategy=claim-first`. |
-| `LeastLoadedStrategy` | `io.quarkiverse.work.core.strategy` | Default `WorkerSelectionStrategy` — pre-assigns to candidate with fewest ASSIGNED/IN_PROGRESS/SUSPENDED WorkItems. Activated by `quarkus.workitems.routing.strategy=least-loaded` (default). `noChange()` when no candidates. |
+| `ClaimFirstStrategy` | `io.quarkiverse.work.core.strategy` | Default `WorkerSelectionStrategy` no-op — `AssignmentDecision.noChange()`; pool stays open for claim-first. Activated by `quarkus.work.routing.strategy=claim-first`. |
+| `LeastLoadedStrategy` | `io.quarkiverse.work.core.strategy` | Default `WorkerSelectionStrategy` — pre-assigns to candidate with fewest ASSIGNED/IN_PROGRESS/SUSPENDED WorkItems. Activated by `quarkus.work.routing.strategy=least-loaded` (default). `noChange()` when no candidates. |
 | `NoOpWorkerRegistry` | `io.quarkiverse.work.core.strategy` | Default `WorkerRegistry` — returns empty list for all groups (groups stay claim-first until app registers real resolver). |
 | `JpaWorkloadProvider` | `runtime.service` | Counts active (ASSIGNED/IN_PROGRESS/SUSPENDED) WorkItems for a worker; implements `WorkloadProvider` from `quarkus-work-api`. |
 | `ExpiryCleanupJob` | `runtime.service` | `@Scheduled` — marks expired WorkItems, fires EscalationPolicy |
@@ -210,13 +210,13 @@ enabling plain unit tests without `@QuarkusTest`.
 
 ## Ledger Module
 
-The optional `quarkus-workitems-ledger` module records every WorkItem lifecycle transition as an
+The optional `quarkus-work-ledger` module records every WorkItem lifecycle transition as an
 immutable `WorkItemLedgerEntry`. It is activated by adding the module to the classpath — the
 core extension is completely unchanged whether the module is present or not.
 
 ### Dependency on quarkus-ledger (ADR-0001)
 
-`quarkus-workitems-ledger` depends on `io.quarkiverse.ledger:quarkus-ledger` — a domain-agnostic
+`quarkus-work-ledger` depends on `io.quarkiverse.ledger:quarkus-ledger` — a domain-agnostic
 shared library providing `LedgerEntry`, `LedgerAttestation`, `ActorTrustScore`,
 `TrustScoreComputer`, `LedgerHashChain`, and their repositories. This allows CaseHub and
 Qhorus to adopt the same ledger infrastructure without depending on WorkItems.
@@ -313,22 +313,22 @@ Response envelope: `{entries: [...], page, size, total}`. Each entry includes `i
 | `GET /workitems/reports/sla-breaches?from=&to=&category=&priority=` | WorkItems that missed `expiresAt`; returns `items[]` + `summary{totalBreached,avgBreachDurationMinutes,byCategory}` |
 | `GET /workitems/reports/actors/{actorId}?from=&to=&category=` | Actor performance: `totalAssigned`, `totalCompleted`, `totalRejected`, `avgCompletionMinutes` (null if no completions), `byCategory` map |
 
-`quarkus-workitems-queues` adds `/filters`, `/queues`, `/workitems/{id}/pickup`, and `/workitems/{id}/relinquishable`. See `docs/api-reference.md` for full queue API documentation.
+`quarkus-work-queues` adds `/filters`, `/queues`, `/workitems/{id}/pickup`, and `/workitems/{id}/relinquishable`. See `docs/api-reference.md` for full queue API documentation.
 
 ---
 
 ## Configuration
 
-`WorkItemsConfig` — `@ConfigMapping(prefix = "quarkus.workitems")`:
+`WorkItemsConfig` — `@ConfigMapping(prefix = "quarkus.work")`:
 
 | Property | Default | Meaning |
 |---|---|---|
-| `quarkus.workitems.default-expiry-hours` | 24 | Default completion deadline |
-| `quarkus.workitems.default-claim-hours` | 4 | Default claim deadline (0 = no claim deadline) |
-| `quarkus.workitems.escalation-policy` | notify | Completion expiry: `notify`, `reassign`, `auto-reject` |
-| `quarkus.workitems.claim-escalation-policy` | notify | Claim deadline breach: `notify`, `reassign` |
-| `quarkus.workitems.cleanup.expiry-check-seconds` | 60 | Expiry/claim-deadline job interval |
-| `quarkus.workitems.routing.strategy` | least-loaded | Worker selection: `least-loaded` (default — pre-assigns to fewest-active candidate) or `claim-first` (pool stays open). Override with CDI `@Alternative WorkerSelectionStrategy`. |
+| `quarkus.work.default-expiry-hours` | 24 | Default completion deadline |
+| `quarkus.work.default-claim-hours` | 4 | Default claim deadline (0 = no claim deadline) |
+| `quarkus.work.escalation-policy` | notify | Completion expiry: `notify`, `reassign`, `auto-reject` |
+| `quarkus.work.claim-escalation-policy` | notify | Claim deadline breach: `notify`, `reassign` |
+| `quarkus.work.cleanup.expiry-check-seconds` | 60 | Expiry/claim-deadline job interval |
+| `quarkus.work.routing.strategy` | least-loaded | Worker selection: `least-loaded` (default — pre-assigns to fewest-active candidate) or `claim-first` (pool stays open). Override with CDI `@Alternative WorkerSelectionStrategy`. |
 
 Consuming app owns all datasource config.
 
@@ -342,20 +342,20 @@ Consuming app owns all datasource config.
 | **2 — REST API** | ✅ Complete | WorkItemResource — 13 endpoints, DTOs, exception mappers |
 | **3 — Lifecycle engine** | ✅ Complete | ExpiryCleanupJob, ClaimDeadlineJob, EscalationPolicy SPI + 3 implementations |
 | **4 — CDI events** | ✅ Complete | WorkItemLifecycleEvent on all transitions; rationale + planRef fields |
-| **5 — Quarkus-Flow integration** | ✅ Complete | `quarkus-workitems-flow` — WorkItemsFlow DSL, HumanTaskFlowBridge, Uni<String> suspension |
-| **6 — Ledger module** | ✅ Complete | `quarkus-workitems-ledger` — command/event model, hash chain, attestation, EigenTrust; optional, zero core impact |
-| **7 — Label-based queues** | ✅ Complete | `quarkus-workitems-queues` — label model (MANUAL/INFERRED), vocabulary (GLOBAL→PERSONAL scopes), filter engine (JEXL/JQ/Lambda, multi-pass propagation, cascade delete via FilterChain), QueueView named queries, soft assignment. See ADR-0002 and `docs/specs/2026-04-15-queues-design.md` |
+| **5 — Quarkus-Flow integration** | ✅ Complete | `quarkus-work-flow` — WorkItemsFlow DSL, HumanTaskFlowBridge, Uni<String> suspension |
+| **6 — Ledger module** | ✅ Complete | `quarkus-work-ledger` — command/event model, hash chain, attestation, EigenTrust; optional, zero core impact |
+| **7 — Label-based queues** | ✅ Complete | `quarkus-work-queues` — label model (MANUAL/INFERRED), vocabulary (GLOBAL→PERSONAL scopes), filter engine (JEXL/JQ/Lambda, multi-pass propagation, cascade delete via FilterChain), QueueView named queries, soft assignment. See ADR-0002 and `docs/specs/2026-04-15-queues-design.md` |
 | **8 — Native image** | ✅ Complete | GraalVM 25 native build, 19 @QuarkusIntegrationTest tests, 0.084s startup |
-| **Examples** | ✅ Complete | `quarkus-workitems-examples` (4 ledger scenarios) + `quarkus-workitems-flow-examples` (WorkItemsFlow DSL showcase) + `quarkus-workitems-queues-examples` (5 queue scenarios: triage cascade, legal routing, finance approval, security escalation, document review pipeline) |
-| **Dashboard** | ✅ Complete | `quarkus-workitems-queues-dashboard` — Tamboui TUI inside Quarkus via `@QuarkusMain`; live queue board, step-by-step scenario control, 6 Pilot end-to-end tests passing headlessly via `TuiTestRunner` (`TestBackend` is in `tamboui-core:test-fixtures`) |
+| **Examples** | ✅ Complete | `quarkus-work-examples` (4 ledger scenarios) + `quarkus-work-flow-examples` (WorkItemsFlow DSL showcase) + `quarkus-work-queues-examples` (5 queue scenarios: triage cascade, legal routing, finance approval, security escalation, document review pipeline) |
+| **Dashboard** | ✅ Complete | `quarkus-work-queues-dashboard` — Tamboui TUI inside Quarkus via `@QuarkusMain`; live queue board, step-by-step scenario control, 6 Pilot end-to-end tests passing headlessly via `TuiTestRunner` (`TestBackend` is in `tamboui-core:test-fixtures`) |
 | **9 — Form Schema** | ✅ Complete | Epic #98: `WorkItemFormSchema` entity + CRUD API (#107 ✅), payload/resolution validation (#108 ✅). UI devs can GET the schema for a category and auto-generate validated forms. |
 | **10 — Audit History Query API** | ✅ Complete | Epic #99: `GET /audit` cross-WorkItem query with actorId/event/date/category filters + pagination (#109 ✅), SLA breach report (#110 ✅), actor performance summary (#111 ✅). V12 indexes. |
-| **11 — Confidence-Gated Routing** | ✅ Complete | Epic #100: `confidenceScore` on WorkItem + V13 (#112 ✅), `quarkus-workitems-filter-registry` module with `FilterAction` SPI + JEXL engine + permanent/dynamic registry (#113 ✅), `quarkus-workitems-ai` `LowConfidenceFilterProducer` (#114 ✅). |
-| **12 — WorkerSelectionStrategy** | ✅ Complete | Epics #100/#102: `quarkus-workitems-api` shared SPI module (#115 ✅), `WorkItemAssignmentService` + `LeastLoadedStrategy` + `ClaimFirstStrategy` + `NoOpWorkerRegistry` wired into create/release/delegate (#116 ✅). `RoundRobinStrategy` deferred (#117). |
-| **13 — quarkus-work separation** | ✅ Complete | `quarkus-work-api` (shared SPI contracts) and `quarkus-work-core` (WorkBroker + generic filter engine) extracted. `quarkus-workitems-api` renamed to `quarkus-work-api`; `quarkus-workitems-filter-registry` dissolved into `quarkus-work-core`. CaseHub can now depend on `quarkus-work-core` for `WorkBroker` without pulling in human-inbox specifics. Issue #118. |
-| **13b — Semantic Skill Matching** | ✅ Complete | `SkillProfile` + `SkillProfileProvider` + `SkillMatcher` SPIs in `quarkus-work-api`. `SelectionContext` gains `title` and `description`. `EmbeddingSkillMatcher` (`dev.langchain4j` cosine similarity). `WorkerProfileSkillProfileProvider` (default, DB-backed), `CapabilitiesSkillProfileProvider` + `ResolutionHistorySkillProfileProvider` (`@Alternative`). `SemanticWorkerSelectionStrategy` auto-activates via `@Alternative @Priority(1)`. `WorkerSkillProfile` entity + REST API at `/worker-skill-profiles`. Flyway V14. 48 tests in `quarkus-workitems-ai` (was 8). Issues #119 (composite provider) and #120 (fallback strategy) filed for future iteration. Issue #121. |
-| **10 — CaseHub integration** | ⏸ Blocked | `quarkus-workitems-casehub` — CaseHub WorkerRegistry adapter (awaiting CaseHub stable API) |
-| **10 — Qhorus integration** | ⏸ Blocked | `quarkus-workitems-qhorus` — MCP tools (awaiting Qhorus stable API) |
+| **11 — Confidence-Gated Routing** | ✅ Complete | Epic #100: `confidenceScore` on WorkItem + V13 (#112 ✅), `quarkus-work-filter-registry` module with `FilterAction` SPI + JEXL engine + permanent/dynamic registry (#113 ✅), `quarkus-work-ai` `LowConfidenceFilterProducer` (#114 ✅). |
+| **12 — WorkerSelectionStrategy** | ✅ Complete | Epics #100/#102: `quarkus-work-api` shared SPI module (#115 ✅), `WorkItemAssignmentService` + `LeastLoadedStrategy` + `ClaimFirstStrategy` + `NoOpWorkerRegistry` wired into create/release/delegate (#116 ✅). `RoundRobinStrategy` deferred (#117). |
+| **13 — quarkus-work separation** | ✅ Complete | `quarkus-work-api` (shared SPI contracts) and `quarkus-work-core` (WorkBroker + generic filter engine) extracted. `quarkus-work-api` renamed to `quarkus-work-api`; `quarkus-work-filter-registry` dissolved into `quarkus-work-core`. CaseHub can now depend on `quarkus-work-core` for `WorkBroker` without pulling in human-inbox specifics. Issue #118. |
+| **13b — Semantic Skill Matching** | ✅ Complete | `SkillProfile` + `SkillProfileProvider` + `SkillMatcher` SPIs in `quarkus-work-api`. `SelectionContext` gains `title` and `description`. `EmbeddingSkillMatcher` (`dev.langchain4j` cosine similarity). `WorkerProfileSkillProfileProvider` (default, DB-backed), `CapabilitiesSkillProfileProvider` + `ResolutionHistorySkillProfileProvider` (`@Alternative`). `SemanticWorkerSelectionStrategy` auto-activates via `@Alternative @Priority(1)`. `WorkerSkillProfile` entity + REST API at `/worker-skill-profiles`. Flyway V14. 48 tests in `quarkus-work-ai` (was 8). Issues #119 (composite provider) and #120 (fallback strategy) filed for future iteration. Issue #121. |
+| **10 — CaseHub integration** | ⏸ Blocked | `quarkus-work-casehub` — CaseHub WorkerRegistry adapter (awaiting CaseHub stable API) |
+| **10 — Qhorus integration** | ⏸ Blocked | `quarkus-work-qhorus` — MCP tools (awaiting Qhorus stable API) |
 | **11 — ProvenanceLink** | ⏸ Blocked | Typed PROV-O causal graph — awaiting CaseHub + Qhorus integrations (issue #39) |
 
 ---
@@ -365,7 +365,7 @@ Consuming app owns all datasource config.
 Three tiers:
 
 **Unit tests** (no Quarkus boot):
-- Use `InMemoryWorkItemStore` from `quarkus-workitems-testing`
+- Use `InMemoryWorkItemStore` from `quarkus-work-testing`
 - Pure logic functions (e.g. `QueueBoardBuilder`, `LabelVocabularyService.matchesPattern()`)
 - No datasource, no Flyway, instant execution
 
@@ -387,16 +387,16 @@ Three tiers:
 | quarkus-work-api | 15 |
 | quarkus-work-core | 38 |
 | runtime | 548 |
-| workitems-flow | 32 |
-| quarkus-workitems-ledger | 75 |
-| quarkus-workitems-queues | 82 |
-| quarkus-workitems-ai | 48 |
-| quarkus-workitems-examples | 37 |
-| quarkus-workitems-flow-examples | 2 |
-| quarkus-workitems-queues-examples | 37 |
-| quarkus-workitems-queues-dashboard | 20 |
-| quarkus-workitems-persistence-mongodb | 27 |
-| quarkus-workitems-issue-tracker | 23 |
+| work-flow | 32 |
+| quarkus-work-ledger | 75 |
+| quarkus-work-queues | 82 |
+| quarkus-work-ai | 48 |
+| quarkus-work-examples | 37 |
+| quarkus-work-flow-examples | 2 |
+| quarkus-work-queues-examples | 37 |
+| quarkus-work-queues-dashboard | 20 |
+| quarkus-work-persistence-mongodb | 27 |
+| quarkus-work-issue-tracker | 23 |
 | testing | 16 |
 | integration-tests | 19 (native) |
 | **Total** | **1019+** |

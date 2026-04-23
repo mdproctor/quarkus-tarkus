@@ -1,8 +1,8 @@
-# quarkus-workitems-queues Module Implementation Plan
+# quarkus-work-queues Module Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the optional `quarkus-workitems-queues` Maven module — filters, FilterChain engine, and queue views on top of the label model from sub-epic #51.
+**Goal:** Build the optional `quarkus-work-queues` Maven module — filters, FilterChain engine, and queue views on top of the label model from sub-epic #51.
 
 **Architecture:** The module is a plain Maven module (not a Quarkiverse extension pair — no deployment processor needed). It observes `WorkItemLifecycleEvent` from the core via CDI. Filters are stored in the database; evaluation is synchronous multi-pass (up to 10 passes for propagation). `FilterChain` tracks `filterId → Set<workItemId>` for O(affected) cascade on deletion. `QueueView` is a named label-pattern query. Lambda filters are CDI beans.
 
@@ -10,23 +10,23 @@
 
 **Issues:** #56 (scaffold), #57 (WorkItemFilter), #58 (JEXL), #59 (JQ), #60 (Lambda), #61 (engine), #62 (cascade), #63 (QueueView), #64 (soft assign), #65 (E2E)
 
-**Module location:** `quarkus-workitems-queues/`
+**Module location:** `quarkus-work-queues/`
 
 **Build commands:**
 ```bash
 # Build only this module (after installing parent)
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-queues -Dno-format
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-queues -Dno-format
 
 # Full build including all dependencies
 JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn clean install -DskipTests -Dno-format && \
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-queues -Dno-format
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-queues -Dno-format
 ```
 
 ---
 
 ## File Map
 
-**Created (quarkus-workitems-queues/src/main/java/io/quarkiverse/workitems/queues/):**
+**Created (quarkus-work-queues/src/main/java/io/quarkiverse/workitems/queues/):**
 - `model/FilterScope.java` — enum: PERSONAL, TEAM, ORG
 - `model/WorkItemFilter.java` — Panache entity
 - `model/FilterChain.java` — Panache entity (filterId → workItemIds)
@@ -46,9 +46,9 @@ JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-queues 
 - `api/QueueStateResource.java` — relinquishable REST
 
 **Created (resources):**
-- `quarkus-workitems-queues/src/main/resources/db/migration/V1__queues_schema.sql`
-- `quarkus-workitems-queues/src/main/resources/META-INF/microprofile-config.properties`
-- `quarkus-workitems-queues/src/test/resources/application.properties`
+- `quarkus-work-queues/src/main/resources/db/migration/V1__queues_schema.sql`
+- `quarkus-work-queues/src/main/resources/META-INF/microprofile-config.properties`
+- `quarkus-work-queues/src/test/resources/application.properties`
 
 **Created (tests):**
 - `queues/.../service/FilterEngineTest.java` — unit test (no Quarkus)
@@ -60,7 +60,7 @@ JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-queues 
 - `queues/.../api/FullPipelineTest.java` — @QuarkusTest end-to-end
 
 **Modified:**
-- `pom.xml` — add `quarkus-workitems-queues` to `<modules>`
+- `pom.xml` — add `quarkus-work-queues` to `<modules>`
 
 ---
 
@@ -68,16 +68,16 @@ JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-queues 
 
 ---
 
-### Task 1: Create the quarkus-workitems-queues POM
+### Task 1: Create the quarkus-work-queues POM
 
 **Files:**
-- Create: `quarkus-workitems-queues/pom.xml`
+- Create: `quarkus-work-queues/pom.xml`
 - Modify: `pom.xml` (add module)
 
 - [ ] **Step 1: Create module directory and POM**
 
 ```xml
-<!-- quarkus-workitems-queues/pom.xml -->
+<!-- quarkus-work-queues/pom.xml -->
 <?xml version="1.0"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -85,12 +85,12 @@ JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-queues 
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.quarkiverse.workitems</groupId>
-    <artifactId>quarkus-workitems-parent</artifactId>
+    <groupId>io.quarkiverse.work</groupId>
+    <artifactId>quarkus-work-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>quarkus-workitems-queues</artifactId>
+  <artifactId>quarkus-work-queues</artifactId>
   <name>Quarkus WorkItems - Queues</name>
   <description>Optional queues module providing label-based work queues: saved and ad-hoc filters
 (JEXL, JQ, Lambda), FilterChain derivation graph, and QueueView named queries.
@@ -100,8 +100,8 @@ Add this module to enable queue capabilities — the core extension is unchanged
 
     <!-- Core extension — WorkItem, WorkItemLifecycleEvent, WorkItemRepository, labels -->
     <dependency>
-      <groupId>io.quarkiverse.workitems</groupId>
-      <artifactId>quarkus-workitems</artifactId>
+      <groupId>io.quarkiverse.work</groupId>
+      <artifactId>quarkus-work</artifactId>
       <version>${project.version}</version>
     </dependency>
 
@@ -188,12 +188,12 @@ Add this module to enable queue capabilities — the core extension is unchanged
 
 - [ ] **Step 2: Add module to parent POM**
 
-In `pom.xml`, add `<module>quarkus-workitems-queues</module>` after `quarkus-workitems-ledger`.
+In `pom.xml`, add `<module>quarkus-work-queues</module>` after `quarkus-work-ledger`.
 
 - [ ] **Step 3: Create test application.properties**
 
 ```properties
-# quarkus-workitems-queues/src/test/resources/application.properties
+# quarkus-work-queues/src/test/resources/application.properties
 quarkus.http.test-port=0
 quarkus.datasource.db-kind=h2
 quarkus.datasource.jdbc.url=jdbc:h2:mem:queuestest;DB_CLOSE_DELAY=-1
@@ -201,9 +201,9 @@ quarkus.hibernate-orm.database.generation=none
 quarkus.flyway.migrate-at-start=true
 quarkus.flyway.locations=db/migration
 quarkus.scheduler.enabled=false
-quarkus.workitems.default-expiry-hours=24
-quarkus.workitems.default-claim-hours=4
-quarkus.workitems.cleanup.expiry-check-seconds=60
+quarkus.work.default-expiry-hours=24
+quarkus.work.default-claim-hours=4
+quarkus.work.cleanup.expiry-check-seconds=60
 ```
 
 - [ ] **Step 4: Verify module compiles**
@@ -219,14 +219,14 @@ Expected: BUILD SUCCESS across all modules.
 ### Task 2: Flyway V1 for queues module + FilterScope enum
 
 **Files:**
-- Create: `quarkus-workitems-queues/src/main/resources/db/migration/V1__queues_schema.sql`
-- Create: `quarkus-workitems-queues/src/main/java/io/quarkiverse/workitems/queues/model/FilterScope.java`
+- Create: `quarkus-work-queues/src/main/resources/db/migration/V1__queues_schema.sql`
+- Create: `quarkus-work-queues/src/main/java/io/quarkiverse/workitems/queues/model/FilterScope.java`
 
 - [ ] **Step 1: Create FilterScope enum**
 
 ```java
-// quarkus-workitems-queues/src/main/java/io/quarkiverse/workitems/queues/model/FilterScope.java
-package io.quarkiverse.workitems.queues.model;
+// quarkus-work-queues/src/main/java/io/quarkiverse/workitems/queues/model/FilterScope.java
+package io.quarkiverse.work.queues.model;
 
 /** Visibility scope of a {@link WorkItemFilter} or {@link QueueView}. */
 public enum FilterScope {
@@ -242,7 +242,7 @@ public enum FilterScope {
 - [ ] **Step 2: Create the Flyway V1 migration**
 
 ```sql
--- quarkus-workitems-queues V1: filters, filter chains, queue views, queue state
+-- quarkus-work-queues V1: filters, filter chains, queue views, queue state
 -- Compatible with H2 (dev/test) and PostgreSQL (production).
 
 -- Saved filter definitions
@@ -312,9 +312,9 @@ JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn clean install -DskipTests -Dno-for
 - [ ] **Step 1: Create FilterEngine interface**
 
 ```java
-package io.quarkiverse.workitems.queues.service;
+package io.quarkiverse.work.queues.service;
 
-import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.model.WorkItem;
 
 /** Evaluates active filters against a WorkItem and updates its INFERRED labels. */
 public interface FilterEngine {
@@ -329,11 +329,11 @@ public interface FilterEngine {
 - [ ] **Step 2: Create stub FilterEngineImpl**
 
 ```java
-package io.quarkiverse.workitems.queues.service;
+package io.quarkiverse.work.queues.service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.model.WorkItem;
 
 @ApplicationScoped
 public class FilterEngineImpl implements FilterEngine {
@@ -348,15 +348,15 @@ public class FilterEngineImpl implements FilterEngine {
 - [ ] **Step 3: Create FilterEvaluationObserver**
 
 ```java
-package io.quarkiverse.workitems.queues.service;
+package io.quarkiverse.work.queues.service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
-import io.quarkiverse.workitems.runtime.event.WorkItemLifecycleEvent;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent;
+import io.quarkiverse.work.runtime.repository.WorkItemRepository;
 
 /**
  * CDI observer that triggers filter re-evaluation on every WorkItem lifecycle event.
@@ -380,10 +380,10 @@ public class FilterEvaluationObserver {
 
 - [ ] **Step 4: Write smoke test**
 
-Create `quarkus-workitems-queues/src/test/java/io/quarkiverse/workitems/queues/api/QueuesModuleSmokeTest.java`:
+Create `quarkus-work-queues/src/test/java/io/quarkiverse/workitems/queues/api/QueuesModuleSmokeTest.java`:
 
 ```java
-package io.quarkiverse.workitems.queues.api;
+package io.quarkiverse.work.queues.api;
 
 import static io.restassured.RestAssured.given;
 
@@ -405,7 +405,7 @@ class QueuesModuleSmokeTest {
 - [ ] **Step 5: Run the test**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-queues \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-queues \
   -Dtest=QueuesModuleSmokeTest -Dno-format 2>&1 | tail -8
 ```
 
@@ -415,9 +415,9 @@ Expected: Tests run: 1, Failures: 0
 
 ```bash
 git add -A
-git commit -m "feat(queues): quarkus-workitems-queues module scaffold
+git commit -m "feat(queues): quarkus-work-queues module scaffold
 
-- quarkus-workitems-queues Maven module with POM following ledger pattern
+- quarkus-work-queues Maven module with POM following ledger pattern
 - FilterScope enum: PERSONAL, TEAM, ORG
 - Flyway V1: work_item_filter, filter_chain, filter_chain_work_item,
   queue_view, work_item_queue_state tables
@@ -444,7 +444,7 @@ Refs #52, #50"
 - [ ] **Step 1: Create FilterAction record**
 
 ```java
-package io.quarkiverse.workitems.queues.model;
+package io.quarkiverse.work.queues.model;
 
 /**
  * An action executed by a filter when its condition matches.
@@ -465,7 +465,7 @@ public record FilterAction(
 - [ ] **Step 2: Create WorkItemFilter entity**
 
 ```java
-package io.quarkiverse.workitems.queues.model;
+package io.quarkiverse.work.queues.model;
 
 import java.time.Instant;
 import java.util.List;
@@ -577,10 +577,10 @@ public class WorkItemFilter extends PanacheEntityBase {
 
 - [ ] **Step 1: Write failing integration tests**
 
-Create `quarkus-workitems-queues/src/test/java/io/quarkiverse/workitems/queues/api/FilterResourceTest.java`:
+Create `quarkus-work-queues/src/test/java/io/quarkiverse/workitems/queues/api/FilterResourceTest.java`:
 
 ```java
-package io.quarkiverse.workitems.queues.api;
+package io.quarkiverse.work.queues.api;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
@@ -722,7 +722,7 @@ class FilterResourceTest {
 - [ ] **Step 2: Create FilterResource**
 
 ```java
-package io.quarkiverse.workitems.queues.api;
+package io.quarkiverse.work.queues.api;
 
 import java.util.List;
 import java.util.Map;
@@ -736,14 +736,14 @@ import jakarta.ws.rs.core.Response;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import io.quarkiverse.workitems.queues.model.FilterAction;
-import io.quarkiverse.workitems.queues.model.FilterScope;
-import io.quarkiverse.workitems.queues.model.WorkItemFilter;
-import io.quarkiverse.workitems.queues.service.FilterConditionEvaluator;
-import io.quarkiverse.workitems.queues.service.FilterEvaluatorRegistry;
-import io.quarkiverse.workitems.runtime.model.WorkItem;
-import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
-import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
+import io.quarkiverse.work.queues.model.FilterAction;
+import io.quarkiverse.work.queues.model.FilterScope;
+import io.quarkiverse.work.queues.model.WorkItemFilter;
+import io.quarkiverse.work.queues.service.FilterConditionEvaluator;
+import io.quarkiverse.work.queues.service.FilterEvaluatorRegistry;
+import io.quarkiverse.work.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.model.WorkItemPriority;
+import io.quarkiverse.work.runtime.model.WorkItemStatus;
 
 @Path("/filters")
 @Produces(MediaType.APPLICATION_JSON)
@@ -872,7 +872,7 @@ public class FilterResource {
 - [ ] **Step 3: Run tests — expect failure (FilterEvaluatorRegistry not yet created)**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-queues \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-queues \
   -Dtest=FilterResourceTest -Dno-format 2>&1 | tail -8
 ```
 
@@ -893,19 +893,19 @@ Expected: compile failure (FilterEvaluatorRegistry not found) — confirms TDD r
 
 - [ ] **Step 1: Write failing unit tests for JEXL**
 
-Create `quarkus-workitems-queues/src/test/java/io/quarkiverse/workitems/queues/service/JexlConditionEvaluatorTest.java`:
+Create `quarkus-work-queues/src/test/java/io/quarkiverse/workitems/queues/service/JexlConditionEvaluatorTest.java`:
 
 ```java
-package io.quarkiverse.workitems.queues.service;
+package io.quarkiverse.work.queues.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.workitems.runtime.model.WorkItem;
-import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
-import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
+import io.quarkiverse.work.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.model.WorkItemPriority;
+import io.quarkiverse.work.runtime.model.WorkItemStatus;
 
 class JexlConditionEvaluatorTest {
 
@@ -978,7 +978,7 @@ class JexlConditionEvaluatorTest {
 - [ ] **Step 2: Run test — expect compile failure**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-queues \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-queues \
   -Dtest=JexlConditionEvaluatorTest -Dno-format 2>&1 | tail -5
 ```
 
@@ -987,9 +987,9 @@ Expected: `cannot find symbol: class JexlConditionEvaluator`
 - [ ] **Step 3: Create FilterConditionEvaluator interface**
 
 ```java
-package io.quarkiverse.workitems.queues.service;
+package io.quarkiverse.work.queues.service;
 
-import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.model.WorkItem;
 
 /**
  * SPI for evaluating a filter condition expression against a WorkItem.
@@ -1017,7 +1017,7 @@ public interface FilterConditionEvaluator {
 - [ ] **Step 4: Create JexlConditionEvaluator**
 
 ```java
-package io.quarkiverse.workitems.queues.service;
+package io.quarkiverse.work.queues.service;
 
 import java.util.Map;
 
@@ -1028,7 +1028,7 @@ import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.jexl3.MapContext;
 
-import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.model.WorkItem;
 
 /**
  * Evaluates Apache JEXL expressions against a WorkItem.
@@ -1104,7 +1104,7 @@ And use `new MapContext(buildContext(workItem))` — or switch to a direct `Jexl
 - [ ] **Step 5: Create FilterEvaluatorRegistry**
 
 ```java
-package io.quarkiverse.workitems.queues.service;
+package io.quarkiverse.work.queues.service;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -1142,7 +1142,7 @@ public class FilterEvaluatorRegistry {
 - [ ] **Step 6: Run JEXL tests — expect PASS**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-queues \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-queues \
   -Dtest=JexlConditionEvaluatorTest -Dno-format 2>&1 | tail -5
 ```
 
@@ -1162,19 +1162,19 @@ Expected: Tests run: 8, Failures: 0
 
 - [ ] **Step 1: Write failing unit tests**
 
-Create `quarkus-workitems-queues/src/test/java/io/quarkiverse/workitems/queues/service/JqConditionEvaluatorTest.java`:
+Create `quarkus-work-queues/src/test/java/io/quarkiverse/workitems/queues/service/JqConditionEvaluatorTest.java`:
 
 ```java
-package io.quarkiverse.workitems.queues.service;
+package io.quarkiverse.work.queues.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.workitems.runtime.model.WorkItem;
-import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
-import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
+import io.quarkiverse.work.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.model.WorkItemPriority;
+import io.quarkiverse.work.runtime.model.WorkItemStatus;
 
 class JqConditionEvaluatorTest {
 
@@ -1235,7 +1235,7 @@ class JqConditionEvaluatorTest {
 - [ ] **Step 3: Create JqConditionEvaluator**
 
 ```java
-package io.quarkiverse.workitems.queues.service;
+package io.quarkiverse.work.queues.service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -1249,7 +1249,7 @@ import net.thisptr.jackson.jq.Scope;
 import net.thisptr.jackson.jq.Versions;
 import net.thisptr.jackson.jq.exception.JsonQueryException;
 
-import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.model.WorkItem;
 
 /**
  * Evaluates JQ expressions against a WorkItem serialised as JSON.
@@ -1311,7 +1311,7 @@ public class JqConditionEvaluator implements FilterConditionEvaluator {
 - [ ] **Step 4: Run JQ tests — expect PASS**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-queues \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-queues \
   -Dtest=JqConditionEvaluatorTest -Dno-format 2>&1 | tail -5
 ```
 
@@ -1332,13 +1332,13 @@ Expected: Tests run: 6, Failures: 0
 - [ ] **Step 1: Create WorkItemFilterBean SPI**
 
 ```java
-package io.quarkiverse.workitems.queues.service;
+package io.quarkiverse.work.queues.service;
 
 import java.util.List;
 
-import io.quarkiverse.workitems.queues.model.FilterAction;
-import io.quarkiverse.workitems.queues.model.FilterScope;
-import io.quarkiverse.workitems.runtime.model.WorkItem;
+import io.quarkiverse.work.queues.model.FilterAction;
+import io.quarkiverse.work.queues.model.FilterScope;
+import io.quarkiverse.work.runtime.model.WorkItem;
 
 /**
  * SPI for programmatic (Lambda) filter beans.
@@ -1375,7 +1375,7 @@ public interface WorkItemFilterBean {
 - [ ] **Step 2: Create LambdaFilterRegistry**
 
 ```java
-package io.quarkiverse.workitems.queues.service;
+package io.quarkiverse.work.queues.service;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -1424,7 +1424,7 @@ Add to `FilterResourceTest.java`:
 - [ ] **Step 4: Now run FilterResourceTest to see all tests pass (evaluators are wired)**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-queues \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-queues \
   -Dtest=FilterResourceTest -Dno-format 2>&1 | tail -8
 ```
 
@@ -1466,7 +1466,7 @@ Refs #52, #50"
 - [ ] **Step 1: Create FilterChain entity**
 
 ```java
-package io.quarkiverse.workitems.queues.model;
+package io.quarkiverse.work.queues.model;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -1537,10 +1537,10 @@ public class FilterChain extends PanacheEntityBase {
 
 - [ ] **Step 1: Write failing unit tests for the engine**
 
-Create `quarkus-workitems-queues/src/test/java/io/quarkiverse/workitems/queues/service/FilterEngineTest.java`:
+Create `quarkus-work-queues/src/test/java/io/quarkiverse/workitems/queues/service/FilterEngineTest.java`:
 
 ```java
-package io.quarkiverse.workitems.queues.service;
+package io.quarkiverse.work.queues.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -1549,13 +1549,13 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.workitems.queues.model.FilterAction;
-import io.quarkiverse.workitems.queues.model.FilterScope;
-import io.quarkiverse.workitems.runtime.model.LabelPersistence;
-import io.quarkiverse.workitems.runtime.model.WorkItem;
-import io.quarkiverse.workitems.runtime.model.WorkItemLabel;
-import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
-import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
+import io.quarkiverse.work.queues.model.FilterAction;
+import io.quarkiverse.work.queues.model.FilterScope;
+import io.quarkiverse.work.runtime.model.LabelPersistence;
+import io.quarkiverse.work.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.model.WorkItemLabel;
+import io.quarkiverse.work.runtime.model.WorkItemPriority;
+import io.quarkiverse.work.runtime.model.WorkItemStatus;
 
 class FilterEngineTest {
 
@@ -1706,7 +1706,7 @@ class FilterEngineTest {
 - [ ] **Step 2: Run tests — expect PASS** (these test pure logic, no Quarkus)
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-queues \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-queues \
   -Dtest=FilterEngineTest -Dno-format 2>&1 | tail -5
 ```
 
@@ -1717,7 +1717,7 @@ Expected: Tests run: 6, Failures: 0
 Replace the stub in `FilterEngineImpl.java`:
 
 ```java
-package io.quarkiverse.workitems.queues.service;
+package io.quarkiverse.work.queues.service;
 
 import java.util.List;
 
@@ -1725,13 +1725,13 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
-import io.quarkiverse.workitems.queues.model.FilterAction;
-import io.quarkiverse.workitems.queues.model.FilterChain;
-import io.quarkiverse.workitems.queues.model.WorkItemFilter;
-import io.quarkiverse.workitems.runtime.model.LabelPersistence;
-import io.quarkiverse.workitems.runtime.model.WorkItem;
-import io.quarkiverse.workitems.runtime.model.WorkItemLabel;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.work.queues.model.FilterAction;
+import io.quarkiverse.work.queues.model.FilterChain;
+import io.quarkiverse.work.queues.model.WorkItemFilter;
+import io.quarkiverse.work.runtime.model.LabelPersistence;
+import io.quarkiverse.work.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.model.WorkItemLabel;
+import io.quarkiverse.work.runtime.repository.WorkItemRepository;
 
 @ApplicationScoped
 public class FilterEngineImpl implements FilterEngine {
@@ -1813,7 +1813,7 @@ public class FilterEngineImpl implements FilterEngine {
 - [ ] **Step 1: Write the integration test**
 
 ```java
-package io.quarkiverse.workitems.queues.api;
+package io.quarkiverse.work.queues.api;
 
 import static io.restassured.RestAssured.given;
 import static org.awaitility.Awaitility.await;
@@ -1955,7 +1955,7 @@ class FullPipelineTest {
 - [ ] **Step 2: Run the full pipeline test**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-queues \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-queues \
   -Dtest=FullPipelineTest -Dno-format 2>&1 | tail -10
 ```
 
@@ -2109,7 +2109,7 @@ Add `@Inject FilterEngine filterEngine;` to `FilterResource`.
 - [ ] **Step 5: Run cascade test**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-queues \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-queues \
   -Dtest=FullPipelineTest -Dno-format 2>&1 | tail -8
 ```
 
@@ -2145,10 +2145,10 @@ Refs #52, #50"
 
 - [ ] **Step 1: Write failing tests**
 
-Create `quarkus-workitems-queues/src/test/java/io/quarkiverse/workitems/queues/api/QueueResourceTest.java`:
+Create `quarkus-work-queues/src/test/java/io/quarkiverse/workitems/queues/api/QueueResourceTest.java`:
 
 ```java
-package io.quarkiverse.workitems.queues.api;
+package io.quarkiverse.work.queues.api;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
@@ -2267,7 +2267,7 @@ class QueueResourceTest {
 - [ ] **Step 2: Create QueueView entity**
 
 ```java
-package io.quarkiverse.workitems.queues.model;
+package io.quarkiverse.work.queues.model;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -2329,7 +2329,7 @@ public class QueueView extends PanacheEntityBase {
 - [ ] **Step 3: Create QueueResource**
 
 ```java
-package io.quarkiverse.workitems.queues.api;
+package io.quarkiverse.work.queues.api;
 
 import java.util.List;
 import java.util.Map;
@@ -2341,11 +2341,11 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import io.quarkiverse.workitems.queues.model.FilterScope;
-import io.quarkiverse.workitems.queues.model.QueueView;
-import io.quarkiverse.workitems.runtime.api.WorkItemMapper;
-import io.quarkiverse.workitems.runtime.api.WorkItemResponse;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.work.queues.model.FilterScope;
+import io.quarkiverse.work.queues.model.QueueView;
+import io.quarkiverse.work.runtime.api.WorkItemMapper;
+import io.quarkiverse.work.runtime.api.WorkItemResponse;
+import io.quarkiverse.work.runtime.repository.WorkItemRepository;
 
 @Path("/queues")
 @Produces(MediaType.APPLICATION_JSON)
@@ -2429,7 +2429,7 @@ public class QueueResource {
 - [ ] **Step 4: Run QueueResourceTest**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-queues \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-queues \
   -Dtest=QueueResourceTest -Dno-format 2>&1 | tail -8
 ```
 
@@ -2465,10 +2465,10 @@ Refs #52, #50"
 
 - [ ] **Step 1: Write failing tests**
 
-Create `quarkus-workitems-queues/src/test/java/io/quarkiverse/workitems/queues/api/QueueStateResourceTest.java`:
+Create `quarkus-work-queues/src/test/java/io/quarkiverse/workitems/queues/api/QueueStateResourceTest.java`:
 
 ```java
-package io.quarkiverse.workitems.queues.api;
+package io.quarkiverse.work.queues.api;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
@@ -2538,7 +2538,7 @@ class QueueStateResourceTest {
 - [ ] **Step 2: Create WorkItemQueueState entity**
 
 ```java
-package io.quarkiverse.workitems.queues.model;
+package io.quarkiverse.work.queues.model;
 
 import java.util.UUID;
 
@@ -2580,7 +2580,7 @@ public class WorkItemQueueState extends PanacheEntityBase {
 - [ ] **Step 3: Create QueueStateResource**
 
 ```java
-package io.quarkiverse.workitems.queues.api;
+package io.quarkiverse.work.queues.api;
 
 import java.util.Map;
 import java.util.UUID;
@@ -2591,8 +2591,8 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import io.quarkiverse.workitems.queues.model.WorkItemQueueState;
-import io.quarkiverse.workitems.runtime.repository.WorkItemRepository;
+import io.quarkiverse.work.queues.model.WorkItemQueueState;
+import io.quarkiverse.work.runtime.repository.WorkItemRepository;
 
 @Path("/workitems")
 @Produces(MediaType.APPLICATION_JSON)
@@ -2624,7 +2624,7 @@ public class QueueStateResource {
 - [ ] **Step 4: Run tests**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-queues \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-queues \
   -Dtest=QueueStateResourceTest -Dno-format 2>&1 | tail -8
 ```
 
@@ -2659,7 +2659,7 @@ Refs #52, #50"
 - [ ] **Step 1: Run the complete queues module test suite**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-workitems-queues \
+JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test -pl quarkus-work-queues \
   -Dno-format 2>&1 | grep -E "Tests run|BUILD|FAIL" | tail -20
 ```
 
@@ -2669,7 +2669,7 @@ Expected: BUILD SUCCESS, 0 failures (all test classes)
 
 ```bash
 JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn test \
-  -pl runtime,testing,workitems-flow,quarkus-workitems-ledger,quarkus-workitems-examples,quarkus-workitems-queues \
+  -pl runtime,testing,work-flow,quarkus-work-ledger,quarkus-work-examples,quarkus-work-queues \
   -Dno-format 2>&1 | grep -E "Tests run|BUILD|FAIL" | tail -15
 ```
 
@@ -2687,7 +2687,7 @@ Expected: BUILD SUCCESS
 
 ```bash
 # These are closed via commit messages but verify on GitHub
-gh issue list --state open --repo mdproctor/quarkus-workitems
+gh issue list --state open --repo mdproctor/quarkus-work
 ```
 
 Expected: only #39 (blocked) remaining open.
@@ -2696,7 +2696,7 @@ Expected: only #39 (blocked) remaining open.
 
 ```bash
 git add -A
-git commit -m "test(queues): end-to-end integration test coverage for quarkus-workitems-queues
+git commit -m "test(queues): end-to-end integration test coverage for quarkus-work-queues
 
 Full test suite across all modules passing. Coverage summary:
 - QueuesModuleSmokeTest: Quarkus boots with module on classpath

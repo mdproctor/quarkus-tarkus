@@ -67,7 +67,7 @@ directly (tests, CaseHub) need updating — no external consumers yet.
 
 ---
 
-## Implementations in `quarkus-workitems-ai`
+## Implementations in `quarkus-work-ai`
 
 ### `CapabilitiesSkillProfileProvider`
 Joins `capabilities` into a narrative: `"Worker skills: approval, legal, nda-review"`.
@@ -81,7 +81,7 @@ Falls back to `SkillProfile.ofNarrative("")` if no profile exists for the worker
 Queries `WorkItemStore` for completed WorkItems where `assigneeId = workerId`.
 Aggregates their categories and labels into a frequency summary:
 `"Completed work: legal×23, nda×18, finance×4"`.
-Capped at the last N items (config: `quarkus.workitems.ai.semantic.history-limit`,
+Capped at the last N items (config: `quarkus.work.ai.semantic.history-limit`,
 default 50), ordered by `completedAt` descending.
 
 ### `EmbeddingSkillMatcher`
@@ -99,7 +99,7 @@ score(profile, context):
 ```
 
 ### `SemanticWorkerSelectionStrategy`
-Annotated `@ApplicationScoped @Alternative @Priority(1)`. Adding `quarkus-workitems-ai`
+Annotated `@ApplicationScoped @Alternative @Priority(1)`. Adding `quarkus-work-ai`
 to the classpath auto-activates it — `WorkItemAssignmentService.activeStrategy()` picks
 up `@Alternative` beans over the config-selected built-in. No beans.xml entry needed
 (same pattern as `LowConfidenceFilterProducer`).
@@ -160,9 +160,9 @@ EmbeddingSkillMatcher.score(profile, context):
 ## Configuration
 
 ```properties
-quarkus.workitems.ai.semantic.enabled=true         # false = SemanticStrategy is a no-op
-quarkus.workitems.ai.semantic.score-threshold=0.0  # minimum score to pre-assign
-quarkus.workitems.ai.semantic.history-limit=50     # max past WorkItems for history provider
+quarkus.work.ai.semantic.enabled=true         # false = SemanticStrategy is a no-op
+quarkus.work.ai.semantic.score-threshold=0.0  # minimum score to pre-assign
+quarkus.work.ai.semantic.history-limit=50     # max past WorkItems for history provider
 ```
 
 ---
@@ -173,15 +173,15 @@ quarkus.workitems.ai.semantic.history-limit=50     # max past WorkItems for hist
 |---|---|
 | `SkillProfile`, `SkillProfileProvider`, `SkillMatcher` | `quarkus-work-api` |
 | `SelectionContext` (add title + description) | `quarkus-work-api` |
-| `CapabilitiesSkillProfileProvider` | `quarkus-workitems-ai` |
-| `WorkerProfileSkillProfileProvider` | `quarkus-workitems-ai` |
-| `ResolutionHistorySkillProfileProvider` | `quarkus-workitems-ai` |
-| `EmbeddingSkillMatcher` | `quarkus-workitems-ai` |
-| `SemanticWorkerSelectionStrategy` | `quarkus-workitems-ai` |
-| `WorkerSkillProfile` entity + REST | `quarkus-workitems-ai` |
-| `WorkItemsAiConfig` semantic sub-group | `quarkus-workitems-ai` |
+| `CapabilitiesSkillProfileProvider` | `quarkus-work-ai` |
+| `WorkerProfileSkillProfileProvider` | `quarkus-work-ai` |
+| `ResolutionHistorySkillProfileProvider` | `quarkus-work-ai` |
+| `EmbeddingSkillMatcher` | `quarkus-work-ai` |
+| `SemanticWorkerSelectionStrategy` | `quarkus-work-ai` |
+| `WorkerSkillProfile` entity + REST | `quarkus-work-ai` |
+| `WorkItemsAiConfig` semantic sub-group | `quarkus-work-ai` |
 | `WorkItemAssignmentService` update | `runtime` |
-| `quarkus-langchain4j-core` dependency | `quarkus-workitems-ai/pom.xml` |
+| `quarkus-langchain4j-core` dependency | `quarkus-work-ai/pom.xml` |
 
 ---
 
@@ -192,9 +192,9 @@ quarkus-work-api          ← SkillProfile, SkillProfileProvider, SkillMatcher, 
        ↑
 quarkus-work-core         ← WorkBroker (unchanged; routes to SemanticWorkerSelectionStrategy)
        ↑
-quarkus-workitems         ← WorkItemAssignmentService (populates title+description)
+quarkus-work         ← WorkItemAssignmentService (populates title+description)
        ↑
-quarkus-workitems-ai      ← all implementations + entity + REST
+quarkus-work-ai      ← all implementations + entity + REST
        ↑
 quarkus-langchain4j-core  ← EmbeddingModel (consumer configures provider)
 ```

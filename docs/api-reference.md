@@ -10,7 +10,7 @@ All responses are `application/json`. All request bodies with a JSON body requir
 
 ### POST /workitems
 
-Creates a new WorkItem in `PENDING` status. If no `expiresAt` is supplied, the expiry is set to `now + quarkus.workitems.default-expiry-hours`. If no `claimDeadline` is supplied and `quarkus.workitems.default-claim-hours > 0`, the claim deadline is set to `now + quarkus.workitems.default-claim-hours`.
+Creates a new WorkItem in `PENDING` status. If no `expiresAt` is supplied, the expiry is set to `now + quarkus.work.default-expiry-hours`. If no `claimDeadline` is supplied and `quarkus.work.default-claim-hours > 0`, the claim deadline is set to `now + quarkus.work.default-claim-hours`.
 
 **Request body:**
 
@@ -143,7 +143,7 @@ curl -X PUT "http://localhost:8080/workitems/{id}/start?actor=alice"
 
 ### PUT /workitems/{id}/complete
 
-Completes the WorkItem. Transitions `IN_PROGRESS → COMPLETED`. Stores the resolution JSON and records `completedAt`. Fires `io.quarkiverse.workitems.workitem.completed` CDI event.
+Completes the WorkItem. Transitions `IN_PROGRESS → COMPLETED`. Stores the resolution JSON and records `completedAt`. Fires `io.quarkiverse.work.workitem.completed` CDI event.
 
 **Path parameter:** `id` — UUID
 **Query parameter:** `actor` — the user ID completing the work
@@ -168,7 +168,7 @@ curl -X PUT "http://localhost:8080/workitems/{id}/complete?actor=alice" \
 
 ### PUT /workitems/{id}/reject
 
-Rejects the WorkItem. Transitions `ASSIGNED|IN_PROGRESS → REJECTED`. Records `completedAt`. Fires `io.quarkiverse.workitems.workitem.rejected` CDI event.
+Rejects the WorkItem. Transitions `ASSIGNED|IN_PROGRESS → REJECTED`. Records `completedAt`. Fires `io.quarkiverse.work.workitem.rejected` CDI event.
 
 **Path parameter:** `id` — UUID
 **Query parameter:** `actor` — the user ID rejecting the work
@@ -279,7 +279,7 @@ curl -X PUT "http://localhost:8080/workitems/{id}/resume?actor=alice"
 
 ### PUT /workitems/{id}/cancel
 
-Cancels the WorkItem. Transitions any non-terminal status → `CANCELLED`. Records `completedAt`. Fires `io.quarkiverse.workitems.workitem.cancelled` CDI event. Admin operation.
+Cancels the WorkItem. Transitions any non-terminal status → `CANCELLED`. Records `completedAt`. Fires `io.quarkiverse.work.workitem.cancelled` CDI event. Admin operation.
 
 **Path parameter:** `id` — UUID
 **Query parameter:** `actor` — the user ID or system cancelling
@@ -425,22 +425,22 @@ Note: `REJECTED` and `EXPIRED` are not terminal by the `isTerminal()` definition
 
 ## Lifecycle Event Types
 
-A `WorkItemLifecycleEvent` CDI event is fired on every transition. The `type` field follows the pattern `io.quarkiverse.workitems.workitem.{action}`.
+A `WorkItemLifecycleEvent` CDI event is fired on every transition. The `type` field follows the pattern `io.quarkiverse.work.workitem.{action}`.
 
 | Event type | Audit event | Triggered by |
 |---|---|---|
-| `io.quarkiverse.workitems.workitem.created` | `CREATED` | `POST /` |
-| `io.quarkiverse.workitems.workitem.assigned` | `ASSIGNED` | `PUT /{id}/claim` |
-| `io.quarkiverse.workitems.workitem.started` | `STARTED` | `PUT /{id}/start` |
-| `io.quarkiverse.workitems.workitem.completed` | `COMPLETED` | `PUT /{id}/complete` |
-| `io.quarkiverse.workitems.workitem.rejected` | `REJECTED` | `PUT /{id}/reject` |
-| `io.quarkiverse.workitems.workitem.delegated` | `DELEGATED` | `PUT /{id}/delegate` |
-| `io.quarkiverse.workitems.workitem.released` | `RELEASED` | `PUT /{id}/release` |
-| `io.quarkiverse.workitems.workitem.suspended` | `SUSPENDED` | `PUT /{id}/suspend` |
-| `io.quarkiverse.workitems.workitem.resumed` | `RESUMED` | `PUT /{id}/resume` |
-| `io.quarkiverse.workitems.workitem.cancelled` | `CANCELLED` | `PUT /{id}/cancel` |
-| `io.quarkiverse.workitems.workitem.expired` | `EXPIRED` | Expiry cleanup job |
-| `io.quarkiverse.workitems.workitem.escalated` | `ESCALATED` | Escalation policy |
+| `io.quarkiverse.work.workitem.created` | `CREATED` | `POST /` |
+| `io.quarkiverse.work.workitem.assigned` | `ASSIGNED` | `PUT /{id}/claim` |
+| `io.quarkiverse.work.workitem.started` | `STARTED` | `PUT /{id}/start` |
+| `io.quarkiverse.work.workitem.completed` | `COMPLETED` | `PUT /{id}/complete` |
+| `io.quarkiverse.work.workitem.rejected` | `REJECTED` | `PUT /{id}/reject` |
+| `io.quarkiverse.work.workitem.delegated` | `DELEGATED` | `PUT /{id}/delegate` |
+| `io.quarkiverse.work.workitem.released` | `RELEASED` | `PUT /{id}/release` |
+| `io.quarkiverse.work.workitem.suspended` | `SUSPENDED` | `PUT /{id}/suspend` |
+| `io.quarkiverse.work.workitem.resumed` | `RESUMED` | `PUT /{id}/resume` |
+| `io.quarkiverse.work.workitem.cancelled` | `CANCELLED` | `PUT /{id}/cancel` |
+| `io.quarkiverse.work.workitem.expired` | `EXPIRED` | Expiry cleanup job |
+| `io.quarkiverse.work.workitem.escalated` | `ESCALATED` | Escalation policy |
 
 The `WorkItemLifecycleEvent` record fields: `type`, `source` (`/workitems/{id}`), `subject` (UUID string), `workItemId` (UUID), `status` (post-transition), `occurredAt`, `actor`, `detail` (nullable JSON or reason string).
 
@@ -455,9 +455,9 @@ The `WorkItemLifecycleEvent` record fields: `type`, `source` (`/workitems/{id}`)
 
 ---
 
-## Label API (quarkus-workitems core)
+## Label API (quarkus-work core)
 
-Labels are path-structured tags on WorkItems (e.g. `legal/contracts/nda`). `MANUAL` labels are human-applied; `INFERRED` labels are maintained by the filter engine in `quarkus-workitems-queues`.
+Labels are path-structured tags on WorkItems (e.g. `legal/contracts/nda`). `MANUAL` labels are human-applied; `INFERRED` labels are maintained by the filter engine in `quarkus-work-queues`.
 
 ---
 
@@ -520,7 +520,7 @@ curl -X DELETE "http://localhost:8080/workitems/{id}/labels?path=legal/contracts
 
 ---
 
-## Vocabulary API (quarkus-workitems core)
+## Vocabulary API (quarkus-work core)
 
 Labels must be declared in a vocabulary before they can be applied. Vocabularies are scoped: `GLOBAL` (platform-wide) → `ORG` → `TEAM` → `PERSONAL`. A GLOBAL vocabulary is seeded by Flyway with common labels (`intake`, `intake/triage`, `priority/high`, `priority/critical`, `legal`, `legal/contracts`, `legal/compliance`).
 
@@ -564,11 +564,11 @@ curl -X POST http://localhost:8080/vocabulary/GLOBAL \
 
 ---
 
-## Queue API (quarkus-workitems-queues)
+## Queue API (quarkus-work-queues)
 
-These endpoints are only present when `quarkus-workitems-queues` is on the classpath. They activate automatically via CDI.
+These endpoints are only present when `quarkus-work-queues` is on the classpath. They activate automatically via CDI.
 
-A **queue** is a `QueueView` — a named label-pattern query. WorkItems appear in the queue when they carry a matching label. `INFERRED` labels are applied by the filter engine; `MANUAL` labels are applied by users. Adding `quarkus-workitems-queues` as a dependency wires up the filter evaluation engine automatically.
+A **queue** is a `QueueView` — a named label-pattern query. WorkItems appear in the queue when they carry a matching label. `INFERRED` labels are applied by the filter engine; `MANUAL` labels are applied by users. Adding `quarkus-work-queues` as a dependency wires up the filter evaluation engine automatically.
 
 ---
 
@@ -810,9 +810,9 @@ curl -X PUT "http://localhost:8080/workitems/{id}/relinquishable" \
 
 ---
 
-## Ledger API (quarkus-workitems-ledger)
+## Ledger API (quarkus-work-ledger)
 
-These endpoints are only present when `quarkus-workitems-ledger` is on the classpath. They activate automatically via CDI — no configuration required beyond adding the dependency.
+These endpoints are only present when `quarkus-work-ledger` is on the classpath. They activate automatically via CDI — no configuration required beyond adding the dependency.
 
 ---
 
@@ -867,7 +867,7 @@ curl -X PUT "http://localhost:8080/workitems/{id}/ledger/provenance" \
 
 ### POST /workitems/{id}/ledger/{entryId}/attestations
 
-Posts a peer attestation on a specific ledger entry. Requires `quarkus.workitems.ledger.attestations.enabled=true` (the default when the module is present).
+Posts a peer attestation on a specific ledger entry. Requires `quarkus.work.ledger.attestations.enabled=true` (the default when the module is present).
 
 **Path parameters:**
 - `id` — WorkItem UUID
@@ -896,7 +896,7 @@ Posts a peer attestation on a specific ledger entry. Requires `quarkus.workitems
 
 **Errors:**
 - `404 Not Found` — ledger entry does not exist or does not belong to the given WorkItem.
-- `409 Conflict` — attestations are disabled (`quarkus.workitems.ledger.attestations.enabled=false`).
+- `409 Conflict` — attestations are disabled (`quarkus.work.ledger.attestations.enabled=false`).
 
 ```bash
 curl -X POST "http://localhost:8080/workitems/{id}/ledger/{entryId}/attestations" \
@@ -914,7 +914,7 @@ curl -X POST "http://localhost:8080/workitems/{id}/ledger/{entryId}/attestations
 
 ### GET /workitems/actors/{actorId}/trust
 
-Returns the computed EigenTrust-inspired trust score for an actor. Requires `quarkus.workitems.ledger.trust-score.enabled=true`. Scores are computed by a nightly scheduled job; the endpoint returns `404` until the first computation run completes.
+Returns the computed EigenTrust-inspired trust score for an actor. Requires `quarkus.work.ledger.trust-score.enabled=true`. Scores are computed by a nightly scheduled job; the endpoint returns `404` until the first computation run completes.
 
 **Path parameter:** `actorId` — the actor's identity string (e.g. `"alice"`, `"agent-007"`)
 
@@ -1000,9 +1000,9 @@ Returned by `GET /workitems/actors/{actorId}/trust`.
 
 ---
 
-## Worker Skill Profile API (quarkus-workitems-ai)
+## Worker Skill Profile API (quarkus-work-ai)
 
-Requires `quarkus-workitems-ai` on the classpath. Profiles feed `WorkerProfileSkillProfileProvider` so `SemanticWorkerSelectionStrategy` can match workers to work items by narrative similarity.
+Requires `quarkus-work-ai` on the classpath. Profiles feed `WorkerProfileSkillProfileProvider` so `SemanticWorkerSelectionStrategy` can match workers to work items by narrative similarity.
 
 ### POST /worker-skill-profiles
 

@@ -19,9 +19,9 @@ A unit of work within a CaseHub case, following CMMN terminology. Assigned to a 
 (human or agent) via capability matching. Has lifecycle: PENDING → ASSIGNED → RUNNING →
 WAITING → COMPLETED / FAULTED / CANCELLED. The task model is unified — human workers
 and agent workers are the same concept in CaseHub. When a CaseHub Task is routed to a
-human worker, the `quarkus-workitems-casehub` adapter creates a corresponding WorkItems WorkItem.
+human worker, the `quarkus-work-casehub` adapter creates a corresponding WorkItems WorkItem.
 
-**WorkItem** *(io.quarkiverse.workitems.runtime.model.WorkItem — Quarkus WorkItems)*
+**WorkItem** *(io.quarkiverse.work.runtime.model.WorkItem — Quarkus WorkItems)*
 A unit of work requiring human attention or judgment. Has lifecycle:
 PENDING → ASSIGNED → IN_PROGRESS → COMPLETED / REJECTED / SUSPENDED / CANCELLED / EXPIRED → ESCALATED.
 Persists minutes to days. Has assignee, candidate groups, priority, deadlines, delegation chain,
@@ -66,7 +66,7 @@ Any Quarkus application can embed WorkItems to get:
 │  AuditEntryStore SPI     ←── JpaAuditEntryStore (default)      │
 │         │                     (Panache, H2/PostgreSQL)          │
 │         │                                                        │
-│         └── InMemoryWorkItemStore (quarkus-workitems-testing)   │
+│         └── InMemoryWorkItemStore (quarkus-work-testing)   │
 └─────────────────────────────────────────────────────────────────┘
 
 Substrate SPI layer (shared across domains):
@@ -75,16 +75,16 @@ Substrate SPI layer (shared across domains):
   quarkus-work-core           →  Jandex library: WorkBroker, routing strategies, filter engine
 
 Optional integration modules (separate artifacts):
-  quarkus-workitems-ai        →  SemanticWorkerSelectionStrategy, EmbeddingSkillMatcher,
+  quarkus-work-ai        →  SemanticWorkerSelectionStrategy, EmbeddingSkillMatcher,
                                  WorkerSkillProfile entity + REST (built)
-  quarkus-workitems-flow      →  TaskExecutorFactory SPI (Quarkus-Flow) (built)
-  quarkus-workitems-ledger    →  Immutable ledger + Merkle hash chain + trust scores (built)
-  quarkus-workitems-queues    →  Label-based queue filtering (built)
-  quarkus-workitems-testing   →  InMemoryWorkItemStore for unit tests (built)
-  quarkus-workitems-casehub   →  WorkerRegistry adapter (CaseHub) (future)
-  quarkus-workitems-qhorus    →  MCP tools (Qhorus) (future)
-  quarkus-workitems-mongodb   →  MongoDB-backed WorkItemStore (future)
-  quarkus-workitems-redis     →  Redis-backed WorkItemStore (future)
+  quarkus-work-flow      →  TaskExecutorFactory SPI (Quarkus-Flow) (built)
+  quarkus-work-ledger    →  Immutable ledger + Merkle hash chain + trust scores (built)
+  quarkus-work-queues    →  Label-based queue filtering (built)
+  quarkus-work-testing   →  InMemoryWorkItemStore for unit tests (built)
+  quarkus-work-casehub   →  WorkerRegistry adapter (CaseHub) (future)
+  quarkus-work-qhorus    →  MCP tools (Qhorus) (future)
+  quarkus-work-mongodb   →  MongoDB-backed WorkItemStore (future)
+  quarkus-work-redis     →  Redis-backed WorkItemStore (future)
 ```
 
 ---
@@ -92,7 +92,7 @@ Optional integration modules (separate artifacts):
 ## WorkItem Model
 
 ```java
-// io.quarkiverse.workitems.runtime.model.WorkItem
+// io.quarkiverse.work.runtime.model.WorkItem
 @Entity @Table(name = "work_item")
 public class WorkItem extends PanacheEntityBase {
     @Id public UUID id;
@@ -143,13 +143,13 @@ public class WorkItem extends PanacheEntityBase {
     public Instant suspendedAt;          // when SUSPENDED
 }
 
-// io.quarkiverse.workitems.runtime.model.DelegationState
+// io.quarkiverse.work.runtime.model.DelegationState
 public enum DelegationState {
     PENDING,   // delegated to another; they are working it
     RESOLVED   // delegate completed; owner must confirm
 }
 
-// io.quarkiverse.workitems.runtime.model.AuditEntry
+// io.quarkiverse.work.runtime.model.AuditEntry
 @Entity @Table(name = "audit_entry")
 public class AuditEntry extends PanacheEntityBase {
     @Id public UUID id;
@@ -275,15 +275,15 @@ The inbox query uses OR across `assignee`, `candidateGroup`, `candidateUser` —
 
 ## Configuration
 
-`WorkItemsConfig` — `@ConfigMapping(prefix = "quarkus.workitems")`:
+`WorkItemsConfig` — `@ConfigMapping(prefix = "quarkus.work")`:
 
 | Property | Default | Meaning |
 |---|---|---|
-| `quarkus.workitems.default-expiry-hours` | 24 | Default completion deadline if no `expiresAt` is set |
-| `quarkus.workitems.default-claim-hours` | 4 | Default claim deadline if no `claimDeadline` is set (0 = no claim deadline) |
-| `quarkus.workitems.escalation-policy` | notify | What happens on completion expiry: `notify`, `reassign`, `auto-reject` |
-| `quarkus.workitems.claim-escalation-policy` | notify | What happens on claim deadline breach: `notify`, `reassign` |
-| `quarkus.workitems.cleanup.expiry-check-seconds` | 60 | How often the expiry/claim-deadline job runs |
+| `quarkus.work.default-expiry-hours` | 24 | Default completion deadline if no `expiresAt` is set |
+| `quarkus.work.default-claim-hours` | 4 | Default claim deadline if no `claimDeadline` is set (0 = no claim deadline) |
+| `quarkus.work.escalation-policy` | notify | What happens on completion expiry: `notify`, `reassign`, `auto-reject` |
+| `quarkus.work.claim-escalation-policy` | notify | What happens on claim deadline breach: `notify`, `reassign` |
+| `quarkus.work.cleanup.expiry-check-seconds` | 60 | How often the expiry/claim-deadline job runs |
 
 Consuming app owns datasource config — none in the extension's `application.properties`.
 
@@ -291,7 +291,7 @@ Consuming app owns datasource config — none in the extension's `application.pr
 
 ## Storage SPI
 
-Persistence is pluggable via two CDI interfaces in `io.quarkiverse.workitems.runtime.repository`.
+Persistence is pluggable via two CDI interfaces in `io.quarkiverse.work.runtime.repository`.
 The SPI uses KV-native semantics — aligned with the CNCF Serverless Workflow SDK's persistence
 module conventions — rather than SQL-shaped method-per-query patterns.
 
@@ -320,7 +320,7 @@ public interface AuditEntryStore {
 - `JpaWorkItemStore` — Panache-backed; `scan(WorkItemQuery)` builds dynamic JPQL; `@ApplicationScoped`
 - `JpaAuditEntryStore` — Panache-backed; `@ApplicationScoped`
 
-**Test implementation** (`quarkus-workitems-testing` module):
+**Test implementation** (`quarkus-work-testing` module):
 - `InMemoryWorkItemStore` — `ConcurrentHashMap`-backed; `scan()` uses stream-filter; no datasource required
 - `InMemoryAuditEntryStore` — list-backed
 - Both registered `@ApplicationScoped @Alternative @Priority(1)` — override the JPA defaults automatically
@@ -331,7 +331,7 @@ public interface AuditEntryStore {
 public class MyMongoWorkItemStore implements WorkItemStore { ... }
 ```
 
-The JPA default requires a datasource. When using `quarkus-workitems-testing`, no datasource
+The JPA default requires a datasource. When using `quarkus-work-testing`, no datasource
 or Flyway migration is needed — making pure unit tests (no `@QuarkusTest`) trivial.
 
 ---
@@ -359,23 +359,23 @@ WorkItems emits CloudEvents for all lifecycle transitions (via Quarkus Messaging
 
 | Event type | When |
 |---|---|
-| `io.quarkiverse.workitems.workitem.created` | WorkItem created |
-| `io.quarkiverse.workitems.workitem.assigned` | WorkItem claimed or assigned |
-| `io.quarkiverse.workitems.workitem.completed` | WorkItem completed |
-| `io.quarkiverse.workitems.workitem.rejected` | WorkItem rejected |
-| `io.quarkiverse.workitems.workitem.delegated` | WorkItem delegated |
-| `io.quarkiverse.workitems.workitem.expired` | WorkItem expired |
-| `io.quarkiverse.workitems.workitem.escalated` | Escalation policy fired |
+| `io.quarkiverse.work.workitem.created` | WorkItem created |
+| `io.quarkiverse.work.workitem.assigned` | WorkItem claimed or assigned |
+| `io.quarkiverse.work.workitem.completed` | WorkItem completed |
+| `io.quarkiverse.work.workitem.rejected` | WorkItem rejected |
+| `io.quarkiverse.work.workitem.delegated` | WorkItem delegated |
+| `io.quarkiverse.work.workitem.expired` | WorkItem expired |
+| `io.quarkiverse.work.workitem.escalated` | Escalation policy fired |
 
 ---
 
 ## Integration Modules
 
-### quarkus-workitems-ai (built)
+### quarkus-work-ai (built)
 
 Adds AI-native routing via `SemanticWorkerSelectionStrategy` (`@Alternative @Priority(1)` — auto-activates on classpath). Provides `WorkerSkillProfile` entity + REST at `/worker-skill-profiles`, `EmbeddingSkillMatcher` (cosine similarity via LangChain4j), and three `SkillProfileProvider` implementations (DB-backed, capability tag join, resolution history). See the integration guide Section 9 for full configuration.
 
-### quarkus-workitems-flow (built)
+### quarkus-work-flow (built)
 Implements `io.serverlessworkflow.impl.executors.TaskExecutorFactory` (Java SPI via
 `META-INF/services`). When a Quarkus-Flow workflow step matches the WorkItems handler
 (e.g., a custom `humanTask` type), the factory:
@@ -384,13 +384,13 @@ Implements `io.serverlessworkflow.impl.executors.TaskExecutorFactory` (Java SPI 
 3. Completes the CompletableFuture with the WorkItem resolution when the human acts
 4. Quarkus-Flow resumes the workflow with the resolution as output
 
-### quarkus-workitems-casehub
+### quarkus-work-casehub
 Registers a worker with CaseHub's `WorkerRegistry` claiming `human:*` capability tasks.
 When a CaseHub Task is claimed:
 1. Creates a WorkItems WorkItem with the CaseHub task context as payload
 2. On WorkItem completion, calls `WorkerRegistry.submitResult()` to advance the case
 
-### quarkus-workitems-qhorus
+### quarkus-work-qhorus
 Adds MCP tools backed by the WorkItems REST API:
 - `request_approval(title, description, assignee, payload, timeout_s)` → creates WorkItem, returns `workItemId`
 - `check_approval(work_item_id)` → returns status and resolution
@@ -408,11 +408,11 @@ Adds MCP tools backed by the WorkItems REST API:
 | **4 — CDI lifecycle events** | ✅ Complete | WorkItemLifecycleEvent, WorkLifecycleEvent (base) via quarkus-work-api |
 | **5 — Routing SPI substrate** | ✅ Complete | quarkus-work-api + quarkus-work-core: WorkBroker, strategies, filter engine |
 | **6 — AI-native features** | ✅ Partial | SemanticWorkerSelectionStrategy, EmbeddingSkillMatcher, WorkerSkillProfile (Epic #100 in progress) |
-| **7 — Quarkus-Flow integration** | ✅ Complete | `quarkus-workitems-flow` module, HumanTaskFlowBridge |
-| **8 — Audit + ledger** | ✅ Complete | quarkus-workitems-ledger: Merkle hash chain, attestations, trust scores |
+| **7 — Quarkus-Flow integration** | ✅ Complete | `quarkus-work-flow` module, HumanTaskFlowBridge |
+| **8 — Audit + ledger** | ✅ Complete | quarkus-work-ledger: Merkle hash chain, attestations, trust scores |
 | **9 — Native image validation** | ✅ Complete | GraalVM native build, 19 integration tests, 0.084s native startup |
-| **10 — CaseHub integration** | 🔲 Blocked | `quarkus-workitems-casehub` — awaiting CaseHub stability |
-| **11 — Qhorus integration** | 🔲 Blocked | `quarkus-workitems-qhorus` — awaiting Qhorus MCP stability |
+| **10 — CaseHub integration** | 🔲 Blocked | `quarkus-work-casehub` — awaiting CaseHub stability |
+| **11 — Qhorus integration** | 🔲 Blocked | `quarkus-work-qhorus` — awaiting Qhorus MCP stability |
 
 ---
 

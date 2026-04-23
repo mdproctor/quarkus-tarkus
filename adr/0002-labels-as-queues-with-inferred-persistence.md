@@ -42,7 +42,7 @@ be created retroactively over any label with no data migration.
 * Queue membership is always current — INFERRED labels recompute on every mutation
 * New queue views can be defined over existing labels without migrating data
 * Core WorkItem model gains only a `labels` collection; queue logic is fully
-  isolated in the optional `quarkus-workitems-queues` module
+  isolated in the optional `quarkus-work-queues` module
 
 ### Negative Consequences / Tradeoffs
 

@@ -11,10 +11,10 @@ import java.util.Map;
  *
  * <p>
  * The {@code workUnit} parameter is the domain-specific work object (e.g. {@code WorkItem}
- * in quarkus-workitems). Implementations cast to their expected concrete type.
+ * in quarkus-work). Implementations cast to their expected concrete type.
  *
  * <p>
- * Built-in implementations (in quarkus-workitems): {@code APPLY_LABEL},
+ * Built-in implementations (in quarkus-work): {@code APPLY_LABEL},
  * {@code OVERRIDE_CANDIDATE_GROUPS}, {@code SET_PRIORITY}.
  */
 public interface FilterAction {

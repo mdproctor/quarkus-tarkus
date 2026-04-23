@@ -1,4 +1,4 @@
-# quarkus-workitems-examples — Design Spec
+# quarkus-work-examples — Design Spec
 
 **Date:** 2026-04-15
 **Status:** Approved
@@ -8,7 +8,7 @@
 ## Purpose
 
 A self-contained Maven module that demonstrates every ledger, audit, and lifecycle capability of
-`quarkus-workitems` through four runnable scenario endpoints. Each scenario executes a realistic
+`quarkus-work` through four runnable scenario endpoints. Each scenario executes a realistic
 business story end-to-end via `POST /examples/{name}/run`, logs a narrative to stdout as it runs,
 and returns the full ledger and audit trail as JSON.
 
@@ -20,9 +20,9 @@ Target audience: developers evaluating Tarkus, contributors validating behaviour
 
 | Field | Value |
 |---|---|
-| Maven module directory | `quarkus-workitems-examples/` |
-| artifactId | `quarkus-workitems-examples` |
-| Root Java package | `io.quarkiverse.workitems.examples` |
+| Maven module directory | `quarkus-work-examples/` |
+| artifactId | `quarkus-work-examples` |
+| Root Java package | `io.quarkiverse.work.examples` |
 | Added to parent `<modules>` | Before `integration-tests` |
 
 ---
@@ -31,10 +31,10 @@ Target audience: developers evaluating Tarkus, contributors validating behaviour
 
 ```xml
 <!-- Core extension -->
-quarkus-workitems (runtime)
+quarkus-work (runtime)
 
 <!-- Optional accountability module — all features enabled -->
-quarkus-workitems-ledger
+quarkus-work-ledger
 
 <!-- Datasource — H2 in-memory for zero-config running -->
 quarkus-jdbc-h2
@@ -52,7 +52,7 @@ rest-assured
 assertj-core
 ```
 
-No dependency on `quarkus-workitems-flow` — examples are self-contained.
+No dependency on `quarkus-work-flow` — examples are self-contained.
 
 ---
 
@@ -67,17 +67,17 @@ quarkus.datasource.jdbc.url=jdbc:h2:mem:tarkus-examples;DB_CLOSE_DELAY=-1
 quarkus.flyway.migrate-at-start=true
 
 # WorkItem defaults
-quarkus.workitems.default-expiry-hours=168
-quarkus.workitems.default-claim-hours=24
+quarkus.work.default-expiry-hours=168
+quarkus.work.default-claim-hours=24
 
 # Ledger — all features on
-quarkus.workitems.ledger.enabled=true
-quarkus.workitems.ledger.hash-chain.enabled=true
-quarkus.workitems.ledger.decision-context.enabled=true
-quarkus.workitems.ledger.evidence.enabled=true
-quarkus.workitems.ledger.attestations.enabled=true
-quarkus.workitems.ledger.trust-score.enabled=true
-quarkus.workitems.ledger.trust-score.decay-half-life-days=90
+quarkus.work.ledger.enabled=true
+quarkus.work.ledger.hash-chain.enabled=true
+quarkus.work.ledger.decision-context.enabled=true
+quarkus.work.ledger.evidence.enabled=true
+quarkus.work.ledger.attestations.enabled=true
+quarkus.work.ledger.trust-score.enabled=true
+quarkus.work.ledger.trust-score.decay-half-life-days=90
 ```
 
 Test-only override (`src/test/resources/application.properties`):
@@ -93,7 +93,7 @@ quarkus.http.test-port=0
 ## Project Structure
 
 ```
-quarkus-workitems-examples/
+quarkus-work-examples/
 ├── pom.xml
 ├── README.md
 └── src/
@@ -255,7 +255,7 @@ trust scores are materialised and queried.
 3. `reviewer-alice` releases it — can't review right now (ASSIGNED → PENDING)
 4. `reviewer-bob` queries the inbox (now sees all three again), claims and completes each
 5. `reviewer-alice` queries the inbox again, claims and completes the one she released
-6. Scenario injects `TrustScoreJob` (from `quarkus-workitems-ledger`) and triggers it programmatically,
+6. Scenario injects `TrustScoreJob` (from `quarkus-work-ledger`) and triggers it programmatically,
    bypassing the nightly scheduler, to materialise scores from the accumulated ledger history
 7. Queries `ActorTrustResource` for `reviewer-bob` and `reviewer-alice` trust scores;
    includes both in the response. Bob scores higher: more completions, no releases.
@@ -309,7 +309,7 @@ Each scenario has a `@QuarkusTest` class that:
    - S3: entry 1 has non-null `evidence`; rejection entry has non-null `rationale`; attestation `actorType=AGENT`
    - S4: `ledgerEntries` ≥ 10 (3 WorkItems × lifecycle); both trust scores non-null; bob's score > alice's
 
-Tests run via `mvn test -pl quarkus-workitems-examples` (Surefire, not Failsafe — these are
+Tests run via `mvn test -pl quarkus-work-examples` (Surefire, not Failsafe — these are
 `@QuarkusTest`, not `@QuarkusIntegrationTest`).
 
 ---
@@ -317,7 +317,7 @@ Tests run via `mvn test -pl quarkus-workitems-examples` (Surefire, not Failsafe 
 ## README Structure
 
 ```
-# quarkus-workitems-examples
+# quarkus-work-examples
 
 > What this module demonstrates
 

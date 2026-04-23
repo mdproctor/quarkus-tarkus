@@ -18,7 +18,7 @@ import org.apache.commons.jexl3.MapContext;
  * from {@code conditionContext} are merged alongside.
  *
  * <p>
- * The caller is responsible for building the context map. In quarkus-workitems,
+ * The caller is responsible for building the context map. In quarkus-work,
  * {@code WorkItemContextBuilder.toMap(WorkItem)} provides it via
  * {@code WorkItemLifecycleEvent.context()}.
  */

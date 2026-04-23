@@ -59,7 +59,7 @@
 
 ```java
 // runtime/src/test/java/io/quarkiverse/workitems/runtime/model/WorkItemLabelTest.java
-package io.quarkiverse.workitems.runtime.model;
+package io.quarkiverse.work.runtime.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -88,7 +88,7 @@ Expected: `cannot find symbol: class LabelPersistence`
 
 ```java
 // runtime/src/main/java/io/quarkiverse/workitems/runtime/model/LabelPersistence.java
-package io.quarkiverse.workitems.runtime.model;
+package io.quarkiverse.work.runtime.model;
 
 /**
  * Determines how a label was applied to a WorkItem and how it is maintained.
@@ -171,7 +171,7 @@ Expected: `cannot find symbol: class WorkItemLabel`
 
 ```java
 // runtime/src/main/java/io/quarkiverse/workitems/runtime/model/WorkItemLabel.java
-package io.quarkiverse.workitems.runtime.model;
+package io.quarkiverse.work.runtime.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
@@ -257,9 +257,9 @@ No test needed for a pure data record — it will be covered by the integration 
 
 ```java
 // runtime/src/main/java/io/quarkiverse/workitems/runtime/api/WorkItemLabelResponse.java
-package io.quarkiverse.workitems.runtime.api;
+package io.quarkiverse.work.runtime.api;
 
-import io.quarkiverse.workitems.runtime.model.LabelPersistence;
+import io.quarkiverse.work.runtime.model.LabelPersistence;
 
 public record WorkItemLabelResponse(
         String path,
@@ -330,7 +330,7 @@ In `WorkItem.java`, add after the timestamps section (before `prePersist`):
      * <p>
      * {@link LabelPersistence#MANUAL} labels are applied by humans.
      * {@link LabelPersistence#INFERRED} labels are maintained by the filter engine
-     * in {@code quarkus-workitems-queues}.
+     * in {@code quarkus-work-queues}.
      */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "work_item_label", joinColumns = @JoinColumn(name = "work_item_id"))
@@ -346,7 +346,7 @@ import jakarta.persistence.CollectionTable;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
-import io.quarkiverse.workitems.runtime.model.WorkItemLabel;
+import io.quarkiverse.work.runtime.model.WorkItemLabel;
 ```
 
 - [ ] **Step 2: Add labels to CreateWorkItemRequest**
@@ -354,12 +354,12 @@ import io.quarkiverse.workitems.runtime.model.WorkItemLabel;
 Replace the existing record in `CreateWorkItemRequest.java`:
 
 ```java
-package io.quarkiverse.workitems.runtime.api;
+package io.quarkiverse.work.runtime.api;
 
 import java.time.Instant;
 import java.util.List;
 
-import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
+import io.quarkiverse.work.runtime.model.WorkItemPriority;
 
 public record CreateWorkItemRequest(
         String title,
@@ -385,15 +385,15 @@ public record CreateWorkItemRequest(
 Replace the existing record in `WorkItemResponse.java`:
 
 ```java
-package io.quarkiverse.workitems.runtime.api;
+package io.quarkiverse.work.runtime.api;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import io.quarkiverse.workitems.runtime.model.DelegationState;
-import io.quarkiverse.workitems.runtime.model.WorkItemPriority;
-import io.quarkiverse.workitems.runtime.model.WorkItemStatus;
+import io.quarkiverse.work.runtime.model.DelegationState;
+import io.quarkiverse.work.runtime.model.WorkItemPriority;
+import io.quarkiverse.work.runtime.model.WorkItemStatus;
 
 public record WorkItemResponse(
         UUID id,
@@ -445,7 +445,7 @@ And in `toResponse(WorkItem wi)`, add `labels` as the last argument:
         wi.labels == null ? List.of() : wi.labels.stream().map(WorkItemMapper::toLabelResponse).toList()
 ```
 
-Add `import java.util.List;` and `import io.quarkiverse.workitems.runtime.model.WorkItemLabel;` to the mapper.
+Add `import java.util.List;` and `import io.quarkiverse.work.runtime.model.WorkItemLabel;` to the mapper.
 
 - [ ] **Step 5: Run full test suite — expect all pass**
 
@@ -496,7 +496,7 @@ In `WorkItemServiceTest.java`, add:
     }
 ```
 
-Add imports: `import io.quarkiverse.workitems.runtime.api.WorkItemLabelResponse;`, `import io.quarkiverse.workitems.runtime.model.LabelPersistence;`, `import java.util.List;`
+Add imports: `import io.quarkiverse.work.runtime.api.WorkItemLabelResponse;`, `import io.quarkiverse.work.runtime.model.LabelPersistence;`, `import java.util.List;`
 
 - [ ] **Step 2: Run test — expect FAIL**
 
@@ -525,7 +525,7 @@ In `WorkItemService.create()`, after the existing field assignments and before `
         }
 ```
 
-Add imports: `import io.quarkiverse.workitems.runtime.model.WorkItemLabel;`, `import io.quarkiverse.workitems.runtime.model.LabelPersistence;`
+Add imports: `import io.quarkiverse.work.runtime.model.WorkItemLabel;`, `import io.quarkiverse.work.runtime.model.LabelPersistence;`
 
 - [ ] **Step 4: Run tests — expect PASS**
 
@@ -547,7 +547,7 @@ Expected: all WorkItemServiceTest tests pass
 
 ```java
 // runtime/src/test/java/io/quarkiverse/workitems/runtime/api/LabelEndpointTest.java
-package io.quarkiverse.workitems.runtime.api;
+package io.quarkiverse.work.runtime.api;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -723,13 +723,13 @@ Refs #51, #50"
 
 ```java
 // runtime/src/test/java/io/quarkiverse/workitems/runtime/service/LabelVocabularyServiceTest.java
-package io.quarkiverse.workitems.runtime.service;
+package io.quarkiverse.work.runtime.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.workitems.runtime.model.VocabularyScope;
+import io.quarkiverse.work.runtime.model.VocabularyScope;
 
 class LabelVocabularyServiceTest {
 
@@ -761,7 +761,7 @@ Expected: `cannot find symbol: class VocabularyScope`
 
 ```java
 // runtime/src/main/java/io/quarkiverse/workitems/runtime/model/VocabularyScope.java
-package io.quarkiverse.workitems.runtime.model;
+package io.quarkiverse.work.runtime.model;
 
 /**
  * Scope of a {@link LabelVocabulary}, forming a visibility hierarchy from broadest to narrowest.
@@ -797,7 +797,7 @@ public enum VocabularyScope {
 
 ```java
 // runtime/src/main/java/io/quarkiverse/workitems/runtime/model/LabelVocabulary.java
-package io.quarkiverse.workitems.runtime.model;
+package io.quarkiverse.work.runtime.model;
 
 import java.util.UUID;
 
@@ -870,7 +870,7 @@ Expected: `Tests run: 2, Failures: 0, Errors: 0`
 
 ```java
 // runtime/src/main/java/io/quarkiverse/workitems/runtime/model/LabelDefinition.java
-package io.quarkiverse.workitems.runtime.model;
+package io.quarkiverse.work.runtime.model;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -1060,7 +1060,7 @@ Add to `LabelVocabularyServiceTest.java`:
     }
 ```
 
-Add imports: `import java.util.UUID;`, `import io.quarkiverse.workitems.runtime.model.*;`
+Add imports: `import java.util.UUID;`, `import io.quarkiverse.work.runtime.model.*;`
 
 - [ ] **Step 2: Run tests — expect compile failure**
 
@@ -1075,7 +1075,7 @@ Expected: `cannot find symbol: class LabelVocabularyService`
 
 ```java
 // runtime/src/main/java/io/quarkiverse/workitems/runtime/service/LabelVocabularyService.java
-package io.quarkiverse.workitems.runtime.service;
+package io.quarkiverse.work.runtime.service;
 
 import java.util.List;
 import java.util.UUID;
@@ -1083,9 +1083,9 @@ import java.util.UUID;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 
-import io.quarkiverse.workitems.runtime.model.LabelDefinition;
-import io.quarkiverse.workitems.runtime.model.LabelVocabulary;
-import io.quarkiverse.workitems.runtime.model.VocabularyScope;
+import io.quarkiverse.work.runtime.model.LabelDefinition;
+import io.quarkiverse.work.runtime.model.LabelVocabulary;
+import io.quarkiverse.work.runtime.model.VocabularyScope;
 
 @ApplicationScoped
 public class LabelVocabularyService {
@@ -1201,7 +1201,7 @@ Expected: `Tests run: 7, Failures: 0, Errors: 0`
 
 ```java
 // runtime/src/main/java/io/quarkiverse/workitems/runtime/api/VocabularyResource.java
-package io.quarkiverse.workitems.runtime.api;
+package io.quarkiverse.work.runtime.api;
 
 import java.util.List;
 import java.util.Map;
@@ -1218,9 +1218,9 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import io.quarkiverse.workitems.runtime.model.LabelDefinition;
-import io.quarkiverse.workitems.runtime.model.VocabularyScope;
-import io.quarkiverse.workitems.runtime.service.LabelVocabularyService;
+import io.quarkiverse.work.runtime.model.LabelDefinition;
+import io.quarkiverse.work.runtime.model.VocabularyScope;
+import io.quarkiverse.work.runtime.service.LabelVocabularyService;
 
 @Path("/vocabulary")
 @Produces(MediaType.APPLICATION_JSON)
@@ -1481,7 +1481,7 @@ In `JpaWorkItemRepositoryTest.java`, add:
     }
 ```
 
-Add imports: `import io.quarkiverse.workitems.runtime.model.WorkItemLabel;`, `import io.quarkiverse.workitems.runtime.model.LabelPersistence;`
+Add imports: `import io.quarkiverse.work.runtime.model.WorkItemLabel;`, `import io.quarkiverse.work.runtime.model.LabelPersistence;`
 
 - [ ] **Step 2: Run tests — expect compile failure**
 
@@ -1553,7 +1553,7 @@ In `testing/src/main/java/io/quarkiverse/workitems/testing/InMemoryWorkItemRepos
     public List<WorkItem> findByLabelPattern(final String pattern) {
         return store.values().stream()
                 .filter(wi -> wi.labels != null && wi.labels.stream()
-                        .anyMatch(l -> io.quarkiverse.workitems.runtime.service.LabelVocabularyService
+                        .anyMatch(l -> io.quarkiverse.work.runtime.service.LabelVocabularyService
                                 .matchesPattern(pattern, l.path)))
                 .toList();
     }
@@ -1848,4 +1848,4 @@ Refs #50"
 
 - `supporters: Set<chainId>` on WorkItemLabel — deferred to queues module Flyway
 - Vocabulary enforcement wired into WorkItemService.addLabel() — currently just validates path not blank; vocabulary `isDeclared()` check to be wired in a follow-up once vocabulary is seeded in tests
-- INFERRED label write-path (quarkus-workitems-queues writes directly via a service method, not the create endpoint)
+- INFERRED label write-path (quarkus-work-queues writes directly via a service method, not the create endpoint)

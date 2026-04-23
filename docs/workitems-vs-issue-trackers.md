@@ -101,7 +101,7 @@ For all of this, GitHub Issues are superior to WorkItems. WorkItems has no miles
 
 **Use WorkItems when:** the work is a runtime obligation inside your running application — approvals, reviews, escalations, compliance checks, AI-to-human handoffs.
 
-Most non-trivial applications need both. The integration module (`quarkus-workitems-issue-tracker`) lets you link them: a GitHub Issue spawns a WorkItem, and the WorkItem's completion closes the issue. The tracker carries the external context; the WorkItem enforces the operational SLA.
+Most non-trivial applications need both. The integration module (`quarkus-work-issue-tracker`) lets you link them: a GitHub Issue spawns a WorkItem, and the WorkItem's completion closes the issue. The tracker carries the external context; the WorkItem enforces the operational SLA.
 
 ---
 
