@@ -1,4 +1,4 @@
--- V3001: FilterRule — dynamic (DB-persisted) filter rules (Issue #113, Epic #100)
+-- V16: FilterRule — dynamic (DB-persisted) filter rules (Issue #113, Epic #100, moved from quarkus-work-core by #133)
 --
 -- Dynamic rules complement CDI-produced permanent filters. Operators create,
 -- enable/disable, and delete rules at runtime without redeployment.

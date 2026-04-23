@@ -1,4 +1,4 @@
-package io.quarkiverse.work.core.filter;
+package io.quarkiverse.work.runtime.filter;
 
 import java.time.Instant;
 import java.util.List;

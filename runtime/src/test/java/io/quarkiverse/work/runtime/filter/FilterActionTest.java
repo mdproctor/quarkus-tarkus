@@ -1,4 +1,4 @@
-package io.quarkiverse.work.core.filter;
+package io.quarkiverse.work.runtime.filter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
