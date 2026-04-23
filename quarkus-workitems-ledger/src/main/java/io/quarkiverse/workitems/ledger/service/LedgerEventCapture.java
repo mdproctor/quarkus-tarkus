@@ -6,6 +6,7 @@ import java.util.Optional;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
 import io.quarkiverse.ledger.runtime.config.LedgerConfig;
@@ -44,6 +45,9 @@ public class LedgerEventCapture {
 
     @Inject
     LedgerConfig config;
+
+    @Inject
+    EntityManager em;
 
     /**
      * Observe a WorkItem lifecycle event and write the corresponding ledger entry.
@@ -96,11 +100,16 @@ public class LedgerEventCapture {
 
         // Update Merkle Mountain Range frontier for this subject
         if (config.hashChain().enabled()) {
-            final java.util.List<LedgerMerkleFrontier> current = LedgerMerkleFrontier.findBySubjectId(entry.subjectId);
+            final java.util.List<LedgerMerkleFrontier> current = em
+                    .createNamedQuery("LedgerMerkleFrontier.findBySubjectId", LedgerMerkleFrontier.class)
+                    .setParameter("subjectId", entry.subjectId)
+                    .getResultList();
             final java.util.List<LedgerMerkleFrontier> newFrontier = LedgerMerkleTree.append(entry.digest, current,
                     entry.subjectId);
-            LedgerMerkleFrontier.delete("subjectId", entry.subjectId);
-            newFrontier.forEach(n -> n.persist());
+            em.createQuery("DELETE FROM LedgerMerkleFrontier f WHERE f.subjectId = :subjectId")
+                    .setParameter("subjectId", entry.subjectId)
+                    .executeUpdate();
+            newFrontier.forEach(em::persist);
         }
     }
 

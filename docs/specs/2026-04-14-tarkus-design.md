@@ -69,11 +69,20 @@ Any Quarkus application can embed WorkItems to get:
 │         └── InMemoryWorkItemStore (quarkus-workitems-testing)   │
 └─────────────────────────────────────────────────────────────────┘
 
-Optional integration modules (separate artifacts, future):
-  quarkus-workitems-flow      →  TaskExecutorFactory SPI (Quarkus-Flow)
-  quarkus-workitems-casehub   →  WorkerRegistry adapter (CaseHub)
-  quarkus-workitems-qhorus    →  MCP tools (Qhorus)
-  quarkus-workitems-testing   →  InMemoryWorkItemStore for unit tests
+Substrate SPI layer (shared across domains):
+  quarkus-work-api            →  Pure-Java SPIs: WorkerSelectionStrategy, WorkerRegistry,
+                                 WorkloadProvider, EscalationPolicy, SkillProfile, SkillMatcher
+  quarkus-work-core           →  Jandex library: WorkBroker, routing strategies, filter engine
+
+Optional integration modules (separate artifacts):
+  quarkus-workitems-ai        →  SemanticWorkerSelectionStrategy, EmbeddingSkillMatcher,
+                                 WorkerSkillProfile entity + REST (built)
+  quarkus-workitems-flow      →  TaskExecutorFactory SPI (Quarkus-Flow) (built)
+  quarkus-workitems-ledger    →  Immutable ledger + Merkle hash chain + trust scores (built)
+  quarkus-workitems-queues    →  Label-based queue filtering (built)
+  quarkus-workitems-testing   →  InMemoryWorkItemStore for unit tests (built)
+  quarkus-workitems-casehub   →  WorkerRegistry adapter (CaseHub) (future)
+  quarkus-workitems-qhorus    →  MCP tools (Qhorus) (future)
   quarkus-workitems-mongodb   →  MongoDB-backed WorkItemStore (future)
   quarkus-workitems-redis     →  Redis-backed WorkItemStore (future)
 ```
@@ -329,20 +338,18 @@ or Flyway migration is needed — making pure unit tests (no `@QuarkusTest`) tri
 
 ## Escalation Policy SPI
 
+Package: `io.quarkiverse.work.api` (part of `quarkus-work-api`).
+
 ```java
-// io.quarkiverse.workitems.runtime.service.EscalationPolicy
 public interface EscalationPolicy {
-    /** Called when a WorkItem's expiresAt passes without resolution. */
-    void escalate(WorkItem workItem);
+    /** Called on WorkItem expiry and claim-deadline breach. */
+    void escalate(WorkLifecycleEvent event);
 }
 ```
 
-Default implementations (selectable via `quarkus.workitems.escalation-policy`):
-- `notify` — emits a `workitem.expired` CloudEvent; human must act
-- `reassign` — moves to next assignee in a capability pool
-- `auto-reject` — auto-rejects and records in audit log
+Check `event.eventType()` to distinguish `WorkEventType.EXPIRED` (expiresAt breach, fired by `ExpiryCleanupJob`) from `WorkEventType.CLAIM_EXPIRED` (claim deadline breach, fired by `ClaimDeadlineJob`). Call `event.source()` to access the `WorkItem` entity.
 
-Custom implementations register as CDI beans with `@Singleton @Alternative @Priority(1)`.
+Custom implementations register as CDI beans with `@ApplicationScoped @Alternative @Priority(1)`.
 
 ---
 
@@ -362,9 +369,13 @@ WorkItems emits CloudEvents for all lifecycle transitions (via Quarkus Messaging
 
 ---
 
-## Integration Modules (Future)
+## Integration Modules
 
-### quarkus-workitems-flow
+### quarkus-workitems-ai (built)
+
+Adds AI-native routing via `SemanticWorkerSelectionStrategy` (`@Alternative @Priority(1)` — auto-activates on classpath). Provides `WorkerSkillProfile` entity + REST at `/worker-skill-profiles`, `EmbeddingSkillMatcher` (cosine similarity via LangChain4j), and three `SkillProfileProvider` implementations (DB-backed, capability tag join, resolution history). See the integration guide Section 9 for full configuration.
+
+### quarkus-workitems-flow (built)
 Implements `io.serverlessworkflow.impl.executors.TaskExecutorFactory` (Java SPI via
 `META-INF/services`). When a Quarkus-Flow workflow step matches the WorkItems handler
 (e.g., a custom `humanTask` type), the factory:
@@ -391,14 +402,17 @@ Adds MCP tools backed by the WorkItems REST API:
 
 | Phase | Status | What |
 |---|---|---|
-| **1 — Core data model** | ⬜ Pending | Storage SPI interfaces, JPA defaults, InMemory impl (testing module), WorkItem + AuditEntry entities, Flyway V1, WorkItemService, WorkItemsConfig |
-| **2 — REST API** | ⬜ Pending | WorkItemResource — all CRUD + inbox + lifecycle endpoints |
-| **3 — Lifecycle engine** | ⬜ Pending | ExpiryCleanupJob, EscalationPolicy SPI, default implementations |
-| **4 — CloudEvents** | ⬜ Pending | Event emission on all lifecycle transitions |
-| **5 — Quarkus-Flow integration** | ⬜ Pending | `quarkus-workitems-flow` module, TaskExecutorFactory SPI |
-| **6 — CaseHub integration** | ⬜ Pending | `quarkus-workitems-casehub` module, WorkerRegistry adapter |
-| **7 — Qhorus integration** | ⬜ Pending | `quarkus-workitems-qhorus` module, MCP tools |
-| **8 — Native image validation** | ⬜ Pending | GraalVM native build, reflection config, native tests |
+| **1 — Core data model** | ✅ Complete | Storage SPI interfaces, JPA defaults, InMemory impl (testing module), WorkItem + AuditEntry entities, Flyway V1, WorkItemService, WorkItemsConfig |
+| **2 — REST API** | ✅ Complete | WorkItemResource — all CRUD + inbox + lifecycle endpoints |
+| **3 — Lifecycle engine** | ✅ Complete | ExpiryCleanupJob, ClaimDeadlineJob, EscalationPolicy SPI |
+| **4 — CDI lifecycle events** | ✅ Complete | WorkItemLifecycleEvent, WorkLifecycleEvent (base) via quarkus-work-api |
+| **5 — Routing SPI substrate** | ✅ Complete | quarkus-work-api + quarkus-work-core: WorkBroker, strategies, filter engine |
+| **6 — AI-native features** | ✅ Partial | SemanticWorkerSelectionStrategy, EmbeddingSkillMatcher, WorkerSkillProfile (Epic #100 in progress) |
+| **7 — Quarkus-Flow integration** | ✅ Complete | `quarkus-workitems-flow` module, HumanTaskFlowBridge |
+| **8 — Audit + ledger** | ✅ Complete | quarkus-workitems-ledger: Merkle hash chain, attestations, trust scores |
+| **9 — Native image validation** | ✅ Complete | GraalVM native build, 19 integration tests, 0.084s native startup |
+| **10 — CaseHub integration** | 🔲 Blocked | `quarkus-workitems-casehub` — awaiting CaseHub stability |
+| **11 — Qhorus integration** | 🔲 Blocked | `quarkus-workitems-qhorus` — awaiting Qhorus MCP stability |
 
 ---
 
