@@ -72,7 +72,7 @@ quarkus-workitems/
 ├── quarkus-work-api/                      — Pure-Java SPI module (groupId io.quarkiverse.work)
 │   └── src/main/java/io/quarkiverse/work/api/
 │       ├── WorkerCandidate.java           — candidate assignee value object
-│       ├── SelectionContext.java          — context passed to WorkerSelectionStrategy
+│       ├── SelectionContext.java          — context passed to WorkerSelectionStrategy (workItemId, title, description, category, requiredCapabilities, candidateUsers, candidateGroups)
 │       ├── AssignmentDecision.java        — result from WorkerSelectionStrategy
 │       ├── AssignmentTrigger.java         — enum: CREATED|CLAIM_EXPIRED|MANUAL
 │       ├── WorkerSelectionStrategy.java   — SPI: select(SelectionContext)
@@ -80,7 +80,10 @@ quarkus-workitems/
 │       ├── WorkEventType.java             — enum: CREATED|ASSIGNED|EXPIRED|CLAIM_EXPIRED|...
 │       ├── WorkLifecycleEvent.java        — base lifecycle event (source, eventType, sourceUri)
 │       ├── WorkloadProvider.java          — SPI: active workload count per worker
-│       └── EscalationPolicy.java          — SPI: escalate(WorkLifecycleEvent)
+│       ├── EscalationPolicy.java          — SPI: escalate(WorkLifecycleEvent)
+│       ├── SkillProfile.java              — record: narrative + attributes
+│       ├── SkillProfileProvider.java      — SPI: getProfile(workerId, capabilities)
+│       └── SkillMatcher.java              — SPI: score(SkillProfile, SelectionContext)
 ├── quarkus-work-core/                     — Jandex library module (groupId io.quarkiverse.work)
 │   └── src/main/java/io/quarkiverse/work/core/
 │       ├── filter/
@@ -149,7 +152,8 @@ quarkus-workitems/
   - `api/`: `FilterResource` (/filters), `QueueResource` (/queues), `QueueStateResource` (/workitems/{id}/relinquishable)
   - `model/`: `FilterScope`, `FilterAction`, `WorkItemFilter`, `FilterChain`, `QueueView`, `WorkItemQueueState`
   - `service/`: `WorkItemExpressionEvaluator` SPI, `ExpressionDescriptor`, `JexlConditionEvaluator`, `JqConditionEvaluator`, `WorkItemFilterBean`, `FilterEngine`, `FilterEngineImpl`, `FilterEvaluationObserver`
-- `quarkus-workitems-ai/` — AI-native features; `LowConfidenceFilterProducer` wires confidence-gating into `FilterRegistryEngine`; depends on `quarkus-work-core`
+- `quarkus-workitems-ai/` — AI-native features; `LowConfidenceFilterProducer` wires confidence-gating into `FilterRegistryEngine`; `SemanticWorkerSelectionStrategy` (@Alternative @Priority(1)) for embedding-based worker scoring; depends on `quarkus-work-core`
+  - `skill/`: `WorkerSkillProfile` entity (V14 migration), `WorkerSkillProfileResource` (/worker-skill-profiles), `SemanticWorkerSelectionStrategy` (@Alternative @Priority(1) — auto-activates when module on classpath), `EmbeddingSkillMatcher` (cosine similarity via dev.langchain4j), `WorkerProfileSkillProfileProvider` (default, DB-backed), `CapabilitiesSkillProfileProvider` (@Alternative — joins capability tags), `ResolutionHistorySkillProfileProvider` (@Alternative — aggregates completion history)
 - `quarkus-workitems-examples/` — runnable scenario demos; 4 `@QuarkusTest` scenarios covering every ledger/audit capability, each runs via `POST /examples/{name}/run`
 - `integration-tests/` — `@QuarkusIntegrationTest` suite and native image validation (19 tests, 0.084s native startup)
 
@@ -222,6 +226,8 @@ JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn install -DskipTests -f ~/claude/qu
 - `FilterAction.apply()` takes `Object workUnit` — implementations must cast to `WorkItem`. The signature is generic so `quarkus-work-core` remains independent of the WorkItem model.
 - `EscalationPolicy.escalate(WorkLifecycleEvent)` replaces the old two-method interface — check `event.eventType()` to distinguish `WorkEventType.EXPIRED` (ExpiryCleanupJob) from `WorkEventType.CLAIM_EXPIRED` (ClaimDeadlineJob) and handle each branch accordingly.
 - `FilterRegistryEngine` observes `WorkLifecycleEvent` (the base type from `quarkus-work-api`), not the workitems-specific `WorkItemLifecycleEvent` — use `WorkItemLifecycleEvent` when firing events from runtime code so the engine picks them up via CDI observer inheritance.
+- `CapabilitiesSkillProfileProvider` and `ResolutionHistorySkillProfileProvider` are `@Alternative` — only `WorkerProfileSkillProfileProvider` is the default `SkillProfileProvider`. Activate the alternatives via CDI `@Alternative @Priority(1)` in your application.
+- For `EmbeddingSkillMatcher`, use `dev.langchain4j:langchain4j-core` (plain Java library), NOT `io.quarkiverse.langchain4j:quarkus-langchain4j-core` (Quarkus extension) — the extension causes `@QuarkusTest` augmentation to stall when no provider is configured.
 
 ---
 
@@ -253,7 +259,7 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home
 
 | Priority | # | Epic | Status | First child |
 |---|---|---|---|---|
-| 1 | #100 | AI-Native Features — confidence gating, semantic routing | **active** | #112 ✅ confidenceScore, #113 ✅ filter-registry, #114 ✅ LowConfidenceFilter, #115 ✅ quarkus-work-api SPI, #116 ✅ WorkItemAssignmentService+strategies, #118 ✅ quarkus-work-api/work-core separation; remaining: semantic skill matching, AI-suggested resolution, escalation summarisation |
+| 1 | #100 | AI-Native Features — confidence gating, semantic routing | **active** | #112 ✅ confidenceScore, #113 ✅ filter-registry, #114 ✅ LowConfidenceFilter, #115 ✅ quarkus-work-api SPI, #116 ✅ WorkItemAssignmentService+strategies, #118 ✅ quarkus-work-api/work-core separation, #121 ✅ semantic skill matching; remaining: AI-suggested resolution, escalation summarisation |
 | 2 | #101 | Business-Hours Deadlines — SLA in working hours | **active** | BusinessCalendar SPI |
 | 3 | #102 | Workload-Aware Routing — least-loaded assignment | ✅ complete | #115 ✅ shared SPI, #116 ✅ LeastLoadedStrategy wired. RoundRobinStrategy deferred (#117). |
 | 4 | #103 | Notifications — Slack/Teams/email/webhook on lifecycle events | **active** | quarkus-workitems-notifications module |
