@@ -21,5 +21,6 @@ public record CreateWorkItemRequest(
         Instant expiresAt,
         Instant followUpDate,
         List<WorkItemLabelResponse> labels,
-        Double confidenceScore) {
+        Double confidenceScore,
+        String callerRef) {
 }

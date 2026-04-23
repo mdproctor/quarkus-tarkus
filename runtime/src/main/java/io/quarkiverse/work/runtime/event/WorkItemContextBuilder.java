@@ -63,6 +63,7 @@ public final class WorkItemContextBuilder {
         map.put("lastReturnedToPoolAt", workItem.lastReturnedToPoolAt);
         map.put("labels", workItem.labels);
         map.put("confidenceScore", workItem.confidenceScore);
+        map.put("callerRef", workItem.callerRef);
         return map;
     }
 }

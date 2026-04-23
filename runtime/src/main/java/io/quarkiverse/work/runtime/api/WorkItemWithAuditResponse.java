@@ -43,5 +43,10 @@ public record WorkItemWithAuditResponse(
          * Null when created by a human or when no confidence metadata was provided.
          */
         Double confidenceScore,
+        /**
+         * Opaque caller-supplied routing key set at spawn time.
+         * Null for WorkItems not created via spawn.
+         */
+        String callerRef,
         Long version) {
 }
