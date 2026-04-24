@@ -12,9 +12,9 @@ import jakarta.ws.rs.core.MediaType;
 
 import org.jboss.logging.Logger;
 
-import io.quarkiverse.work.runtime.filter.FilterRule;
 import io.quarkiverse.work.examples.StepLog;
 import io.quarkiverse.work.runtime.api.AuditEntryResponse;
+import io.quarkiverse.work.runtime.filter.FilterRule;
 import io.quarkiverse.work.runtime.model.AuditEntry;
 import io.quarkiverse.work.runtime.model.WorkItem;
 import io.quarkiverse.work.runtime.model.WorkItemCreateRequest;
@@ -84,7 +84,7 @@ public class FilterRulesScenario {
         rule.name = "auto-label-urgent";
         rule.description = "Applies 'urgent' label to any HIGH or CRITICAL priority WorkItem at creation";
         rule.enabled = true;
-        rule.condition = "workItem.priority == 'HIGH' || workItem.priority == 'CRITICAL'";
+        rule.condition = "workItem.priority.name() == 'HIGH' || workItem.priority.name() == 'CRITICAL'";
         rule.events = "ADD";
         rule.actionsJson = "[{\"type\":\"APPLY_LABEL\",\"params\":{\"path\":\"urgent\",\"appliedBy\":\"auto-label-urgent\"}}]";
         rule.persist();
@@ -110,6 +110,7 @@ public class FilterRulesScenario {
                 null,
                 null,
                 null,
+                null,
                 null);
 
         final WorkItem highPriorityWi = workItemService.create(highPriorityRequest);
@@ -131,6 +132,7 @@ public class FilterRulesScenario {
                 null,
                 ACTOR_CREATOR,
                 "{\"requisitionId\": \"REQ-2026-Q2-047\"}",
+                null,
                 null,
                 null,
                 null,

@@ -126,6 +126,7 @@ public class VocabularyScenario {
                 null,
                 null,
                 null,
+                null,
                 null);
 
         final WorkItem annualLeaveWi = workItemService.create(annualLeaveRequest);
@@ -142,6 +143,7 @@ public class VocabularyScenario {
                 null,
                 "tom.jones",
                 "{\"date\": \"2026-04-23\", \"selfCertified\": true}",
+                null,
                 null,
                 null,
                 null,

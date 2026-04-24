@@ -101,6 +101,7 @@ public class EscalationScenario {
                 Instant.now().minusSeconds(10), // already expired
                 null,
                 null,
+                null,
                 null);
         final WorkItem wi = workItemService.create(request);
         steps.add(new StepLog(1, description1, wi.id));

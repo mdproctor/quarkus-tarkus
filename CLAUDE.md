@@ -77,13 +77,18 @@ quarkus-work/
 │       ├── AssignmentTrigger.java         — enum: CREATED|CLAIM_EXPIRED|MANUAL
 │       ├── WorkerSelectionStrategy.java   — SPI: select(SelectionContext)
 │       ├── WorkerRegistry.java            — SPI: candidates for a work unit
-│       ├── WorkEventType.java             — enum: CREATED|ASSIGNED|EXPIRED|CLAIM_EXPIRED|...
+│       ├── WorkEventType.java             — enum: CREATED|ASSIGNED|EXPIRED|CLAIM_EXPIRED|SPAWNED|...
 │       ├── WorkLifecycleEvent.java        — base lifecycle event (source, eventType, sourceUri)
 │       ├── WorkloadProvider.java          — SPI: active workload count per worker
 │       ├── EscalationPolicy.java          — SPI: escalate(WorkLifecycleEvent)
 │       ├── SkillProfile.java              — record: narrative + attributes
 │       ├── SkillProfileProvider.java      — SPI: getProfile(workerId, capabilities)
-│       └── SkillMatcher.java              — SPI: score(SkillProfile, SelectionContext)
+│       ├── SkillMatcher.java              — SPI: score(SkillProfile, SelectionContext)
+│       ├── SpawnPort.java                 — SPI: spawn(SpawnRequest), cancelGroup(UUID, boolean)
+│       ├── SpawnRequest.java              — record: parentId, idempotencyKey, children
+│       ├── ChildSpec.java                 — record: templateId, callerRef, overrides
+│       ├── SpawnResult.java               — record: groupId, children, created
+│       └── SpawnedChild.java              — record: workItemId, callerRef
 ├── quarkus-work-core/                     — Jandex library module (groupId io.quarkiverse.work)
 │   └── src/main/java/io/quarkiverse/work/core/
 │       ├── filter/
@@ -114,9 +119,10 @@ quarkus-work/
 │       │   ├── WorkItemEventBroadcaster.java — fires WorkItemLifecycleEvent via CDI
 │       │   └── WorkItemLifecycleEvent.java — extends WorkLifecycleEvent; source() returns Object (the WorkItem)
 │       ├── model/
-│       │   ├── WorkItem.java              — PanacheEntity (the core concept)
+│       │   ├── WorkItem.java              — PanacheEntity (the core concept); callerRef field for spawn routing
 │       │   ├── WorkItemStatus.java        — enum: PENDING|ASSIGNED|IN_PROGRESS|...
 │       │   ├── WorkItemPriority.java      — enum: LOW|NORMAL|HIGH|CRITICAL
+│       │   ├── WorkItemSpawnGroup.java    — spawn batch tracking (idempotency + membership)
 │       │   └── AuditEntry.java            — PanacheEntity (append-only audit log)
 │       ├── repository/
 │       │   ├── WorkItemStore.java         — SPI: put, get, scan(WorkItemQuery), scanAll
@@ -128,9 +134,12 @@ quarkus-work/
 │       ├── service/
 │       │   ├── WorkItemService.java       — lifecycle management, expiry, delegation
 │       │   ├── WorkItemAssignmentService.java — assignment orchestration via WorkBroker
+│       │   ├── WorkItemSpawnService.java  — implements SpawnPort; creates children from templates, wires PART_OF, stores callerRef
 │       │   └── JpaWorkloadProvider.java   — implements WorkloadProvider via JPA store
 │       └── api/
-│           └── WorkItemResource.java      — REST API at /workitems
+│           ├── WorkItemResource.java      — REST API at /workitems
+│           ├── WorkItemSpawnResource.java — POST /workitems/{id}/spawn, GET/DELETE /workitems/{id}/spawn-groups
+│           └── SpawnGroupResource.java    — GET /spawn-groups/{id}
 ├── deployment/                            — Extension deployment (build-time) module
 │   └── src/main/java/io/quarkiverse/workitems/deployment/
 │       └── WorkItemsProcessor.java        — @BuildStep: FeatureBuildItem
@@ -202,7 +211,7 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home \
 
 **Use `mvn` not `./mvnw`** — maven wrapper not configured on this machine.
 
-**`quarkus-ledger` prerequisite:** `quarkus-work-ledger` depends on `io.quarkiverse.ledger:quarkus-ledger:1.0.0-SNAPSHOT` — a sibling project at `~/claude/quarkus-ledger/`. If the build fails with "Could not find artifact", install it first:
+**`quarkus-ledger` prerequisite:** `quarkus-work-ledger` depends on `io.quarkiverse.ledger:quarkus-ledger:0.2-SNAPSHOT` — a sibling project at `~/claude/quarkus-ledger/`. If the build fails with "Could not find artifact", install it first:
 ```bash
 JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn install -DskipTests -f ~/claude/quarkus-ledger/pom.xml
 ```
@@ -228,6 +237,10 @@ JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn install -DskipTests -f ~/claude/qu
 - `FilterRegistryEngine` observes `WorkLifecycleEvent` (the base type from `quarkus-work-api`), not the workitems-specific `WorkItemLifecycleEvent` — use `WorkItemLifecycleEvent` when firing events from runtime code so the engine picks them up via CDI observer inheritance.
 - `CapabilitiesSkillProfileProvider` and `ResolutionHistorySkillProfileProvider` are `@Alternative` — only `WorkerProfileSkillProfileProvider` is the default `SkillProfileProvider`. Activate the alternatives via CDI `@Alternative @Priority(1)` in your application.
 - For `EmbeddingSkillMatcher`, use `dev.langchain4j:langchain4j-core` (plain Java library), NOT `io.quarkiverse.langchain4j:quarkus-langchain4j-core` (Quarkus extension) — the extension causes `@QuarkusTest` augmentation to stall when no provider is configured.
+- `callerRef` on `WorkItem` is opaque — quarkus-work stores and echoes it in every `WorkItemLifecycleEvent`; it never interprets it. CaseHub embeds its `planItemId` here so child completion events can be routed back to the right `PlanItem` without a query.
+- Spawn group cascade cancellation is scoped to the specific group via `createdBy = "system:spawn:{groupId}"` — `DELETE /workitems/{id}/spawn-groups/{gid}?cancelChildren=true` cancels only children from that group, not all children of the parent.
+- Spawn idempotency key is scoped per parent — the same key on different parents creates separate groups; uniqueness is `(parent_id, idempotency_key)`.
+- `quarkus-work-ledger` depends on `io.quarkiverse.ledger:quarkus-ledger:0.2-SNAPSHOT` — update this version when `quarkus-ledger` changes its own version. The prerequisite note below is stale; use `0.2-SNAPSHOT`.
 
 ---
 
