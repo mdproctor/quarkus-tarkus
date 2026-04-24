@@ -1,93 +1,60 @@
-# Quarkus WorkItems — Session Handover
-**Date:** 2026-04-23
+# quarkus-work — Session Handover
+**Date:** 2026-04-24
 
 ## Project Status
 
-77+ AI module tests, 548 runtime tests, 14 examples tests. All green.
+597 runtime tests, all green. Full build passes.
 
 | Module | Tests |
 |---|---|
 | quarkus-work-api | 27 |
 | quarkus-work-core | 53 |
-| runtime | 548 |
+| runtime | 597 |
 | quarkus-work-ai | 77 |
-| quarkus-work-examples | 14 |
-| (others unchanged) | — |
+| quarkus-work-examples | passing (3 pre-existing failures unrelated to spawn) |
+| quarkus-work-ledger | 25 (LedgerIntegrationTest) |
 
-## What Was Built This Session
+## What Was Done This Session
 
-### Epic #100 AI-Native Features — CLOSED
+### Rename: quarkus-workitems → quarkus-work
+Complete rename — Maven groupId, artifactIds, Java packages, module directories, config prefix, feature name. Commit `098acfe`. Nothing published so no compatibility constraints.
 
-All remaining child issues closed:
+### Architecture: layering and platform naming
+- `docs/architecture/LAYERING.md` — canonical boundary rule between quarkus-work (primitives/events) and CaseHub (orchestration). Critical reading before any cross-project work.
+- CaseHub confirmed as the platform/org name. casehub-engine is the CMMN core. quarkus-work will eventually be renamed casehub-work, quarkus-ledger → casehub-ledger. **Parked for a dedicated rename session.**
+- Work/WorkItem/Task taxonomy documented in LAYERING.md.
 
-| Issue | Feature | Commit |
-|---|---|---|
-| #119 | `CompositeSkillProfileProvider` — concatenates narratives from all active providers | `c11908b` |
-| #120 | `SemanticWorkerSelectionStrategy` fallback to `LeastLoadedStrategy` on embedding failure | `c11908b` |
-| #124 | `GET /workitems/{id}/resolution-suggestion` — LLM few-shot from past completions | `7d7321e` |
-| #126 | Escalation summarisation — LLM briefing on EXPIRED/CLAIM_EXPIRED events | `58dc06f` |
+### #133 Filter engine moved from quarkus-work-core → runtime
+FilterRule (@Entity), FilterRuleResource, FilterRegistryEngine, etc. quarkus-work-core is now pure CDI + quarkus-work-api — no JPA, no REST. CaseHub can depend on it without a datasource.
 
-### Epic #122 Documentation & Examples — CLOSED
+### #105 Subprocess spawning — COMPLETE
+All 8 tasks done, issues #127–#132 closed.
 
-All 9 example scenarios shipped + `docs/examples-guide.md` with why-not-just-what docs.
+Key design: quarkus-work is the pure primitive layer. No orchestration.
+- `callerRef` on WorkItem (V17) — opaque routing key, echoed in every lifecycle event. CaseHub embeds its planItemId.
+- `WorkItemSpawnGroup` (V18) — idempotency tracking only, no completion state.
+- `POST /workitems/{id}/spawn` + group endpoints
+- `WorkEventType.SPAWNED` + ledger causedByEntryId wiring
+- Cascade cancellation scoped via `createdBy = "system:spawn:{groupId}"`
+- Full TDD: unit, integration, E2E, idempotency, cascade, correctness tests
+- SpawnScenario example at `POST /examples/spawn/run`
 
-### ClaimSlaPolicy wired (#125) — `dd6bbf8`
+### quarkus-ledger dependency version fix
+quarkus-work-ledger now depends on `0.2-SNAPSHOT` (was stale `1.0.0-SNAPSHOT`). See CLAUDE.md gotcha.
 
-Four pool-deadline strategies exist in quarkus-work-core (Continuation, Fresh, Single, Phase).
-Now actually called: `WorkItemService.release/delegate` and `ClaimDeadlineJob` reset
-`claimDeadline` via the active policy. V15 migration adds `accumulated_unclaimed_seconds`
-and `last_returned_to_pool_at` to `work_item`.
+## Open / Next
 
-### CaseHub alignment (linked: casehubio/engine#122)
-
-ClaimSlaPolicy wiring done. FreshClockPolicy, SingleBudgetPolicy, PhaseClockPolicy marked
-`@Alternative` — ContinuationPolicy is the sole default `@ApplicationScoped` bean.
-
-### Ledger drift repair
-
-quarkus-ledger switched from Panache to plain EntityManager — fixed throughout:
-`JpaWorkItemLedgerEntryRepository`, `LedgerEventCapture`, `LedgerResource`.
-Removed `@PersistenceUnit("qhorus")` from `TrustScoreJob` and `JpaLedgerEntryRepository`
-in quarkus-ledger sibling (was Qhorus-specific, broke workitems context).
-
-### Queues migration fix
-
-`quarkus-work-queues` V2001 renamed to V2002 (conflict with ledger V2001).
-
-## Closed This Session
-
-Epics: #100, #98, #102, #122
-
-Issues: #107, #108, #112–#116, #119, #120, #123–#126
-
-## Open — Priority Order
-
-| Priority | # | Epic | Status |
-|---|---|---|---|
-| 1 | #101 | Business-Hours Deadlines — `BusinessCalendar` SPI | not started |
-| 2 | #103 | Notifications — webhooks on lifecycle events | not started |
-| 3 | #104 | SLA Compliance Reporting — breach rate reports | not started |
-| 4 | #105 | Subprocess Spawning — template-driven child WorkItems | not started |
-| 5 | #106 | Multi-Instance Tasks — M-of-N parallel completion | not started |
-| — | #92 | Distributed WorkItems / SSE (#93) | future |
-| — | #79, #39 | External integrations, ProvenanceLink | blocked |
-| — | #117 | RoundRobinStrategy | deferred |
-
-## Deferred / Carry-Forward
-
-- `quarkus-work-ledger` tests (`LedgerIntegrationTest` etc.) use old 15-arg
-  `WorkItemCreateRequest` constructor — need updating (separate session)
-- `ClaimSlaPolicy` — no config-driven policy selection yet; users choose via CDI `@Alternative @Priority`
-- Embedding model for `EmbeddingSkillMatcher` — degrades to LeastLoaded fallback when not configured (correct behaviour now, thanks to #120)
-
-## References
-
-| What | Path |
+| Priority | What |
 |---|---|
-| Design tracker | `docs/DESIGN.md` |
-| Examples guide | `docs/examples-guide.md` |
-| Integration guide (§8 quarkus-work, §9 semantic) | `docs/integration-guide.md` |
-| API reference (/worker-skill-profiles, /resolution-suggestion, /escalation-summaries) | `docs/api-reference.md` |
-| AI module | `quarkus-work-ai/src/main/java/io/quarkiverse/workitems/ai/` |
-| ClaimSlaPolicy impls | `quarkus-work-core/src/main/java/io/quarkiverse/work/core/policy/` |
-| Epic priority table | `CLAUDE.md` Work Tracking section |
+| 1 | Platform rename (quarkus-work → casehub-work, etc.) — parked, needs dedicated session |
+| 2 | #101 Business-hours deadlines — `BusinessCalendar` SPI |
+| 3 | #103 Notifications — `quarkus-work-notifications` module |
+| 4 | #104 SLA compliance reporting |
+| 5 | #105 child: `quarkus-work-casehub` adapter — routes `WorkItemLifecycleEvent` → CaseHub `CONTEXT_CHANGED` via callerRef |
+
+## Key References
+
+- Layering architecture: `docs/architecture/LAYERING.md`
+- Spawn spec: `docs/superpowers/specs/2026-04-23-subprocess-spawning-design.md`
+- casehub-engine path: `/Users/mdproctor/dev/casehub-engine` (not `~/claude/casehub` — that is the stale POC)
+- quarkus-ledger: `~/claude/quarkus-ledger` — version is `0.2-SNAPSHOT`
