@@ -38,6 +38,18 @@ public interface WorkItemLedgerEntryRepository extends LedgerEntryRepository {
     Optional<WorkItemLedgerEntry> findLatestByWorkItemId(UUID workItemId);
 
     /**
+     * Return the earliest ledger entry for the given WorkItem (sequenceNumber = 1), or empty if none.
+     *
+     * <p>
+     * The first entry for any WorkItem is always the CREATED entry. Used when wiring
+     * causal chains from a parent SPAWNED entry back to each child's CREATED entry.
+     *
+     * @param workItemId the WorkItem UUID
+     * @return the earliest typed entry, or empty if no entries exist
+     */
+    Optional<WorkItemLedgerEntry> findEarliestByWorkItemId(UUID workItemId);
+
+    /**
      * Persist a new attestation and return the saved instance.
      * Overrides to be explicitly available on this typed interface.
      *

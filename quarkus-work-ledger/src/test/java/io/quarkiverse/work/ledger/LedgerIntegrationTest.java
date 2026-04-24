@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 import java.util.UUID;
 
+import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 
 import org.junit.jupiter.api.Test;
@@ -16,8 +17,12 @@ import io.quarkiverse.ledger.runtime.model.LedgerEntryType;
 import io.quarkiverse.ledger.runtime.service.LedgerMerkleTree;
 import io.quarkiverse.work.ledger.model.WorkItemLedgerEntry;
 import io.quarkiverse.work.ledger.repository.WorkItemLedgerEntryRepository;
+import io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent;
+import io.quarkiverse.work.runtime.model.WorkItem;
 import io.quarkiverse.work.runtime.model.WorkItemCreateRequest;
 import io.quarkiverse.work.runtime.model.WorkItemPriority;
+import io.quarkiverse.work.runtime.model.WorkItemRelation;
+import io.quarkiverse.work.runtime.model.WorkItemRelationType;
 import io.quarkiverse.work.runtime.service.WorkItemService;
 import io.quarkus.test.TestTransaction;
 import io.quarkus.test.junit.QuarkusTest;
@@ -44,6 +49,9 @@ class LedgerIntegrationTest {
     @Inject
     WorkItemLedgerEntryRepository ledgerRepo;
 
+    @Inject
+    Event<WorkItemLifecycleEvent> lifecycleEvent;
+
     // -------------------------------------------------------------------------
     // Fixture helper
     // -------------------------------------------------------------------------
@@ -51,7 +59,7 @@ class LedgerIntegrationTest {
     private WorkItemCreateRequest basicRequest(final String title) {
         return new WorkItemCreateRequest(title, null, null, null,
                 WorkItemPriority.NORMAL, null, null, null, null, "system",
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, null);
     }
 
     // -------------------------------------------------------------------------
@@ -367,7 +375,7 @@ class LedgerIntegrationTest {
         final var item = workItemService.create(new WorkItemCreateRequest(
                 "Rationale complete test", null, null, null,
                 WorkItemPriority.NORMAL, null, null, null, null,
-                "system", null, null, null, null, null, null));
+                "system", null, null, null, null, null, null, null));
         workItemService.claim(item.id, "alice");
         workItemService.start(item.id, "alice");
 
@@ -394,7 +402,7 @@ class LedgerIntegrationTest {
         final var item = workItemService.create(new WorkItemCreateRequest(
                 "Rationale reject test", null, null, null,
                 WorkItemPriority.NORMAL, null, null, null, null,
-                "system", null, null, null, null, null, null));
+                "system", null, null, null, null, null, null, null));
         workItemService.claim(item.id, "alice");
 
         workItemService.reject(item.id, "alice",
@@ -419,7 +427,7 @@ class LedgerIntegrationTest {
         final var item = workItemService.create(new WorkItemCreateRequest(
                 "Human actor test", null, null, null,
                 WorkItemPriority.NORMAL, null, null, null, null,
-                "alice", null, null, null, null, null, null));
+                "alice", null, null, null, null, null, null, null));
 
         final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
         assertThat(entries).hasSize(1);
@@ -431,7 +439,7 @@ class LedgerIntegrationTest {
         final var item = workItemService.create(new WorkItemCreateRequest(
                 "Agent actor test", null, null, null,
                 WorkItemPriority.NORMAL, null, null, null, null,
-                "agent:content-ai", null, null, null, null, null, null));
+                "agent:content-ai", null, null, null, null, null, null, null));
 
         final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
         assertThat(entries).hasSize(1);
@@ -443,10 +451,59 @@ class LedgerIntegrationTest {
         final var item = workItemService.create(new WorkItemCreateRequest(
                 "System actor test", null, null, null,
                 WorkItemPriority.NORMAL, null, null, null, null,
-                "system:scheduler", null, null, null, null, null, null));
+                "system:scheduler", null, null, null, null, null, null, null));
 
         final List<WorkItemLedgerEntry> entries = ledgerRepo.findByWorkItemId(item.id);
         assertThat(entries).hasSize(1);
         assertThat(entries.get(0).actorType).isEqualTo(ActorType.SYSTEM);
+    }
+
+    // -------------------------------------------------------------------------
+    // Causal chain: spawn wires causedByEntryId on child CREATED entries
+    // -------------------------------------------------------------------------
+
+    @Test
+    void spawn_createsCausalChain_inLedger() {
+        // Create parent
+        final WorkItem parent = workItemService.create(basicRequest("Spawn parent"));
+
+        // Create child with callerRef, as WorkItemSpawnService would
+        final WorkItem child = workItemService.create(new WorkItemCreateRequest(
+                "Spawn child", null, null, null,
+                WorkItemPriority.NORMAL, null, null, null, null,
+                "system:spawn", null, null, null, null, null, null, "task-A"));
+
+        // Wire PART_OF relation: child → parent (mirrors WorkItemSpawnService.spawn)
+        final WorkItemRelation rel = new WorkItemRelation();
+        rel.sourceId = child.id;
+        rel.targetId = parent.id;
+        rel.relationType = WorkItemRelationType.PART_OF;
+        rel.createdBy = "system:spawn";
+        rel.persist();
+
+        // Fire SPAWNED event on parent, as WorkItemSpawnService would
+        lifecycleEvent.fire(WorkItemLifecycleEvent.of("SPAWNED", parent, "system:spawn",
+                "children:1"));
+
+        // Fetch ledger entries
+        final List<WorkItemLedgerEntry> parentEntries = ledgerRepo.findByWorkItemId(parent.id);
+        final List<WorkItemLedgerEntry> childEntries = ledgerRepo.findByWorkItemId(child.id);
+
+        // Parent should have CREATED + SPAWNED entries
+        assertThat(parentEntries).hasSize(2);
+        final WorkItemLedgerEntry parentSpawned = parentEntries.stream()
+                .filter(e -> "WorkItemsSpawned".equals(e.eventType))
+                .findFirst().orElseThrow(() -> new AssertionError("No WorkItemsSpawned entry on parent"));
+        assertThat(parentSpawned.commandType).isEqualTo("SpawnWorkItems");
+
+        // Child should have exactly one CREATED entry
+        assertThat(childEntries).hasSize(1);
+        final WorkItemLedgerEntry childCreated = childEntries.get(0);
+        assertThat(childCreated.eventType).isEqualTo("WorkItemCreated");
+
+        // causedByEntryId on child CREATED must point to parent SPAWNED entry
+        assertThat(childCreated.causedByEntryId)
+                .as("child CREATED causedByEntryId should point to parent SPAWNED entry")
+                .isEqualTo(parentSpawned.id);
     }
 }

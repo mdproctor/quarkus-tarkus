@@ -63,6 +63,18 @@ public class JpaWorkItemLedgerEntryRepository implements WorkItemLedgerEntryRepo
 
     /** {@inheritDoc} */
     @Override
+    public Optional<WorkItemLedgerEntry> findEarliestByWorkItemId(final UUID workItemId) {
+        return em.createQuery(
+                "SELECT e FROM WorkItemLedgerEntry e WHERE e.subjectId = :subjectId ORDER BY e.sequenceNumber ASC",
+                WorkItemLedgerEntry.class)
+                .setParameter("subjectId", workItemId)
+                .setMaxResults(1)
+                .getResultStream()
+                .findFirst();
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public List<LedgerEntry> findBySubjectId(final UUID subjectId) {
         return em.createQuery(
                 "SELECT e FROM LedgerEntry e WHERE e.subjectId = :subjectId ORDER BY e.sequenceNumber ASC",
