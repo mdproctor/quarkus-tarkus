@@ -12,7 +12,7 @@
 
   <groupId>io.quarkiverse.work</groupId>
   <artifactId>quarkus-work-parent</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>0.2-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Quarkus WorkItems - Parent</name>
@@ -57,8 +57,40 @@ Standalone Quarkiverse extension with optional integrations for Quarkus-Flow, Ca
     <surefire-plugin.version>3.2.5</surefire-plugin.version>
   </properties>
 
+  <repositories>
+    <repository>
+      <id>github</id>
+      <name>casehubio GitHub Packages</name>
+      <url>https://maven.pkg.github.com/casehubio/*</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+
+  <distributionManagement>
+    <repository>
+      <id>github</id>
+      <name>casehubio GitHub Packages</name>
+      <url>https://maven.pkg.github.com/casehubio/quarkus-work</url>
+    </repository>
+    <snapshotRepository>
+      <id>github</id>
+      <name>casehubio GitHub Packages</name>
+      <url>https://maven.pkg.github.com/casehubio/quarkus-work</url>
+    </snapshotRepository>
+  </distributionManagement>
+
   <dependencyManagement>
     <dependencies>
+      <!-- casehub-parent BOM — manages all casehubio artifact versions -->
+      <dependency>
+        <groupId>io.casehubio</groupId>
+        <artifactId>casehub-parent</artifactId>
+        <version>0.2-SNAPSHOT</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
       <dependency>
         <groupId>io.quarkus.platform</groupId>
         <artifactId>quarkus-bom</artifactId>
