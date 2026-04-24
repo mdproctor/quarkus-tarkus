@@ -120,6 +120,7 @@ public class QueueModuleScenario {
                 null,
                 null,
                 List.of(new WorkItemLabelResponse("contract-review/nda", LabelPersistence.MANUAL, ACTOR_CREATOR)),
+                null,
                 null));
         steps.add(new StepLog(1, description1, wiA.id));
 
@@ -143,6 +144,7 @@ public class QueueModuleScenario {
                 null,
                 null,
                 List.of(new WorkItemLabelResponse("compliance/gdpr", LabelPersistence.MANUAL, ACTOR_CREATOR)),
+                null,
                 null));
         steps.add(new StepLog(2, description2, wiB.id));
 
@@ -166,6 +168,7 @@ public class QueueModuleScenario {
                 null,
                 null,
                 List.of(new WorkItemLabelResponse("contract-review/ip", LabelPersistence.MANUAL, ACTOR_CREATOR)),
+                null,
                 null));
         steps.add(new StepLog(3, description3, wiC.id));
 

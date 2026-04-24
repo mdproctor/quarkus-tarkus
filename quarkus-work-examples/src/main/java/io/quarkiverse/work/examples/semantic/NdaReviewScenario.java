@@ -110,7 +110,8 @@ public class NdaReviewScenario {
                 null,
                 null,
                 null,
-                0.92);
+                0.92,
+                null);
 
         final WorkItem wi = workItemService.create(request);
         steps.add(new StepLog(2, description2, wi.id));

@@ -111,6 +111,7 @@ public class ContentModerationScenario {
                 null,
                 null,
                 null,
+                null,
                 null);
 
         final WorkItem wi = workItemService.create(request);
