@@ -292,3 +292,22 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home
 - **All commits should reference an issue** — `Refs #N` (ongoing) or `Closes #N` (done). Also reference the parent epic: `Refs #77` etc.
 - **Code review fix commits** — when committing fixes found during a code review, create or reuse an issue for that review work **before** committing. Use `Refs #N` on the relevant epic even if it is already closed.
 - **New feature requests** — assess which epic it belongs to before creating the issue. If none fits, propose a new epic first.
+
+## Ecosystem Conventions
+
+All casehubio projects align on these conventions:
+
+**Quarkus version:** All projects use `3.32.2`. When bumping, bump all projects together.
+
+**GitHub Packages — dependency resolution:** Add to `pom.xml` `<repositories>`:
+```xml
+<repository>
+  <id>github</id>
+  <url>https://maven.pkg.github.com/casehubio/*</url>
+  <snapshots><enabled>true</enabled></snapshots>
+</repository>
+```
+CI must use `server-id: github` + `GITHUB_TOKEN` in `actions/setup-java`.
+
+**Cross-project SNAPSHOT versions:** `quarkus-ledger` and `quarkus-work` modules are `0.2-SNAPSHOT` resolved from GitHub Packages. Declare in `pom.xml` properties and `<dependencyManagement>` — no hardcoded versions in submodule poms.
+

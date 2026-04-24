@@ -31,9 +31,9 @@ Maven multi-module layout following Quarkiverse conventions:
 | Module | Artifact | Purpose |
 |---|---|---|
 | Parent | `quarkus-work-parent` | BOM, version management |
-| API | `quarkus-work-api` | Pure Java SPI contracts — `WorkerCandidate`, `SelectionContext` (workItemId, title, description, category, requiredCapabilities, candidateUsers, candidateGroups), `AssignmentDecision`, `AssignmentTrigger`, `WorkerSelectionStrategy`, `WorkerRegistry`, `WorkEventType`, `WorkLifecycleEvent`, `WorkloadProvider`, `EscalationPolicy`, `SkillProfile`, `SkillProfileProvider`, `SkillMatcher`. groupId `io.quarkiverse.work`. Zero runtime dependencies. CaseHub and other systems depend on this without pulling in the WorkItems stack. |
-| Core | `quarkus-work-core` | Generic work management implementations — `WorkBroker` (generic assignment orchestrator, replaces CaseHub's TaskBroker concept), `LeastLoadedStrategy`, `ClaimFirstStrategy`, `NoOpWorkerRegistry`, filter engine (`FilterAction` SPI, `FilterRegistryEngine` observing `WorkLifecycleEvent`, `JexlConditionEvaluator`, `PermanentFilterRegistry`, `DynamicFilterRegistry`, `FilterRule`, `FilterRuleResource`). Jandex-indexed library, groupId `io.quarkiverse.work`. |
-| Runtime | `quarkus-work` | Core — WorkItem model, storage SPI, JPA defaults, service, REST API, lifecycle engine, labels, vocabulary. Includes `WorkItemContextBuilder`, `JpaWorkloadProvider` (implements `WorkloadProvider`), and runtime actions in `runtime/action/` (`ApplyLabelAction`, `OverrideCandidateGroupsAction`, `SetPriorityAction`). |
+| API | `quarkus-work-api` | Pure Java SPI contracts — `WorkerCandidate`, `SelectionContext` (workItemId, title, description, category, requiredCapabilities, candidateUsers, candidateGroups), `AssignmentDecision`, `AssignmentTrigger`, `WorkerSelectionStrategy`, `WorkerRegistry`, `WorkEventType` (includes `SPAWNED`), `WorkLifecycleEvent`, `WorkloadProvider`, `EscalationPolicy`, `SkillProfile`, `SkillProfileProvider`, `SkillMatcher`. Spawn SPI: `SpawnPort`, `SpawnRequest`, `ChildSpec`, `SpawnResult`, `SpawnedChild`. groupId `io.quarkiverse.work`. Zero runtime dependencies. CaseHub and other systems depend on this without pulling in the WorkItems stack. |
+| Core | `quarkus-work-core` | Generic work management implementations — `WorkBroker` (generic assignment orchestrator), `LeastLoadedStrategy`, `ClaimFirstStrategy`, `NoOpWorkerRegistry`, claim SLA policies. No JPA entities, no REST resources. CaseHub depends on this module directly. Jandex-indexed library, groupId `io.quarkiverse.work`. |
+| Runtime | `quarkus-work` | Core — WorkItem model, storage SPI, JPA defaults, service, REST API, lifecycle engine, labels, vocabulary. Includes `WorkItemContextBuilder`, `JpaWorkloadProvider`, runtime actions (`ApplyLabelAction`, `OverrideCandidateGroupsAction`, `SetPriorityAction`), filter engine (`FilterAction` SPI, `FilterRegistryEngine`, `JexlConditionEvaluator`, `PermanentFilterRegistry`, `DynamicFilterRegistry`, `FilterRule`, `FilterRuleResource` — relocated from core in #133). Subprocess spawning: `WorkItemSpawnService` (implements `SpawnPort`), `WorkItemSpawnGroup` entity (idempotency tracking), `WorkItemSpawnResource` (`POST /workitems/{id}/spawn`, `GET/DELETE /workitems/{id}/spawn-groups`), `SpawnGroupResource` (`GET /spawn-groups/{id}`). |
 | Deployment | `quarkus-work-deployment` | Build-time processor — feature registration, native config |
 | Testing | `quarkus-work-testing` | `InMemoryWorkItemStore` + `InMemoryAuditEntryStore` — no datasource needed for unit tests |
 | Flow | `quarkus-work-flow` | Quarkus-Flow integration — `WorkItemsFlow` DSL base class, `HumanTaskFlowBridge`, `WorkItemFlowEventListener` |
@@ -100,6 +100,18 @@ Maven multi-module layout following Quarkiverse conventions:
 | `priorStatus` | WorkItemStatus | Status before suspension; restored on resume |
 | `labels` | `List<WorkItemLabel>` | 0..n labels; see Label Model below |
 | `confidenceScore` | Double | Nullable. Set by AI agents (0.0–1.0). Null = no AI metadata. Used by filter-registry to gate routing. V13 migration. |
+| `callerRef` | String | Nullable. Opaque routing key set at spawn time. Stored and echoed in every `WorkItemLifecycleEvent`; never interpreted by quarkus-work. CaseHub embeds its `planItemId` here to route child completion back to the right `PlanItem`. V17 migration. |
+
+**WorkItemSpawnGroup (`runtime/model/`)** — tracks a batch of children spawned together:
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | UUID PK | Set in `@PrePersist` |
+| `parentId` | UUID | The parent WorkItem that owns this group |
+| `idempotencyKey` | String | Unique per parent — a second spawn call with the same `(parentId, idempotencyKey)` returns this group without creating new children |
+| `createdAt` | Instant | When the group was created |
+
+No completion state — that belongs to the caller (CaseHub's `Stage.requiredItemIds`). V18 migration.
 
 **WorkItemLabel (`runtime/model/`)** — each entry:
 
