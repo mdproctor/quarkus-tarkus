@@ -19,6 +19,8 @@ import io.quarkiverse.work.ledger.model.WorkItemLedgerEntry;
 import io.quarkiverse.work.ledger.repository.WorkItemLedgerEntryRepository;
 import io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent;
 import io.quarkiverse.work.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.model.WorkItemRelation;
+import io.quarkiverse.work.runtime.model.WorkItemRelationType;
 import io.quarkiverse.work.runtime.repository.WorkItemStore;
 
 /**
@@ -98,6 +100,21 @@ public class LedgerEventCapture {
 
         ledgerRepo.save(entry);
 
+        // Causal chain: when SPAWNED fires on the parent, point each child's CREATED
+        // ledger entry at this parent SPAWNED entry via causedByEntryId.
+        // PART_OF links (child → parent) are persisted before SPAWNED fires, so they
+        // are visible here within the same transaction.
+        if ("spawned".equals(eventSuffix(event.type()))) {
+            WorkItemRelation.findByTargetAndType(event.workItemId(), WorkItemRelationType.PART_OF)
+                    .forEach(rel -> ledgerRepo.findEarliestByWorkItemId(rel.sourceId)
+                            .ifPresent(childCreatedEntry -> {
+                                if ("WorkItemCreated".equals(childCreatedEntry.eventType)
+                                        && childCreatedEntry.causedByEntryId == null) {
+                                    childCreatedEntry.causedByEntryId = entry.id;
+                                }
+                            }));
+        }
+
         // Update Merkle Mountain Range frontier for this subject
         if (config.hashChain().enabled()) {
             final java.util.List<LedgerMerkleFrontier> current = em
@@ -141,7 +158,8 @@ public class LedgerEventCapture {
             Map.entry("resumed", new String[] { "ResumeWorkItem", "WorkItemResumed", "Assignee" }),
             Map.entry("cancelled", new String[] { "CancelWorkItem", "WorkItemCancelled", "Administrator" }),
             Map.entry("expired", new String[] { "ExpireWorkItem", "WorkItemExpired", "System" }),
-            Map.entry("escalated", new String[] { "EscalateWorkItem", "WorkItemEscalated", "System" }));
+            Map.entry("escalated", new String[] { "EscalateWorkItem", "WorkItemEscalated", "System" }),
+            Map.entry("spawned", new String[] { "SpawnWorkItems", "WorkItemsSpawned", "System" }));
 
     private static final int META_COMMAND = 0;
     private static final int META_EVENT = 1;
