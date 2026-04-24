@@ -1,5 +1,6 @@
 package io.quarkiverse.work.runtime.service;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -15,12 +16,14 @@ import io.quarkiverse.work.api.SpawnRequest;
 import io.quarkiverse.work.api.SpawnResult;
 import io.quarkiverse.work.api.SpawnedChild;
 import io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent;
+import io.quarkiverse.work.runtime.model.AuditEntry;
 import io.quarkiverse.work.runtime.model.WorkItem;
 import io.quarkiverse.work.runtime.model.WorkItemCreateRequest;
 import io.quarkiverse.work.runtime.model.WorkItemRelation;
 import io.quarkiverse.work.runtime.model.WorkItemRelationType;
 import io.quarkiverse.work.runtime.model.WorkItemSpawnGroup;
 import io.quarkiverse.work.runtime.model.WorkItemTemplate;
+import io.quarkiverse.work.runtime.repository.AuditEntryStore;
 import io.quarkiverse.work.runtime.repository.WorkItemStore;
 
 /**
@@ -41,14 +44,17 @@ public class WorkItemSpawnService implements SpawnPort {
 
     private final WorkItemStore workItemStore;
     private final WorkItemService workItemService;
+    private final AuditEntryStore auditStore;
 
     @Inject
     Event<WorkItemLifecycleEvent> lifecycleEvent;
 
     @Inject
-    public WorkItemSpawnService(final WorkItemStore workItemStore, final WorkItemService workItemService) {
+    public WorkItemSpawnService(final WorkItemStore workItemStore, final WorkItemService workItemService,
+            final AuditEntryStore auditStore) {
         this.workItemStore = workItemStore;
         this.workItemService = workItemService;
+        this.auditStore = auditStore;
     }
 
     /**
@@ -141,10 +147,18 @@ public class WorkItemSpawnService implements SpawnPort {
             spawnedChildren.add(new SpawnedChild(child.id, spec.callerRef()));
         }
 
-        // Fire SPAWNED event on parent
+        // Write SPAWNED audit entry on parent and fire CDI event
+        final String spawnDetail = "groupId:" + group.id + ",children:" + spawnedChildren.size();
+        final AuditEntry auditEntry = new AuditEntry();
+        auditEntry.workItemId = parent.id;
+        auditEntry.event = "SPAWNED";
+        auditEntry.actor = "system:spawn";
+        auditEntry.detail = spawnDetail;
+        auditEntry.occurredAt = Instant.now();
+        auditStore.append(auditEntry);
+
         if (lifecycleEvent != null) {
-            lifecycleEvent.fire(WorkItemLifecycleEvent.of("SPAWNED", parent, "system:spawn",
-                    "groupId:" + group.id + ",children:" + spawnedChildren.size()));
+            lifecycleEvent.fire(WorkItemLifecycleEvent.of("SPAWNED", parent, "system:spawn", spawnDetail));
         }
 
         return new SpawnResult(group.id, spawnedChildren, true);
