@@ -22,11 +22,11 @@ Using `WorkItem` avoids naming conflicts and accurately describes what WorkItems
 
 ---
 
-## Quarkiverse Naming
+## Naming
 
 | Element | Value |
 |---|---|
-| GitHub repo | `mdproctor/quarkus-work` (→ `quarkiverse/quarkus-work` when submitted) |
+| GitHub repo | `casehubio/quarkus-work` |
 | groupId | `io.quarkiverse.work` |
 | Parent artifactId | `quarkus-work-parent` |
 | Runtime artifactId | `quarkus-work` |
@@ -36,6 +36,7 @@ Using `WorkItem` avoids naming conflicts and accurately describes what WorkItems
 | Deployment subpackage | `io.quarkiverse.work.deployment` |
 | Config prefix | `quarkus.work` |
 | Feature name | `workitems` |
+| Version | `0.2-SNAPSHOT` (published to GitHub Packages under casehubio org) |
 
 ---
 
@@ -59,7 +60,7 @@ WorkItems has **no dependency on CaseHub, Quarkus-Flow, or Qhorus** — it is th
 
 **Related projects (read only, for context):**
 - `~/claude/quarkus-qhorus` — agent communication mesh (Qhorus integration target)
-- `~/claude/casehub` — case orchestration engine (CaseHub integration target)
+- `~/dev/casehub-engine` — real CaseHub engine (CMMN + blackboard; **not** `~/claude/casehub` which is the stale POC)
 - `~/dev/quarkus-flow` — workflow engine (Quarkus-Flow integration target; uses CNCF Serverless Workflow SDK)
 - `~/claude/claudony` — integration layer; will surface WorkItems inbox in its dashboard
 
@@ -91,7 +92,25 @@ quarkus-work/
 │       └── SpawnedChild.java              — record: workItemId, callerRef
 ├── quarkus-work-core/                     — Jandex library module (groupId io.quarkiverse.work)
 │   └── src/main/java/io/quarkiverse/work/core/
-│       ├── filter/
+│       ├── strategy/
+│       │   ├── WorkBroker.java            — dispatches assignment via WorkerSelectionStrategy
+│       │   ├── LeastLoadedStrategy.java   — assigns to worker with fewest open items
+│       │   ├── ClaimFirstStrategy.java    — first-claim-wins strategy
+│       │   └── NoOpWorkerRegistry.java    — no-op registry (no candidates returned)
+│       └── policy/                        — claim SLA policies (ContinuationPolicy, FreshClockPolicy, etc.)
+│   Note: no JPA entities, no REST resources — pure CDI + quarkus-work-api. CaseHub depends on this directly.
+├── runtime/                               — Extension runtime module
+│   └── src/main/java/io/quarkiverse/work/runtime/
+│       ├── action/
+│       │   ├── ApplyLabelAction.java      — FilterAction: apply label to WorkItem
+│       │   ├── OverrideCandidateGroupsAction.java — FilterAction: replace candidate groups
+│       │   └── SetPriorityAction.java     — FilterAction: set WorkItem priority
+│       ├── config/WorkItemsConfig.java    — @ConfigMapping(prefix = "quarkus.work")
+│       ├── event/
+│       │   ├── WorkItemContextBuilder.java — toMap(WorkItem) for JEXL context maps
+│       │   ├── WorkItemEventBroadcaster.java — fires WorkItemLifecycleEvent via CDI
+│       │   └── WorkItemLifecycleEvent.java — extends WorkLifecycleEvent; source() returns Object (the WorkItem)
+│       ├── filter/                        — filter engine (moved from quarkus-work-core in #133)
 │       │   ├── FilterAction.java          — SPI: apply(Object workUnit, FilterDefinition)
 │       │   ├── FilterDefinition.java      — filter rule definition value object
 │       │   ├── FilterEvent.java           — event fired after filter evaluation
@@ -102,22 +121,6 @@ quarkus-work/
 │       │   ├── JexlConditionEvaluator.java — JEXL expression evaluator
 │       │   ├── PermanentFilterRegistry.java — CDI-discovered static FilterAction registry
 │       │   └── DynamicFilterRegistry.java — runtime-editable filter rule registry
-│       └── strategy/
-│           ├── WorkBroker.java            — dispatches assignment via WorkerSelectionStrategy
-│           ├── LeastLoadedStrategy.java   — assigns to worker with fewest open items
-│           ├── ClaimFirstStrategy.java    — first-claim-wins strategy
-│           └── NoOpWorkerRegistry.java    — no-op registry (no candidates returned)
-├── runtime/                               — Extension runtime module
-│   └── src/main/java/io/quarkiverse/workitems/runtime/
-│       ├── action/
-│       │   ├── ApplyLabelAction.java      — FilterAction: apply label to WorkItem
-│       │   ├── OverrideCandidateGroupsAction.java — FilterAction: replace candidate groups
-│       │   └── SetPriorityAction.java     — FilterAction: set WorkItem priority
-│       ├── config/WorkItemsConfig.java    — @ConfigMapping(prefix = "quarkus.work")
-│       ├── event/
-│       │   ├── WorkItemContextBuilder.java — toMap(WorkItem) for JEXL context maps
-│       │   ├── WorkItemEventBroadcaster.java — fires WorkItemLifecycleEvent via CDI
-│       │   └── WorkItemLifecycleEvent.java — extends WorkLifecycleEvent; source() returns Object (the WorkItem)
 │       ├── model/
 │       │   ├── WorkItem.java              — PanacheEntity (the core concept); callerRef field for spawn routing
 │       │   ├── WorkItemStatus.java        — enum: PENDING|ASSIGNED|IN_PROGRESS|...
@@ -141,10 +144,10 @@ quarkus-work/
 │           ├── WorkItemSpawnResource.java — POST /workitems/{id}/spawn, GET/DELETE /workitems/{id}/spawn-groups
 │           └── SpawnGroupResource.java    — GET /spawn-groups/{id}
 ├── deployment/                            — Extension deployment (build-time) module
-│   └── src/main/java/io/quarkiverse/workitems/deployment/
+│   └── src/main/java/io/quarkiverse/work/deployment/
 │       └── WorkItemsProcessor.java        — @BuildStep: FeatureBuildItem
 ├── testing/                               — Test utilities module (quarkus-work-testing)
-│   └── src/main/java/io/quarkiverse/workitems/testing/
+│   └── src/main/java/io/quarkiverse/work/testing/
 │       ├── InMemoryWorkItemStore.java     — ConcurrentHashMap-backed, no datasource needed
 │       └── InMemoryAuditEntryStore.java   — list-backed
 ├── docs/
@@ -167,10 +170,10 @@ quarkus-work/
 - `integration-tests/` — `@QuarkusIntegrationTest` suite and native image validation (19 tests, 0.084s native startup)
 
 **Future integration modules (not yet scaffolded):**
-- `workitems-casehub/` — CaseHub `WorkerRegistry` adapter (blocked: CaseHub not yet complete)
-- `workitems-qhorus/` — Qhorus MCP tools (`request_approval`, `check_approval`, `wait_for_approval`) (blocked: Qhorus not yet complete)
-- `workitems-mongodb/` — MongoDB-backed `WorkItemStore`
-- `workitems-redis/` — Redis-backed `WorkItemStore`
+- CaseHub adapter — lives in casehub-engine repo, not here (see `docs/architecture/LAYERING.md`)
+- `quarkus-work-qhorus/` — Qhorus MCP tools (`request_approval`, `check_approval`, `wait_for_approval`) (blocked: Qhorus not yet complete)
+- `quarkus-work-persistence-mongodb/` — MongoDB-backed `WorkItemStore`
+- `quarkus-work-persistence-redis/` — Redis-backed `WorkItemStore`
 
 ---
 
@@ -232,7 +235,7 @@ JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn install -DskipTests -f ~/claude/qu
 - Hibernate bytecode-enhanced entities return `null`/`0` for all fields when accessed via `Field.get(entity)` reflection — Hibernate stores values in a generated subclass, not in the parent field slots. Use direct field access (`entity.fieldName`) to build context maps or projections; use a drift-protection test to catch new fields (see `JexlConditionEvaluatorTest.toMap_containsAllPublicNonStaticWorkItemFields`).
 - Use `quarkus-junit` (not `quarkus-junit5`, which is deprecated and triggers a Maven relocation warning on every build). For pure-Java modules with no `@QuarkusTest`, use plain `org.junit.jupiter:junit-jupiter` instead.
 - `WorkItemLifecycleEvent.source()` returns `Object` (the `WorkItem` entity), not the CloudEvents URI string — call `.sourceUri()` to get the URI. The method is inherited from `WorkLifecycleEvent` and intentionally typed `Object` so the base event is WorkItem-agnostic.
-- `FilterAction.apply()` takes `Object workUnit` — implementations must cast to `WorkItem`. The signature is generic so `quarkus-work-core` remains independent of the WorkItem model.
+- `FilterAction.apply()` takes `Object workUnit` — implementations must cast to `WorkItem`. The filter engine now lives in `runtime/filter/` (moved from `quarkus-work-core` in #133); `quarkus-work-core` has no filter classes.
 - `EscalationPolicy.escalate(WorkLifecycleEvent)` replaces the old two-method interface — check `event.eventType()` to distinguish `WorkEventType.EXPIRED` (ExpiryCleanupJob) from `WorkEventType.CLAIM_EXPIRED` (ClaimDeadlineJob) and handle each branch accordingly.
 - `FilterRegistryEngine` observes `WorkLifecycleEvent` (the base type from `quarkus-work-api`), not the workitems-specific `WorkItemLifecycleEvent` — use `WorkItemLifecycleEvent` when firing events from runtime code so the engine picks them up via CDI observer inheritance.
 - `CapabilitiesSkillProfileProvider` and `ResolutionHistorySkillProfileProvider` are `@Alternative` — only `WorkerProfileSkillProfileProvider` is the default `SkillProfileProvider`. Activate the alternatives via CDI `@Alternative @Priority(1)` in your application.
@@ -266,22 +269,22 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home
 ## Work Tracking
 
 **Issue tracking:** enabled
-**GitHub repo:** mdproctor/quarkus-work
+**GitHub repo:** casehubio/quarkus-work
 
 **Active epics** — priority order for market leadership:
 
 | Priority | # | Epic | Status | First child |
 |---|---|---|---|---|
-| 1 | #100 | AI-Native Features — confidence gating, semantic routing | **active** | #112 ✅ confidenceScore, #113 ✅ filter-registry, #114 ✅ LowConfidenceFilter, #115 ✅ quarkus-work-api SPI, #116 ✅ WorkItemAssignmentService+strategies, #118 ✅ quarkus-work-api/work-core separation, #121 ✅ semantic skill matching; remaining: AI-suggested resolution, escalation summarisation |
-| 2 | #101 | Business-Hours Deadlines — SLA in working hours | **active** | BusinessCalendar SPI |
-| 3 | #102 | Workload-Aware Routing — least-loaded assignment | ✅ complete | #115 ✅ shared SPI, #116 ✅ LeastLoadedStrategy wired. RoundRobinStrategy deferred (#117). |
-| 4 | #103 | Notifications — Slack/Teams/email/webhook on lifecycle events | **active** | quarkus-work-notifications module |
-| 5 | #104 | SLA Compliance Reporting — breach rates, actor performance | **active** | GET /workitems/reports/sla-breaches |
-| 6 | #105 | Subprocess Spawning — template-driven child WorkItems | **active** | WorkItemSpawnRule entity |
-| 7 | #106 | Multi-Instance Tasks — M-of-N parallel completion | **active** | MultiInstanceConfig on template |
+| 1 | #101 | Business-Hours Deadlines — SLA in working hours | **active** | BusinessCalendar SPI |
+| 2 | #103 | Notifications — Slack/Teams/email/webhook on lifecycle events | **active** | quarkus-work-notifications module |
+| 3 | #104 | SLA Compliance Reporting — breach rates, actor performance | **active** | GET /workitems/reports/sla-breaches |
+| 4 | #106 | Multi-Instance Tasks — M-of-N parallel completion | **active** (design needed — may be CaseHub concern) | — |
 | — | #92 | Distributed WorkItems — clustering + federation | future | #93 (SSE) implementable now |
 | — | #79 | External System Integrations | blocked | CaseHub/Qhorus not stable |
 | — | #39 | ProvenanceLink (PROV-O causal graph) | blocked | Awaiting #79 |
+| ✅ | #100 | AI-Native Features — confidence gating, semantic routing | complete | #112–#126 all done |
+| ✅ | #102 | Workload-Aware Routing — least-loaded assignment | complete | #115, #116. RoundRobinStrategy deferred (#117). |
+| ✅ | #105 | Subprocess Spawning | complete | #127–#132 all done |
 | ✅ | #98 | Form Schema — payload/resolution JSON Schema | complete | #107 ✅, #108 ✅ |
 | ✅ | #99 | Audit History Query API — cross-WorkItem search | complete | #109 ✅, #110 ✅, #111 ✅ |
 | ✅ | #77,78,80,81 | Collaboration, Queue Intelligence, Storage, Platform | complete | — |
