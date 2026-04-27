@@ -113,6 +113,17 @@ Maven multi-module layout following Quarkiverse conventions:
 
 No completion state — that belongs to the caller (CaseHub's `Stage.requiredItemIds`). V18 migration.
 
+**Business-hours SLA fields** — V19 migration adds two columns to `work_item_template`:
+
+| Field | Location | Notes |
+|---|---|---|
+| `expiresAtBusinessHours` | `WorkItemCreateRequest` | Resolved to absolute `expiresAt` via `BusinessCalendar` at create time. Precedence: absolute field wins if both provided. |
+| `claimDeadlineBusinessHours` | `WorkItemCreateRequest` | Resolved to absolute `claimDeadline` via `BusinessCalendar`. Same precedence rule. |
+| `defaultExpiryBusinessHours` | `WorkItemTemplate` | Passed through to spawned/instantiated WorkItems. |
+| `defaultClaimBusinessHours` | `WorkItemTemplate` | Passed through to spawned/instantiated WorkItems. |
+
+`BusinessCalendar` SPI (`quarkus-work-api`): `addBusinessDuration(Instant, Duration, ZoneId)` and `isBusinessHour(Instant, ZoneId)`. Default implementation reads `quarkus.work.business-hours.*` config (timezone, start/end, work-days, holidays list). `HolidayCalendar` SPI (`quarkus-work-api`): pluggable holiday data source. Default: static config list. Optional: iCal feed via `quarkus.work.business-hours.holiday-ical-url`. Override: provide any `@ApplicationScoped HolidayCalendar` bean — takes precedence via `@DefaultBean` producer.
+
 **WorkItemLabel (`runtime/model/`)** — each entry:
 
 | Field | Type | Notes |
