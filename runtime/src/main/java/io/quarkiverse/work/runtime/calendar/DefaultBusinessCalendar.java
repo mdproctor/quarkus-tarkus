@@ -13,7 +13,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 
 import io.quarkiverse.work.api.BusinessCalendar;
@@ -44,7 +43,7 @@ public class DefaultBusinessCalendar implements BusinessCalendar {
     private final Set<DayOfWeek> workDays;
 
     @Inject
-    Instance<HolidayCalendar> holidayCalendar;
+    HolidayCalendar holidayCalendar;
 
     /** Test-only override — set directly in unit tests to avoid CDI. */
     HolidayCalendar holidayCalendarForTest;
@@ -132,8 +131,7 @@ public class DefaultBusinessCalendar implements BusinessCalendar {
             return false;
         }
         final LocalDate date = zdt.toLocalDate();
-        final HolidayCalendar holidays = holidayCalendarForTest != null ? holidayCalendarForTest
-                : (holidayCalendar != null && !holidayCalendar.isUnsatisfied() ? holidayCalendar.get() : null);
+        final HolidayCalendar holidays = holidayCalendarForTest != null ? holidayCalendarForTest : holidayCalendar;
         if (holidays != null && holidays.isHoliday(date, zone)) {
             return false;
         }
