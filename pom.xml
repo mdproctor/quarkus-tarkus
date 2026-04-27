@@ -37,6 +37,7 @@ Standalone Quarkiverse extension with optional integrations for Quarkus-Flow, Ca
     <module>quarkus-work-persistence-mongodb</module>
     <module>quarkus-work-issue-tracker</module>
     <module>quarkus-work-ai</module>
+    <module>quarkus-work-reports</module>
 
     <module>integration-tests</module>
   </modules>

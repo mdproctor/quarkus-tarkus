@@ -197,8 +197,12 @@ quarkus-work/
   - `service/`: `NotificationDispatcher` — AFTER_SUCCESS CDI observer, async delivery via virtual threads, rule matching by eventType + category
   - `channel/`: `HttpWebhookChannel` (HMAC-SHA256 signing), `SlackNotificationChannel` (Incoming Webhooks), `TeamsNotificationChannel` (Adaptive Cards)
   - SPIs in `quarkus-work-api`: `NotificationChannel` (channelType + send), `NotificationPayload` — custom channels implement `NotificationChannel` as `@ApplicationScoped` CDI bean
+- `quarkus-work-reports/` — optional SLA compliance reporting module. Zero cost when absent. 68 tests.
+  - `api/`: `ReportResource` — `GET /workitems/reports/sla-breaches`, `/actors/{actorId}`, `/throughput?groupBy=day|week|month`, `/queue-health`
+  - `service/`: `ReportService` (@CacheResult Caffeine 5-min TTL), `ThroughputBucketAggregator` (pure Java day→week/month rollup), response records (`SlaBreachReport`, `ActorReport`, `ThroughputReport`, `QueueHealthReport`)
+  - Query strategy: HQL `CAST(date_trunc('day', w.createdAt) AS LocalDate)` + GROUP BY for throughput; JPQL COUNT/AVG aggregates for queue-health; JPQL GROUP BY for actor byCategory (no N+1)
 - `quarkus-work-examples/` — runnable scenario demos; covers ledger/audit, spawn, business-hours, each runs via `POST /examples/{name}/run`
-- `integration-tests/` — `@QuarkusIntegrationTest` suite and native image validation (19 tests, 0.084s native startup)
+- `integration-tests/` — `@QuarkusIntegrationTest` suite and native image validation (25 tests including 6 report smoke tests)
 
 **Future integration modules (not yet scaffolded):**
 - CaseHub adapter — lives in casehub-engine repo, not here (see `docs/architecture/LAYERING.md`)
@@ -245,6 +249,53 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home \
 
 **Use `mvn` not `./mvnw`** — maven wrapper not configured on this machine.
 
+---
+
+## Build Discipline (AI agents — read this before running any Maven command)
+
+**Never run `mvn install` or `mvn test` without `-pl <module>`.** The full project has 20+ modules; a full build takes 5+ minutes and will time out in any AI tool context window. Always target the specific module you changed.
+
+**Use the helper scripts in `scripts/` — they enforce hard timeouts and exit clearly:**
+
+```bash
+# Test a single module (90s timeout — exits with clear error if exceeded)
+scripts/mvn-test <module>
+scripts/mvn-test <module> -Dtest=SpecificTestClass
+
+# Install a module to local Maven repo so dependents can resolve it (60s timeout)
+scripts/mvn-install <module>
+
+# Compile a module's main + test sources without running tests (45s timeout)
+scripts/mvn-compile <module>
+
+# Test multiple modules sequentially, fail-fast on first failure
+scripts/check-build runtime quarkus-work-reports
+```
+
+**Standard workflow after changing module X:**
+```bash
+scripts/mvn-test X                        # verify tests pass
+scripts/mvn-install X                     # publish to local Maven repo
+scripts/mvn-compile <dependent-of-X>      # verify dependent still compiles
+```
+
+**Never specify `timeout` > default in Bash tool calls.** Specifying a large timeout silently converts the command to a background task with output written to an unreadable temp file. The default (120s) runs synchronously. If your command needs more than 120s, break it into smaller pieces using the scripts above.
+
+**Expected test times per module** (use as a sanity check — if a module takes longer, something is wrong):
+
+| Module | Expected |
+|---|---|
+| quarkus-work-api | < 5s |
+| quarkus-work-core | < 10s |
+| runtime | < 60s |
+| quarkus-work-reports | < 45s |
+| quarkus-work-notifications | < 30s |
+| quarkus-work-ai | < 30s |
+| quarkus-work-queues | < 30s |
+| quarkus-work-ledger | < 30s |
+
+---
+
 **`quarkus-ledger` prerequisite:** `quarkus-work-ledger` depends on `io.quarkiverse.ledger:quarkus-ledger:0.2-SNAPSHOT` — a sibling project at `~/claude/quarkus-ledger/`. If the build fails with "Could not find artifact", install it first:
 ```bash
 JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn install -DskipTests -f ~/claude/quarkus-ledger/pom.xml
@@ -275,6 +326,9 @@ JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn install -DskipTests -f ~/claude/qu
 - Spawn group cascade cancellation is scoped to the specific group via `createdBy = "system:spawn:{groupId}"` — `DELETE /workitems/{id}/spawn-groups/{gid}?cancelChildren=true` cancels only children from that group, not all children of the parent.
 - Spawn idempotency key is scoped per parent — the same key on different parents creates separate groups; uniqueness is `(parent_id, idempotency_key)`.
 - `quarkus-work-ledger` depends on `io.quarkiverse.ledger:quarkus-ledger:0.2-SNAPSHOT` — update this version when `quarkus-ledger` changes its own version. The prerequisite note below is stale; use `0.2-SNAPSHOT`.
+- `@CacheResult` on `ReportService` methods accepts nullable parameters — Quarkus 3.x `CompositeCacheKey` handles nulls correctly via `Arrays.hashCode`; the cache key for `slaBreaches(null, null, null, null)` is stable and shared across unfiltered calls. Use a `from` filter in tests that call the endpoint unfiltered AND need fresh data (cache TTL is 1s in test `application.properties`).
+- `PostgresDialectValidationTest` is `@Disabled` — Quarkus augments the datasource driver at build time; switching from H2 to PostgreSQL at runtime via `@TestProfile` fails with "Bean is not active" because the augmented artifact was compiled for H2. To run PostgreSQL dialect validation, build the module with a PostgreSQL-backed `application.properties` (no H2 URL) and remove `@Disabled`.
+- `CAST(date_trunc('day', w.createdAt) AS LocalDate)` in HQL — the explicit `CAST AS LocalDate` ensures Hibernate 6 returns `java.time.LocalDate` in the result set regardless of dialect, avoiding type ambiguity between H2 and PostgreSQL.
 
 ---
 
@@ -308,7 +362,7 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home
 |---|---|---|---|---|
 | 1 | #101 | Business-Hours Deadlines — SLA in working hours | ✅ complete | BusinessCalendar, HolidayCalendar SPIs; DefaultBusinessCalendar, ICalHolidayCalendar, HolidayCalendarProducer; V19 migration; expiresAtBusinessHours/claimDeadlineBusinessHours on template + request; example scenario |
 | 2 | #103 | Notifications — Slack/Teams/webhook on lifecycle events | ✅ complete | #140 ✅ SPI+dispatcher+CRUD, #141 ✅ HTTP/Slack/Teams channels |
-| 3 | #104 | SLA Compliance Reporting — breach rates, actor performance | **active** | GET /workitems/reports/sla-breaches |
+| ✅ | #104 | SLA Compliance Reporting — breach rates, actor performance | ✅ complete | `quarkus-work-reports` optional module; sla-breaches, actors, throughput, queue-health; 68 tests |
 | 4 | #106 | Multi-Instance Tasks — M-of-N parallel completion | **active** (design needed — may be CaseHub concern) | — |
 | — | #92 | Distributed WorkItems — clustering + federation | future | #93 (SSE) implementable now |
 | — | #79 | External System Integrations | blocked | CaseHub/Qhorus not stable |

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Install a single module to the local Maven repo (skip tests).
+# Exits 1 with a clear message if the command exceeds 60 seconds.
+#
+# Usage: scripts/mvn-install <module>
+# Example: scripts/mvn-install quarkus-work-reports
+#
+# Never install the whole project — use this per-module, then compile dependents separately.
+
+set -euo pipefail
+
+if [ $# -lt 1 ]; then
+  echo "Usage: scripts/mvn-install <module>" >&2
+  exit 1
+fi
+
+MODULE="$1"
+JAVA_HOME=$(/usr/libexec/java_home -v 26)
+export JAVA_HOME
+
+TIMEOUT=60
+echo "==> mvn install -DskipTests -pl ${MODULE} (timeout ${TIMEOUT}s)"
+
+if ! timeout "${TIMEOUT}" mvn install -DskipTests -pl "${MODULE}" 2>&1; then
+  EXIT=$?
+  if [ $EXIT -eq 124 ]; then
+    echo "TIMEOUT: Install of '${MODULE}' exceeded ${TIMEOUT}s." >&2
+    echo "Fix: check for slow annotation processing or excessive resource copying." >&2
+  fi
+  exit $EXIT
+fi
