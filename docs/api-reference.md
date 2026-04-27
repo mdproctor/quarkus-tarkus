@@ -1135,3 +1135,121 @@ curl -X DELETE /worker-skill-profiles/alice
 | `narrative` | string | Free-text skill description used by the embedding matcher |
 | `createdAt` | ISO-8601 instant | When the profile was first created |
 | `updatedAt` | ISO-8601 instant | When the profile was last updated |
+
+---
+
+## Reports API (`quarkus-work-reports` module)
+
+Optional module — add `quarkus-work-reports` to your application to activate these endpoints. Zero cost when absent.
+
+All endpoints return `application/json`. All timestamps are ISO-8601.
+
+### GET /workitems/reports/sla-breaches
+
+Returns WorkItems that breached their `expiresAt` deadline.
+
+**Query parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `from` | ISO-8601 instant | No | Include only items whose `expiresAt` ≥ from |
+| `to` | ISO-8601 instant | No | Include only items whose `expiresAt` ≤ to |
+| `category` | string | No | Filter to this category |
+| `priority` | enum | No | Filter to this priority (LOW\|NORMAL\|HIGH\|CRITICAL) |
+
+**Breach definition:** active item past `expiresAt`, OR terminal item where `completedAt > expiresAt`. Items with no `expiresAt` are excluded.
+
+**Example response:**
+```json
+{
+  "items": [
+    {
+      "workItemId": "uuid",
+      "category": "onboarding",
+      "priority": "HIGH",
+      "expiresAt": "2026-04-25T09:00:00Z",
+      "completedAt": "2026-04-25T11:32:00Z",
+      "status": "COMPLETED",
+      "breachDurationMinutes": 152
+    }
+  ],
+  "summary": {
+    "totalBreached": 3,
+    "avgBreachDurationMinutes": 94.5,
+    "byCategory": { "onboarding": 2, "review": 1 }
+  }
+}
+```
+
+---
+
+### GET /workitems/reports/actors/{actorId}
+
+Returns a performance summary for a single actor derived from audit history.
+
+**Query parameters:** `from`, `to` (ISO-8601), `category`
+
+**Example response:**
+```json
+{
+  "actorId": "alice",
+  "totalAssigned": 12,
+  "totalCompleted": 9,
+  "totalRejected": 1,
+  "avgCompletionMinutes": 47.3,
+  "byCategory": { "onboarding": 5, "review": 4 }
+}
+```
+
+`avgCompletionMinutes` is `assignedAt → completedAt`, null when no completions in range.
+
+---
+
+### GET /workitems/reports/throughput
+
+Created/completed counts over time, grouped by day, week, or month.
+
+**Query parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `from` | ISO-8601 instant | **Yes** | Start of range (unbounded scan not permitted) |
+| `to` | ISO-8601 instant | **Yes** | End of range |
+| `groupBy` | string | No | `day` (default), `week`, or `month` |
+
+**Example response:**
+```json
+{
+  "from": "2026-04-01T00:00:00Z",
+  "to": "2026-04-27T23:59:59Z",
+  "groupBy": "week",
+  "buckets": [
+    { "period": "2026-W14", "created": 12, "completed": 8 },
+    { "period": "2026-W15", "created": 18, "completed": 15 }
+  ]
+}
+```
+
+Period format: `yyyy-MM-dd` (day), `yyyy-Www` (ISO week), `yyyy-MM` (month). Created and completed counts are independent — an in-flight WorkItem contributes to `created` but not `completed`.
+
+---
+
+### GET /workitems/reports/queue-health
+
+Point-in-time snapshot of the current queue state.
+
+**Query parameters:** `category`, `priority` (optional filters)
+
+**Example response:**
+```json
+{
+  "timestamp": "2026-04-27T17:00:00Z",
+  "overdueCount": 5,
+  "pendingCount": 23,
+  "avgPendingAgeSeconds": 7200,
+  "oldestUnclaimedCreatedAt": "2026-04-25T10:00:00Z",
+  "criticalOverdueCount": 2
+}
+```
+
+`oldestUnclaimedCreatedAt` is `null` when no PENDING items match the filter. `criticalOverdueCount` is always ≤ `overdueCount`.
