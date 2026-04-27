@@ -35,8 +35,8 @@ public class ReportResource {
             @QueryParam("category") final String category,
             @QueryParam("priority") final String priority) {
         return reportService.slaBreaches(
-                from != null ? Instant.parse(from) : null,
-                to != null ? Instant.parse(to) : null,
+                parseInstant(from, "from"),
+                parseInstant(to, "to"),
                 category,
                 parsePriority(priority));
     }
@@ -50,8 +50,8 @@ public class ReportResource {
             @QueryParam("category") final String category) {
         return reportService.actorPerformance(
                 actorId,
-                from != null ? Instant.parse(from) : null,
-                to != null ? Instant.parse(to) : null,
+                parseInstant(from, "from"),
+                parseInstant(to, "to"),
                 category);
     }
 
@@ -71,7 +71,7 @@ public class ReportResource {
                     "Invalid groupBy '" + groupBy + "': must be day, week, or month",
                     Response.Status.BAD_REQUEST);
         }
-        return reportService.throughput(Instant.parse(from), Instant.parse(to), groupBy);
+        return reportService.throughput(parseInstant(from, "from"), parseInstant(to, "to"), groupBy);
     }
 
     @GET
@@ -91,6 +91,19 @@ public class ReportResource {
         } catch (final IllegalArgumentException e) {
             throw new WebApplicationException(
                     "Invalid priority: " + priority, Response.Status.BAD_REQUEST);
+        }
+    }
+
+    private static Instant parseInstant(final String value, final String paramName) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return Instant.parse(value);
+        } catch (final java.time.format.DateTimeParseException e) {
+            throw new WebApplicationException(
+                    "Invalid ISO 8601 timestamp for '" + paramName + "': " + value,
+                    Response.Status.BAD_REQUEST);
         }
     }
 }
