@@ -25,6 +25,13 @@ The core extension is unchanged whether this module is present or not.</descript
       <version>${project.version}</version>
     </dependency>
 
+    <!-- CaseHub connectors — Slack, Teams, Twilio SMS, WhatsApp (HTTP-based, zero extra deps) -->
+    <dependency>
+      <groupId>io.casehubio</groupId>
+      <artifactId>casehub-connectors</artifactId>
+      <version>0.2-SNAPSHOT</version>
+    </dependency>
+
     <!-- CDI, REST, ORM, Flyway -->
     <dependency>
       <groupId>io.quarkus</groupId>
