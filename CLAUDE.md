@@ -306,7 +306,7 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home
 
 | Priority | # | Epic | Status | First child |
 |---|---|---|---|---|
-| 1 | #101 | Business-Hours Deadlines — SLA in working hours | **active** | BusinessCalendar SPI |
+| 1 | #101 | Business-Hours Deadlines — SLA in working hours | ✅ complete | BusinessCalendar, HolidayCalendar SPIs; DefaultBusinessCalendar, ICalHolidayCalendar, HolidayCalendarProducer; V19 migration; expiresAtBusinessHours/claimDeadlineBusinessHours on template + request; example scenario |
 | 2 | #103 | Notifications — Slack/Teams/webhook on lifecycle events | ✅ complete | #140 ✅ SPI+dispatcher+CRUD, #141 ✅ HTTP/Slack/Teams channels |
 | 3 | #104 | SLA Compliance Reporting — breach rates, actor performance | **active** | GET /workitems/reports/sla-breaches |
 | 4 | #106 | Multi-Instance Tasks — M-of-N parallel completion | **active** (design needed — may be CaseHub concern) | — |
