@@ -14,16 +14,36 @@ current queue health — without requiring a data warehouse or custom SQL.
 
 ---
 
+## Module Design — `quarkus-work-reports`
+
+Reporting is an **optional module**, not part of the core `runtime`. Users who only need
+WorkItem lifecycle management pay nothing — no extra classpath, no extra CDI beans, no extra
+REST surface, no Caffeine on the native image.
+
+This follows the same pattern as `quarkus-work-notifications`, `quarkus-work-queues`,
+`quarkus-work-ledger`, and `quarkus-work-ai` — all optional, all separate JARs.
+
+`quarkus-work-reports` is a **Jandex library module** (not a full Quarkus extension):
+- Depends on `quarkus-work` (runtime) for entity and repository access
+- Declares `@Path` and `@ApplicationScoped` CDI beans discovered via Jandex
+- Uses `io.smallrye:jandex-maven-plugin` so beans are discovered when consumed as a JAR
+- No deployment module needed
+
+The existing scaffold (`ReportResource.java`, test stubs in `runtime/`) moves into this
+new module. The files do not stay in `runtime/`.
+
+---
+
 ## Scope
 
 | Endpoint | Description | State |
 |---|---|---|
-| `GET /workitems/reports/sla-breaches` | WorkItems that missed their `expiresAt` deadline | scaffold exists |
-| `GET /workitems/reports/actors/{actorId}` | Performance summary for one actor | scaffold exists |
+| `GET /workitems/reports/sla-breaches` | WorkItems that missed their `expiresAt` deadline | scaffold → move to new module |
+| `GET /workitems/reports/actors/{actorId}` | Performance summary for one actor | scaffold → move to new module |
 | `GET /workitems/reports/throughput` | Created/completed counts over time, grouped by day/week/month | new |
 | `GET /workitems/reports/queue-health` | Current overdue count, avg PENDING age, oldest unclaimed | new |
 
-All four endpoints live in `ReportResource` (`/workitems/reports`).
+All four endpoints live in `ReportResource` (`/workitems/reports`) inside `quarkus-work-reports`.
 
 ---
 
@@ -106,7 +126,9 @@ Response:
 
 ### `GET /workitems/reports/throughput`
 
-Query params: `from` (ISO 8601, required), `to` (ISO 8601, required), `groupBy` (`day` | `week` | `month`, default `day`)
+Query params: `from` (ISO 8601, **required**), `to` (ISO 8601, **required**), `groupBy` (`day` | `week` | `month`, default `day`)
+
+Returns HTTP 400 if `from` or `to` is absent — an unbounded throughput scan is not permitted.
 
 Response:
 ```json
@@ -146,36 +168,54 @@ Response:
 
 ## Architecture
 
-### Classes
+### Module structure
 
 ```
-runtime/src/main/java/io/quarkiverse/work/runtime/
-└── api/
-    ├── ReportResource.java          — all four endpoints; injects ReportService
-    └── report/
-        ├── ReportService.java       — all aggregate queries; @ApplicationScoped
-        ├── SlaBreachReport.java     — response record (items + summary)
-        ├── SlaBreachItem.java       — per-item breach record
-        ├── SlaSummary.java          — totalBreached, avgBreachDurationMinutes, byCategory
-        ├── ActorReport.java         — response record
-        ├── ThroughputReport.java    — from, to, groupBy, buckets
-        ├── ThroughputBucket.java    — period label + created + completed counts
-        └── QueueHealthReport.java   — timestamp + overdue/pending counts + ages
+quarkus-work-reports/
+├── pom.xml                                    — depends on quarkus-work (runtime); quarkus-cache; jandex plugin
+└── src/
+    ├── main/java/io/quarkiverse/work/reports/
+    │   ├── api/
+    │   │   └── ReportResource.java            — thin HTTP adapter; injects ReportService
+    │   └── service/
+    │       ├── ReportService.java             — all aggregate queries; @ApplicationScoped
+    │       ├── SlaBreachReport.java           — response record (items + summary)
+    │       ├── SlaBreachItem.java             — per-item breach record
+    │       ├── SlaSummary.java                — totalBreached, avgBreachDurationMinutes, byCategory
+    │       ├── ActorReport.java               — response record
+    │       ├── ThroughputReport.java          — from, to, groupBy, buckets list
+    │       ├── ThroughputBucket.java          — period label + created + completed counts
+    │       ├── ThroughputBucketAggregator.java — pure Java day→week/month rollup logic
+    │       └── QueueHealthReport.java         — timestamp + overdue/pending counts + ages
+    └── test/java/io/quarkiverse/work/reports/
+        ├── service/
+        │   └── ThroughputBucketAggregatorTest.java  — pure unit tests, no DB
+        └── api/
+            ├── SlaBreachReportTest.java
+            ├── ActorPerformanceReportTest.java
+            ├── ThroughputReportTest.java
+            └── QueueHealthReportTest.java
 ```
 
 `ReportResource` is a thin HTTP adapter — no business logic. `ReportService` owns all
-queries and assembly. This boundary enables unit-testing the service without HTTP.
+queries and assembly. `ThroughputBucketAggregator` is pure Java with no dependencies —
+fully unit-testable without Quarkus or a DB.
 
-### Refactoring of existing scaffold
+### Relocation of existing scaffold
 
-The current `ReportResource` has business logic inline and two bugs:
+The files currently in `runtime/` must move to `quarkus-work-reports/`:
+- `runtime/src/main/java/.../api/ReportResource.java` → `quarkus-work-reports/...`
+- `runtime/src/test/.../api/SlaBreachReportTest.java` → `quarkus-work-reports/...`
+- `runtime/src/test/.../api/ActorPerformanceReportTest.java` → `quarkus-work-reports/...`
+
+The scaffold code also needs the N+1 bug fixed and epic refs corrected (see below).
+
+### Bugs fixed in the existing scaffold
 
 1. **N+1 in `computeByCategory`** — loads WorkItem entities in a loop via `em.find()`.
-   Replace with a JPQL `GROUP BY w.category COUNT(w)` projection.
+   Replace with a JPQL `GROUP BY w.category, COUNT(w)` projection.
 2. **Wrong epic references** — Javadoc cites `#99` and `#110`/`#111`. Update to `#104`
    and the correct child issue numbers once created.
-
-The refactor moves all query logic out of `ReportResource` into `ReportService`.
 
 ---
 
@@ -196,11 +236,13 @@ ORDER BY date_trunc('day', w.createdAt)
 Hibernate 6 translates `date_trunc` per dialect — H2 2.x and PostgreSQL both supported
 at `'day'` granularity. A second query does the same for `completedAt` on terminal items.
 
-For `groupBy=week` and `groupBy=month`, the day buckets are merged in Java:
+`ThroughputBucketAggregator` then merges day buckets in Java:
 - **Week:** ISO week (`yyyy-'W'ww` via `IsoFields.WEEK_OF_WEEK_BASED_YEAR`)
 - **Month:** calendar month (`yyyy-MM`)
 
-This avoids dialect inconsistency in week semantics (PostgreSQL ISO week vs MySQL calendar week).
+This avoids dialect inconsistency in week semantics (PostgreSQL ISO week vs MySQL calendar
+week). The DB still does all the grouping work; Java only merges the already-small day
+result set (≤ 365 rows per year).
 
 ### Queue health — JPQL aggregates
 
@@ -228,58 +270,66 @@ GROUP BY w.category
 
 ## Caching
 
-All four endpoints are read-heavy and their results change slowly. Add `quarkus-cache`
-dependency to `runtime/pom.xml` and annotate with `@CacheResult(cacheName = "reports")`.
+All four endpoints are read-heavy and results change slowly. `quarkus-cache` is a
+dependency of `quarkus-work-reports` only — not of `runtime`. Users who do not add
+`quarkus-work-reports` get no Caffeine on their classpath.
+
+Annotate service methods with `@CacheResult(cacheName = "reports")`.
 
 Cache TTL: 5 minutes (configurable via `quarkus.cache.caffeine.reports.expire-after-write=5M`).
 
-Cache is invalidated on application restart; no active invalidation needed (stale-by-up-to-5min
-is acceptable for reporting).
+Cache is invalidated on application restart; no active invalidation needed — stale-by-up-to-5min
+is acceptable for reporting.
 
 ### Query timeout
 
 Set `jakarta.persistence.query.timeout=30000` (30s) on all report queries as a safety valve
-against pathologically wide date ranges hitting unindexed data.
+against pathologically wide date ranges.
 
 ---
 
 ## Testing Strategy
 
-### Unit tests — `ReportServiceTest` and bucket math
+### Unit tests — `ThroughputBucketAggregatorTest`
 
-Test `ThroughputBucket` rollup logic in isolation (no DB, no HTTP):
+Pure Java, no DB, no Quarkus:
 - Day grouping: items on the same day land in the same bucket
 - Week grouping: items Mon–Sun of the same ISO week merge correctly
 - Month grouping: items across weeks in the same month merge correctly
-- Boundary: item at midnight UTC on day boundary lands in correct bucket
+- Boundary: item at midnight UTC lands in the correct bucket
 - Empty input: returns empty bucket list
+- Mixed: some days have created but no completed, and vice versa
 
 ### Integration tests — `@QuarkusTest` (H2)
 
-One test class per endpoint:
+One test class per endpoint. The module's `@QuarkusTest` suite runs against H2 in-memory
+with the full `quarkus-work` + `quarkus-work-reports` stack.
 
-**`SlaBreachReportTest`** (scaffold exists, extend):
+**`SlaBreachReportTest`** (scaffold exists, fix and extend):
 - Happy path: item completed after `expiresAt` appears in results
 - Happy path: item completed before `expiresAt` excluded
 - Open item past deadline included
 - Boundary: `completedAt == expiresAt` → on-time, not breached
-- Filter `from`/`to` by `expiresAt` window
+- No `expiresAt` → never appears in breach report
+- Filter `from`/`to` by `expiresAt` window — inside included, outside excluded
 - Filter `category` — only matching category returned
 - Filter `priority` — only matching priority returned
 - Summary: `totalBreached` matches `items.size()`
 - Summary: `avgBreachDurationMinutes` > 0 when breaches exist
-- Summary: `byCategory` groups correctly
-- E2E: mixed compliance — 2 breaches + 1 on-time, verify both lists
+- Summary: `byCategory` groups correctly across categories
+- E2E: 2 breaches + 1 on-time — both breach items present, on-time item absent
 
-**`ActorPerformanceReportTest`** (scaffold exists, extend):
+**`ActorPerformanceReportTest`** (scaffold exists, fix and extend):
 - Zero counts for actor with no activity
+- Unknown actor → 200 with all zero counts, no 404
 - `totalAssigned` increments per claim
 - `totalCompleted` increments per completion
 - `totalRejected` increments per rejection
 - `avgCompletionMinutes` is null when no completions
+- `avgCompletionMinutes` is `assignedAt → completedAt`, not `createdAt → completedAt`
 - `avgCompletionMinutes` ≥ 0 when completions exist
 - `byCategory` counts per category
-- `from`/`to` filter scopes counts correctly
+- `from`/`to` filter scopes counts; far-future `from` returns zeros
 - `category` filter scopes to that category only
 - E2E: 2 completed + 1 rejected + 1 in-flight — verify all counts
 
@@ -287,62 +337,54 @@ One test class per endpoint:
 - Happy path: items created/completed in range appear in correct day bucket
 - Items outside range excluded
 - `groupBy=day`: one bucket per day with activity
-- `groupBy=week`: items spanning same ISO week in one bucket
-- `groupBy=month`: items spanning same month in one bucket
-- No items in range: empty buckets list
-- Created and completed counts are independent
-- In-flight item (no `completedAt`): appears in created count only
+- `groupBy=week`: items spanning same ISO week land in one bucket
+- `groupBy=month`: items spanning same month land in one bucket
+- No items in range: empty `buckets` list
+- Created and completed counts are independent (in-flight item appears in created only)
 - Boundary: item at exactly `from`/`to` boundary is included
 - Missing `groupBy`: defaults to `day`
-- Response includes `from`, `to`, `groupBy` echoed back
+- Missing `from` or `to`: HTTP 400
+- Response echoes `from`, `to`, `groupBy`
 
 **`QueueHealthReportTest`** (new):
 - `pendingCount` reflects current PENDING items
 - `overdueCount` reflects active items past `expiresAt`
-- `criticalOverdueCount` is a subset of `overdueCount`
+- `criticalOverdueCount` is subset of `overdueCount`
 - `avgPendingAgeSeconds` ≥ 0
 - `oldestUnclaimedCreatedAt` is null when no PENDING items
-- `oldestUnclaimedCreatedAt` is not null when PENDING items exist
+- `oldestUnclaimedCreatedAt` present when PENDING items exist
 - Completed items excluded from all counts
 - `category` filter scopes all counts
 - `priority` filter scopes all counts
-- E2E: create mix of PENDING, overdue CRITICAL, completed — verify all fields
+- All items completed: all zero counts, null `oldestUnclaimedCreatedAt`
+- E2E: PENDING + overdue CRITICAL + completed — verify all fields correct
 
-### Correctness tests (within integration suite)
+### Robustness tests (within integration suite)
 
-- SLA: items with no `expiresAt` never appear in breach report
-- Throughput: `created` + `completed` counts can differ (in-flight items)
-- Actor: `avgCompletionMinutes` is `assignedAt → completedAt`, not `createdAt → completedAt`
-- Queue health: `overdueCount` only counts active statuses, not COMPLETED/CANCELLED
-
-### Robustness tests
-
-- SLA breach: empty result set (no breaches in range) → 200 with empty `items`, zero summary
-- Actor: unknown actor → 200 with all zero counts, no 404
-- Throughput: `from` == `to` (single instant) → 200 with zero or one bucket
-- Queue health: all items completed → all zero counts, null `oldestUnclaimedCreatedAt`
 - Invalid `priority` enum value → 400
-- Invalid ISO 8601 date → 400
-- Extremely wide date range (year 2000 to 2099) → 200 within timeout
+- Invalid ISO 8601 date string → 400
+- Extremely wide date range (2000–2099) → 200 within timeout
 
-### E2E / @QuarkusIntegrationTest
+### E2E — `@QuarkusIntegrationTest`
 
-Add `WorkItemReportNativeIT` to `integration-tests/` module:
-- Smoke each of the four endpoints: 200, correct JSON structure
-- One SLA breach scenario end-to-end
+Add `WorkItemReportNativeIT` to `integration-tests/` (add `quarkus-work-reports` as test
+dependency in that module):
+- Smoke all four endpoints: 200 + correct JSON structure
+- One full SLA breach scenario end-to-end
 
-### Testcontainers PostgreSQL dialect validation
+### Testcontainers PostgreSQL — dialect validation
 
-Add a `PostgresTestProfile` to `integration-tests/` using `quarkus-jdbc-postgresql` +
-Testcontainers. Run the throughput report `groupBy=day`, `groupBy=week`, `groupBy=month`
-against a real PostgreSQL instance to catch any HQL dialect divergence that H2 masks.
+Add a `PostgresTestProfile` in `quarkus-work-reports/src/test/` using `quarkus-jdbc-postgresql`
++ Testcontainers. Run the throughput report with `groupBy=day`, `groupBy=week`,
+`groupBy=month` against a real PostgreSQL instance. This is the drift guard for Hibernate 6
+HQL `date_trunc` dialect translation — H2 will not catch a PostgreSQL-specific regression.
 
 ---
 
 ## Documentation Updates
 
-- **`docs/DESIGN.md`** — add reporting section: endpoints, query strategy, caching approach
-- **`CLAUDE.md` project structure** — add `api/report/` subpackage with its classes
+- **`docs/DESIGN.md`** — add reporting section: module, endpoints, query strategy, caching
+- **`CLAUDE.md` project structure** — add `quarkus-work-reports/` module with its classes
 - **Javadoc** — correct all `@see` references from `#99` → `#104` and child issue numbers
 - **`docs/api-reference.md`** — add report endpoints with request/response examples
 
@@ -352,7 +394,7 @@ against a real PostgreSQL instance to catch any HQL dialect divergence that H2 m
 
 | # | Title |
 |---|---|
-| A | Refactor ReportResource: extract ReportService, fix N+1, correct epic refs |
+| A | Scaffold `quarkus-work-reports` module; relocate and fix existing SLA/actor scaffold |
 | B | Add throughput time-series endpoint with full TDD |
 | C | Add queue-health endpoint with full TDD |
 | D | Add E2E and Testcontainers PostgreSQL dialect tests for report endpoints |
