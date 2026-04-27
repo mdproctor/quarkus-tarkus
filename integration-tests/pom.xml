@@ -24,6 +24,13 @@ Contains a minimal Quarkus app embedding the extension, packaged and tested via
       <version>${project.version}</version>
     </dependency>
 
+    <!-- Optional reporting module -->
+    <dependency>
+      <groupId>io.quarkiverse.work</groupId>
+      <artifactId>quarkus-work-reports</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
     <!-- H2 datasource for integration tests -->
     <dependency>
       <groupId>io.quarkus</groupId>
