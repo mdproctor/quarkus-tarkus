@@ -8,6 +8,8 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -317,6 +319,72 @@ class WorkItemNativeIT {
                 .body("{\"resolution\":\"done\"}")
                 .when().put("/workitems/{id}/complete", id)
                 .then().statusCode(409);
+    }
+
+    // -------------------------------------------------------------------------
+    // Audit trail integrity in packaged mode
+    // -------------------------------------------------------------------------
+
+    // -------------------------------------------------------------------------
+    // Report endpoints — smoke tests (quarkus-work-reports module)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void reports_slaBreaches_returns200() {
+        given().get("/workitems/reports/sla-breaches")
+                .then().statusCode(200)
+                .body("items", notNullValue())
+                .body("summary", notNullValue());
+    }
+
+    @Test
+    void reports_actorPerformance_returns200() {
+        given().get("/workitems/reports/actors/smoke-actor")
+                .then().statusCode(200)
+                .body("actorId", equalTo("smoke-actor"))
+                .body("totalCompleted", notNullValue());
+    }
+
+    @Test
+    void reports_throughput_missingFrom_returns400() {
+        given().queryParam("to", "2026-04-27T00:00:00Z")
+                .get("/workitems/reports/throughput")
+                .then().statusCode(400);
+    }
+
+    @Test
+    void reports_throughput_returns200() {
+        given().queryParam("from", "2026-01-01T00:00:00Z")
+                .queryParam("to", "2026-12-31T23:59:59Z")
+                .queryParam("groupBy", "month")
+                .get("/workitems/reports/throughput")
+                .then().statusCode(200)
+                .body("buckets", notNullValue());
+    }
+
+    @Test
+    void reports_queueHealth_returns200() {
+        given().get("/workitems/reports/queue-health")
+                .then().statusCode(200)
+                .body("timestamp", notNullValue())
+                .body("overdueCount", notNullValue())
+                .body("pendingCount", notNullValue());
+    }
+
+    @Test
+    void reports_slaBreaches_e2e_breach_appears() {
+        final String expiresAt = Instant.now().minus(2, ChronoUnit.MINUTES).toString();
+        final String id = given().contentType(ContentType.JSON)
+                .body("{\"title\":\"IT Breach\",\"expiresAt\":\"" + expiresAt + "\",\"createdBy\":\"it\"}")
+                .post("/workitems").then().statusCode(201).extract().path("id");
+        given().put("/workitems/" + id + "/claim?claimant=it-actor").then().statusCode(200);
+        given().put("/workitems/" + id + "/start?actor=it-actor").then().statusCode(200);
+        given().contentType(ContentType.JSON).body("{}")
+                .put("/workitems/" + id + "/complete?actor=it-actor").then().statusCode(200);
+
+        final int totalBreached = given().get("/workitems/reports/sla-breaches")
+                .then().statusCode(200).extract().path("summary.totalBreached");
+        assertThat(totalBreached).isGreaterThanOrEqualTo(1);
     }
 
     // -------------------------------------------------------------------------
