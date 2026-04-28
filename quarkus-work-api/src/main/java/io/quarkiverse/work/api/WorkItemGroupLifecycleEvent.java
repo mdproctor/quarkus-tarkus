@@ -47,14 +47,14 @@ public final class WorkItemGroupLifecycleEvent {
      * @param requiredCount threshold count needed for resolution
      * @param completedCount number of instances that completed successfully
      * @param rejectedCount number of instances that were rejected
-     * @param status the current {@link GroupStatus}
+     * @param groupStatus the current {@link GroupStatus}
      * @param callerRef opaque caller reference echoed from parent WorkItem
      * @return a new WorkItemGroupLifecycleEvent
      */
     public static WorkItemGroupLifecycleEvent of(final UUID parentId, final UUID groupId,
             final int instanceCount, final int requiredCount,
             final int completedCount, final int rejectedCount,
-            final GroupStatus status, final String callerRef) {
+            final GroupStatus groupStatus, final String callerRef) {
         return new WorkItemGroupLifecycleEvent(parentId, groupId, instanceCount, requiredCount,
                 completedCount, rejectedCount, status, callerRef);
     }
