@@ -1,6 +1,7 @@
 package io.quarkiverse.work.runtime.multiinstance;
 
 import java.util.List;
+import java.util.UUID;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
@@ -26,17 +27,35 @@ public class MultiInstanceGroupPolicy {
     /**
      * Update the spawn group counters and evaluate the M-of-N threshold.
      * Called from MultiInstanceCoordinator on @ObservesAsync.
-     * Throws OptimisticLockException if concurrent update detected — caller retries.
+     *
+     * <p>
+     * Accepts the child's ID and terminal status rather than the entity itself to avoid
+     * using a detached entity across transaction boundaries. The child is reloaded by ID
+     * inside this transaction only when needed (e.g. to resolve parentId).
+     *
+     * <p>
+     * Returns the {@link WorkItemGroupLifecycleEvent} that should be fired, or {@code null}
+     * if nothing should be fired (e.g. policyTriggered guard hit). The caller fires the event
+     * <em>after</em> this method returns — i.e. after the transaction commits — so that a
+     * concurrent transaction that rolls back with OCC does not emit a spurious event.
+     *
+     * <p>
+     * Throws on any transient failure (OCC, RollbackException) — caller retries once.
+     * The {@code policyTriggered} guard makes this method idempotent on retry.
      */
     @Transactional
-    public void process(final WorkItem child) {
+    public WorkItemGroupLifecycleEvent process(final UUID childId, final WorkItemStatus childStatus) {
+        final WorkItem child = WorkItem.findById(childId);
+        if (child == null)
+            return null;
+
         final WorkItemSpawnGroup group = WorkItemSpawnGroup.findMultiInstanceByParentId(child.parentId);
         if (group == null)
-            return;
+            return null;
         if (group.policyTriggered)
-            return;
+            return null;
 
-        if (child.status == WorkItemStatus.COMPLETED) {
+        if (childStatus == WorkItemStatus.COMPLETED) {
             group.completedCount++;
         } else {
             group.rejectedCount++;
@@ -46,15 +65,26 @@ public class MultiInstanceGroupPolicy {
         final int needed = group.requiredCount - group.completedCount;
 
         if (group.completedCount >= group.requiredCount) {
-            resolve(group, GroupStatus.COMPLETED);
+            return resolve(group, GroupStatus.COMPLETED);
         } else if (remaining < needed) {
-            resolve(group, GroupStatus.REJECTED);
+            return resolve(group, GroupStatus.REJECTED);
         } else {
-            fireGroupEvent(group, GroupStatus.IN_PROGRESS);
+            return buildGroupEvent(group, GroupStatus.IN_PROGRESS);
         }
     }
 
-    private void resolve(final WorkItemSpawnGroup group, final GroupStatus outcome) {
+    /**
+     * Fire a group lifecycle event. Called by the coordinator after the transaction commits.
+     *
+     * @param event the event to fire, or {@code null} (no-op)
+     */
+    public void fireEvent(final WorkItemGroupLifecycleEvent event) {
+        if (event != null) {
+            groupEvent.fireAsync(event);
+        }
+    }
+
+    private WorkItemGroupLifecycleEvent resolve(final WorkItemSpawnGroup group, final GroupStatus outcome) {
         group.policyTriggered = true;
 
         if (outcome == GroupStatus.COMPLETED) {
@@ -69,7 +99,7 @@ public class MultiInstanceGroupPolicy {
             cancelRemainingChildren(group);
         }
 
-        fireGroupEvent(group, outcome);
+        return buildGroupEvent(group, outcome);
     }
 
     private void cancelRemainingChildren(final WorkItemSpawnGroup group) {
@@ -82,13 +112,13 @@ public class MultiInstanceGroupPolicy {
                         "threshold-met — cancelled by group policy"));
     }
 
-    private void fireGroupEvent(final WorkItemSpawnGroup group, final GroupStatus status) {
+    private WorkItemGroupLifecycleEvent buildGroupEvent(final WorkItemSpawnGroup group, final GroupStatus status) {
         final WorkItem parent = WorkItem.findById(group.parentId);
-        groupEvent.fireAsync(WorkItemGroupLifecycleEvent.of(
+        return WorkItemGroupLifecycleEvent.of(
                 group.parentId, group.id,
                 group.instanceCount, group.requiredCount,
                 group.completedCount, group.rejectedCount,
                 status,
-                parent != null ? parent.callerRef : null));
+                parent != null ? parent.callerRef : null);
     }
 }
