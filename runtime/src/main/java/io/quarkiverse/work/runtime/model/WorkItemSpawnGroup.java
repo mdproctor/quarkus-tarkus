@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 
@@ -60,6 +61,43 @@ public class WorkItemSpawnGroup extends PanacheEntityBase {
     @Column(name = "created_at", nullable = false)
     public Instant createdAt;
 
+    /** OCC version — incremented on every successful counter update. */
+    @Version
+    @Column(nullable = false)
+    public Long version = 0L;
+
+    /** instanceCount from MultiInstanceConfig; null for non-multi-instance groups. */
+    @Column(name = "instance_count")
+    public Integer instanceCount;
+
+    /** requiredCount from MultiInstanceConfig; null for non-multi-instance groups. */
+    @Column(name = "required_count")
+    public Integer requiredCount;
+
+    /** What to do with remaining non-terminal children when threshold is met. */
+    @Column(name = "on_threshold_reached", length = 10)
+    public String onThresholdReached;
+
+    /** When false, a claimant already holding another instance in this group is rejected. */
+    @Column(name = "allow_same_assignee", nullable = false)
+    public boolean allowSameAssignee = false;
+
+    /** COORDINATOR or PARTICIPANT. */
+    @Column(name = "parent_role", length = 15)
+    public String parentRole;
+
+    /** Number of child instances that have reached COMPLETED status. */
+    @Column(name = "completed_count", nullable = false)
+    public int completedCount = 0;
+
+    /** Number of child instances that have reached a non-COMPLETED terminal status. */
+    @Column(name = "rejected_count", nullable = false)
+    public int rejectedCount = 0;
+
+    /** True once the group outcome has been determined and the parent transitioned. */
+    @Column(name = "policy_triggered", nullable = false)
+    public boolean policyTriggered = false;
+
     @PrePersist
     void prePersist() {
         if (id == null) {
@@ -80,5 +118,13 @@ public class WorkItemSpawnGroup extends PanacheEntityBase {
     /** All groups spawned from a parent, newest first. */
     public static List<WorkItemSpawnGroup> findByParentId(final UUID parentId) {
         return list("parentId = ?1 ORDER BY createdAt DESC", parentId);
+    }
+
+    /**
+     * Find the multi-instance spawn group for a parent — the group where
+     * {@code requiredCount} is set. Returns null if no multi-instance group exists.
+     */
+    public static WorkItemSpawnGroup findMultiInstanceByParentId(final UUID parentId) {
+        return find("parentId = ?1 AND requiredCount IS NOT NULL", parentId).firstResult();
     }
 }
