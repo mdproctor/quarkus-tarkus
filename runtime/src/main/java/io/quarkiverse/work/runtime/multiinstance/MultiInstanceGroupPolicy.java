@@ -84,7 +84,7 @@ public class MultiInstanceGroupPolicy {
 
     private void fireGroupEvent(final WorkItemSpawnGroup group, final GroupStatus status) {
         final WorkItem parent = WorkItem.findById(group.parentId);
-        groupEvent.fire(WorkItemGroupLifecycleEvent.of(
+        groupEvent.fireAsync(WorkItemGroupLifecycleEvent.of(
                 group.parentId, group.id,
                 group.instanceCount, group.requiredCount,
                 group.completedCount, group.rejectedCount,
