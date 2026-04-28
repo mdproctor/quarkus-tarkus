@@ -10,7 +10,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
 import io.quarkiverse.ledger.runtime.config.LedgerConfig;
-import io.quarkiverse.ledger.runtime.model.ActorType;
+import io.quarkiverse.ledger.runtime.model.ActorTypeResolver;
 import io.quarkiverse.ledger.runtime.model.LedgerEntryType;
 import io.quarkiverse.ledger.runtime.model.LedgerMerkleFrontier;
 import io.quarkiverse.ledger.runtime.model.supplement.ComplianceSupplement;
@@ -77,7 +77,7 @@ public class LedgerEventCapture {
         entry.commandType = deriveCommandType(event.type());
         entry.eventType = deriveEventType(event.type());
         entry.actorId = event.actor();
-        entry.actorType = deriveActorType(event.actor());
+        entry.actorType = ActorTypeResolver.resolve(event.actor());
         entry.actorRole = deriveActorRole(event.type());
         // Set occurredAt explicitly with millis precision before hash computation —
         // @PrePersist sets it too late; DB truncates to millis so canonical form must match
@@ -187,28 +187,4 @@ public class LedgerEventCapture {
         return meta != null ? meta[META_ROLE] : "Assignee";
     }
 
-    /**
-     * Derive the actor type from the actorId prefix convention.
-     *
-     * <ul>
-     * <li>{@code "agent:*"} → {@link ActorType#AGENT} — AI agents and automated classifiers</li>
-     * <li>{@code "system:*"} → {@link ActorType#SYSTEM} — schedulers, expiry jobs, platform services</li>
-     * <li>anything else → {@link ActorType#HUMAN} — human actors (default)</li>
-     * </ul>
-     *
-     * @param actorId the raw actor identifier from the lifecycle event; may be {@code null}
-     * @return the derived actor type; never {@code null}
-     */
-    private ActorType deriveActorType(final String actorId) {
-        if (actorId == null) {
-            return ActorType.HUMAN;
-        }
-        if (actorId.startsWith("agent:")) {
-            return ActorType.AGENT;
-        }
-        if (actorId.startsWith("system:")) {
-            return ActorType.SYSTEM;
-        }
-        return ActorType.HUMAN;
-    }
 }
