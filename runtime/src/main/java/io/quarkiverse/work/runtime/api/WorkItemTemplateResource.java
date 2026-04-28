@@ -18,6 +18,7 @@ import jakarta.ws.rs.core.Response;
 
 import io.quarkiverse.work.runtime.model.WorkItemTemplate;
 import io.quarkiverse.work.runtime.service.WorkItemTemplateService;
+import io.quarkiverse.work.runtime.service.WorkItemTemplateValidationService;
 
 /**
  * REST resource for managing and instantiating {@link WorkItemTemplate} records.
@@ -50,8 +51,16 @@ public class WorkItemTemplateResource {
      * @param requiredCapabilities default comma-separated capability tags
      * @param defaultExpiryHours default completion deadline in hours; null → system default
      * @param defaultClaimHours default claim deadline in hours; null → system default
+     * @param defaultExpiryBusinessHours default completion deadline in business hours
+     * @param defaultClaimBusinessHours default claim deadline in business hours
      * @param defaultPayload default JSON payload
      * @param labelPaths JSON array of label paths applied at instantiation
+     * @param instanceCount number of parallel instances for multi-instance mode; null for standard
+     * @param requiredCount minimum instances that must complete; only meaningful when instanceCount is set
+     * @param parentRole COORDINATOR (default) or PARTICIPANT; only meaningful when instanceCount is set
+     * @param assignmentStrategy CDI bean name of InstanceAssignmentStrategy; null defaults to "pool"
+     * @param onThresholdReached CANCEL (default) or LEAVE when threshold met
+     * @param allowSameAssignee when true, same person can claim multiple instances in group
      * @param createdBy who created this template (required)
      */
     public record CreateTemplateRequest(
@@ -64,8 +73,16 @@ public class WorkItemTemplateResource {
             String requiredCapabilities,
             Integer defaultExpiryHours,
             Integer defaultClaimHours,
+            Integer defaultExpiryBusinessHours,
+            Integer defaultClaimBusinessHours,
             String defaultPayload,
             String labelPaths,
+            Integer instanceCount,
+            Integer requiredCount,
+            String parentRole,
+            String assignmentStrategy,
+            String onThresholdReached,
+            Boolean allowSameAssignee,
             String createdBy) {
     }
 
@@ -109,9 +126,18 @@ public class WorkItemTemplateResource {
         t.requiredCapabilities = request.requiredCapabilities();
         t.defaultExpiryHours = request.defaultExpiryHours();
         t.defaultClaimHours = request.defaultClaimHours();
+        t.defaultExpiryBusinessHours = request.defaultExpiryBusinessHours();
+        t.defaultClaimBusinessHours = request.defaultClaimBusinessHours();
         t.defaultPayload = request.defaultPayload();
         t.labelPaths = request.labelPaths();
+        t.instanceCount = request.instanceCount();
+        t.requiredCount = request.requiredCount();
+        t.parentRole = request.parentRole();
+        t.assignmentStrategy = request.assignmentStrategy();
+        t.onThresholdReached = request.onThresholdReached();
+        t.allowSameAssignee = request.allowSameAssignee();
         t.createdBy = request.createdBy();
+        WorkItemTemplateValidationService.validate(t);
         t.persist();
 
         return Response.status(Response.Status.CREATED).entity(toResponse(t)).build();
@@ -203,8 +229,16 @@ public class WorkItemTemplateResource {
         m.put("requiredCapabilities", t.requiredCapabilities);
         m.put("defaultExpiryHours", t.defaultExpiryHours);
         m.put("defaultClaimHours", t.defaultClaimHours);
+        m.put("defaultExpiryBusinessHours", t.defaultExpiryBusinessHours);
+        m.put("defaultClaimBusinessHours", t.defaultClaimBusinessHours);
         m.put("defaultPayload", t.defaultPayload);
         m.put("labelPaths", t.labelPaths);
+        m.put("instanceCount", t.instanceCount);
+        m.put("requiredCount", t.requiredCount);
+        m.put("parentRole", t.parentRole);
+        m.put("assignmentStrategy", t.assignmentStrategy);
+        m.put("onThresholdReached", t.onThresholdReached);
+        m.put("allowSameAssignee", t.allowSameAssignee);
         m.put("createdBy", t.createdBy);
         m.put("createdAt", t.createdAt);
         return m;
