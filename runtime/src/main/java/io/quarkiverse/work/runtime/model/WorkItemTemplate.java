@@ -126,6 +126,39 @@ public class WorkItemTemplate extends PanacheEntityBase {
     @Column(name = "label_paths", columnDefinition = "TEXT")
     public String labelPaths;
 
+    /**
+     * Number of parallel instances to spawn when this template is instantiated.
+     * Null means standard (non-multi-instance) instantiation.
+     */
+    @Column(name = "instance_count")
+    public Integer instanceCount;
+
+    /**
+     * Minimum number of instances that must reach COMPLETED for the group to succeed.
+     * Required when instanceCount is set.
+     */
+    @Column(name = "required_count")
+    public Integer requiredCount;
+
+    /** COORDINATOR (default) or PARTICIPANT. Only meaningful when instanceCount is set. */
+    @Column(name = "parent_role", length = 15)
+    public String parentRole;
+
+    /** CDI bean name of the InstanceAssignmentStrategy; null defaults to "pool". */
+    @Column(name = "assignment_strategy", length = 255)
+    public String assignmentStrategy;
+
+    /** CANCEL (default) or LEAVE — what to do with remaining instances when threshold met. */
+    @Column(name = "on_threshold_reached", length = 10)
+    public String onThresholdReached;
+
+    /**
+     * When false (default), a person already holding one instance cannot claim another
+     * in the same group. When true, no such restriction applies.
+     */
+    @Column(name = "allow_same_assignee")
+    public Boolean allowSameAssignee;
+
     /** Who created this template. */
     @Column(name = "created_by", nullable = false, length = 255)
     public String createdBy;
