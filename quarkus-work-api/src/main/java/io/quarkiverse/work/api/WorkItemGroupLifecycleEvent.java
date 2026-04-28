@@ -56,7 +56,7 @@ public final class WorkItemGroupLifecycleEvent {
             final int completedCount, final int rejectedCount,
             final GroupStatus groupStatus, final String callerRef) {
         return new WorkItemGroupLifecycleEvent(parentId, groupId, instanceCount, requiredCount,
-                completedCount, rejectedCount, status, callerRef);
+                completedCount, rejectedCount, groupStatus, callerRef);
     }
 
     /**
