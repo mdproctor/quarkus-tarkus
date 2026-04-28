@@ -174,7 +174,9 @@ public class WorkItemService {
         final WorkItem saved = workItemStore.put(item);
         audit(saved.id, "COMPLETED", actorId, null);
         if (lifecycleEvent != null) {
-            lifecycleEvent.fire(WorkItemLifecycleEvent.of("COMPLETED", saved, actorId, resolution));
+            final WorkItemLifecycleEvent evt = WorkItemLifecycleEvent.of("COMPLETED", saved, actorId, resolution);
+            lifecycleEvent.fire(evt);
+            lifecycleEvent.fireAsync(evt);
         }
         return saved;
     }
@@ -193,7 +195,9 @@ public class WorkItemService {
         final WorkItem saved = workItemStore.put(item);
         audit(saved.id, "REJECTED", actorId, reason);
         if (lifecycleEvent != null) {
-            lifecycleEvent.fire(WorkItemLifecycleEvent.of("REJECTED", saved, actorId, reason));
+            final WorkItemLifecycleEvent evt = WorkItemLifecycleEvent.of("REJECTED", saved, actorId, reason);
+            lifecycleEvent.fire(evt);
+            lifecycleEvent.fireAsync(evt);
         }
         return saved;
     }
@@ -210,7 +214,9 @@ public class WorkItemService {
         final WorkItem saved = workItemStore.put(item);
         audit(saved.id, "COMPLETED", actorId, null);
         if (lifecycleEvent != null) {
-            lifecycleEvent.fire(WorkItemLifecycleEvent.of("COMPLETED", saved, actorId, resolution));
+            final WorkItemLifecycleEvent evt = WorkItemLifecycleEvent.of("COMPLETED", saved, actorId, resolution);
+            lifecycleEvent.fire(evt);
+            lifecycleEvent.fireAsync(evt);
         }
         return saved;
     }
@@ -226,7 +232,9 @@ public class WorkItemService {
         final WorkItem saved = workItemStore.put(item);
         audit(saved.id, "REJECTED", actorId, reason);
         if (lifecycleEvent != null) {
-            lifecycleEvent.fire(WorkItemLifecycleEvent.of("REJECTED", saved, actorId, reason));
+            final WorkItemLifecycleEvent evt = WorkItemLifecycleEvent.of("REJECTED", saved, actorId, reason);
+            lifecycleEvent.fire(evt);
+            lifecycleEvent.fireAsync(evt);
         }
         return saved;
     }
@@ -253,8 +261,10 @@ public class WorkItemService {
         final WorkItem saved = workItemStore.put(item);
         audit(saved.id, "COMPLETED", actorId, null);
         if (lifecycleEvent != null) {
-            lifecycleEvent.fire(WorkItemLifecycleEvent.of(
-                    "COMPLETED", saved, actorId, resolution, rationale, planRef));
+            final WorkItemLifecycleEvent evt = WorkItemLifecycleEvent.of(
+                    "COMPLETED", saved, actorId, resolution, rationale, planRef);
+            lifecycleEvent.fire(evt);
+            lifecycleEvent.fireAsync(evt);
         }
         return saved;
     }
@@ -279,8 +289,10 @@ public class WorkItemService {
         final WorkItem saved = workItemStore.put(item);
         audit(saved.id, "REJECTED", actorId, reason);
         if (lifecycleEvent != null) {
-            lifecycleEvent.fire(WorkItemLifecycleEvent.of(
-                    "REJECTED", saved, actorId, reason, rationale, null));
+            final WorkItemLifecycleEvent evt = WorkItemLifecycleEvent.of(
+                    "REJECTED", saved, actorId, reason, rationale, null);
+            lifecycleEvent.fire(evt);
+            lifecycleEvent.fireAsync(evt);
         }
         return saved;
     }
@@ -382,7 +394,9 @@ public class WorkItemService {
         final WorkItem saved = workItemStore.put(item);
         audit(saved.id, "CANCELLED", actorId, reason);
         if (lifecycleEvent != null) {
-            lifecycleEvent.fire(WorkItemLifecycleEvent.of("CANCELLED", saved, actorId, reason));
+            final WorkItemLifecycleEvent evt = WorkItemLifecycleEvent.of("CANCELLED", saved, actorId, reason);
+            lifecycleEvent.fire(evt);
+            lifecycleEvent.fireAsync(evt);
         }
         return saved;
     }
