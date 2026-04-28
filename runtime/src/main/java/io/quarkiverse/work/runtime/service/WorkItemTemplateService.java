@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
@@ -17,6 +18,7 @@ import io.quarkiverse.work.runtime.model.WorkItem;
 import io.quarkiverse.work.runtime.model.WorkItemCreateRequest;
 import io.quarkiverse.work.runtime.model.WorkItemLabel;
 import io.quarkiverse.work.runtime.model.WorkItemTemplate;
+import io.quarkiverse.work.runtime.multiinstance.MultiInstanceSpawnService;
 
 /**
  * Service for creating and instantiating {@link WorkItemTemplate} records.
@@ -33,6 +35,9 @@ public class WorkItemTemplateService {
 
     @Inject
     WorkItemService workItemService;
+
+    @Inject
+    Instance<MultiInstanceSpawnService> multiInstanceSpawnService;
 
     /**
      * Instantiate a {@link WorkItemTemplate} into a new PENDING {@link WorkItem}.
@@ -61,6 +66,10 @@ public class WorkItemTemplateService {
             final String titleOverride,
             final String assigneeIdOverride,
             final String createdBy) {
+
+        if (template.instanceCount != null) {
+            return multiInstanceSpawnService.get().createGroup(template, titleOverride, createdBy);
+        }
 
         final WorkItemCreateRequest request = toCreateRequest(template, titleOverride, assigneeIdOverride, createdBy);
         WorkItem workItem = workItemService.create(request);
