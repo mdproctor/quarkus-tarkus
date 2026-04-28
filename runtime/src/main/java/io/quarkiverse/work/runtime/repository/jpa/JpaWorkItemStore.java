@@ -137,6 +137,12 @@ public class JpaWorkItemStore implements WorkItemStore {
         return WorkItem.find(jpql.toString(), params).list();
     }
 
+    @Override
+    public long countByParentAndAssignee(final UUID parentId, final String assigneeId, final UUID excludeId) {
+        return WorkItem.count("parentId = ?1 AND assigneeId = ?2 AND id != ?3",
+                parentId, assigneeId, excludeId);
+    }
+
     /**
      * Label pattern scan using the existing JPQL JOIN approach from {@code JpaWorkItemRepository}.
      *

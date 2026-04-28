@@ -23,6 +23,7 @@ import io.quarkiverse.work.runtime.model.WorkItem;
 import io.quarkiverse.work.runtime.model.WorkItemCreateRequest;
 import io.quarkiverse.work.runtime.model.WorkItemLabel;
 import io.quarkiverse.work.runtime.model.WorkItemPriority;
+import io.quarkiverse.work.runtime.model.WorkItemSpawnGroup;
 import io.quarkiverse.work.runtime.model.WorkItemStatus;
 import io.quarkiverse.work.runtime.repository.AuditEntryStore;
 import io.quarkiverse.work.runtime.repository.WorkItemStore;
@@ -123,6 +124,17 @@ public class WorkItemService {
     @Transactional
     public WorkItem claim(final UUID id, final String claimantId) {
         final WorkItem item = requireWorkItem(id);
+        // Multi-instance claim guard
+        if (item.parentId != null) {
+            final WorkItemSpawnGroup group = WorkItemSpawnGroup.findMultiInstanceByParentId(item.parentId);
+            if (group != null && !group.allowSameAssignee) {
+                final long alreadyHeld = workItemStore.countByParentAndAssignee(item.parentId, claimantId, id);
+                if (alreadyHeld > 0) {
+                    throw new IllegalStateException(
+                            "Claimant '" + claimantId + "' already hold another instance in this group");
+                }
+            }
+        }
         if (item.status != WorkItemStatus.PENDING) {
             throw new IllegalStateException("Cannot claim WorkItem in status: " + item.status);
         }

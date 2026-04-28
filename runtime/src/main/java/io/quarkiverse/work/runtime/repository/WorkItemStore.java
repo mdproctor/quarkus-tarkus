@@ -67,4 +67,18 @@ public interface WorkItemStore {
     default List<WorkItem> scanAll() {
         return scan(WorkItemQuery.all());
     }
+
+    /**
+     * Count instances in a multi-instance group assigned to the given claimant,
+     * excluding the WorkItem being claimed.
+     * Returns 0 by default — override in JPA store.
+     *
+     * @param parentId the UUID of the parent WorkItem whose group is being checked
+     * @param assigneeId the claimant to check for existing held instances
+     * @param excludeId the WorkItem being claimed (excluded from the count)
+     * @return the number of other instances in the group already held by the claimant
+     */
+    default long countByParentAndAssignee(UUID parentId, String assigneeId, UUID excludeId) {
+        return 0L;
+    }
 }
