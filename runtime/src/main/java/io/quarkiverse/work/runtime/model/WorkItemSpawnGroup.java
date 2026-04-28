@@ -29,13 +29,21 @@ import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
  * {@link #createdAt}; or via {@code GET /workitems/{parentId}/children}.</li>
  * </ol>
  *
- * <h2>No completion state</h2>
+ * <h2>Multi-instance group policy</h2>
  * <p>
- * This entity does NOT track completion state, completion policy, or group status.
- * That is the caller's concern (CaseHub's {@code Stage.requiredItemIds};
- * or the application's own CDI observer). quarkus-work fires per-child
- * {@link io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent}s — the caller
- * decides what they mean.
+ * For multi-instance groups (where {@link #requiredCount} is set), this entity also
+ * owns M-of-N completion tracking. {@link #completedCount} and {@link #rejectedCount}
+ * are incremented atomically via {@code @Version} OCC as child WorkItems reach terminal
+ * states. When {@code completedCount >= requiredCount}, the parent transitions to
+ * COMPLETED; when the remaining active children cannot reach {@code requiredCount},
+ * the parent transitions to REJECTED. {@link #policyTriggered} is set to {@code true}
+ * exactly once to guarantee the outcome fires at most once.
+ *
+ * <p>
+ * Non-multi-instance groups (where {@link #requiredCount} is {@code null}) carry no
+ * completion semantics — the caller (CaseHub, application) decides what completing
+ * child WorkItems means by observing
+ * {@link io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent}s directly.
  */
 @Entity
 @Table(name = "work_item_spawn_group", uniqueConstraints = {
