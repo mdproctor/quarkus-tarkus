@@ -197,7 +197,7 @@ quarkus-work/
   - `service/`: `NotificationDispatcher` — AFTER_SUCCESS CDI observer, async delivery via virtual threads, rule matching by eventType + category
   - `channel/`: `HttpWebhookChannel` (HMAC-SHA256 signing), `SlackNotificationChannel` (Incoming Webhooks), `TeamsNotificationChannel` (Adaptive Cards)
   - SPIs in `quarkus-work-api`: `NotificationChannel` (channelType + send), `NotificationPayload` — custom channels implement `NotificationChannel` as `@ApplicationScoped` CDI bean
-- `quarkus-work-reports/` — optional SLA compliance reporting module. Zero cost when absent. 68 tests.
+- `quarkus-work-reports/` — optional SLA compliance reporting module. Zero cost when absent. 73 tests (68 H2 + 5 PostgreSQL via Testcontainers).
   - `api/`: `ReportResource` — `GET /workitems/reports/sla-breaches`, `/actors/{actorId}`, `/throughput?groupBy=day|week|month`, `/queue-health`
   - `service/`: `ReportService` (@CacheResult Caffeine 5-min TTL), `ThroughputBucketAggregator` (pure Java day→week/month rollup), response records (`SlaBreachReport`, `ActorReport`, `ThroughputReport`, `QueueHealthReport`)
   - Query strategy: HQL `CAST(date_trunc('day', w.createdAt) AS LocalDate)` + GROUP BY for throughput; JPQL COUNT/AVG aggregates for queue-health; JPQL GROUP BY for actor byCategory (no N+1)
@@ -327,7 +327,7 @@ JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn install -DskipTests -f ~/claude/qu
 - Spawn idempotency key is scoped per parent — the same key on different parents creates separate groups; uniqueness is `(parent_id, idempotency_key)`.
 - `quarkus-work-ledger` depends on `io.quarkiverse.ledger:quarkus-ledger:0.2-SNAPSHOT` — update this version when `quarkus-ledger` changes its own version. The prerequisite note below is stale; use `0.2-SNAPSHOT`.
 - `@CacheResult` on `ReportService` methods accepts nullable parameters — Quarkus 3.x `CompositeCacheKey` handles nulls correctly via `Arrays.hashCode`; the cache key for `slaBreaches(null, null, null, null)` is stable and shared across unfiltered calls. Use a `from` filter in tests that call the endpoint unfiltered AND need fresh data (cache TTL is 1s in test `application.properties`).
-- `PostgresDialectValidationTest` is `@Disabled` — Quarkus augments the datasource driver at build time; switching from H2 to PostgreSQL at runtime via `@TestProfile` fails with "Bean is not active" because the augmented artifact was compiled for H2. To run PostgreSQL dialect validation, build the module with a PostgreSQL-backed `application.properties` (no H2 URL) and remove `@Disabled`.
+- `PostgresDialectValidationTest` runs against a real PostgreSQL Testcontainer via a dedicated Surefire execution (`postgres-dialect-test`) that: (1) sets `quarkus.datasource.db-kind=postgresql` as a **system property** before augmentation (test resource overrides don't reach the augmentation cache check), (2) uses `reuseForks=false` for a clean JVM so the fresh augmentation uses PostgreSQL, (3) runs **first** before H2 tests so no cached H2 artifact exists yet. `PostgresTestResource` starts the container and injects the JDBC URL. Flyway is disabled in the PostgreSQL test and replaced with `hibernate-orm.database.generation=drop-and-create` because the Flyway migrations use H2-permissive SQL (e.g. bare `DOUBLE` type) that PostgreSQL rejects — this is a known production compatibility issue to address separately.
 - `CAST(date_trunc('day', w.createdAt) AS LocalDate)` in HQL — the explicit `CAST AS LocalDate` ensures Hibernate 6 returns `java.time.LocalDate` in the result set regardless of dialect, avoiding type ambiguity between H2 and PostgreSQL.
 
 ---
@@ -362,7 +362,7 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home
 |---|---|---|---|---|
 | 1 | #101 | Business-Hours Deadlines — SLA in working hours | ✅ complete | BusinessCalendar, HolidayCalendar SPIs; DefaultBusinessCalendar, ICalHolidayCalendar, HolidayCalendarProducer; V19 migration; expiresAtBusinessHours/claimDeadlineBusinessHours on template + request; example scenario |
 | 2 | #103 | Notifications — Slack/Teams/webhook on lifecycle events | ✅ complete | #140 ✅ SPI+dispatcher+CRUD, #141 ✅ HTTP/Slack/Teams channels |
-| ✅ | #104 | SLA Compliance Reporting — breach rates, actor performance | ✅ complete | `quarkus-work-reports` optional module; sla-breaches, actors, throughput, queue-health; 68 tests |
+| ✅ | #104 | SLA Compliance Reporting — breach rates, actor performance | ✅ complete | `quarkus-work-reports` optional module; sla-breaches, actors, throughput, queue-health; 73 tests (68 H2 + 5 PostgreSQL) |
 | 4 | #106 | Multi-Instance Tasks — M-of-N parallel completion | **active** (design needed — may be CaseHub concern) | — |
 | — | #92 | Distributed WorkItems — clustering + federation | future | #93 (SSE) implementable now |
 | — | #79 | External System Integrations | blocked | CaseHub/Qhorus not stable |
