@@ -12,6 +12,12 @@ public record MultiInstanceConfig(
         boolean allowSameAssignee,
         List<String> explicitAssignees) {
 
+    public MultiInstanceConfig {
+        if (explicitAssignees != null) {
+            explicitAssignees = List.copyOf(explicitAssignees);
+        }
+    }
+
     public ParentRole effectiveParentRole() {
         return parentRole != null ? parentRole : ParentRole.COORDINATOR;
     }
