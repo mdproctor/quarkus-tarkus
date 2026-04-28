@@ -258,6 +258,14 @@ public class WorkItem extends PanacheEntityBase {
     @Column(name = "caller_ref", length = 512)
     public String callerRef;
 
+    /**
+     * UUID of the parent WorkItem for multi-instance groups.
+     * Null for standalone WorkItems. Non-null means this item is a child instance;
+     * the parent is the group coordinator or participant root.
+     */
+    @Column(name = "parent_id")
+    public UUID parentId;
+
     // -------------------------------------------------------------------------
     // JPA lifecycle callbacks
     // -------------------------------------------------------------------------
