@@ -7,45 +7,27 @@ import static org.hamcrest.Matchers.notNullValue;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Map;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.QuarkusTestProfile;
-import io.quarkus.test.junit.TestProfile;
 import io.restassured.http.ContentType;
 
 /**
  * Dialect validation: verifies HQL date_trunc('day') translates correctly against real PostgreSQL.
  *
  * <p>
- * Disabled by default — requires a separate Quarkus build with PostgreSQL as the datasource
- * (Quarkus augments the datasource driver at build time; switching at runtime via TestProfile
- * is not supported). To run these tests, build the module with a PostgreSQL-configured
- * application.properties and remove the {@code @Disabled} annotation.
+ * Uses {@link PostgresTestResource} to start a PostgreSQL Testcontainer before Quarkus boots
+ * and inject a real JDBC URL. This avoids the Quarkus Dev Services augmentation-time limitation
+ * (Dev Services is disabled at augmentation if any JDBC URL is configured in application.properties).
  *
  * <p>
- * H2 2.x already validates the HQL {@code date_trunc} function at the syntax level in the
- * standard test suite; this class provides additional confirmation against a real PostgreSQL engine.
+ * Requires Docker or a compatible socket (Podman, Colima). Skipped automatically if unavailable.
  */
-@Disabled("Requires PostgreSQL-backed build; H2 suite covers date_trunc HQL syntax validation")
 @QuarkusTest
-@TestProfile(PostgresDialectValidationTest.PgProfile.class)
+@QuarkusTestResource(value = PostgresTestResource.class, restrictToAnnotatedClass = true)
 class PostgresDialectValidationTest {
-
-    public static class PgProfile implements QuarkusTestProfile {
-        @Override
-        public Map<String, String> getConfigOverrides() {
-            return Map.of("quarkus.datasource.db-kind", "postgresql");
-        }
-
-        @Override
-        public String getConfigProfile() {
-            return "postgres";
-        }
-    }
 
     @Test
     void throughput_groupByDay_executesOnPostgres() {

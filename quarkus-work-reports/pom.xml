@@ -63,6 +63,11 @@ Zero cost when absent — the core extension is unchanged.</description>
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>io.rest-assured</groupId>
       <artifactId>rest-assured</artifactId>
       <scope>test</scope>
@@ -85,6 +90,49 @@ Zero cost when absent — the core extension is unchanged.</description>
             <id>jandex</id>
             <phase>process-classes</phase>
             <goals><goal>jandex</goal></goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <executions>
+          <!-- Disable the default execution — we control ordering explicitly below -->
+          <execution>
+            <id>default-test</id>
+            <phase>none</phase>
+          </execution>
+          <!--
+            PostgreSQL dialect validation runs FIRST so it augments fresh (no cached H2 artifact).
+            reuseForks=false gives a clean JVM. quarkus.datasource.db-kind=postgresql is a
+            system property so Quarkus sees it before the augmentation cache check.
+            PostgresTestResource.start() provides the actual JDBC URL before the runtime starts.
+          -->
+          <execution>
+            <id>postgres-dialect-test</id>
+            <phase>test</phase>
+            <goals><goal>test</goal></goals>
+            <configuration>
+              <includes>
+                <include>**/PostgresDialectValidationTest.java</include>
+              </includes>
+              <reuseForks>false</reuseForks>
+              <systemPropertyVariables>
+                <quarkus.datasource.db-kind>postgresql</quarkus.datasource.db-kind>
+                <quarkus.datasource.devservices.enabled>false</quarkus.datasource.devservices.enabled>
+              </systemPropertyVariables>
+            </configuration>
+          </execution>
+          <!-- H2 tests run SECOND — Quarkus detects db-kind mismatch and re-augments for H2 -->
+          <execution>
+            <id>h2-tests</id>
+            <phase>test</phase>
+            <goals><goal>test</goal></goals>
+            <configuration>
+              <excludes>
+                <exclude>**/PostgresDialectValidationTest.java</exclude>
+              </excludes>
+            </configuration>
           </execution>
         </executions>
       </plugin>
