@@ -64,6 +64,7 @@ public final class WorkItemContextBuilder {
         map.put("labels", workItem.labels);
         map.put("confidenceScore", workItem.confidenceScore);
         map.put("callerRef", workItem.callerRef);
+        map.put("parentId", workItem.parentId != null ? workItem.parentId.toString() : null);
         return map;
     }
 }
