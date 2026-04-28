@@ -1,5 +1,5 @@
 # Layering Architecture
-**Date:** 2026-04-23  
+**Date:** 2026-04-28  
 **Scope:** quarkus-work, quarkus-workitems, CaseHub, Quarkus-Flow ecosystem
 
 ---
@@ -90,22 +90,27 @@ quarkus-work is the **human task primitive layer**. It provides the mechanics of
 - Append-only audit trail per WorkItem
 - Ledger entries with causal chain (`causedByEntryId`) for provenance
 
+**Group policies:**
+- M-of-N completion — a spawn group configured with `instanceCount=N, requiredCount=M` tracks child completions and completes the parent when M children reach COMPLETED, or rejects it when the group can no longer reach M. Declared at creation time, evaluated purely from member states — no external context, no ordering.
+- Cascade cancellation — `SpawnPort.cancelGroup(cascadeChildren=true)` cancels pending children within a group. Same rationale: static policy, no external context, no ordering imposed.
+
+Group policies are distinct from orchestration because they operate on **homogeneous, unordered members** with a **statically declared policy** that can be evaluated in isolation. Orchestration operates on heterogeneous, potentially ordered work whose completion semantics depend on external case context.
+
 ---
 
 ## What quarkus-work does NOT own
 
-quarkus-work **does not orchestrate**. It does not decide what happens next based on events. Specifically:
+quarkus-work **does not orchestrate**. It does not impose ordering between distinct pieces of work or make decisions that require external case state. Specifically:
 
 - **When to spawn WorkItems** — that is the caller's decision (CaseHub, application)
-- **What completing a WorkItem means** — quarkus-work fires the event; CaseHub decides
-- **Completion rollup** — whether a group of children satisfies a stage; that is CaseHub's `Stage.requiredItemIds` and autocomplete logic
-- **Parent auto-completion** — quarkus-work does not complete a parent when children finish; CaseHub does
+- **What completing a WorkItem means for a case** — quarkus-work fires the event; CaseHub decides
 - **Activation conditions** — whether a child should activate based on parent state; that is CaseHub's blackboard
 - **Milestones** — case-level checkpoints; CaseHub's CMMN model
 - **Case lifecycle** — fault handling, case cancellation semantics; CaseHub
 - **What a rejected or expired WorkItem means for a process** — CaseHub decides
+- **Heterogeneous plan-item completion** — whether named plan items A, B, and C have all completed to advance a Stage; that is CaseHub's `Stage.requiredItemIds` (see reconciliation note below)
 
-If quarkus-work were to implement any of these, it would be competing with CaseHub. The rule is: **quarkus-work fires events and provides primitives. Every "what happens next" decision lives above it.**
+The rule is: **quarkus-work provides primitives and group policies. Every decision that requires ordering or external context lives above it.**
 
 ---
 
@@ -115,29 +120,43 @@ CaseHub is the **case orchestration layer**. It coordinates Work — which may b
 
 - **When to create WorkItems** — CaseHub calls `POST /workitems/{id}/spawn` or creates individual WorkItems when bindings fire
 - **Which children to spawn** — CaseHub's `CasePlanModel` defines the structure; quarkus-work executes it
-- **What completing a WorkItem means** — CaseHub's `PlanItemCompletionHandler` marks the corresponding `PlanItem` COMPLETED and evaluates stage autocomplete
-- **Stage completion** — `Stage.requiredItemIds` + autocomplete; not quarkus-work's concern
+- **What completing a WorkItem means for a case** — CaseHub's `PlanItemCompletionHandler` marks the corresponding `PlanItem` COMPLETED and evaluates stage autocomplete
+- **Heterogeneous stage completion** — `Stage.requiredItemIds` tracks which specific named plan items (WorkItem A AND Task B AND milestone C) must complete before a Stage advances. This is the right tool for named, heterogeneous plan-level completion — not for homogeneous parallel instances (see reconciliation note below).
 - **Case-level fault handling** — REJECTED child → CaseHub's goal evaluation decides whether to fault the case
 - **Cancellation semantics** — when a stage terminates, CaseHub instructs quarkus-work to cancel children; quarkus-work executes, does not decide
 - **Activation conditions** — CaseHub's blackboard evaluates whether a planned child should activate now
 - **Orchestration vs choreography** — CaseHub chooses the execution model; quarkus-work supports both via `correlationId` on lifecycle events
 
+### Stage.requiredItemIds — reconciliation note
+
+`Stage.requiredItemIds` is the right tool when a Stage requires specific, named, heterogeneous plan items to complete — WorkItem A AND Task B AND milestone C. Each item is distinct, its identity matters, and the completion condition is structural.
+
+It is **not** the right tool for homogeneous parallel instances (five reviewers of the same template, any three must approve). For that case, CaseHub should spawn a multi-instance WorkItem — quarkus-work tracks the M-of-N policy internally and fires a single COMPLETED event on the parent when satisfied. CaseHub observes the parent's COMPLETED event; it does not track the individual instances. Using `Stage.requiredItemIds` for multi-instance tracking would duplicate what quarkus-work already handles at the group primitive level and couple CaseHub to implementation details of a group it should treat as atomic.
+
 ---
 
 ## The boundary rule
 
-> **quarkus-work provides primitives and fires events.**  
-> **CaseHub consumes primitives and makes decisions.**  
+> **quarkus-work provides primitives and group policies.**  
+> **CaseHub orchestrates — it imposes ordering and applies domain context.**  
 > **Nothing crosses this line in either direction.**
 
-A concrete test: if a piece of code in quarkus-work says "when X happens, do Y to another WorkItem," it is orchestration and belongs in CaseHub or the application. quarkus-work is allowed to say "when X happens to a WorkItem, update that WorkItem's own state" — that is lifecycle management, not orchestration.
+The test is **not** "does this touch another WorkItem." Cascade cancellation touches other WorkItems and is correct in quarkus-work. The real test is two questions:
+
+1. **Does it impose ordering between distinct pieces of work?** If code says "do B after A completes," that is ordering — it requires a plan model and belongs in CaseHub.
+2. **Does it require external context or domain knowledge to evaluate?** If the decision depends on case state, blackboard data, risk scores, or business goals, it belongs in CaseHub. If it can be evaluated purely from the group's own member states, it is a primitive.
+
+A policy that satisfies neither test — no ordering imposed, no external context required — is a quarkus-work primitive or group policy.
 
 Examples:
 - "When a WorkItem expires, mark it EXPIRED" — **lifecycle management, quarkus-work** ✓
 - "When a WorkItem expires, escalate it to a supervisor group" — **lifecycle management, quarkus-work** ✓ (EscalationPolicy)
-- "When all children complete, complete the parent" — **orchestration, CaseHub** ✗ not quarkus-work
-- "When a WorkItem reaches ASSIGNED, spawn three children" — **orchestration, CaseHub** ✗ not quarkus-work
-- "When a child is rejected, block parent completion" — **orchestration, CaseHub** ✗ not quarkus-work
+- "When M-of-N child instances complete (static M, static N, same template), complete the parent" — **group policy, quarkus-work** ✓ (no ordering, no external context)
+- "When the group can no longer reach M completions due to rejections, reject the parent" — **group policy, quarkus-work** ✓ (same rationale)
+- "When a spawn group is cancelled, cancel pending children" — **group policy, quarkus-work** ✓ (cascade cancel)
+- "When WorkItem A (risk assessment) completes, spawn WorkItem B (review)" — **orchestration, CaseHub** ✗ (ordering + specific named items)
+- "When a child is rejected, decide whether to fault the case based on risk score" — **orchestration, CaseHub** ✗ (external context)
+- "When all required named plan items in a Stage complete, advance the Stage" — **orchestration, CaseHub** ✗ (heterogeneous named items, plan-level semantics)
 
 ---
 
@@ -170,7 +189,7 @@ WorkItemLifecycleEvent(SPAWNED,   workItemId, correlationId, childIds, ...)
 
 ## Why this matters
 
-**No competing functionality.** If quarkus-work implements completion rollup, it competes with CaseHub's `Stage` autocomplete. Two systems making the same decision with potentially different answers is worse than one system making it correctly.
+**No competing functionality.** Group policies in quarkus-work and Stage orchestration in CaseHub cover distinct concerns — homogeneous group primitives vs. heterogeneous plan-level coordination. When each system owns what it is best suited for, they compose cleanly rather than duplicate. Two systems making the same decision with potentially different answers is worse than one system making it correctly.
 
 **Clean buildability.** CaseHub can build on quarkus-work without working around it. quarkus-work does not have opinions that CaseHub needs to suppress with config flags.
 
