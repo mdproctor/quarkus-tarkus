@@ -159,6 +159,45 @@ public class WorkItemService {
         return saved;
     }
 
+    /**
+     * Complete a WorkItem from a system actor, accepting any non-terminal status.
+     * Used by the multi-instance coordinator when group policy triggers parent completion.
+     */
+    @Transactional
+    public WorkItem completeFromSystem(final UUID id, final String actorId, final String resolution) {
+        final WorkItem item = requireWorkItem(id);
+        if (item.status.isTerminal())
+            return item;
+        item.status = WorkItemStatus.COMPLETED;
+        item.completedAt = Instant.now();
+        item.resolution = resolution;
+        final WorkItem saved = workItemStore.put(item);
+        audit(saved.id, "COMPLETED", actorId, null);
+        if (lifecycleEvent != null) {
+            lifecycleEvent.fire(WorkItemLifecycleEvent.of("COMPLETED", saved, actorId, resolution));
+        }
+        return saved;
+    }
+
+    /**
+     * Reject a WorkItem from a system actor, accepting any non-terminal status.
+     * Used by the multi-instance coordinator when group policy triggers parent rejection.
+     */
+    @Transactional
+    public WorkItem rejectFromSystem(final UUID id, final String actorId, final String reason) {
+        final WorkItem item = requireWorkItem(id);
+        if (item.status.isTerminal())
+            return item;
+        item.status = WorkItemStatus.REJECTED;
+        item.completedAt = Instant.now();
+        final WorkItem saved = workItemStore.put(item);
+        audit(saved.id, "REJECTED", actorId, reason);
+        if (lifecycleEvent != null) {
+            lifecycleEvent.fire(WorkItemLifecycleEvent.of("REJECTED", saved, actorId, reason));
+        }
+        return saved;
+    }
+
     @Transactional
     public WorkItem complete(final UUID id, final String actorId, final String resolution) {
         final WorkItem item = requireWorkItem(id);

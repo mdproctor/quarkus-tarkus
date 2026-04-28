@@ -58,10 +58,10 @@ public class MultiInstanceGroupPolicy {
         group.policyTriggered = true;
 
         if (outcome == GroupStatus.COMPLETED) {
-            workItemService.complete(group.parentId, "system:multi-instance",
+            workItemService.completeFromSystem(group.parentId, "system:multi-instance",
                     "threshold-met: " + group.completedCount + "/" + group.requiredCount);
         } else {
-            workItemService.reject(group.parentId, "system:multi-instance",
+            workItemService.rejectFromSystem(group.parentId, "system:multi-instance",
                     "cannot-reach-threshold: " + group.rejectedCount + " rejections");
         }
 
