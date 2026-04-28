@@ -249,6 +249,53 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home \
 
 **Use `mvn` not `./mvnw`** — maven wrapper not configured on this machine.
 
+---
+
+## Build Discipline (AI agents — read this before running any Maven command)
+
+**Never run `mvn install` or `mvn test` without `-pl <module>`.** The full project has 20+ modules; a full build takes 5+ minutes and will time out in any AI tool context window. Always target the specific module you changed.
+
+**Use the helper scripts in `scripts/` — they enforce hard timeouts and exit clearly:**
+
+```bash
+# Test a single module (90s timeout — exits with clear error if exceeded)
+scripts/mvn-test <module>
+scripts/mvn-test <module> -Dtest=SpecificTestClass
+
+# Install a module to local Maven repo so dependents can resolve it (60s timeout)
+scripts/mvn-install <module>
+
+# Compile a module's main + test sources without running tests (45s timeout)
+scripts/mvn-compile <module>
+
+# Test multiple modules sequentially, fail-fast on first failure
+scripts/check-build runtime quarkus-work-reports
+```
+
+**Standard workflow after changing module X:**
+```bash
+scripts/mvn-test X                        # verify tests pass
+scripts/mvn-install X                     # publish to local Maven repo
+scripts/mvn-compile <dependent-of-X>      # verify dependent still compiles
+```
+
+**Never specify `timeout` > default in Bash tool calls.** Specifying a large timeout silently converts the command to a background task with output written to an unreadable temp file. The default (120s) runs synchronously. If your command needs more than 120s, break it into smaller pieces using the scripts above.
+
+**Expected test times per module** (use as a sanity check — if a module takes longer, something is wrong):
+
+| Module | Expected |
+|---|---|
+| quarkus-work-api | < 5s |
+| quarkus-work-core | < 10s |
+| runtime | < 60s |
+| quarkus-work-reports | < 45s |
+| quarkus-work-notifications | < 30s |
+| quarkus-work-ai | < 30s |
+| quarkus-work-queues | < 30s |
+| quarkus-work-ledger | < 30s |
+
+---
+
 **`quarkus-ledger` prerequisite:** `quarkus-work-ledger` depends on `io.quarkiverse.ledger:quarkus-ledger:0.2-SNAPSHOT` — a sibling project at `~/claude/quarkus-ledger/`. If the build fails with "Could not find artifact", install it first:
 ```bash
 JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn install -DskipTests -f ~/claude/quarkus-ledger/pom.xml

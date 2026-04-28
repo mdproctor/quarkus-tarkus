@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Run a focused verification of modules most likely affected by recent changes.
+# Runs each module test suite sequentially, each with its own timeout.
+# Exits immediately if any module fails — no silent accumulation.
+#
+# Usage: scripts/check-build [module1 module2 ...]
+#        With no args: runs the standard set (runtime + quarkus-work-reports)
+#
+# Example: scripts/check-build runtime quarkus-work-reports quarkus-work-notifications
+
+set -euo pipefail
+
+JAVA_HOME=$(/usr/libexec/java_home -v 26)
+export JAVA_HOME
+
+MODULES=("$@")
+if [ ${#MODULES[@]} -eq 0 ]; then
+  MODULES=(runtime quarkus-work-reports)
+fi
+
+TIMEOUT_PER_MODULE=90
+FAILED=()
+
+for MODULE in "${MODULES[@]}"; do
+  echo ""
+  echo "==> Testing ${MODULE}..."
+  if timeout "${TIMEOUT_PER_MODULE}" mvn test -pl "${MODULE}" -q 2>&1; then
+    echo "    OK: ${MODULE}"
+  else
+    EXIT=$?
+    if [ $EXIT -eq 124 ]; then
+      echo "    TIMEOUT (${TIMEOUT_PER_MODULE}s): ${MODULE}" >&2
+    else
+      echo "    FAILED (exit ${EXIT}): ${MODULE}" >&2
+    fi
+    FAILED+=("${MODULE}")
+    # Fail fast — don't run remaining modules after a failure
+    break
+  fi
+done
+
+echo ""
+if [ ${#FAILED[@]} -eq 0 ]; then
+  echo "All modules passed."
+  exit 0
+else
+  echo "FAILED: ${FAILED[*]}" >&2
+  exit 1
+fi

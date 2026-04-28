@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Compile a module (main + test sources) without running tests.
+# Used to verify a dependent module sees new classes after mvn-install.
+#
+# Usage: scripts/mvn-compile <module>
+
+set -euo pipefail
+
+if [ $# -lt 1 ]; then
+  echo "Usage: scripts/mvn-compile <module>" >&2
+  exit 1
+fi
+
+MODULE="$1"
+JAVA_HOME=$(/usr/libexec/java_home -v 26)
+export JAVA_HOME
+
+TIMEOUT=45
+echo "==> mvn test-compile -pl ${MODULE} (timeout ${TIMEOUT}s)"
+
+if ! timeout "${TIMEOUT}" mvn test-compile -pl "${MODULE}" 2>&1; then
+  EXIT=$?
+  if [ $EXIT -eq 124 ]; then
+    echo "TIMEOUT: Compile of '${MODULE}' exceeded ${TIMEOUT}s." >&2
+  fi
+  exit $EXIT
+fi
