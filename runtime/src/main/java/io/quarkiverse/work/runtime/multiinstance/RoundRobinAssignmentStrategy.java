@@ -15,6 +15,9 @@ import io.quarkiverse.work.api.InstanceAssignmentStrategy;
 import io.quarkiverse.work.api.MultiInstanceContext;
 import io.quarkiverse.work.api.SelectionContext;
 import io.quarkiverse.work.api.WorkerSelectionStrategy;
+import io.quarkiverse.work.core.strategy.ClaimFirstStrategy;
+import io.quarkiverse.work.core.strategy.LeastLoadedStrategy;
+import io.quarkiverse.work.runtime.config.WorkItemsConfig;
 import io.quarkiverse.work.runtime.model.WorkItem;
 
 /**
@@ -38,9 +41,27 @@ public class RoundRobinAssignmentStrategy implements InstanceAssignmentStrategy 
 
     private final WorkerSelectionStrategy workerSelectionStrategy;
 
-    /** CDI constructor. */
+    /**
+     * CDI constructor — injects concrete strategy types to avoid ambiguity,
+     * then selects the active one based on config. Mirrors the pattern in
+     * {@code WorkItemAssignmentService}.
+     *
+     * @param config the WorkItems configuration
+     * @param claimFirst the built-in claim-first strategy
+     * @param leastLoaded the built-in least-loaded strategy
+     */
     @Inject
-    public RoundRobinAssignmentStrategy(final WorkerSelectionStrategy workerSelectionStrategy) {
+    public RoundRobinAssignmentStrategy(
+            final WorkItemsConfig config,
+            final ClaimFirstStrategy claimFirst,
+            final LeastLoadedStrategy leastLoaded) {
+        this.workerSelectionStrategy = "claim-first".equals(config.routing().strategy())
+                ? claimFirst
+                : leastLoaded;
+    }
+
+    /** Package-private constructor for unit tests. */
+    RoundRobinAssignmentStrategy(final WorkerSelectionStrategy workerSelectionStrategy) {
         this.workerSelectionStrategy = workerSelectionStrategy;
     }
 
