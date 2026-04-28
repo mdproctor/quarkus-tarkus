@@ -43,4 +43,16 @@ class MultiInstanceConfigTest {
         var config = new MultiInstanceConfig(5, 3, ParentRole.COORDINATOR, "pool", OnThresholdReached.CANCEL, false, null);
         assertThat(config.validate()).isEmpty();
     }
+
+    @Test
+    void instanceCountZeroReturnsValidationError() {
+        var config = new MultiInstanceConfig(0, 1, null, null, null, false, null);
+        assertThat(config.validate()).contains("instanceCount must be at least 1");
+    }
+
+    @Test
+    void requiredCountZeroReturnsValidationError() {
+        var config = new MultiInstanceConfig(3, 0, null, null, null, false, null);
+        assertThat(config.validate()).contains("requiredCount must be at least 1");
+    }
 }
