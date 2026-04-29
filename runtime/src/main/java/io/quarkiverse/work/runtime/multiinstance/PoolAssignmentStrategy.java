@@ -30,6 +30,12 @@ public class PoolAssignmentStrategy implements InstanceAssignmentStrategy {
     @Override
     public void assign(final List<Object> instances, final MultiInstanceContext context) {
         final WorkItem parent = (WorkItem) context.parent();
+        // Only propagate candidateGroups/candidateUsers from parent when parent is a PARTICIPANT
+        // (has its own candidateGroups). For COORDINATOR parents, children already have the
+        // correct routing from their create request and must not be overwritten with null.
+        if (parent.candidateGroups == null && parent.candidateUsers == null) {
+            return;
+        }
         for (final Object obj : instances) {
             final WorkItem child = (WorkItem) obj;
             child.candidateGroups = parent.candidateGroups;
