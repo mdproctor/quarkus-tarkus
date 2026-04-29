@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import io.quarkiverse.work.runtime.model.WorkItem;
+import io.quarkiverse.work.runtime.model.WorkItemRootView;
 
 /**
  * KV-native store SPI for {@link WorkItem} persistence.
@@ -80,5 +81,19 @@ public interface WorkItemStore {
      */
     default long countByParentAndAssignee(UUID parentId, String assigneeId, UUID excludeId) {
         return 0L;
+    }
+
+    /**
+     * Return root WorkItems (parentId IS NULL) visible to the given user,
+     * enriched with aggregate stats. Visible = directly assigned to user,
+     * in candidateGroups/Users, OR user has visibility into at least one descendant.
+     * Default returns empty list — override in JPA store.
+     *
+     * @param userId the user to check visibility for; may be null
+     * @param candidateGroups the groups to check visibility for; may be null or empty
+     * @return list of root WorkItems enriched with child stats; never null
+     */
+    default List<WorkItemRootView> scanRoots(String userId, List<String> candidateGroups) {
+        return java.util.Collections.emptyList();
     }
 }
