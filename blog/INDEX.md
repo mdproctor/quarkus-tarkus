@@ -12,3 +12,4 @@
 | [2026-04-27-mdp01-slas-signals-connectors.md](2026-04-27-mdp01-slas-signals-connectors.md) | 2026-04-27 | Business-hours SLA, notifications module, and casehub-connectors as a standalone reusable connector library |
 | [2026-04-28-mdp01-optional-reports-postgres-truth.md](2026-04-28-mdp01-optional-reports-postgres-truth.md) | 2026-04-28 | Optional SLA reporting module; how Quarkus augmentation time bites when you try to switch databases in tests |
 | [2026-04-29-mdp01-m-of-n-rule-rewriting.md](2026-04-29-mdp01-m-of-n-rule-rewriting.md) | 2026-04-29 | M-of-N parallel WorkItems; a boundary rule that was wrong; OCC exceptions Narayana won't throw where you expect; threaded inbox |
+| [2026-04-29-mdp02-distributed-sse-infra-tax.md](2026-04-29-mdp02-distributed-sse-infra-tax.md) | 2026-04-29 | Reconsidering Redis for distributed SSE fan-out; WorkItemEventBroadcaster as a pluggable SPI |
