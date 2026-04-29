@@ -14,7 +14,7 @@ import jakarta.ws.rs.core.Response;
 
 import io.quarkiverse.ledger.runtime.config.LedgerConfig;
 import io.quarkiverse.ledger.runtime.model.ActorTrustScore;
-import io.quarkiverse.ledger.runtime.repository.ActorTrustScoreRepository;
+import io.quarkiverse.ledger.runtime.service.TrustGateService;
 import io.quarkiverse.work.ledger.api.dto.ActorTrustScoreResponse;
 
 /**
@@ -30,7 +30,7 @@ import io.quarkiverse.work.ledger.api.dto.ActorTrustScoreResponse;
 public class ActorTrustResource {
 
     @Inject
-    ActorTrustScoreRepository trustRepo;
+    TrustGateService trustGateService;
 
     @Inject
     LedgerConfig config;
@@ -53,7 +53,7 @@ public class ActorTrustResource {
                     .entity(Map.of("error", "Trust scoring is not enabled"))
                     .build();
         }
-        return trustRepo.findByActorId(actorId)
+        return trustGateService.findScore(actorId)
                 .map(score -> Response.ok(toResponse(score)).build())
                 .orElse(Response.status(Response.Status.NOT_FOUND)
                         .entity(Map.of("error", "No trust score computed for: " + actorId))

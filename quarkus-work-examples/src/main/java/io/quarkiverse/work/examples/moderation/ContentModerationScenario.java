@@ -12,8 +12,8 @@ import jakarta.ws.rs.core.MediaType;
 
 import org.jboss.logging.Logger;
 
-import io.quarkiverse.ledger.runtime.model.ActorType;
-import io.quarkiverse.ledger.runtime.model.AttestationVerdict;
+import io.quarkiverse.ledger.api.model.ActorType;
+import io.quarkiverse.ledger.api.model.AttestationVerdict;
 import io.quarkiverse.ledger.runtime.model.LedgerAttestation;
 import io.quarkiverse.ledger.runtime.model.supplement.ComplianceSupplement;
 import io.quarkiverse.ledger.runtime.model.supplement.ProvenanceSupplement;

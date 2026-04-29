@@ -2,7 +2,7 @@ package io.quarkiverse.work.ledger.api.dto;
 
 import java.time.Instant;
 
-import io.quarkiverse.ledger.runtime.model.ActorType;
+import io.quarkiverse.ledger.api.model.ActorType;
 
 /**
  * REST response DTO carrying the computed trust score for a single actor.
