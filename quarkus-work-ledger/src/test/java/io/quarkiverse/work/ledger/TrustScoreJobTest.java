@@ -1,6 +1,7 @@
 package io.quarkiverse.work.ledger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 import java.time.Instant;
 import java.util.List;
@@ -129,6 +130,7 @@ class TrustScoreJobTest {
 
     @Test
     void runComputation_cleanDecisions_highScore() {
+        // No attestations → Beta(1,1) prior → neutral score 0.5 (maximum uncertainty)
         createAndCompleteWorkItem("alice");
         createAndCompleteWorkItem("alice");
         createAndCompleteWorkItem("alice");
@@ -137,7 +139,7 @@ class TrustScoreJobTest {
 
         final Optional<ActorTrustScore> aliceScore = trustScoreRepo.findByActorId("alice");
         assertThat(aliceScore).isPresent();
-        assertThat(aliceScore.get().trustScore).isGreaterThan(0.7);
+        assertThat(aliceScore.get().trustScore).isCloseTo(0.5, within(0.01));
     }
 
     // -------------------------------------------------------------------------

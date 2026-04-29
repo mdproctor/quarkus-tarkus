@@ -9,6 +9,10 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import io.quarkiverse.ledger.runtime.config.LedgerConfig;
 import io.quarkiverse.ledger.runtime.model.ActorTypeResolver;
 import io.quarkiverse.ledger.runtime.model.LedgerEntryType;
@@ -22,6 +26,7 @@ import io.quarkiverse.work.runtime.model.WorkItem;
 import io.quarkiverse.work.runtime.model.WorkItemRelation;
 import io.quarkiverse.work.runtime.model.WorkItemRelationType;
 import io.quarkiverse.work.runtime.repository.WorkItemStore;
+import io.quarkus.logging.Log;
 
 /**
  * CDI observer that writes a {@link WorkItemLedgerEntry} for every WorkItem lifecycle transition.
@@ -38,6 +43,8 @@ import io.quarkiverse.work.runtime.repository.WorkItemStore;
  */
 @ApplicationScoped
 public class LedgerEventCapture {
+
+    private static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules();
 
     @Inject
     WorkItemLedgerEntryRepository ledgerRepo;
@@ -59,6 +66,18 @@ public class LedgerEventCapture {
     @Transactional
     void onWorkItemEvent(@Observes final WorkItemLifecycleEvent event) {
         if (!config.enabled()) {
+            return;
+        }
+
+        // Guard against unrecognised event types before touching EVENT_META
+        final String suffix = eventSuffix(event.type());
+        if (suffix == null) {
+            Log.warnf("Skipping ledger entry — null event type for workItem %s", event.workItemId());
+            return;
+        }
+        if (!EVENT_META.containsKey(suffix)) {
+            Log.warnf("Skipping ledger entry — unrecognised event type '%s' for workItem %s",
+                    event.type(), event.workItemId());
             return;
         }
 
@@ -137,12 +156,32 @@ public class LedgerEventCapture {
      * @return a JSON object string containing status, priority, assigneeId, and expiresAt
      */
     private String buildDecisionContext(final WorkItem wi) {
-        return String.format(
-                "{\"status\":\"%s\",\"priority\":\"%s\",\"assigneeId\":%s,\"expiresAt\":%s}",
-                wi.status,
-                wi.priority,
-                wi.assigneeId != null ? "\"" + wi.assigneeId + "\"" : "null",
-                wi.expiresAt != null ? "\"" + wi.expiresAt + "\"" : "null");
+        final ObjectNode node = MAPPER.createObjectNode();
+        if (wi.status != null) {
+            node.put("status", wi.status.name());
+        } else {
+            node.putNull("status");
+        }
+        if (wi.priority != null) {
+            node.put("priority", wi.priority.name());
+        } else {
+            node.putNull("priority");
+        }
+        if (wi.assigneeId != null) {
+            node.put("assigneeId", wi.assigneeId);
+        } else {
+            node.putNull("assigneeId");
+        }
+        if (wi.expiresAt != null) {
+            node.put("expiresAt", wi.expiresAt.toString());
+        } else {
+            node.putNull("expiresAt");
+        }
+        try {
+            return MAPPER.writeValueAsString(node);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Failed to serialize decision context for workItem " + wi.id, e);
+        }
     }
 
     /** Single source of truth for event suffix → (commandType, eventType, actorRole) mapping. */
@@ -173,17 +212,26 @@ public class LedgerEventCapture {
     }
 
     private String deriveCommandType(final String eventType) {
-        final String[] meta = EVENT_META.get(eventSuffix(eventType));
+        final String s = eventSuffix(eventType);
+        if (s == null)
+            return null;
+        final String[] meta = EVENT_META.get(s);
         return meta != null ? meta[META_COMMAND] : null;
     }
 
     private String deriveEventType(final String eventType) {
-        final String[] meta = EVENT_META.get(eventSuffix(eventType));
+        final String s = eventSuffix(eventType);
+        if (s == null)
+            return null;
+        final String[] meta = EVENT_META.get(s);
         return meta != null ? meta[META_EVENT] : null;
     }
 
     private String deriveActorRole(final String eventType) {
-        final String[] meta = EVENT_META.get(eventSuffix(eventType));
+        final String s = eventSuffix(eventType);
+        if (s == null)
+            return "Assignee";
+        final String[] meta = EVENT_META.get(s);
         return meta != null ? meta[META_ROLE] : "Assignee";
     }
 

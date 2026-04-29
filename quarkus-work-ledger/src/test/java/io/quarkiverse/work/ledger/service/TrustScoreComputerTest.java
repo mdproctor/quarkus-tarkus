@@ -75,12 +75,13 @@ class TrustScoreComputerTest {
 
     @Test
     void singleCleanDecision_noAttestations_returnsHighScore() {
+        // No attestations → Beta(1,1) prior only → neutral score 0.5 (maximum uncertainty)
         final WorkItemLedgerEntry d = decision("alice", now.minus(1, ChronoUnit.HOURS));
 
         final TrustScoreComputer.ActorScore score = computer.compute(
                 List.of(d), Map.of(), now);
 
-        assertThat(score.trustScore()).isCloseTo(1.0, within(0.01));
+        assertThat(score.trustScore()).isCloseTo(0.5, within(0.01));
         assertThat(score.decisionCount()).isEqualTo(1);
     }
 
@@ -90,13 +91,14 @@ class TrustScoreComputerTest {
 
     @Test
     void singleDecisionWithSoundAttestation_returnsHighScore() {
+        // 1 SOUND (confidence=0.9, age≈0): α=1+0.9=1.9, β=1.0 → 1.9/2.9 ≈ 0.655
         final WorkItemLedgerEntry d = decision("alice", now.minus(1, ChronoUnit.HOURS));
         final LedgerAttestation a = attestation(d.id, AttestationVerdict.SOUND);
 
         final TrustScoreComputer.ActorScore score = computer.compute(
                 List.of(d), Map.of(d.id, List.of(a)), now);
 
-        assertThat(score.trustScore()).isCloseTo(1.0, within(0.01));
+        assertThat(score.trustScore()).isCloseTo(0.655, within(0.01));
         assertThat(score.attestationPositive()).isEqualTo(1);
     }
 
@@ -106,13 +108,14 @@ class TrustScoreComputerTest {
 
     @Test
     void singleDecisionWithFlaggedAttestation_returnsLowScore() {
+        // 1 FLAGGED (confidence=0.9, age≈0): α=1.0, β=1+0.9=1.9 → 1.0/2.9 ≈ 0.345
         final WorkItemLedgerEntry d = decision("alice", now.minus(1, ChronoUnit.HOURS));
         final LedgerAttestation a = attestation(d.id, AttestationVerdict.FLAGGED);
 
         final TrustScoreComputer.ActorScore score = computer.compute(
                 List.of(d), Map.of(d.id, List.of(a)), now);
 
-        assertThat(score.trustScore()).isCloseTo(0.0, within(0.01));
+        assertThat(score.trustScore()).isCloseTo(0.345, within(0.01));
         assertThat(score.overturnedCount()).isEqualTo(1);
         assertThat(score.attestationNegative()).isEqualTo(1);
     }
@@ -123,6 +126,8 @@ class TrustScoreComputerTest {
 
     @Test
     void mixedAttestations_majority_negative_returnsLowScore() {
+        // 1 SOUND + 2 FLAGGED (all age≈0, confidence=0.9):
+        // α=1+0.9=1.9, β=1+0.9+0.9=2.8 → 1.9/4.7 ≈ 0.404 (below neutral)
         final WorkItemLedgerEntry d = decision("alice", now.minus(1, ChronoUnit.HOURS));
         final LedgerAttestation sound = attestation(d.id, AttestationVerdict.SOUND);
         final LedgerAttestation flagged1 = attestation(d.id, AttestationVerdict.FLAGGED);
@@ -131,7 +136,7 @@ class TrustScoreComputerTest {
         final TrustScoreComputer.ActorScore score = computer.compute(
                 List.of(d), Map.of(d.id, List.of(sound, flagged1, flagged2)), now);
 
-        assertThat(score.trustScore()).isCloseTo(0.0, within(0.01));
+        assertThat(score.trustScore()).isLessThan(0.5);
     }
 
     // -------------------------------------------------------------------------
@@ -158,6 +163,7 @@ class TrustScoreComputerTest {
 
     @Test
     void multipleDecisions_allClean_returnsHighScore() {
+        // No attestations → Beta(1,1) prior only → 0.5 regardless of decision count
         final WorkItemLedgerEntry d1 = decision("alice", now.minus(1, ChronoUnit.DAYS));
         final WorkItemLedgerEntry d2 = decision("alice", now.minus(2, ChronoUnit.DAYS));
         final WorkItemLedgerEntry d3 = decision("alice", now.minus(3, ChronoUnit.DAYS));
@@ -165,7 +171,7 @@ class TrustScoreComputerTest {
         final TrustScoreComputer.ActorScore score = computer.compute(
                 List.of(d1, d2, d3), Map.of(), now);
 
-        assertThat(score.trustScore()).isCloseTo(1.0, within(0.01));
+        assertThat(score.trustScore()).isCloseTo(0.5, within(0.01));
         assertThat(score.decisionCount()).isEqualTo(3);
     }
 
@@ -196,11 +202,17 @@ class TrustScoreComputerTest {
 
     @Test
     void recencyWeighting_recentDecisionWeightedMore() {
+        // Decay is based on attestation.occurredAt, so set it to match the decision age.
+        // recent SOUND (age=1d): decay≈0.992, weight≈0.893
+        // old FLAGGED (age=180d, half-life=90): decay=2^(-2)=0.25, weight=0.225
+        // α=1+0.893=1.893, β=1+0.225=1.225 → score≈0.607 > 0.5
         final WorkItemLedgerEntry recent = decision("alice", now.minus(1, ChronoUnit.DAYS));
         final LedgerAttestation recentSound = attestation(recent.id, AttestationVerdict.SOUND);
+        recentSound.occurredAt = now.minus(1, ChronoUnit.DAYS);
 
         final WorkItemLedgerEntry old = decision("alice", now.minus(180, ChronoUnit.DAYS));
         final LedgerAttestation oldFlagged = attestation(old.id, AttestationVerdict.FLAGGED);
+        oldFlagged.occurredAt = now.minus(180, ChronoUnit.DAYS);
 
         final TrustScoreComputer.ActorScore score = computer.compute(
                 List.of(recent, old),
@@ -216,13 +228,19 @@ class TrustScoreComputerTest {
 
     @Test
     void halfLifeRespected_oldDecisionHasLessWeight() {
+        // Decay is based on attestation.occurredAt, so set it to match the decision age.
+        // recent SOUND (age=1d, half-life=30): decay≈0.977, weight≈0.879
+        // veryOld FLAGGED (age=365d, half-life=30): decay=2^(-12.2)≈0.000217, weight≈0.000195
+        // α=1+0.879≈1.879, β≈1.000 → score≈0.652 > 0.5
         final TrustScoreComputer shortHalfLife = new TrustScoreComputer(30);
 
         final WorkItemLedgerEntry recent = decision("alice", now.minus(1, ChronoUnit.DAYS));
         final LedgerAttestation recentSound = attestation(recent.id, AttestationVerdict.SOUND);
+        recentSound.occurredAt = now.minus(1, ChronoUnit.DAYS);
 
         final WorkItemLedgerEntry veryOld = decision("alice", now.minus(365, ChronoUnit.DAYS));
         final LedgerAttestation oldFlagged = attestation(veryOld.id, AttestationVerdict.FLAGGED);
+        oldFlagged.occurredAt = now.minus(365, ChronoUnit.DAYS);
 
         final TrustScoreComputer.ActorScore score = shortHalfLife.compute(
                 List.of(recent, veryOld),
