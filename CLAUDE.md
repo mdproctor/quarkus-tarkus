@@ -85,7 +85,7 @@ WorkItems has **no dependency on CaseHub, Quarkus-Flow, or Qhorus** — it is th
 
 **Related projects (read only, for context):**
 - `~/claude/quarkus-qhorus` — agent communication mesh (Qhorus integration target)
-- `~/claude/casehub-engine` — real CaseHub engine (CMMN + blackboard; **not** `~/claude/casehub-poc` which is the retiring POC)
+- `~/claude/casehub/engine` — real CaseHub engine (CMMN + blackboard; **not** `~/claude/casehub-poc` which is the retiring POC)
 - `~/dev/quarkus-flow` — workflow engine (Quarkus-Flow integration target; uses CNCF Serverless Workflow SDK)
 - `~/claude/claudony` — integration layer; will surface WorkItems inbox in its dashboard
 
