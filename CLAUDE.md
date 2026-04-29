@@ -159,8 +159,16 @@ quarkus-work/
 │       │   └── jpa/
 │       │       ├── JpaWorkItemStore.java  — default Panache impl (@ApplicationScoped)
 │       │       └── JpaAuditEntryStore.java — default Panache impl (@ApplicationScoped)
+│       ├── multiinstance/
+│       │   ├── MultiInstanceSpawnService.java — creates parent + spawn group + N children in one @Transactional
+│       │   ├── MultiInstanceGroupPolicy.java  — OCC counter update and M-of-N threshold evaluation
+│       │   ├── MultiInstanceCoordinator.java  — @ObservesAsync entry point with retry on transient failures
+│       │   ├── PoolAssignmentStrategy.java    — InstanceAssignmentStrategy: PENDING pool, first-claim-wins
+│       │   ├── ExplicitListAssignmentStrategy.java — InstanceAssignmentStrategy: one child per named assignee
+│       │   ├── RoundRobinAssignmentStrategy.java   — InstanceAssignmentStrategy: round-robin over candidate list
+│       │   └── CompositeInstanceAssignmentStrategy.java — delegates to configured strategy
 │       ├── service/
-│       │   ├── WorkItemService.java       — lifecycle management, expiry, delegation
+│       │   ├── WorkItemService.java       — lifecycle management, expiry, delegation; completeFromSystem/rejectFromSystem for system-context transitions
 │       │   ├── WorkItemAssignmentService.java — assignment orchestration via WorkBroker
 │       │   ├── WorkItemSpawnService.java  — implements SpawnPort; creates children from templates, wires PART_OF, stores callerRef
 │       │   └── JpaWorkloadProvider.java   — implements WorkloadProvider via JPA store
@@ -329,6 +337,12 @@ JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn install -DskipTests -f ~/claude/qu
 - `@CacheResult` on `ReportService` methods accepts nullable parameters — Quarkus 3.x `CompositeCacheKey` handles nulls correctly via `Arrays.hashCode`; the cache key for `slaBreaches(null, null, null, null)` is stable and shared across unfiltered calls. Use a `from` filter in tests that call the endpoint unfiltered AND need fresh data (cache TTL is 1s in test `application.properties`).
 - `PostgresDialectValidationTest` runs against a real PostgreSQL Testcontainer via a dedicated Surefire execution (`postgres-dialect-test`) that: (1) sets `quarkus.datasource.db-kind=postgresql` as a **system property** before augmentation (test resource overrides don't reach the augmentation cache check), (2) uses `reuseForks=false` for a clean JVM so the fresh augmentation uses PostgreSQL, (3) runs **first** before H2 tests so no cached H2 artifact exists yet. `PostgresTestResource` starts the container and injects the JDBC URL. Flyway is disabled in the PostgreSQL test and replaced with `hibernate-orm.database.generation=drop-and-create` because the Flyway migrations use H2-permissive SQL (e.g. bare `DOUBLE` type) that PostgreSQL rejects — this is a known production compatibility issue to address separately.
 - `CAST(date_trunc('day', w.createdAt) AS LocalDate)` in HQL — the explicit `CAST AS LocalDate` ensures Hibernate 6 returns `java.time.LocalDate` in the result set regardless of dialect, avoiding type ambiguity between H2 and PostgreSQL.
+- `@ObservesAsync` CDI observers with `@Transactional` logic should delegate to a separate injected `@ApplicationScoped @Transactional` bean rather than annotating the observer method itself. In Quarkus, calling a `@Transactional` method from a non-transactional context (the `@ObservesAsync` method) correctly starts a new transaction per call — enabling clean OCC retry. If the observer itself were `@Transactional`, self-invocation issues and rollback semantics would be much harder to manage. See `MultiInstanceCoordinator` + `MultiInstanceGroupPolicy`.
+- When JTA commit fails with OCC (`OptimisticLockException`), Quarkus/Narayana may propagate it wrapped as a `RollbackException` rather than as the raw `jakarta.persistence.OptimisticLockException`. Catching only `OptimisticLockException` in retry loops will miss these cases — catch `Exception` broadly and handle accordingly.
+- `fireAsync()` inside a `@Transactional` method dispatches the event immediately to the thread pool — it does NOT wait for the transaction to commit. If the transaction later rolls back (e.g. OCC), the event has already been delivered. Keep `fireAsync()` outside the transaction boundary (call it after the transactional method returns) when the event should only fire on successful commit.
+- `WorkItemSpawnGroup.findMultiInstanceByParentId()` — returns the multi-instance spawn group (where `requiredCount IS NOT NULL`). A parent can have multiple spawn groups from repeated spawn calls; this method gets the multi-instance one specifically.
+- `scanRoots()` in `JpaWorkItemStore` uses a depth-1 ancestor lookup (not a recursive CTE) for H2 compatibility. Coordinator parents surface in the inbox via their children's candidateGroups/Users. The inbox always returns `parentId IS NULL` items only — children never appear directly.
+- `completeFromSystem()` and `rejectFromSystem()` in `WorkItemService` accept any non-terminal status. Use these (not `complete()`/`reject()`) when transitioning a WorkItem from system context (e.g., multi-instance coordinator completing the parent which may be PENDING).
 
 ---
 
@@ -363,7 +377,7 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home
 | 1 | #101 | Business-Hours Deadlines — SLA in working hours | ✅ complete | BusinessCalendar, HolidayCalendar SPIs; DefaultBusinessCalendar, ICalHolidayCalendar, HolidayCalendarProducer; V19 migration; expiresAtBusinessHours/claimDeadlineBusinessHours on template + request; example scenario |
 | 2 | #103 | Notifications — Slack/Teams/webhook on lifecycle events | ✅ complete | #140 ✅ SPI+dispatcher+CRUD, #141 ✅ HTTP/Slack/Teams channels |
 | ✅ | #104 | SLA Compliance Reporting — breach rates, actor performance | ✅ complete | `quarkus-work-reports` optional module; sla-breaches, actors, throughput, queue-health; 73 tests (68 H2 + 5 PostgreSQL) |
-| 4 | #106 | Multi-Instance Tasks — M-of-N parallel completion | **active** (design needed — may be CaseHub concern) | — |
+| ✅ | #106 | Multi-Instance Tasks — M-of-N parallel completion | ✅ complete | `MultiInstanceSpawnService`, `MultiInstanceCoordinator`, `MultiInstanceGroupPolicy`; `InstanceAssignmentStrategy` SPI + 3 impls; threaded inbox via `scanRoots()`; `GET /workitems/{id}/instances`; V20+V21 migrations |
 | — | #92 | Distributed WorkItems — clustering + federation | future | #93 (SSE) implementable now |
 | — | #79 | External System Integrations | blocked | CaseHub/Qhorus not stable |
 | — | #39 | ProvenanceLink (PROV-O causal graph) | blocked | Awaiting #79 |
