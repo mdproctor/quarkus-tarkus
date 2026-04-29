@@ -33,6 +33,7 @@ import io.quarkiverse.work.runtime.model.WorkItemNote;
 import io.quarkiverse.work.runtime.model.WorkItemPriority;
 import io.quarkiverse.work.runtime.model.WorkItemRelation;
 import io.quarkiverse.work.runtime.model.WorkItemRelationType;
+import io.quarkiverse.work.runtime.model.WorkItemRootView;
 import io.quarkiverse.work.runtime.model.WorkItemStatus;
 import io.quarkiverse.work.runtime.repository.AuditEntryStore;
 import io.quarkiverse.work.runtime.repository.WorkItemNoteStore;
@@ -137,9 +138,31 @@ public class WorkItemResource {
         return InboxSummaryBuilder.build(workItemStore.scan(qb.build()), Instant.now());
     }
 
+    /**
+     * Projection of a root WorkItem enriched with aggregate multi-instance stats.
+     * Returned by {@code GET /workitems/inbox}.
+     */
+    public record WorkItemRootResponse(
+            WorkItemResponse item,
+            int childCount,
+            Integer completedCount,
+            Integer requiredCount,
+            String groupStatus) {
+
+        /** Convert a {@link WorkItemRootView} to a REST response. */
+        public static WorkItemRootResponse from(final WorkItemRootView view) {
+            return new WorkItemRootResponse(
+                    WorkItemMapper.toResponse(view.workItem()),
+                    view.childCount(),
+                    view.completedCount(),
+                    view.requiredCount(),
+                    view.groupStatus() != null ? view.groupStatus().name() : null);
+        }
+    }
+
     @GET
     @Path("/inbox")
-    public List<WorkItemResponse> inbox(
+    public List<WorkItemRootResponse> inbox(
             @QueryParam("assignee") final String assignee,
             @QueryParam("candidateGroup") final List<String> candidateGroups,
             @QueryParam("candidateUser") final String candidateUser,
@@ -147,22 +170,8 @@ public class WorkItemResource {
             @QueryParam("priority") final WorkItemPriority priority,
             @QueryParam("category") final String category,
             @QueryParam("followUp") final Boolean followUp) {
-        final Instant followUpBefore = Boolean.TRUE.equals(followUp) ? Instant.now() : null;
-
-        final WorkItemQuery.Builder qb = WorkItemQuery.inbox(assignee, candidateGroups, candidateUser).toBuilder();
-        if (status != null) {
-            qb.status(status);
-        }
-        if (priority != null) {
-            qb.priority(priority);
-        }
-        if (category != null) {
-            qb.category(category);
-        }
-        if (followUpBefore != null) {
-            qb.followUpBefore(followUpBefore);
-        }
-        return workItemStore.scan(qb.build()).stream().map(WorkItemMapper::toResponse).toList();
+        return workItemStore.scanRoots(assignee, candidateGroups)
+                .stream().map(WorkItemRootResponse::from).toList();
     }
 
     @GET
