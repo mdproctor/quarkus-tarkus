@@ -22,7 +22,7 @@ import io.casehub.work.ledger.api.dto.ActorTrustScoreResponse;
  *
  * <p>
  * All endpoints are under {@code /workitems/actors} and are only active when
- * {@code quarkus.ledger.trust-score.enabled=true}.
+ * {@code casehub.ledger.trust-score.enabled=true}.
  */
 @Path("/workitems/actors")
 @Produces(APPLICATION_JSON)

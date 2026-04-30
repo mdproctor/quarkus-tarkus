@@ -8,20 +8,20 @@ The protocol asks: Does this already exist elsewhere? Is this the right repo for
 
 **Platform architecture (fetch before any implementation decision):**
 ```
-https://raw.githubusercontent.com/casehubio/casehub-parent/main/docs/PLATFORM.md
+https://raw.githubusercontent.com/casehubio/parent/main/docs/PLATFORM.md
 ```
 
 **This repo's deep-dive:**
 ```
-https://raw.githubusercontent.com/casehubio/casehub-parent/main/docs/repos/casehub-work.md
+https://raw.githubusercontent.com/casehubio/parent/main/docs/repos/casehub-work.md
 ```
 
 **Other repo deep-dives** (fetch the relevant ones when your implementation touches their domain):
-- casehub-ledger: `https://raw.githubusercontent.com/casehubio/casehub-parent/main/docs/repos/casehub-ledger.md`
-- casehub-qhorus: `https://raw.githubusercontent.com/casehubio/casehub-parent/main/docs/repos/casehub-qhorus.md`
-- casehub-engine: `https://raw.githubusercontent.com/casehubio/casehub-parent/main/docs/repos/casehub-engine.md`
-- claudony: `https://raw.githubusercontent.com/casehubio/casehub-parent/main/docs/repos/claudony.md`
-- casehub-connectors: `https://raw.githubusercontent.com/casehubio/casehub-parent/main/docs/repos/casehub-connectors.md`
+- casehub-ledger: `https://raw.githubusercontent.com/casehubio/parent/main/docs/repos/casehub-ledger.md`
+- casehub-qhorus: `https://raw.githubusercontent.com/casehubio/parent/main/docs/repos/casehub-qhorus.md`
+- casehub-engine: `https://raw.githubusercontent.com/casehubio/parent/main/docs/repos/casehub-engine.md`
+- claudony: `https://raw.githubusercontent.com/casehubio/parent/main/docs/repos/claudony.md`
+- casehub-connectors: `https://raw.githubusercontent.com/casehubio/parent/main/docs/repos/casehub-connectors.md`
 
 ---
 
@@ -96,7 +96,7 @@ WorkItems has **no dependency on CaseHub, Quarkus-Flow, or Qhorus** — it is th
 ```
 quarkus-work/
 ├── casehub-work-api/                      — Pure-Java SPI module (groupId io.casehub)
-│   └── src/main/java/io/quarkiverse/work/api/
+│   └── src/main/java/io/casehub/work/api/
 │       ├── WorkerCandidate.java           — candidate assignee value object
 │       ├── SelectionContext.java          — context passed to WorkerSelectionStrategy (workItemId, title, description, category, requiredCapabilities, candidateUsers, candidateGroups)
 │       ├── AssignmentDecision.java        — result from WorkerSelectionStrategy
@@ -116,7 +116,7 @@ quarkus-work/
 │       ├── SpawnResult.java               — record: groupId, children, created
 │       └── SpawnedChild.java              — record: workItemId, callerRef
 ├── casehub-work-core/                     — Jandex library module (groupId io.casehub)
-│   └── src/main/java/io/quarkiverse/work/core/
+│   └── src/main/java/io/casehub/work/core/
 │       ├── strategy/
 │       │   ├── WorkBroker.java            — dispatches assignment via WorkerSelectionStrategy
 │       │   ├── LeastLoadedStrategy.java   — assigns to worker with fewest open items
@@ -125,7 +125,7 @@ quarkus-work/
 │       └── policy/                        — claim SLA policies (ContinuationPolicy, FreshClockPolicy, etc.)
 │   Note: no JPA entities, no REST resources — pure CDI + casehub-work-api. CaseHub depends on this directly.
 ├── runtime/                               — Extension runtime module
-│   └── src/main/java/io/quarkiverse/work/runtime/
+│   └── src/main/java/io/casehub/work/runtime/
 │       ├── action/
 │       │   ├── ApplyLabelAction.java      — FilterAction: apply label to WorkItem
 │       │   ├── OverrideCandidateGroupsAction.java — FilterAction: replace candidate groups
@@ -177,10 +177,10 @@ quarkus-work/
 │           ├── WorkItemSpawnResource.java — POST /workitems/{id}/spawn, GET/DELETE /workitems/{id}/spawn-groups
 │           └── SpawnGroupResource.java    — GET /spawn-groups/{id}
 ├── deployment/                            — Extension deployment (build-time) module
-│   └── src/main/java/io/quarkiverse/work/deployment/
+│   └── src/main/java/io/casehub/work/deployment/
 │       └── WorkItemsProcessor.java        — @BuildStep: FeatureBuildItem
 ├── testing/                               — Test utilities module (casehub-work-testing)
-│   └── src/main/java/io/quarkiverse/work/testing/
+│   └── src/main/java/io/casehub/work/testing/
 │       ├── InMemoryWorkItemStore.java     — ConcurrentHashMap-backed, no datasource needed
 │       └── InMemoryAuditEntryStore.java   — list-backed
 ├── docs/
