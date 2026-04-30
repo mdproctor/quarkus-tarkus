@@ -1,4 +1,4 @@
-package io.quarkiverse.work.flow;
+package io.casehub.work.flow;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -9,7 +9,7 @@ import static org.mockito.Mockito.when;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
+import io.casehub.work.runtime.model.WorkItemPriority;
 import io.smallrye.mutiny.Uni;
 
 class WorkItemTaskBuilderTest {

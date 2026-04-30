@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ai.skill;
+package io.casehub.work.ai.skill;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -11,8 +11,8 @@ import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.repository.WorkItemStore;
 import io.quarkus.test.junit.QuarkusTest;
 
 /**

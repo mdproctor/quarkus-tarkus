@@ -1,4 +1,4 @@
-package io.quarkiverse.work.core.policy;
+package io.casehub.work.core.policy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -7,7 +7,7 @@ import java.time.Instant;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.api.ClaimSlaContext;
+import io.casehub.work.api.ClaimSlaContext;
 
 class ClaimSlaPolicyTest {
 

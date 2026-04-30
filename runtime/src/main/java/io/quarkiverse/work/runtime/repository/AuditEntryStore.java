@@ -1,9 +1,9 @@
-package io.quarkiverse.work.runtime.repository;
+package io.casehub.work.runtime.repository;
 
 import java.util.List;
 import java.util.UUID;
 
-import io.quarkiverse.work.runtime.model.AuditEntry;
+import io.casehub.work.runtime.model.AuditEntry;
 
 /**
  * Append-only store SPI for {@link AuditEntry} records.

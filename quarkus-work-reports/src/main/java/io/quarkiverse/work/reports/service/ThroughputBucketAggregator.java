@@ -1,4 +1,4 @@
-package io.quarkiverse.work.reports.service;
+package io.casehub.work.reports.service;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.flow;
+package io.casehub.work.flow;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -11,9 +11,9 @@ import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
+import io.casehub.work.runtime.event.WorkItemLifecycleEvent;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemStatus;
 
 class WorkItemFlowEventListenerTest {
 
@@ -48,7 +48,7 @@ class WorkItemFlowEventListenerTest {
     void completedEvent_completesRegisteredFuture() throws Exception {
         UUID id = UUID.randomUUID();
         CompletableFuture<String> future = registry.register(id);
-        listener.onWorkItemEvent(event("io.quarkiverse.work.workitem.completed", id, "{\"ok\":true}"));
+        listener.onWorkItemEvent(event("io.casehub.work.workitem.completed", id, "{\"ok\":true}"));
         assertThat(future.get()).isEqualTo("{\"ok\":true}");
     }
 
@@ -56,7 +56,7 @@ class WorkItemFlowEventListenerTest {
     void rejectedEvent_failsRegisteredFuture() {
         UUID id = UUID.randomUUID();
         CompletableFuture<String> future = registry.register(id);
-        listener.onWorkItemEvent(event("io.quarkiverse.work.workitem.rejected", id, "out of scope"));
+        listener.onWorkItemEvent(event("io.casehub.work.workitem.rejected", id, "out of scope"));
         assertThat(future.isCompletedExceptionally()).isTrue();
         assertThatThrownBy(future::get)
                 .isInstanceOf(ExecutionException.class)
@@ -68,7 +68,7 @@ class WorkItemFlowEventListenerTest {
     void cancelledEvent_failsRegisteredFuture() {
         UUID id = UUID.randomUUID();
         CompletableFuture<String> future = registry.register(id);
-        listener.onWorkItemEvent(event("io.quarkiverse.work.workitem.cancelled", id, null));
+        listener.onWorkItemEvent(event("io.casehub.work.workitem.cancelled", id, null));
         assertThat(future.isCompletedExceptionally()).isTrue();
     }
 
@@ -76,14 +76,14 @@ class WorkItemFlowEventListenerTest {
     void createdEvent_ignored() {
         UUID id = UUID.randomUUID();
         CompletableFuture<String> future = registry.register(id);
-        listener.onWorkItemEvent(event("io.quarkiverse.work.workitem.created", id, null));
+        listener.onWorkItemEvent(event("io.casehub.work.workitem.created", id, null));
         assertThat(future.isDone()).isFalse();
     }
 
     @Test
     void completedEvent_unknownWorkItemId_noException() {
         // WorkItem not from a flow — should silently ignore
-        assertThatCode(() -> listener.onWorkItemEvent(event("io.quarkiverse.work.workitem.completed",
+        assertThatCode(() -> listener.onWorkItemEvent(event("io.casehub.work.workitem.completed",
                 UUID.randomUUID(), "resolution"))).doesNotThrowAnyException();
     }
 
@@ -91,7 +91,7 @@ class WorkItemFlowEventListenerTest {
     void rejectedEvent_nullDetail_usesDefaultMessage() {
         UUID id = UUID.randomUUID();
         CompletableFuture<String> future = registry.register(id);
-        listener.onWorkItemEvent(event("io.quarkiverse.work.workitem.rejected", id, null));
+        listener.onWorkItemEvent(event("io.casehub.work.workitem.rejected", id, null));
         assertThat(future.isCompletedExceptionally()).isTrue();
         assertThatThrownBy(future::get)
                 .hasCauseInstanceOf(WorkItemResolutionException.class)

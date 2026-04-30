@@ -1,11 +1,11 @@
-package io.quarkiverse.work.runtime.service;
+package io.casehub.work.runtime.service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 
-import io.quarkiverse.work.api.EscalationPolicy;
-import io.quarkiverse.work.runtime.config.WorkItemsConfig;
+import io.casehub.work.api.EscalationPolicy;
+import io.casehub.work.runtime.config.WorkItemsConfig;
 
 @ApplicationScoped
 public class EscalationPolicyProducer {

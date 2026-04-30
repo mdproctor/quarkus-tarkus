@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.queues.lifecycle;
+package io.casehub.work.examples.queues.lifecycle;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,13 +11,13 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
-import io.quarkiverse.work.queues.event.QueueEventType;
-import io.quarkiverse.work.queues.model.FilterScope;
-import io.quarkiverse.work.queues.model.QueueView;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemCreateRequest;
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
-import io.quarkiverse.work.runtime.service.WorkItemService;
+import io.casehub.work.queues.event.QueueEventType;
+import io.casehub.work.queues.model.FilterScope;
+import io.casehub.work.queues.model.QueueView;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemCreateRequest;
+import io.casehub.work.runtime.model.WorkItemPriority;
+import io.casehub.work.runtime.service.WorkItemService;
 
 /**
  * Runnable example demonstrating the full queue lifecycle event sequence:

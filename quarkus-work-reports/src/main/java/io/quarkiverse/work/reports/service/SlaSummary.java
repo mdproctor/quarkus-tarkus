@@ -1,4 +1,4 @@
-package io.quarkiverse.work.reports.service;
+package io.casehub.work.reports.service;
 
 import java.util.Map;
 

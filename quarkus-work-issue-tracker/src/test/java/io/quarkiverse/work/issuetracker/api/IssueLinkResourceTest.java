@@ -1,4 +1,4 @@
-package io.quarkiverse.work.issuetracker.api;
+package io.casehub.work.issuetracker.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -13,7 +13,7 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.issuetracker.StubIssueTrackerProvider;
+import io.casehub.work.issuetracker.StubIssueTrackerProvider;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 

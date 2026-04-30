@@ -1,4 +1,4 @@
-package io.quarkiverse.work.api;
+package io.casehub.work.api;
 
 /**
  * Aggregate completion status of a multi-instance WorkItem group.

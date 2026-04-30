@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ai.config;
+package io.casehub.work.ai.config;
 
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
@@ -8,17 +8,17 @@ import io.smallrye.config.WithName;
  * Configuration for the quarkus-work-ai module.
  *
  * <pre>
- * quarkus.work.ai.confidence-threshold=0.7
- * quarkus.work.ai.low-confidence-filter.enabled=true
- * quarkus.work.ai.semantic.enabled=true
- * quarkus.work.ai.semantic.score-threshold=0.0
- * quarkus.work.ai.semantic.history-limit=50
- * quarkus.work.ai.suggestion.history-limit=5
- * quarkus.work.ai.escalation-summary.enabled=true
- * quarkus.work.ai.escalation-summary.audit-limit=10
+ * casehub.work.ai.confidence-threshold=0.7
+ * casehub.work.ai.low-confidence-filter.enabled=true
+ * casehub.work.ai.semantic.enabled=true
+ * casehub.work.ai.semantic.score-threshold=0.0
+ * casehub.work.ai.semantic.history-limit=50
+ * casehub.work.ai.suggestion.history-limit=5
+ * casehub.work.ai.escalation-summary.enabled=true
+ * casehub.work.ai.escalation-summary.audit-limit=10
  * </pre>
  */
-@ConfigMapping(prefix = "quarkus.work.ai")
+@ConfigMapping(prefix = "casehub.work.ai")
 public interface WorkItemsAiConfig {
 
     /**
@@ -76,7 +76,7 @@ public interface WorkItemsAiConfig {
     }
 
     /**
-     * Configuration for semantic skill matching via {@link io.quarkiverse.work.ai.skill.SemanticWorkerSelectionStrategy}.
+     * Configuration for semantic skill matching via {@link io.casehub.work.ai.skill.SemanticWorkerSelectionStrategy}.
      */
     interface SemanticConfig {
         /**

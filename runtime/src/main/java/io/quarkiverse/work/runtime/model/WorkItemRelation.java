@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.model;
+package io.casehub.work.runtime.model;
 
 import java.time.Instant;
 import java.util.List;
@@ -36,7 +36,7 @@ import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
  * <p>
  * For {@link WorkItemRelationType#PART_OF} relations, the application layer
  * enforces that no WorkItem can be its own ancestor. This check requires graph
- * traversal and is performed in {@link io.quarkiverse.work.runtime.api.WorkItemRelationResource}
+ * traversal and is performed in {@link io.casehub.work.runtime.api.WorkItemRelationResource}
  * before the relation is persisted.
  */
 @Entity

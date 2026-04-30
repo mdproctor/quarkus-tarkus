@@ -5,26 +5,26 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.quarkiverse.work</groupId>
-    <artifactId>quarkus-work-parent</artifactId>
+    <groupId>io.casehub</groupId>
+    <artifactId>casehub-work-parent</artifactId>
     <version>0.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>quarkus-work-queues-examples</artifactId>
+  <artifactId>casehub-work-queues-examples</artifactId>
   <name>Quarkus WorkItems - Queue Examples</name>
   <description>Runnable scenarios demonstrating real-world label-based work queue patterns
 (triage cascades, legal routing, finance approval chains, multi-label security escalation)
-using quarkus-work-queues. Each scenario runs via POST /queue-examples/{name}/run.</description>
+using casehub-work-queues. Each scenario runs via POST /queue-examples/{name}/run.</description>
 
   <dependencies>
     <dependency>
-      <groupId>io.quarkiverse.work</groupId>
-      <artifactId>quarkus-work</artifactId>
+      <groupId>io.casehub</groupId>
+      <artifactId>casehub-work</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>io.quarkiverse.work</groupId>
-      <artifactId>quarkus-work-queues</artifactId>
+      <groupId>io.casehub</groupId>
+      <artifactId>casehub-work-queues</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

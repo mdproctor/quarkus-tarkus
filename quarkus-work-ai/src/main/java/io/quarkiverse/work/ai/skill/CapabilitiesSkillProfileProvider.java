@@ -1,12 +1,12 @@
-package io.quarkiverse.work.ai.skill;
+package io.casehub.work.ai.skill;
 
 import java.util.Set;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
 
-import io.quarkiverse.work.api.SkillProfile;
-import io.quarkiverse.work.api.SkillProfileProvider;
+import io.casehub.work.api.SkillProfile;
+import io.casehub.work.api.SkillProfileProvider;
 
 /**
  * Builds a {@link SkillProfile} by joining the worker's declared capability tags.

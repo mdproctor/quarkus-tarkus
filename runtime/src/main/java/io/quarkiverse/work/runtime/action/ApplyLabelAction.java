@@ -1,14 +1,14 @@
-package io.quarkiverse.work.runtime.action;
+package io.casehub.work.runtime.action;
 
 import java.util.ArrayList;
 import java.util.Map;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.quarkiverse.work.runtime.filter.FilterAction;
-import io.quarkiverse.work.runtime.model.LabelPersistence;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemLabel;
+import io.casehub.work.runtime.filter.FilterAction;
+import io.casehub.work.runtime.model.LabelPersistence;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemLabel;
 
 /**
  * Built-in FilterAction that adds an INFERRED label to a WorkItem.

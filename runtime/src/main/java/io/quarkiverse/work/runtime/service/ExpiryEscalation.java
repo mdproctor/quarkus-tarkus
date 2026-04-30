@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.service;
+package io.casehub.work.runtime.service;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

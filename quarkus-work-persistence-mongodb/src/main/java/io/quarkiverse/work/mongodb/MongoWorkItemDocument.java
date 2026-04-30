@@ -1,4 +1,4 @@
-package io.quarkiverse.work.mongodb;
+package io.casehub.work.mongodb;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -9,12 +9,12 @@ import java.util.stream.Collectors;
 
 import org.bson.codecs.pojo.annotations.BsonId;
 
-import io.quarkiverse.work.runtime.model.DelegationState;
-import io.quarkiverse.work.runtime.model.LabelPersistence;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemLabel;
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
+import io.casehub.work.runtime.model.DelegationState;
+import io.casehub.work.runtime.model.LabelPersistence;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemLabel;
+import io.casehub.work.runtime.model.WorkItemPriority;
+import io.casehub.work.runtime.model.WorkItemStatus;
 import io.quarkus.mongodb.panache.PanacheMongoEntityBase;
 import io.quarkus.mongodb.panache.common.MongoEntity;
 

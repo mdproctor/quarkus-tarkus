@@ -4,21 +4,15 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>io.quarkiverse</groupId>
-    <artifactId>quarkiverse-parent</artifactId>
-    <version>21</version>
-  </parent>
-
-  <groupId>io.quarkiverse.work</groupId>
-  <artifactId>quarkus-work-parent</artifactId>
+  <groupId>io.casehub</groupId>
+  <artifactId>casehub-work-parent</artifactId>
   <version>0.2-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Quarkus WorkItems - Parent</name>
   <description>Human-scale WorkItem lifecycle management — expiry, delegation, escalation, audit trail.
 Standalone Quarkiverse extension with optional integrations for Quarkus-Flow, CaseHub, and Qhorus.</description>
-  <url>https://github.com/mdproctor/quarkus-work</url>
+  <url>https://github.com/casehubio/work</url>
 
   <modules>
     <module>quarkus-work-api</module>
@@ -43,9 +37,9 @@ Standalone Quarkiverse extension with optional integrations for Quarkus-Flow, Ca
   </modules>
 
   <scm>
-    <connection>scm:git:git@github.com:mdproctor/quarkus-work.git</connection>
-    <developerConnection>scm:git:git@github.com:mdproctor/quarkus-work.git</developerConnection>
-    <url>https://github.com/mdproctor/quarkus-work</url>
+    <connection>scm:git:git@github.com:casehubio/work.git</connection>
+    <developerConnection>scm:git:git@github.com:casehubio/work.git</developerConnection>
+    <url>https://github.com/casehubio/work</url>
     <tag>HEAD</tag>
   </scm>
 
@@ -74,12 +68,12 @@ Standalone Quarkiverse extension with optional integrations for Quarkus-Flow, Ca
     <repository>
       <id>github</id>
       <name>casehubio GitHub Packages</name>
-      <url>https://maven.pkg.github.com/casehubio/quarkus-work</url>
+      <url>https://maven.pkg.github.com/casehubio/work</url>
     </repository>
     <snapshotRepository>
       <id>github</id>
       <name>casehubio GitHub Packages</name>
-      <url>https://maven.pkg.github.com/casehubio/quarkus-work</url>
+      <url>https://maven.pkg.github.com/casehubio/work</url>
     </snapshotRepository>
   </distributionManagement>
 

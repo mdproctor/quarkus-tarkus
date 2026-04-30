@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.config;
+package io.casehub.work.runtime.config;
 
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
@@ -11,12 +11,12 @@ import io.smallrye.config.WithDefault;
  * Example {@code application.properties} overrides:
  *
  * <pre>
- * quarkus.work.default-expiry-hours=48
- * quarkus.work.escalation-policy=reassign
- * quarkus.work.cleanup.expiry-check-seconds=30
+ * casehub.work.default-expiry-hours=48
+ * casehub.work.escalation-policy=reassign
+ * casehub.work.cleanup.expiry-check-seconds=30
  * </pre>
  */
-@ConfigMapping(prefix = "quarkus.work")
+@ConfigMapping(prefix = "casehub.work")
 public interface WorkItemsConfig {
 
     /**

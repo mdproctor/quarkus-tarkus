@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ledger;
+package io.casehub.work.ledger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -15,15 +15,15 @@ import io.casehub.ledger.api.model.AttestationVerdict;
 import io.casehub.ledger.api.model.LedgerEntryType;
 import io.casehub.ledger.runtime.model.LedgerAttestation;
 import io.casehub.ledger.runtime.service.LedgerMerkleTree;
-import io.quarkiverse.work.ledger.model.WorkItemLedgerEntry;
-import io.quarkiverse.work.ledger.repository.WorkItemLedgerEntryRepository;
-import io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemCreateRequest;
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
-import io.quarkiverse.work.runtime.model.WorkItemRelation;
-import io.quarkiverse.work.runtime.model.WorkItemRelationType;
-import io.quarkiverse.work.runtime.service.WorkItemService;
+import io.casehub.work.ledger.model.WorkItemLedgerEntry;
+import io.casehub.work.ledger.repository.WorkItemLedgerEntryRepository;
+import io.casehub.work.runtime.event.WorkItemLifecycleEvent;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemCreateRequest;
+import io.casehub.work.runtime.model.WorkItemPriority;
+import io.casehub.work.runtime.model.WorkItemRelation;
+import io.casehub.work.runtime.model.WorkItemRelationType;
+import io.casehub.work.runtime.service.WorkItemService;
 import io.quarkus.test.TestTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 

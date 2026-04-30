@@ -1,10 +1,10 @@
-package io.quarkiverse.work.examples.cancel;
+package io.casehub.work.examples.cancel;
 
 import java.util.List;
 import java.util.UUID;
 
-import io.quarkiverse.work.examples.StepLog;
-import io.quarkiverse.work.runtime.api.AuditEntryResponse;
+import io.casehub.work.examples.StepLog;
+import io.casehub.work.runtime.api.AuditEntryResponse;
 
 /**
  * Response returned by the software licence cancellation scenario.

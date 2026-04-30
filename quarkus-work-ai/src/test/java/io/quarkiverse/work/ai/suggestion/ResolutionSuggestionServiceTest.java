@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ai.suggestion;
+package io.casehub.work.ai.suggestion;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -14,9 +14,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import dev.langchain4j.model.chat.ChatModel;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
-import io.quarkiverse.work.testing.InMemoryWorkItemStore;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemStatus;
+import io.casehub.work.testing.InMemoryWorkItemStore;
 
 class ResolutionSuggestionServiceTest {
 

@@ -1,11 +1,11 @@
-package io.quarkiverse.work.queues.service;
+package io.casehub.work.queues.service;
 
 import java.util.UUID;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 
-import io.quarkiverse.work.queues.event.WorkItemQueueEvent;
+import io.casehub.work.queues.event.WorkItemQueueEvent;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.operators.multi.processors.BroadcastProcessor;
 

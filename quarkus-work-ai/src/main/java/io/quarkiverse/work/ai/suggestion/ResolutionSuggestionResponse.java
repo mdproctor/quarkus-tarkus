@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ai.suggestion;
+package io.casehub.work.ai.suggestion;
 
 import java.util.UUID;
 

@@ -1,11 +1,11 @@
-package io.quarkiverse.work.runtime.calendar;
+package io.casehub.work.runtime.calendar;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 
-import io.quarkiverse.work.api.HolidayCalendar;
-import io.quarkiverse.work.runtime.config.WorkItemsConfig;
+import io.casehub.work.api.HolidayCalendar;
+import io.casehub.work.runtime.config.WorkItemsConfig;
 import io.quarkus.arc.DefaultBean;
 
 /**
@@ -13,11 +13,11 @@ import io.quarkus.arc.DefaultBean;
  *
  * <h2>Selection logic</h2>
  * <ol>
- * <li>If {@code quarkus.work.business-hours.holiday-ical-url} is set,
+ * <li>If {@code casehub.work.business-hours.holiday-ical-url} is set,
  * an {@link ICalHolidayCalendar} is produced — it fetches the iCal feed
  * at startup and caches all holiday dates.</li>
  * <li>Otherwise a {@link ConfigHolidayCalendar} is produced — it reads the
- * static date list from {@code quarkus.work.business-hours.holidays}.</li>
+ * static date list from {@code casehub.work.business-hours.holidays}.</li>
  * </ol>
  *
  * <h2>Overriding</h2>

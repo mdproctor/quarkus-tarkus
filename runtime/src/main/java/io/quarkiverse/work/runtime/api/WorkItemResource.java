@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.api;
+package io.casehub.work.runtime.api;
 
 import java.net.URI;
 import java.time.Instant;
@@ -23,27 +23,27 @@ import jakarta.ws.rs.core.Response;
 
 import org.jboss.resteasy.reactive.RestStreamElementType;
 
-import io.quarkiverse.work.runtime.event.WorkItemEventBroadcaster;
-import io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent;
-import io.quarkiverse.work.runtime.model.AuditEntry;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemFormSchema;
-import io.quarkiverse.work.runtime.model.WorkItemLink;
-import io.quarkiverse.work.runtime.model.WorkItemNote;
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
-import io.quarkiverse.work.runtime.model.WorkItemRelation;
-import io.quarkiverse.work.runtime.model.WorkItemRelationType;
-import io.quarkiverse.work.runtime.model.WorkItemRootView;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
-import io.quarkiverse.work.runtime.repository.AuditEntryStore;
-import io.quarkiverse.work.runtime.repository.WorkItemNoteStore;
-import io.quarkiverse.work.runtime.repository.WorkItemQuery;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
-import io.quarkiverse.work.runtime.service.FormSchemaValidationService;
-import io.quarkiverse.work.runtime.service.InboxSummaryBuilder;
-import io.quarkiverse.work.runtime.service.LabelNotFoundException;
-import io.quarkiverse.work.runtime.service.WorkItemNotFoundException;
-import io.quarkiverse.work.runtime.service.WorkItemService;
+import io.casehub.work.runtime.event.WorkItemEventBroadcaster;
+import io.casehub.work.runtime.event.WorkItemLifecycleEvent;
+import io.casehub.work.runtime.model.AuditEntry;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemFormSchema;
+import io.casehub.work.runtime.model.WorkItemLink;
+import io.casehub.work.runtime.model.WorkItemNote;
+import io.casehub.work.runtime.model.WorkItemPriority;
+import io.casehub.work.runtime.model.WorkItemRelation;
+import io.casehub.work.runtime.model.WorkItemRelationType;
+import io.casehub.work.runtime.model.WorkItemRootView;
+import io.casehub.work.runtime.model.WorkItemStatus;
+import io.casehub.work.runtime.repository.AuditEntryStore;
+import io.casehub.work.runtime.repository.WorkItemNoteStore;
+import io.casehub.work.runtime.repository.WorkItemQuery;
+import io.casehub.work.runtime.repository.WorkItemStore;
+import io.casehub.work.runtime.service.FormSchemaValidationService;
+import io.casehub.work.runtime.service.InboxSummaryBuilder;
+import io.casehub.work.runtime.service.LabelNotFoundException;
+import io.casehub.work.runtime.service.WorkItemNotFoundException;
+import io.casehub.work.runtime.service.WorkItemService;
 import io.smallrye.mutiny.Multi;
 
 @Path("/workitems")

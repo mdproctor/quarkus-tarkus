@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.queues.triage;
+package io.casehub.work.examples.queues.triage;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;

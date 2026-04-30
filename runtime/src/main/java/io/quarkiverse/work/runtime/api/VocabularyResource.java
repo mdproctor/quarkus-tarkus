@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.api;
+package io.casehub.work.runtime.api;
 
 import java.util.List;
 import java.util.Map;
@@ -14,9 +14,9 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import io.quarkiverse.work.runtime.model.LabelDefinition;
-import io.quarkiverse.work.runtime.model.VocabularyScope;
-import io.quarkiverse.work.runtime.service.LabelVocabularyService;
+import io.casehub.work.runtime.model.LabelDefinition;
+import io.casehub.work.runtime.model.VocabularyScope;
+import io.casehub.work.runtime.service.LabelVocabularyService;
 
 @Path("/vocabulary")
 @Produces(MediaType.APPLICATION_JSON)
@@ -70,7 +70,7 @@ public class VocabularyResource {
                     .build();
         }
 
-        final io.quarkiverse.work.runtime.model.LabelVocabulary vocab;
+        final io.casehub.work.runtime.model.LabelVocabulary vocab;
         if (scope == VocabularyScope.GLOBAL) {
             vocab = vocabularyService.findGlobalVocabulary();
             if (vocab == null) {

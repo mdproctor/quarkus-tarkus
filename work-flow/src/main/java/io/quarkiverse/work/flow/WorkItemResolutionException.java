@@ -1,4 +1,4 @@
-package io.quarkiverse.work.flow;
+package io.casehub.work.flow;
 
 import java.util.UUID;
 

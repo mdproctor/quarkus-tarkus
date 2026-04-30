@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ai.skill;
+package io.casehub.work.ai.skill;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Test;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.output.Response;
-import io.quarkiverse.work.api.SelectionContext;
-import io.quarkiverse.work.api.SkillProfile;
+import io.casehub.work.api.SelectionContext;
+import io.casehub.work.api.SkillProfile;
 
 class EmbeddingSkillMatcherTest {
 

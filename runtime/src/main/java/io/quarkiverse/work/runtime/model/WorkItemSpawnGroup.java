@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.model;
+package io.casehub.work.runtime.model;
 
 import java.time.Instant;
 import java.util.List;
@@ -43,7 +43,7 @@ import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
  * Non-multi-instance groups (where {@link #requiredCount} is {@code null}) carry no
  * completion semantics — the caller (CaseHub, application) decides what completing
  * child WorkItems means by observing
- * {@link io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent}s directly.
+ * {@link io.casehub.work.runtime.event.WorkItemLifecycleEvent}s directly.
  */
 @Entity
 @Table(name = "work_item_spawn_group", uniqueConstraints = {

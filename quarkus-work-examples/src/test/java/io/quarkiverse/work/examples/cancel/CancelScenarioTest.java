@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.cancel;
+package io.casehub.work.examples.cancel;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;

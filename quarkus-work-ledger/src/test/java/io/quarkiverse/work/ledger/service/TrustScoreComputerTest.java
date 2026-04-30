@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ledger.service;
+package io.casehub.work.ledger.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -16,7 +16,7 @@ import io.casehub.ledger.api.model.AttestationVerdict;
 import io.casehub.ledger.api.model.LedgerEntryType;
 import io.casehub.ledger.runtime.model.LedgerAttestation;
 import io.casehub.ledger.runtime.service.TrustScoreComputer;
-import io.quarkiverse.work.ledger.model.WorkItemLedgerEntry;
+import io.casehub.work.ledger.model.WorkItemLedgerEntry;
 
 /**
  * Pure unit tests for {@link TrustScoreComputer} using WorkItems's concrete

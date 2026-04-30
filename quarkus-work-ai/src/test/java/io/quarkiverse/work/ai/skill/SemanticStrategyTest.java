@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ai.skill;
+package io.casehub.work.ai.skill;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -8,11 +8,11 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.api.SelectionContext;
-import io.quarkiverse.work.api.SkillMatcher;
-import io.quarkiverse.work.api.SkillProfile;
-import io.quarkiverse.work.api.SkillProfileProvider;
-import io.quarkiverse.work.api.WorkerCandidate;
+import io.casehub.work.api.SelectionContext;
+import io.casehub.work.api.SkillMatcher;
+import io.casehub.work.api.SkillProfile;
+import io.casehub.work.api.SkillProfileProvider;
+import io.casehub.work.api.WorkerCandidate;
 
 class SemanticStrategyTest {
 
@@ -32,7 +32,7 @@ class SemanticStrategyTest {
             final SkillProfileProvider provider, final SkillMatcher matcher,
             final boolean enabled, final double threshold) {
         return new SemanticWorkerSelectionStrategy(provider, matcher,
-                new io.quarkiverse.work.core.strategy.LeastLoadedStrategy(), enabled, threshold);
+                new io.casehub.work.core.strategy.LeastLoadedStrategy(), enabled, threshold);
     }
 
     @Test

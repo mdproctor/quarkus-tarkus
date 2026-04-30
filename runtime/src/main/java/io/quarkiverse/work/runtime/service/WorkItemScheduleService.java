@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.service;
+package io.casehub.work.runtime.service;
 
 import java.time.Instant;
 import java.util.Date;
@@ -13,8 +13,8 @@ import jakarta.transaction.Transactional;
 import org.jboss.logging.Logger;
 import org.quartz.CronExpression;
 
-import io.quarkiverse.work.runtime.model.WorkItemSchedule;
-import io.quarkiverse.work.runtime.model.WorkItemTemplate;
+import io.casehub.work.runtime.model.WorkItemSchedule;
+import io.casehub.work.runtime.model.WorkItemTemplate;
 import io.quarkus.scheduler.Scheduled;
 
 /**
@@ -23,7 +23,7 @@ import io.quarkus.scheduler.Scheduled;
  * <h2>Background job</h2>
  * <p>
  * {@link #processSchedules()} runs every minute (configurable via
- * {@code quarkus.work.scheduler.schedule-check-interval}). It finds all
+ * {@code casehub.work.scheduler.schedule-check-interval}). It finds all
  * active schedules where {@code nextFireAt ≤ now}, instantiates the linked
  * template, updates {@code lastFiredAt}, and computes the new {@code nextFireAt}.
  *
@@ -56,7 +56,7 @@ public class WorkItemScheduleService {
      * @return the number of WorkItems created this run (useful in tests for direct invocation)
      */
     /** Scheduler trigger — must return void. Delegates to {@link #processSchedules()}. */
-    @Scheduled(identity = "work-item-schedule-check", every = "${quarkus.work.scheduler.schedule-check-interval:60}s", delayed = "10s")
+    @Scheduled(identity = "work-item-schedule-check", every = "${casehub.work.scheduler.schedule-check-interval:60}s", delayed = "10s")
     public void scheduledCheck() {
         processSchedules();
     }

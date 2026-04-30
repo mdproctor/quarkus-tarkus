@@ -1,4 +1,4 @@
-package io.quarkiverse.work.queues.model;
+package io.casehub.work.queues.model;
 
 /** Visibility scope of a filter or queue view. */
 public enum FilterScope {

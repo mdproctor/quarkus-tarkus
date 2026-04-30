@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.queues.security;
+package io.casehub.work.examples.queues.security;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;

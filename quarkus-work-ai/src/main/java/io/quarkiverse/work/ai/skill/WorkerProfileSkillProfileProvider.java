@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ai.skill;
+package io.casehub.work.ai.skill;
 
 import java.util.Optional;
 import java.util.Set;
@@ -6,8 +6,8 @@ import java.util.function.Function;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.quarkiverse.work.api.SkillProfile;
-import io.quarkiverse.work.api.SkillProfileProvider;
+import io.casehub.work.api.SkillProfile;
+import io.casehub.work.api.SkillProfileProvider;
 
 /**
  * Reads a worker's skill profile from the {@link WorkerSkillProfile} entity.

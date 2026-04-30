@@ -1,4 +1,4 @@
-package io.quarkiverse.work.queues.api;
+package io.casehub.work.queues.api;
 
 import java.util.List;
 import java.util.Map;
@@ -18,16 +18,16 @@ import jakarta.ws.rs.core.Response;
 
 import org.jboss.resteasy.reactive.RestStreamElementType;
 
-import io.quarkiverse.work.queues.event.WorkItemQueueEvent;
-import io.quarkiverse.work.queues.model.FilterScope;
-import io.quarkiverse.work.queues.model.QueueView;
-import io.quarkiverse.work.queues.service.ExpressionDescriptor;
-import io.quarkiverse.work.queues.service.FilterEvaluatorRegistry;
-import io.quarkiverse.work.queues.service.WorkItemQueueEventBroadcaster;
-import io.quarkiverse.work.runtime.api.WorkItemMapper;
-import io.quarkiverse.work.runtime.api.WorkItemResponse;
-import io.quarkiverse.work.runtime.repository.WorkItemQuery;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
+import io.casehub.work.queues.event.WorkItemQueueEvent;
+import io.casehub.work.queues.model.FilterScope;
+import io.casehub.work.queues.model.QueueView;
+import io.casehub.work.queues.service.ExpressionDescriptor;
+import io.casehub.work.queues.service.FilterEvaluatorRegistry;
+import io.casehub.work.queues.service.WorkItemQueueEventBroadcaster;
+import io.casehub.work.runtime.api.WorkItemMapper;
+import io.casehub.work.runtime.api.WorkItemResponse;
+import io.casehub.work.runtime.repository.WorkItemQuery;
+import io.casehub.work.runtime.repository.WorkItemStore;
 import io.smallrye.mutiny.Multi;
 
 /** REST resource for managing queue views and querying their live content. */

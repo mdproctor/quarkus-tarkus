@@ -1,4 +1,4 @@
-package io.quarkiverse.work.queues.service;
+package io.casehub.work.queues.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -6,8 +6,8 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.queues.model.FilterAction;
-import io.quarkiverse.work.runtime.model.*;
+import io.casehub.work.queues.model.FilterAction;
+import io.casehub.work.runtime.model.*;
 
 /**
  * Unit tests for the core re-evaluation algorithm (no Quarkus, no DB).

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.queues.api;
+package io.casehub.work.queues.api;
 
 import java.time.Instant;
 import java.util.Map;
@@ -16,12 +16,12 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import io.quarkiverse.work.queues.model.WorkItemQueueState;
-import io.quarkiverse.work.runtime.api.WorkItemMapper;
-import io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
-import io.quarkiverse.work.runtime.service.WorkItemService;
+import io.casehub.work.queues.model.WorkItemQueueState;
+import io.casehub.work.runtime.api.WorkItemMapper;
+import io.casehub.work.runtime.event.WorkItemLifecycleEvent;
+import io.casehub.work.runtime.model.WorkItemStatus;
+import io.casehub.work.runtime.repository.WorkItemStore;
+import io.casehub.work.runtime.service.WorkItemService;
 
 /**
  * REST resource for managing WorkItem soft-assignment (queue state) flags.

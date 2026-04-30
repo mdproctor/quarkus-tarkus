@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.api;
+package io.casehub.work.runtime.api;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -17,7 +17,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import io.quarkiverse.work.runtime.model.WorkItemFormSchema;
+import io.casehub.work.runtime.model.WorkItemFormSchema;
 
 /**
  * REST resource for managing {@link WorkItemFormSchema} definitions.

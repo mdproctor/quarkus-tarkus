@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.repository.jpa;
+package io.casehub.work.runtime.repository.jpa;
 
 import java.util.List;
 import java.util.Optional;
@@ -6,8 +6,8 @@ import java.util.UUID;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.quarkiverse.work.runtime.model.WorkItemNote;
-import io.quarkiverse.work.runtime.repository.WorkItemNoteStore;
+import io.casehub.work.runtime.model.WorkItemNote;
+import io.casehub.work.runtime.repository.WorkItemNoteStore;
 
 /**
  * Default JPA/Panache implementation of {@link WorkItemNoteStore}.

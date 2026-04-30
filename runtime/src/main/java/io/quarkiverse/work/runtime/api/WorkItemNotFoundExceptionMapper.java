@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.api;
+package io.casehub.work.runtime.api;
 
 import java.util.Map;
 
@@ -7,7 +7,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 
-import io.quarkiverse.work.runtime.service.WorkItemNotFoundException;
+import io.casehub.work.runtime.service.WorkItemNotFoundException;
 
 @Provider
 public class WorkItemNotFoundExceptionMapper implements ExceptionMapper<WorkItemNotFoundException> {

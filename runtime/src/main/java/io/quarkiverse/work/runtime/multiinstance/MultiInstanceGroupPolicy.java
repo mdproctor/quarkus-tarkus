@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.multiinstance;
+package io.casehub.work.runtime.multiinstance;
 
 import java.util.List;
 import java.util.UUID;
@@ -8,12 +8,12 @@ import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
-import io.quarkiverse.work.api.GroupStatus;
-import io.quarkiverse.work.api.WorkItemGroupLifecycleEvent;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemSpawnGroup;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
-import io.quarkiverse.work.runtime.service.WorkItemService;
+import io.casehub.work.api.GroupStatus;
+import io.casehub.work.api.WorkItemGroupLifecycleEvent;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemSpawnGroup;
+import io.casehub.work.runtime.model.WorkItemStatus;
+import io.casehub.work.runtime.service.WorkItemService;
 
 @ApplicationScoped
 public class MultiInstanceGroupPolicy {

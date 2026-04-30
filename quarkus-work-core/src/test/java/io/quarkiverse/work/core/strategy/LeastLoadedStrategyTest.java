@@ -1,4 +1,4 @@
-package io.quarkiverse.work.core.strategy;
+package io.casehub.work.core.strategy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -7,9 +7,9 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.api.AssignmentTrigger;
-import io.quarkiverse.work.api.SelectionContext;
-import io.quarkiverse.work.api.WorkerCandidate;
+import io.casehub.work.api.AssignmentTrigger;
+import io.casehub.work.api.SelectionContext;
+import io.casehub.work.api.WorkerCandidate;
 
 class LeastLoadedStrategyTest {
 

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.api;
+package io.casehub.work.api;
 
 /**
  * SPI for scoring a worker's {@link SkillProfile} against a work item's

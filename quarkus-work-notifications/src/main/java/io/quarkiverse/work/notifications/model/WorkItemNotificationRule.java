@@ -1,4 +1,4 @@
-package io.quarkiverse.work.notifications.model;
+package io.casehub.work.notifications.model;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -28,8 +28,8 @@ import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
  * <h2>Delivery</h2>
  * <p>
  * When a rule matches, {@code NotificationDispatcher} calls the {@link
- * io.quarkiverse.work.api.NotificationChannel} CDI bean whose {@code channelType()}
- * equals {@link #channelType} with a {@link io.quarkiverse.work.api.NotificationPayload}
+ * io.casehub.work.api.NotificationChannel} CDI bean whose {@code channelType()}
+ * equals {@link #channelType} with a {@link io.casehub.work.api.NotificationPayload}
  * built from this rule and the lifecycle event.
  */
 @Entity
@@ -41,7 +41,7 @@ public class WorkItemNotificationRule extends PanacheEntityBase {
 
     /**
      * The notification channel to use — matched against
-     * {@link io.quarkiverse.work.api.NotificationChannel#channelType()}.
+     * {@link io.casehub.work.api.NotificationChannel#channelType()}.
      * Built-in values: {@code "http-webhook"}, {@code "slack"}, {@code "teams"}.
      */
     @Column(name = "channel_type", nullable = false, length = 50)

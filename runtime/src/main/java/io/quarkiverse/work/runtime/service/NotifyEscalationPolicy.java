@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.service;
+package io.casehub.work.runtime.service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
@@ -6,10 +6,10 @@ import jakarta.inject.Inject;
 
 import org.jboss.logging.Logger;
 
-import io.quarkiverse.work.api.EscalationPolicy;
-import io.quarkiverse.work.api.WorkEventType;
-import io.quarkiverse.work.api.WorkLifecycleEvent;
-import io.quarkiverse.work.runtime.model.WorkItem;
+import io.casehub.work.api.EscalationPolicy;
+import io.casehub.work.api.WorkEventType;
+import io.casehub.work.api.WorkLifecycleEvent;
+import io.casehub.work.runtime.model.WorkItem;
 
 @ApplicationScoped
 public class NotifyEscalationPolicy implements EscalationPolicy {

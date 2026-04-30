@@ -1,14 +1,14 @@
-package io.quarkiverse.work.core.strategy;
+package io.casehub.work.core.strategy;
 
 import java.util.Comparator;
 import java.util.List;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.quarkiverse.work.api.AssignmentDecision;
-import io.quarkiverse.work.api.SelectionContext;
-import io.quarkiverse.work.api.WorkerCandidate;
-import io.quarkiverse.work.api.WorkerSelectionStrategy;
+import io.casehub.work.api.AssignmentDecision;
+import io.casehub.work.api.SelectionContext;
+import io.casehub.work.api.WorkerCandidate;
+import io.casehub.work.api.WorkerSelectionStrategy;
 
 /**
  * Pre-assigns WorkItems to the candidate with the fewest active WorkItems.
@@ -22,7 +22,7 @@ import io.quarkiverse.work.api.WorkerSelectionStrategy;
  * and the WorkItem remains in the open pool for claim-first behaviour.
  *
  * <p>
- * Activated by: {@code quarkus.work.routing.strategy=least-loaded} (default).
+ * Activated by: {@code casehub.work.routing.strategy=least-loaded} (default).
  */
 @ApplicationScoped
 public class LeastLoadedStrategy implements WorkerSelectionStrategy {

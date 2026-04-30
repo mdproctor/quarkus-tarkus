@@ -1,4 +1,4 @@
-package io.quarkiverse.work.notifications.service;
+package io.casehub.work.notifications.service;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;

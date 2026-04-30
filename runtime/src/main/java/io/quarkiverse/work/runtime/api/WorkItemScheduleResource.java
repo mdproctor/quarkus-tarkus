@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.api;
+package io.casehub.work.runtime.api;
 
 import java.util.List;
 import java.util.Map;
@@ -17,8 +17,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import io.quarkiverse.work.runtime.model.WorkItemSchedule;
-import io.quarkiverse.work.runtime.service.WorkItemScheduleService;
+import io.casehub.work.runtime.model.WorkItemSchedule;
+import io.casehub.work.runtime.service.WorkItemScheduleService;
 
 /**
  * REST resource for managing {@link WorkItemSchedule} records.

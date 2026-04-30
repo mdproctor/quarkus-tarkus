@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.multiinstance;
+package io.casehub.work.runtime.multiinstance;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,18 +10,18 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.transaction.Transactional;
 
-import io.quarkiverse.work.api.InstanceAssignmentStrategy;
-import io.quarkiverse.work.api.MultiInstanceConfig;
-import io.quarkiverse.work.api.MultiInstanceContext;
-import io.quarkiverse.work.api.OnThresholdReached;
-import io.quarkiverse.work.api.ParentRole;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemCreateRequest;
-import io.quarkiverse.work.runtime.model.WorkItemRelation;
-import io.quarkiverse.work.runtime.model.WorkItemRelationType;
-import io.quarkiverse.work.runtime.model.WorkItemSpawnGroup;
-import io.quarkiverse.work.runtime.model.WorkItemTemplate;
-import io.quarkiverse.work.runtime.service.WorkItemService;
+import io.casehub.work.api.InstanceAssignmentStrategy;
+import io.casehub.work.api.MultiInstanceConfig;
+import io.casehub.work.api.MultiInstanceContext;
+import io.casehub.work.api.OnThresholdReached;
+import io.casehub.work.api.ParentRole;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemCreateRequest;
+import io.casehub.work.runtime.model.WorkItemRelation;
+import io.casehub.work.runtime.model.WorkItemRelationType;
+import io.casehub.work.runtime.model.WorkItemSpawnGroup;
+import io.casehub.work.runtime.model.WorkItemTemplate;
+import io.casehub.work.runtime.service.WorkItemService;
 
 /**
  * Creates a multi-instance group: a parent WorkItem + N child instances + a

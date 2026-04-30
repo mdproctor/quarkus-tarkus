@@ -1,4 +1,4 @@
-package io.quarkiverse.work.testing;
+package io.casehub.work.testing;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -10,11 +10,11 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.runtime.model.AuditEntry;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
-import io.quarkiverse.work.runtime.repository.WorkItemQuery;
+import io.casehub.work.runtime.model.AuditEntry;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemPriority;
+import io.casehub.work.runtime.model.WorkItemStatus;
+import io.casehub.work.runtime.repository.WorkItemQuery;
 
 /**
  * Pure JUnit 5 tests for the in-memory store implementations.

@@ -4,18 +4,18 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>io.quarkiverse.work</groupId>
-    <artifactId>quarkus-work-parent</artifactId>
+    <groupId>io.casehub</groupId>
+    <artifactId>casehub-work-parent</artifactId>
     <version>0.2-SNAPSHOT</version>
   </parent>
-  <groupId>io.quarkiverse.work</groupId>
-  <artifactId>quarkus-work-core</artifactId>
+  <groupId>io.casehub</groupId>
+  <artifactId>casehub-work-core</artifactId>
   <name>Quarkus Work - Core (WorkBroker + Strategies)</name>
   <description>Generic work management implementations: WorkBroker, built-in WorkerSelectionStrategies, and ClaimSla policies. Jandex-indexed library — no deployment module needed. No JPA entities, no REST resources, no Quarkus-specific runtime dependencies beyond CDI.</description>
   <dependencies>
     <dependency>
-      <groupId>io.quarkiverse.work</groupId>
-      <artifactId>quarkus-work-api</artifactId>
+      <groupId>io.casehub</groupId>
+      <artifactId>casehub-work-api</artifactId>
       <version>${project.version}</version>
     </dependency>
     <!-- CDI for @ApplicationScoped, @Alternative, @Inject on strategy/policy beans -->

@@ -5,12 +5,12 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.quarkiverse.work</groupId>
-    <artifactId>quarkus-work-parent</artifactId>
+    <groupId>io.casehub</groupId>
+    <artifactId>casehub-work-parent</artifactId>
     <version>0.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>quarkus-work-queues</artifactId>
+  <artifactId>casehub-work-queues</artifactId>
   <name>Quarkus WorkItems - Queues</name>
   <description>Optional queues module: label-based work queues via saved filters (JEXL, JQ, Lambda),
 FilterChain derivation graph, and QueueView named queries. The core extension is unchanged when absent.</description>
@@ -19,8 +19,8 @@ FilterChain derivation graph, and QueueView named queries. The core extension is
 
     <!-- Core extension -->
     <dependency>
-      <groupId>io.quarkiverse.work</groupId>
-      <artifactId>quarkus-work</artifactId>
+      <groupId>io.casehub</groupId>
+      <artifactId>casehub-work</artifactId>
       <version>${project.version}</version>
     </dependency>
 

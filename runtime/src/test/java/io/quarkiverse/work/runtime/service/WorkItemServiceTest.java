@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.service;
+package io.casehub.work.runtime.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -15,20 +15,20 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.api.AssignmentDecision;
-import io.quarkiverse.work.core.strategy.WorkBroker;
-import io.quarkiverse.work.runtime.api.WorkItemLabelResponse;
-import io.quarkiverse.work.runtime.config.WorkItemsConfig;
-import io.quarkiverse.work.runtime.model.AuditEntry;
-import io.quarkiverse.work.runtime.model.DelegationState;
-import io.quarkiverse.work.runtime.model.LabelPersistence;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemCreateRequest;
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
-import io.quarkiverse.work.runtime.repository.AuditEntryStore;
-import io.quarkiverse.work.runtime.repository.WorkItemQuery;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
+import io.casehub.work.api.AssignmentDecision;
+import io.casehub.work.core.strategy.WorkBroker;
+import io.casehub.work.runtime.api.WorkItemLabelResponse;
+import io.casehub.work.runtime.config.WorkItemsConfig;
+import io.casehub.work.runtime.model.AuditEntry;
+import io.casehub.work.runtime.model.DelegationState;
+import io.casehub.work.runtime.model.LabelPersistence;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemCreateRequest;
+import io.casehub.work.runtime.model.WorkItemPriority;
+import io.casehub.work.runtime.model.WorkItemStatus;
+import io.casehub.work.runtime.repository.AuditEntryStore;
+import io.casehub.work.runtime.repository.WorkItemQuery;
+import io.casehub.work.runtime.repository.WorkItemStore;
 
 class WorkItemServiceTest {
 
@@ -110,7 +110,7 @@ class WorkItemServiceTest {
             }
             if (q.labelPattern() != null) {
                 boolean matchesLabel = wi.labels != null && wi.labels.stream()
-                        .anyMatch(l -> io.quarkiverse.work.runtime.service.LabelVocabularyService
+                        .anyMatch(l -> io.casehub.work.runtime.service.LabelVocabularyService
                                 .matchesPattern(q.labelPattern(), l.path));
                 if (!matchesLabel) {
                     return false;
@@ -137,12 +137,12 @@ class WorkItemServiceTest {
         }
 
         @Override
-        public List<AuditEntry> query(io.quarkiverse.work.runtime.repository.AuditQuery query) {
+        public List<AuditEntry> query(io.casehub.work.runtime.repository.AuditQuery query) {
             return List.of();
         }
 
         @Override
-        public long count(io.quarkiverse.work.runtime.repository.AuditQuery query) {
+        public long count(io.casehub.work.runtime.repository.AuditQuery query) {
             return 0;
         }
     }
@@ -238,7 +238,7 @@ class WorkItemServiceTest {
                         group -> List.of(),
                         workerId -> 0,
                         new WorkBroker()),
-                new io.quarkiverse.work.core.policy.ContinuationPolicy());
+                new io.casehub.work.core.policy.ContinuationPolicy());
     }
 
     private WorkItemCreateRequest basicRequest() {
@@ -1058,7 +1058,7 @@ class WorkItemServiceTest {
                         group -> List.of(),
                         workerId -> 0,
                         new WorkBroker()),
-                new io.quarkiverse.work.core.policy.ContinuationPolicy());
+                new io.casehub.work.core.policy.ContinuationPolicy());
         WorkItem wi = svc.create(basicRequest());
         assertThat(wi.claimDeadline).isNull();
     }

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.service;
+package io.casehub.work.runtime.service;
 
 import java.util.List;
 import java.util.UUID;
@@ -6,9 +6,9 @@ import java.util.UUID;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 
-import io.quarkiverse.work.runtime.model.LabelDefinition;
-import io.quarkiverse.work.runtime.model.LabelVocabulary;
-import io.quarkiverse.work.runtime.model.VocabularyScope;
+import io.casehub.work.runtime.model.LabelDefinition;
+import io.casehub.work.runtime.model.LabelVocabulary;
+import io.casehub.work.runtime.model.VocabularyScope;
 
 @ApplicationScoped
 public class LabelVocabularyService {

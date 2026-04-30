@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.formschema;
+package io.casehub.work.examples.formschema;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;

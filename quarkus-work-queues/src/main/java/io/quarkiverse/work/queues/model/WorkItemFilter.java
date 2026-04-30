@@ -1,4 +1,4 @@
-package io.quarkiverse.work.queues.model;
+package io.casehub.work.queues.model;
 
 import java.time.Instant;
 import java.util.List;
@@ -16,7 +16,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.quarkiverse.work.queues.service.ExpressionDescriptor;
+import io.casehub.work.queues.service.ExpressionDescriptor;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 
 @Entity

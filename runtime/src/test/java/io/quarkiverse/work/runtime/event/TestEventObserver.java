@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.event;
+package io.casehub.work.runtime.event;
 
 import java.util.ArrayList;
 import java.util.List;

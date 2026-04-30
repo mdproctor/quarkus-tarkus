@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ledger.service;
+package io.casehub.work.ledger.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import io.casehub.ledger.api.model.LedgerEntryType;
 import io.casehub.ledger.runtime.model.LedgerMerkleFrontier;
 import io.casehub.ledger.runtime.service.LedgerMerkleTree;
-import io.quarkiverse.work.ledger.model.WorkItemLedgerEntry;
+import io.casehub.work.ledger.model.WorkItemLedgerEntry;
 
 /**
  * Pure JUnit 5 unit tests for {@link LedgerMerkleTree} using WorkItems's

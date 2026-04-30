@@ -1,4 +1,4 @@
-package io.quarkiverse.work.api;
+package io.casehub.work.api;
 
 /**
  * Payload passed to {@link NotificationChannel#send} for each matched rule.

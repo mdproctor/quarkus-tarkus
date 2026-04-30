@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ledger.repository.jpa;
+package io.casehub.work.ledger.repository.jpa;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -16,8 +16,8 @@ import jakarta.persistence.EntityManager;
 import io.casehub.ledger.api.model.LedgerEntryType;
 import io.casehub.ledger.runtime.model.LedgerAttestation;
 import io.casehub.ledger.runtime.model.LedgerEntry;
-import io.quarkiverse.work.ledger.model.WorkItemLedgerEntry;
-import io.quarkiverse.work.ledger.repository.WorkItemLedgerEntryRepository;
+import io.casehub.work.ledger.model.WorkItemLedgerEntry;
+import io.casehub.work.ledger.repository.WorkItemLedgerEntryRepository;
 
 /**
  * Hibernate ORM / EntityManager implementation of {@link WorkItemLedgerEntryRepository}.

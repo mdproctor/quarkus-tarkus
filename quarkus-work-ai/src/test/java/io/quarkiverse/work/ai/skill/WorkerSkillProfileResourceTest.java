@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ai.skill;
+package io.casehub.work.ai.skill;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;

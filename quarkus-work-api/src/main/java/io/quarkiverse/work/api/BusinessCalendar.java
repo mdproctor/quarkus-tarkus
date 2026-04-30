@@ -1,4 +1,4 @@
-package io.quarkiverse.work.api;
+package io.casehub.work.api;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -14,7 +14,7 @@ import java.time.ZoneId;
  * skipping weekends, holidays, and out-of-hours periods.
  *
  * <p>
- * The default implementation is driven by {@code quarkus.work.business-hours.*}
+ * The default implementation is driven by {@code casehub.work.business-hours.*}
  * config. Override by providing a CDI {@code @ApplicationScoped} bean that
  * implements this interface.
  *

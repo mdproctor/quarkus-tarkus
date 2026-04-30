@@ -5,12 +5,12 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.quarkiverse.work</groupId>
-    <artifactId>quarkus-work-parent</artifactId>
+    <groupId>io.casehub</groupId>
+    <artifactId>casehub-work-parent</artifactId>
     <version>0.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>quarkus-work-flow-examples</artifactId>
+  <artifactId>casehub-work-flow-examples</artifactId>
   <name>Quarkus WorkItems - Quarkus Flow Examples</name>
   <description>Runnable example showing WorkItemsFlow DSL integration: a contract review workflow
 that mixes automated function() steps with human workItem() steps, demonstrating candidateGroups,
@@ -20,15 +20,15 @@ assigneeId, priority, payloadFrom, and the full workflow suspension/resume cycle
 
     <!-- Core extension -->
     <dependency>
-      <groupId>io.quarkiverse.work</groupId>
-      <artifactId>quarkus-work</artifactId>
+      <groupId>io.casehub</groupId>
+      <artifactId>casehub-work</artifactId>
       <version>${project.version}</version>
     </dependency>
 
     <!-- Quarkus-Flow integration — WorkItemsFlow, WorkItemTaskBuilder, HumanTaskFlowBridge -->
     <dependency>
-      <groupId>io.quarkiverse.work</groupId>
-      <artifactId>quarkus-work-flow</artifactId>
+      <groupId>io.casehub</groupId>
+      <artifactId>casehub-work-flow</artifactId>
       <version>${project.version}</version>
     </dependency>
 
@@ -73,8 +73,8 @@ assigneeId, priority, payloadFrom, and the full workflow suspension/resume cycle
 
     <!-- Required for @QuarkusTest to activate WorkItems CDI beans -->
     <dependency>
-      <groupId>io.quarkiverse.work</groupId>
-      <artifactId>quarkus-work-deployment</artifactId>
+      <groupId>io.casehub</groupId>
+      <artifactId>casehub-work-deployment</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>

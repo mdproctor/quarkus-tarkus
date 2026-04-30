@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.calendar;
+package io.casehub.work.runtime.calendar;
 
 import java.time.DayOfWeek;
 import java.time.Duration;
@@ -15,13 +15,13 @@ import java.util.stream.Collectors;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import io.quarkiverse.work.api.BusinessCalendar;
-import io.quarkiverse.work.api.HolidayCalendar;
-import io.quarkiverse.work.runtime.config.WorkItemsConfig;
+import io.casehub.work.api.BusinessCalendar;
+import io.casehub.work.api.HolidayCalendar;
+import io.casehub.work.runtime.config.WorkItemsConfig;
 
 /**
  * Default {@link BusinessCalendar} implementation driven by
- * {@code quarkus.work.business-hours.*} configuration.
+ * {@code casehub.work.business-hours.*} configuration.
  *
  * <p>
  * Business time is counted only during the configured daily window on configured

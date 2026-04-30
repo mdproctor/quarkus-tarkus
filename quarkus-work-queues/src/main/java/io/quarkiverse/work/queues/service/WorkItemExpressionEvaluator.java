@@ -1,6 +1,6 @@
-package io.quarkiverse.work.queues.service;
+package io.casehub.work.queues.service;
 
-import io.quarkiverse.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItem;
 
 /**
  * SPI for evaluating an expression against a WorkItem and returning a boolean result.

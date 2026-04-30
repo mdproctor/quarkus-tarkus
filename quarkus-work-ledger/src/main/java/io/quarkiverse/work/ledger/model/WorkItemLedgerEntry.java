@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ledger.model;
+package io.casehub.work.ledger.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;

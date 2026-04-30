@@ -1,4 +1,4 @@
-package io.quarkiverse.work.queues.event;
+package io.casehub.work.queues.event;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;

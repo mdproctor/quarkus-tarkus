@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.api;
+package io.casehub.work.runtime.api;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsStringIgnoringCase;

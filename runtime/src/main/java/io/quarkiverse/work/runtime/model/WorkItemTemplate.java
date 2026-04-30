@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.model;
+package io.casehub.work.runtime.model;
 
 import java.time.Instant;
 import java.util.List;
@@ -83,14 +83,14 @@ public class WorkItemTemplate extends PanacheEntityBase {
 
     /**
      * Default completion deadline in hours. {@code null} → system default
-     * ({@code quarkus.work.default-expiry-hours}).
+     * ({@code casehub.work.default-expiry-hours}).
      */
     @Column(name = "default_expiry_hours")
     public Integer defaultExpiryHours;
 
     /**
      * Default claim deadline in hours. {@code null} → system default
-     * ({@code quarkus.work.default-claim-hours}).
+     * ({@code casehub.work.default-claim-hours}).
      */
     @Column(name = "default_claim_hours")
     public Integer defaultClaimHours;

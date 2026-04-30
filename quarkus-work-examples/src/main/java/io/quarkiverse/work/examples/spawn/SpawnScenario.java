@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.spawn;
+package io.casehub.work.examples.spawn;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,15 +12,15 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
-import io.quarkiverse.work.api.ChildSpec;
-import io.quarkiverse.work.api.SpawnRequest;
-import io.quarkiverse.work.api.SpawnResult;
-import io.quarkiverse.work.examples.StepLog;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemCreateRequest;
-import io.quarkiverse.work.runtime.model.WorkItemTemplate;
-import io.quarkiverse.work.runtime.service.WorkItemService;
-import io.quarkiverse.work.runtime.service.WorkItemSpawnService;
+import io.casehub.work.api.ChildSpec;
+import io.casehub.work.api.SpawnRequest;
+import io.casehub.work.api.SpawnResult;
+import io.casehub.work.examples.StepLog;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemCreateRequest;
+import io.casehub.work.runtime.model.WorkItemTemplate;
+import io.casehub.work.runtime.service.WorkItemService;
+import io.casehub.work.runtime.service.WorkItemSpawnService;
 
 /**
  * Spawn scenario — demonstrates subprocess spawning.

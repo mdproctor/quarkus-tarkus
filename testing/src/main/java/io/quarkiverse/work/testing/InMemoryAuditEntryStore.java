@@ -1,4 +1,4 @@
-package io.quarkiverse.work.testing;
+package io.casehub.work.testing;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -10,9 +10,9 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
 
-import io.quarkiverse.work.runtime.model.AuditEntry;
-import io.quarkiverse.work.runtime.repository.AuditEntryStore;
-import io.quarkiverse.work.runtime.repository.AuditQuery;
+import io.casehub.work.runtime.model.AuditEntry;
+import io.casehub.work.runtime.repository.AuditEntryStore;
+import io.casehub.work.runtime.repository.AuditQuery;
 
 /**
  * In-memory implementation of {@link AuditEntryStore} for use in tests of

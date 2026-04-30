@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.calendar;
+package io.casehub.work.runtime.calendar;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -8,7 +8,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.runtime.config.WorkItemsConfig;
+import io.casehub.work.runtime.config.WorkItemsConfig;
 
 /**
  * Unit tests for ConfigHolidayCalendar — no Quarkus, no CDI.

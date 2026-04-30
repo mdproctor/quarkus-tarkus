@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.api;
+package io.casehub.work.runtime.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -11,7 +11,7 @@ import jakarta.inject.Inject;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.runtime.service.WorkItemScheduleService;
+import io.casehub.work.runtime.service.WorkItemScheduleService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 

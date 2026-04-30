@@ -1,4 +1,4 @@
-package io.quarkiverse.work.issuetracker.api;
+package io.casehub.work.issuetracker.api;
 
 import java.util.List;
 import java.util.Map;
@@ -17,9 +17,9 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import io.quarkiverse.work.issuetracker.model.WorkItemIssueLink;
-import io.quarkiverse.work.issuetracker.service.IssueLinkService;
-import io.quarkiverse.work.issuetracker.spi.IssueTrackerException;
+import io.casehub.work.issuetracker.model.WorkItemIssueLink;
+import io.casehub.work.issuetracker.service.IssueLinkService;
+import io.casehub.work.issuetracker.spi.IssueTrackerException;
 
 /**
  * REST API for managing links between WorkItems and external issue tracker issues.

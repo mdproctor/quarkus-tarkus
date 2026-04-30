@@ -1,4 +1,4 @@
-package io.quarkiverse.work.notifications.api;
+package io.casehub.work.notifications.api;
 
 import java.net.URI;
 import java.util.List;
@@ -18,7 +18,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import io.quarkiverse.work.notifications.model.WorkItemNotificationRule;
+import io.casehub.work.notifications.model.WorkItemNotificationRule;
 
 /**
  * REST CRUD for {@link WorkItemNotificationRule}.

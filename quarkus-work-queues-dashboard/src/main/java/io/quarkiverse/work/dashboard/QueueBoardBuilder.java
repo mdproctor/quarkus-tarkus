@@ -1,12 +1,12 @@
-package io.quarkiverse.work.dashboard;
+package io.casehub.work.dashboard;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.quarkiverse.work.runtime.model.LabelPersistence;
-import io.quarkiverse.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.LabelPersistence;
+import io.casehub.work.runtime.model.WorkItem;
 
 /**
  * Pure static utility: converts a list of WorkItems into a 3×3 queue grid.

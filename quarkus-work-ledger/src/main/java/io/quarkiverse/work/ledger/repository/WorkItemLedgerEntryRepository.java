@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ledger.repository;
+package io.casehub.work.ledger.repository;
 
 import java.util.List;
 import java.util.Map;
@@ -8,7 +8,7 @@ import java.util.UUID;
 
 import io.casehub.ledger.runtime.model.LedgerAttestation;
 import io.casehub.ledger.runtime.repository.LedgerEntryRepository;
-import io.quarkiverse.work.ledger.model.WorkItemLedgerEntry;
+import io.casehub.work.ledger.model.WorkItemLedgerEntry;
 
 /**
  * Typed repository for {@link WorkItemLedgerEntry} records.

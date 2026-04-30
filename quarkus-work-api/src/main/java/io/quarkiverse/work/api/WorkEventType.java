@@ -1,4 +1,4 @@
-package io.quarkiverse.work.api;
+package io.casehub.work.api;
 
 /**
  * Canonical lifecycle event vocabulary shared across all work-management systems.

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.repository.jpa;
+package io.casehub.work.runtime.repository.jpa;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,9 +9,9 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 
-import io.quarkiverse.work.runtime.model.AuditEntry;
-import io.quarkiverse.work.runtime.repository.AuditEntryStore;
-import io.quarkiverse.work.runtime.repository.AuditQuery;
+import io.casehub.work.runtime.model.AuditEntry;
+import io.casehub.work.runtime.repository.AuditEntryStore;
+import io.casehub.work.runtime.repository.AuditQuery;
 
 /**
  * Default JPA/Panache implementation of {@link AuditEntryStore}.

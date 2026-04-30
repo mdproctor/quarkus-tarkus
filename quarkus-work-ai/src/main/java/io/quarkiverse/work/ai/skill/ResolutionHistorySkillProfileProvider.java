@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ai.skill;
+package io.casehub.work.ai.skill;
 
 import java.time.Instant;
 import java.util.Comparator;
@@ -14,11 +14,11 @@ import jakarta.inject.Inject;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import io.quarkiverse.work.api.SkillProfile;
-import io.quarkiverse.work.api.SkillProfileProvider;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
-import io.quarkiverse.work.runtime.repository.WorkItemQuery;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
+import io.casehub.work.api.SkillProfile;
+import io.casehub.work.api.SkillProfileProvider;
+import io.casehub.work.runtime.model.WorkItemStatus;
+import io.casehub.work.runtime.repository.WorkItemQuery;
+import io.casehub.work.runtime.repository.WorkItemStore;
 
 /**
  * Builds a {@link SkillProfile} from a worker's completed WorkItem history.
@@ -43,7 +43,7 @@ public class ResolutionHistorySkillProfileProvider implements SkillProfileProvid
     @Inject
     public ResolutionHistorySkillProfileProvider(
             final WorkItemStore workItemStore,
-            @ConfigProperty(name = "quarkus.work.ai.semantic.history-limit", defaultValue = "50") final int historyLimit) {
+            @ConfigProperty(name = "casehub.work.ai.semantic.history-limit", defaultValue = "50") final int historyLimit) {
         this.workItemStore = workItemStore;
         this.historyLimit = historyLimit;
     }

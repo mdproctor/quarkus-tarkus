@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.service;
+package io.casehub.work.runtime.service;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,12 +13,12 @@ import jakarta.transaction.Transactional;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.quarkiverse.work.runtime.model.LabelPersistence;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemCreateRequest;
-import io.quarkiverse.work.runtime.model.WorkItemLabel;
-import io.quarkiverse.work.runtime.model.WorkItemTemplate;
-import io.quarkiverse.work.runtime.multiinstance.MultiInstanceSpawnService;
+import io.casehub.work.runtime.model.LabelPersistence;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemCreateRequest;
+import io.casehub.work.runtime.model.WorkItemLabel;
+import io.casehub.work.runtime.model.WorkItemTemplate;
+import io.casehub.work.runtime.multiinstance.MultiInstanceSpawnService;
 
 /**
  * Service for creating and instantiating {@link WorkItemTemplate} records.

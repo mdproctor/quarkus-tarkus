@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.event;
+package io.casehub.work.runtime.event;
 
 import java.time.Instant;
 import java.util.Map;
@@ -7,10 +7,10 @@ import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import io.quarkiverse.work.api.WorkEventType;
-import io.quarkiverse.work.api.WorkLifecycleEvent;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
+import io.casehub.work.api.WorkEventType;
+import io.casehub.work.api.WorkLifecycleEvent;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemStatus;
 
 /**
  * CDI event fired on every WorkItem lifecycle transition.
@@ -23,7 +23,7 @@ import io.quarkiverse.work.runtime.model.WorkItemStatus;
  *
  * <h2>Firing contract — fires AFTER the mutation is persisted</h2>
  * <p>
- * This event is fired by {@link io.quarkiverse.work.runtime.service.WorkItemService}
+ * This event is fired by {@link io.casehub.work.runtime.service.WorkItemService}
  * <em>after</em> the WorkItem has been mutated and written to the store via
  * {@code workItemStore.put(workItem)}. By the time any observer receives this event,
  * the WorkItem's new state is already the current state in the store.
@@ -81,7 +81,7 @@ public final class WorkItemLifecycleEvent extends WorkLifecycleEvent {
     public static WorkItemLifecycleEvent of(final String eventName, final WorkItem workItem,
             final String actor, final String detail) {
         return new WorkItemLifecycleEvent(
-                "io.quarkiverse.work.workitem." + eventName.toLowerCase(),
+                "io.casehub.work.workitem." + eventName.toLowerCase(),
                 "/workitems/" + workItem.id,
                 workItem.id.toString(),
                 workItem.id, workItem.status, Instant.now(),
@@ -103,7 +103,7 @@ public final class WorkItemLifecycleEvent extends WorkLifecycleEvent {
             final String actor, final String detail,
             final String rationale, final String planRef) {
         return new WorkItemLifecycleEvent(
-                "io.quarkiverse.work.workitem." + eventName.toLowerCase(),
+                "io.casehub.work.workitem." + eventName.toLowerCase(),
                 "/workitems/" + workItem.id,
                 workItem.id.toString(),
                 workItem.id, workItem.status, Instant.now(),
@@ -112,7 +112,7 @@ public final class WorkItemLifecycleEvent extends WorkLifecycleEvent {
 
     // ---- Existing accessors preserved (same names as old record components) ----
 
-    /** The CloudEvents type string (e.g. "io.quarkiverse.work.workitem.created"). */
+    /** The CloudEvents type string (e.g. "io.casehub.work.workitem.created"). */
     @JsonProperty("type")
     public String type() {
         return type;
