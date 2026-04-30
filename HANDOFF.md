@@ -1,43 +1,47 @@
-# quarkus-work — Session Handover
-**Date:** 2026-04-29 (third session)
+# casehub-work — Session Handover
+**Date:** 2026-04-30
 
 ## Project Status
 
-637 runtime tests passing. 76 quarkus-work-ledger tests passing (was 68 before this session).
+Fully consistent CaseHub identity across all files. 637 runtime tests passing. 76 ledger tests passing. Working tree clean.
 
-## Earlier Sessions Today
+## What Was Done This Session
 
-*See `git show HEAD~2:HANDOFF.md` for #93 SPI design decision context.*
-*See `git show HEAD~3:HANDOFF.md` for Epic #106 multi-instance WorkItems context.*
+### Quarkiverse → CaseHub identity cleanup (complete)
 
-## What Was Done — This Session
+Full systematic pass across all file types:
+- **458 source files** moved from `io/quarkiverse/work/` → `io/casehub/work/` via `git mv` (18 modules)
+- **All docs**: `quarkus.work.*` config prefix → `casehub.work.*`; `io.quarkiverse.work` groupId → `io.casehub`; prose descriptions updated
+- **Files fixed**: README.md, pom.xml, work-flow/README.md, docs/DESIGN.md, docs/api-reference.md, docs/integration-guide.md, docs/examples-guide.md, docs/specs/*, adr/0001, casehub-work-flow-examples/README.md, WorkItemsConfig.java Javadoc
+- **GitHub issue #136**: body updated; naming convention comment added
+- Third-party Quarkiverse artifacts (langchain4j, quarkus-flow, casehub-ledger) left untouched throughout
 
-### Three audit findings fixed in quarkus-work-ledger (Refs casehubio/ledger#72)
+### Tier-4 health check findings fixed
 
-**a) JSON injection in `buildDecisionContext`**
-`LedgerEventCapture.buildDecisionContext()` used `String.format` to build JSON — quotes or backslashes in any field (actorId, assigneeId, etc.) silently produced malformed JSON. Replaced with Jackson `ObjectMapper` + `ObjectNode`. Jackson already on classpath via `quarkus-rest-jackson`.
+- `docs/examples-guide.md` + `docs/integration-guide.md`: 22 remaining `quarkus.work.*` occurrences (missed in first pass)
+- `docs/DESIGN.md`: artifact name `io.quarkiverse.ledger:quarkus-ledger` → `io.casehub:casehub-ledger`
+- `adr/0001`: same artifact name fix
+- Stale `.worktrees/feature/epic-104-sla-reports/` removed
 
-**b) `eventSuffix()` null guard**
-`EVENT_META` uses `Map.ofEntries()`. `Map.ofEntries().get(null)` throws NPE (not returns null like HashMap). Added guard in `onWorkItemEvent`: checks suffix is non-null and present in EVENT_META before building the entry; logs warning and returns otherwise. Also hardened `deriveCommandType/EventType/ActorRole` methods.
+### Refinement epic #147 created
 
-**c) 8 wrong test expectations in `TrustScoreComputerTest` + `TrustScoreJobTest`**
-Tests expected `score ≈ 1.0` for actors with no attestations. Algorithm is Bayesian Beta(1,1) prior: no attestations → score = 0.5 (maximum uncertainty), not 1.0. Two recency tests also had `attestation.occurredAt` unset — decay uses attestation timestamp so all attestations got age=0 and identical weight. Fixed all 8 plus one in TrustScoreJobTest (same bug, different class).
-
-### Garden entries submitted
-- GE-20260429-177cbe — `Map.ofEntries().get(null)` throws NPE, not returns null
-- GE-20260429-42fb02 — Bayesian Beta prior: no attestations → 0.5, not 1.0
-- GE-20260429-f17b24 — Recency decay tests broken when `attestation.occurredAt` is null
+5 child issues from tier-4 recommendations:
+- #148 — Split DESIGN.md into focused documents
+- #149 — Decompose WorkItemService (extract ExpiryLifecycleService)
+- #150 — Extract WorkItemEventBroadcaster as pluggable SPI (**unblocks #93**)
+- #151 — Document Flyway migration version numbering in CLAUDE.md
+- #152 — Split casehub-work-examples into core and full variants
 
 ## Open / Next
 
 | Priority | What |
 |---|---|
-| 1 | #93 Distributed SSE — SPI design agreed; implementation deferred until concrete multi-node use case |
-| — | Pick next from active epics table in CLAUDE.md |
+| 1 | #150 — broadcaster SPI (do this before #93) |
+| 2 | #93 — Distributed SSE (SPI + CDI design agreed; needs #150 first) |
+| 3 | #148–#152 — refinement epic in any order |
 
 ## Key References
 
-- Bug fix commit: `e44842e`
-- Blog: `blog/2026-04-29-mdp03-ledger-audit-wrong-models.md`
-- Previous handover (SSE SPI decision): `git show HEAD~2:HANDOFF.md`
-- casehubio/ledger#72 — audit issue tracking these fixes
+- Refinement epic: https://github.com/casehubio/work/issues/147
+- Previous handover (ledger audit fixes): `git show HEAD~10:HANDOFF.md`
+- Health check: tier-4 clean except two intentional explicit versions (casehub-ledger, casehub-connectors) documented in CLAUDE.md
