@@ -5,7 +5,7 @@ import io.smallrye.config.WithDefault;
 
 /**
  * Configuration properties for the Quarkus WorkItems extension.
- * All properties are prefixed with {@code quarkus.work}.
+ * All properties are prefixed with {@code casehub.work}.
  *
  * <p>
  * Example {@code application.properties} overrides:

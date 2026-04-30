@@ -94,7 +94,7 @@ WorkItems has **no dependency on CaseHub, Quarkus-Flow, or Qhorus** — it is th
 ## Project Structure
 
 ```
-quarkus-work/
+casehub-work/
 ├── casehub-work-api/                      — Pure-Java SPI module (groupId io.casehub)
 │   └── src/main/java/io/casehub/work/api/
 │       ├── WorkerCandidate.java           — candidate assignee value object

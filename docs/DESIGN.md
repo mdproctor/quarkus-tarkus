@@ -26,13 +26,13 @@ Primary design specification: `docs/specs/2026-04-14-tarkus-design.md`
 
 ## Component Structure
 
-Maven multi-module layout following Quarkiverse conventions:
+Maven multi-module layout:
 
 | Module | Artifact | Purpose |
 |---|---|---|
 | Parent | `quarkus-work-parent` | BOM, version management |
-| API | `quarkus-work-api` | Pure Java SPI contracts — `WorkerCandidate`, `SelectionContext` (workItemId, title, description, category, requiredCapabilities, candidateUsers, candidateGroups), `AssignmentDecision`, `AssignmentTrigger`, `WorkerSelectionStrategy`, `WorkerRegistry`, `WorkEventType` (includes `SPAWNED`), `WorkLifecycleEvent`, `WorkloadProvider`, `EscalationPolicy`, `SkillProfile`, `SkillProfileProvider`, `SkillMatcher`. Spawn SPI: `SpawnPort`, `SpawnRequest`, `ChildSpec`, `SpawnResult`, `SpawnedChild`. groupId `io.quarkiverse.work`. Zero runtime dependencies. CaseHub and other systems depend on this without pulling in the WorkItems stack. |
-| Core | `quarkus-work-core` | Generic work management implementations — `WorkBroker` (generic assignment orchestrator), `LeastLoadedStrategy`, `ClaimFirstStrategy`, `NoOpWorkerRegistry`, claim SLA policies. No JPA entities, no REST resources. CaseHub depends on this module directly. Jandex-indexed library, groupId `io.quarkiverse.work`. |
+| API | `quarkus-work-api` | Pure Java SPI contracts — `WorkerCandidate`, `SelectionContext` (workItemId, title, description, category, requiredCapabilities, candidateUsers, candidateGroups), `AssignmentDecision`, `AssignmentTrigger`, `WorkerSelectionStrategy`, `WorkerRegistry`, `WorkEventType` (includes `SPAWNED`), `WorkLifecycleEvent`, `WorkloadProvider`, `EscalationPolicy`, `SkillProfile`, `SkillProfileProvider`, `SkillMatcher`. Spawn SPI: `SpawnPort`, `SpawnRequest`, `ChildSpec`, `SpawnResult`, `SpawnedChild`. groupId `io.casehub`. Zero runtime dependencies. CaseHub and other systems depend on this without pulling in the WorkItems stack. |
+| Core | `quarkus-work-core` | Generic work management implementations — `WorkBroker` (generic assignment orchestrator), `LeastLoadedStrategy`, `ClaimFirstStrategy`, `NoOpWorkerRegistry`, claim SLA policies. No JPA entities, no REST resources. CaseHub depends on this module directly. Jandex-indexed library, groupId `io.casehub`. |
 | Runtime | `quarkus-work` | Core — WorkItem model, storage SPI, JPA defaults, service, REST API, lifecycle engine, labels, vocabulary. Includes `WorkItemContextBuilder`, `JpaWorkloadProvider`, runtime actions (`ApplyLabelAction`, `OverrideCandidateGroupsAction`, `SetPriorityAction`), filter engine (`FilterAction` SPI, `FilterRegistryEngine`, `JexlConditionEvaluator`, `PermanentFilterRegistry`, `DynamicFilterRegistry`, `FilterRule`, `FilterRuleResource` — relocated from core in #133). Subprocess spawning: `WorkItemSpawnService` (implements `SpawnPort`), `WorkItemSpawnGroup` entity (idempotency tracking), `WorkItemSpawnResource` (`POST /workitems/{id}/spawn`, `GET/DELETE /workitems/{id}/spawn-groups`), `SpawnGroupResource` (`GET /spawn-groups/{id}`). |
 | Deployment | `quarkus-work-deployment` | Build-time processor — feature registration, native config |
 | Testing | `quarkus-work-testing` | `InMemoryWorkItemStore` + `InMemoryAuditEntryStore` — no datasource needed for unit tests |
@@ -49,7 +49,7 @@ Maven multi-module layout following Quarkiverse conventions:
 | MongoDB | `quarkus-work-persistence-mongodb` | MongoDB-backed `WorkItemStore` + `AuditEntryStore`. `candidateGroups`/`candidateUsers` stored as arrays; `WorkItemQuery` → MongoDB `Document` filter; `$regex` for label patterns. 27 tests via Dev Services. |
 | Reports | `quarkus-work-reports` | Optional SLA compliance reporting module. REST endpoints at `/workitems/reports/*`: `sla-breaches` (breach list + summary), `actors/{id}` (actor performance), `throughput` (created/completed over time, groupBy=day|week|month via HQL `date_trunc`), `queue-health` (overdue count, avg PENDING age, oldest unclaimed). Caching via `quarkus-cache` (Caffeine, 5-min TTL, 1s in tests). 73 tests (68 H2 + 5 PostgreSQL). Zero core impact when absent. |
 | Notifications | `quarkus-work-notifications` | Optional outbound notification module. CDI `AFTER_SUCCESS` observer dispatches lifecycle events to configured channels (HTTP webhook, Slack, Teams). `WorkItemNotificationRule` entity stores per-channel rules (eventTypes filter, category filter, targetUrl, optional HMAC secret). REST CRUD at `/workitem-notification-rules`. `NotificationChannel` SPI in `quarkus-work-api` — custom channels implement this as `@ApplicationScoped` CDI beans. Flyway V3000. Zero core impact when absent. |
-| AI | `quarkus-work-ai` | `LowConfidenceFilterProducer` — CDI-produced permanent filter applying `ai/low-confidence` label (INFERRED) when `confidenceScore < threshold`. Config: `quarkus.work.ai.confidence-threshold` (default 0.7), `quarkus.work.ai.low-confidence-filter.enabled` (default true). Semantic skill matching: `WorkerSkillProfile` entity (V14 Flyway migration) + REST API at `/worker-skill-profiles` (CRUD); `SemanticWorkerSelectionStrategy` (`@Alternative @Priority(1)` — auto-activates when module on classpath, embeds WorkItem title+description and worker skill narrative, scores candidates by cosine similarity); `EmbeddingSkillMatcher` (`dev.langchain4j` cosine similarity, `Instance<EmbeddingModel>` optional injection — scores -1.0 when no model); `WorkerProfileSkillProfileProvider` (default, DB-backed); `CapabilitiesSkillProfileProvider` (`@Alternative` — joins capability tags); `ResolutionHistorySkillProfileProvider` (`@Alternative` — aggregates completion history). |
+| AI | `quarkus-work-ai` | `LowConfidenceFilterProducer` — CDI-produced permanent filter applying `ai/low-confidence` label (INFERRED) when `confidenceScore < threshold`. Config: `casehub.work.ai.confidence-threshold` (default 0.7), `casehub.work.ai.low-confidence-filter.enabled` (default true). Semantic skill matching: `WorkerSkillProfile` entity (V14 Flyway migration) + REST API at `/worker-skill-profiles` (CRUD); `SemanticWorkerSelectionStrategy` (`@Alternative @Priority(1)` — auto-activates when module on classpath, embeds WorkItem title+description and worker skill narrative, scores candidates by cosine similarity); `EmbeddingSkillMatcher` (`dev.langchain4j` cosine similarity, `Instance<EmbeddingModel>` optional injection — scores -1.0 when no model); `WorkerProfileSkillProfileProvider` (default, DB-backed); `CapabilitiesSkillProfileProvider` (`@Alternative` — joins capability tags); `ResolutionHistorySkillProfileProvider` (`@Alternative` — aggregates completion history). |
 | *(future)* | `quarkus-work-redis` | Redis-backed `WorkItemStore` |
 
 ---
@@ -59,7 +59,7 @@ Maven multi-module layout following Quarkiverse conventions:
 | Concern | Choice | Notes |
 |---|---|---|
 | Runtime | Java 21 (on Java 26 JVM) | `maven.compiler.release=21` |
-| Framework | Quarkus 3.32.2 | Inherits `quarkiverse-parent:21` |
+| Framework | Quarkus 3.32.2 | Inherits `casehub-parent` BOM |
 | Persistence | Hibernate ORM + Panache (active record) | UUID PKs, `@PrePersist` timestamps |
 | Schema migrations | Flyway | `V1__initial_schema.sql`; consuming app owns datasource config |
 | Scheduler | `quarkus-scheduler` | Expiry cleanup job |
@@ -124,7 +124,7 @@ Completion tracking (`requiredCount`, `completedCount`, `groupStatus`) added for
 | `defaultExpiryBusinessHours` | `WorkItemTemplate` | Passed through to spawned/instantiated WorkItems. |
 | `defaultClaimBusinessHours` | `WorkItemTemplate` | Passed through to spawned/instantiated WorkItems. |
 
-`BusinessCalendar` SPI (`quarkus-work-api`): `addBusinessDuration(Instant, Duration, ZoneId)` and `isBusinessHour(Instant, ZoneId)`. Default implementation reads `quarkus.work.business-hours.*` config (timezone, start/end, work-days, holidays list). `HolidayCalendar` SPI (`quarkus-work-api`): pluggable holiday data source. Default: static config list. Optional: iCal feed via `quarkus.work.business-hours.holiday-ical-url`. Override: provide any `@ApplicationScoped HolidayCalendar` bean — takes precedence via `@DefaultBean` producer.
+`BusinessCalendar` SPI (`quarkus-work-api`): `addBusinessDuration(Instant, Duration, ZoneId)` and `isBusinessHour(Instant, ZoneId)`. Default implementation reads `casehub.work.business-hours.*` config (timezone, start/end, work-days, holidays list). `HolidayCalendar` SPI (`quarkus-work-api`): pluggable holiday data source. Default: static config list. Optional: iCal feed via `casehub.work.business-hours.holiday-ical-url`. Override: provide any `@ApplicationScoped HolidayCalendar` bean — takes precedence via `@DefaultBean` producer.
 
 **WorkItemLabel (`runtime/model/`)** — each entry:
 
@@ -224,12 +224,12 @@ enabling plain unit tests without `@QuarkusTest`.
 | `WorkItemService` | `runtime.service` | Create, assign, claim, complete, reject, delegate; enforces status transitions. Overloaded `complete(+rationale, +planRef)` and `reject(+rationale)` pass through to ledger for GDPR Article 22 compliance. |
 | `FormSchemaValidationService` | `runtime.service` | Pure JSON Schema draft-07 validator (networknt). No DB access — callers resolve the schema string. Returns `List<String>` violations; null/blank JSON → empty list (skip). Used by `WorkItemResource` on create (payload) and complete (resolution). |
 | `WorkItemAssignmentService` | `runtime.service` | Orchestrates worker selection on CREATED/RELEASED/DELEGATED. Resolves candidates from `candidateUsers` (direct) + `WorkerRegistry` (groups), populates `activeWorkItemCount`, filters by `requiredCapabilities`, calls `WorkerSelectionStrategy.select()`, applies `AssignmentDecision` (sets status=ASSIGNED + assignedAt when pre-assigning). |
-| `ClaimFirstStrategy` | `io.quarkiverse.work.core.strategy` | Default `WorkerSelectionStrategy` no-op — `AssignmentDecision.noChange()`; pool stays open for claim-first. Activated by `quarkus.work.routing.strategy=claim-first`. |
-| `LeastLoadedStrategy` | `io.quarkiverse.work.core.strategy` | Default `WorkerSelectionStrategy` — pre-assigns to candidate with fewest ASSIGNED/IN_PROGRESS/SUSPENDED WorkItems. Activated by `quarkus.work.routing.strategy=least-loaded` (default). `noChange()` when no candidates. |
-| `NoOpWorkerRegistry` | `io.quarkiverse.work.core.strategy` | Default `WorkerRegistry` — returns empty list for all groups (groups stay claim-first until app registers real resolver). |
+| `ClaimFirstStrategy` | `io.casehub.work.core.strategy` | Default `WorkerSelectionStrategy` no-op — `AssignmentDecision.noChange()`; pool stays open for claim-first. Activated by `casehub.work.routing.strategy=claim-first`. |
+| `LeastLoadedStrategy` | `io.casehub.work.core.strategy` | Default `WorkerSelectionStrategy` — pre-assigns to candidate with fewest ASSIGNED/IN_PROGRESS/SUSPENDED WorkItems. Activated by `casehub.work.routing.strategy=least-loaded` (default). `noChange()` when no candidates. |
+| `NoOpWorkerRegistry` | `io.casehub.work.core.strategy` | Default `WorkerRegistry` — returns empty list for all groups (groups stay claim-first until app registers real resolver). |
 | `JpaWorkloadProvider` | `runtime.service` | Counts active (ASSIGNED/IN_PROGRESS/SUSPENDED) WorkItems for a worker; implements `WorkloadProvider` from `quarkus-work-api`. |
 | `ExpiryCleanupJob` | `runtime.service` | `@Scheduled` — marks expired WorkItems, fires EscalationPolicy |
-| `EscalationPolicy` | `io.quarkiverse.work.api` | SPI — single `escalate(WorkLifecycleEvent)` method; pluggable: notify, reassign, auto-reject |
+| `EscalationPolicy` | `io.casehub.work.api` | SPI — single `escalate(WorkLifecycleEvent)` method; pluggable: notify, reassign, auto-reject |
 
 ---
 
@@ -348,12 +348,12 @@ Response envelope: `{entries: [...], page, size, total}`. Each entry includes `i
 
 | Property | Default | Meaning |
 |---|---|---|
-| `quarkus.work.default-expiry-hours` | 24 | Default completion deadline |
-| `quarkus.work.default-claim-hours` | 4 | Default claim deadline (0 = no claim deadline) |
-| `quarkus.work.escalation-policy` | notify | Completion expiry: `notify`, `reassign`, `auto-reject` |
-| `quarkus.work.claim-escalation-policy` | notify | Claim deadline breach: `notify`, `reassign` |
-| `quarkus.work.cleanup.expiry-check-seconds` | 60 | Expiry/claim-deadline job interval |
-| `quarkus.work.routing.strategy` | least-loaded | Worker selection: `least-loaded` (default — pre-assigns to fewest-active candidate) or `claim-first` (pool stays open). Override with CDI `@Alternative WorkerSelectionStrategy`. |
+| `casehub.work.default-expiry-hours` | 24 | Default completion deadline |
+| `casehub.work.default-claim-hours` | 4 | Default claim deadline (0 = no claim deadline) |
+| `casehub.work.escalation-policy` | notify | Completion expiry: `notify`, `reassign`, `auto-reject` |
+| `casehub.work.claim-escalation-policy` | notify | Claim deadline breach: `notify`, `reassign` |
+| `casehub.work.cleanup.expiry-check-seconds` | 60 | Expiry/claim-deadline job interval |
+| `casehub.work.routing.strategy` | least-loaded | Worker selection: `least-loaded` (default — pre-assigns to fewest-active candidate) or `claim-first` (pool stays open). Override with CDI `@Alternative WorkerSelectionStrategy`. |
 
 Consuming app owns all datasource config.
 
@@ -380,7 +380,7 @@ Consuming app owns all datasource config.
 | **13 — quarkus-work separation** | ✅ Complete | `quarkus-work-api` (shared SPI contracts) and `quarkus-work-core` (WorkBroker + generic filter engine) extracted. `quarkus-work-api` renamed to `quarkus-work-api`; `quarkus-work-filter-registry` dissolved into `quarkus-work-core`. CaseHub can now depend on `quarkus-work-core` for `WorkBroker` without pulling in human-inbox specifics. Issue #118. |
 | **13b — Semantic Skill Matching** | ✅ Complete | `SkillProfile` + `SkillProfileProvider` + `SkillMatcher` SPIs in `quarkus-work-api`. `SelectionContext` gains `title` and `description`. `EmbeddingSkillMatcher` (`dev.langchain4j` cosine similarity). `WorkerProfileSkillProfileProvider` (default, DB-backed), `CapabilitiesSkillProfileProvider` + `ResolutionHistorySkillProfileProvider` (`@Alternative`). `SemanticWorkerSelectionStrategy` auto-activates via `@Alternative @Priority(1)`. `WorkerSkillProfile` entity + REST API at `/worker-skill-profiles`. Flyway V14. 48 tests in `quarkus-work-ai` (was 8). Issues #119 (composite provider) and #120 (fallback strategy) filed for future iteration. Issue #121. |
 | **14 — SLA Compliance Reporting** | ✅ Complete | Epic #104: `quarkus-work-reports` optional module — `GET /workitems/reports/sla-breaches`, `/actors/{id}`, `/throughput?groupBy=day\|week\|month`, `/queue-health`. HQL `date_trunc('day')` + Java rollup. `@CacheResult` Caffeine 5-min TTL. 73 tests (68 H2 + 5 PostgreSQL via Testcontainers). (#142 ✅ scaffold, #143 ✅ throughput, #144 ✅ queue-health, #145 ✅ IT smoke tests). |
-| **15 — Multi-Instance WorkItems** | ✅ Complete | Epic #106: Template-driven M-of-N parallel instances. `instanceCount` on `WorkItemTemplate` triggers auto-spawn of N child WorkItems via `MultiInstanceSpawnService` in `WorkItemTemplateService.instantiate()`. `MultiInstanceCoordinator` (`@ObservesAsync`) reacts to child terminal events and applies group policy via `MultiInstanceGroupPolicy` (OCC `@Version` on `WorkItemSpawnGroup`). Inbox always returns roots (`parentId IS NULL`) with aggregate stats via `JpaWorkItemStore.scanRoots()`. Key classes in `runtime/src/main/java/io/quarkiverse/work/runtime/multiinstance/`: `MultiInstanceSpawnService`, `MultiInstanceGroupPolicy`, `MultiInstanceCoordinator`, `PoolAssignmentStrategy`, `ExplicitListAssignmentStrategy`, `RoundRobinAssignmentStrategy`, `CompositeInstanceAssignmentStrategy` (`InstanceAssignmentStrategy` SPI), `WorkItemGroupLifecycleEvent`. `GET /workitems/{id}/instances` returns child progress summary. V20 migration (parentId on work_item), V21 migration (multi-instance columns on work_item_spawn_group). |
+| **15 — Multi-Instance WorkItems** | ✅ Complete | Epic #106: Template-driven M-of-N parallel instances. `instanceCount` on `WorkItemTemplate` triggers auto-spawn of N child WorkItems via `MultiInstanceSpawnService` in `WorkItemTemplateService.instantiate()`. `MultiInstanceCoordinator` (`@ObservesAsync`) reacts to child terminal events and applies group policy via `MultiInstanceGroupPolicy` (OCC `@Version` on `WorkItemSpawnGroup`). Inbox always returns roots (`parentId IS NULL`) with aggregate stats via `JpaWorkItemStore.scanRoots()`. Key classes in `runtime/src/main/java/io/casehub/work/runtime/multiinstance/`: `MultiInstanceSpawnService`, `MultiInstanceGroupPolicy`, `MultiInstanceCoordinator`, `PoolAssignmentStrategy`, `ExplicitListAssignmentStrategy`, `RoundRobinAssignmentStrategy`, `CompositeInstanceAssignmentStrategy` (`InstanceAssignmentStrategy` SPI), `WorkItemGroupLifecycleEvent`. `GET /workitems/{id}/instances` returns child progress summary. V20 migration (parentId on work_item), V21 migration (multi-instance columns on work_item_spawn_group). |
 | **10 — CaseHub integration** | ⏸ Blocked | `quarkus-work-casehub` — CaseHub WorkerRegistry adapter (awaiting CaseHub stable API) |
 | **10 — Qhorus integration** | ⏸ Blocked | `quarkus-work-qhorus` — MCP tools (awaiting Qhorus stable API) |
 | **11 — ProvenanceLink** | ⏸ Blocked | Typed PROV-O causal graph — awaiting CaseHub + Qhorus integrations (issue #39) |

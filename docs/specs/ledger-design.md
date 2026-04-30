@@ -61,7 +61,7 @@ to support richer context — useful to any observer, not just the ledger:
 
 ```java
 public record WorkItemLifecycleEvent(
-    String type,        // "io.quarkiverse.work.workitem.completed"
+    String type,        // "io.casehub.work.workitem.completed"
     String source,      // "/workitems/{id}"
     String subject,     // workItemId.toString()
     UUID workItemId,
@@ -115,20 +115,20 @@ If the ledger module is absent, the `ledger_entry`, `ledger_attestation`, and
 
 ## Configuration
 
-`LedgerConfig` is a `@ConfigMapping(prefix = "quarkus.work.ledger")` interface
+`LedgerConfig` is a `@ConfigMapping(prefix = "casehub.work.ledger")` interface
 in `quarkus-work-ledger`. These config keys are invisible unless the module is
 on the classpath.
 
 | Property | Default | Meaning |
 |---|---|---|
-| `quarkus.work.ledger.enabled` | `true` | Master switch when module is present |
-| `quarkus.work.ledger.hash-chain.enabled` | `true` | SHA-256 tamper-evidence chain |
-| `quarkus.work.ledger.decision-context.enabled` | `true` | WorkItem snapshot at each transition |
-| `quarkus.work.ledger.evidence.enabled` | `false` | Structured evidence capture (opt-in) |
-| `quarkus.work.ledger.attestations.enabled` | `true` | Stamp/attestation REST endpoints |
-| `quarkus.work.ledger.trust-score.enabled` | `false` | Nightly EigenTrust batch computation |
-| `quarkus.work.ledger.trust-score.decay-half-life-days` | `90` | Score decay rate |
-| `quarkus.work.ledger.trust-routing.enabled` | `false` | Trust-score-based routing |
+| `casehub.work.ledger.enabled` | `true` | Master switch when module is present |
+| `casehub.work.ledger.hash-chain.enabled` | `true` | SHA-256 tamper-evidence chain |
+| `casehub.work.ledger.decision-context.enabled` | `true` | WorkItem snapshot at each transition |
+| `casehub.work.ledger.evidence.enabled` | `false` | Structured evidence capture (opt-in) |
+| `casehub.work.ledger.attestations.enabled` | `true` | Stamp/attestation REST endpoints |
+| `casehub.work.ledger.trust-score.enabled` | `false` | Nightly EigenTrust batch computation |
+| `casehub.work.ledger.trust-score.decay-half-life-days` | `90` | Score decay rate |
+| `casehub.work.ledger.trust-routing.enabled` | `false` | Trust-score-based routing |
 
 **Rationale for defaults:** hash-chain and decision-context default ON — low
 overhead, high compliance value (GDPR, EU AI Act). evidence, trust-score, and
@@ -165,7 +165,7 @@ and EU AI Act Article 12.
 }
 ```
 
-**Configurable:** `quarkus.work.ledger.decision-context.enabled`
+**Configurable:** `casehub.work.ledger.decision-context.enabled`
 
 ### 3. Plan Reference
 
