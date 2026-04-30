@@ -21,7 +21,7 @@ WAITING → COMPLETED / FAULTED / CANCELLED. The task model is unified — human
 and agent workers are the same concept in CaseHub. When a CaseHub Task is routed to a
 human worker, the `quarkus-work-casehub` adapter creates a corresponding WorkItems WorkItem.
 
-**WorkItem** *(io.quarkiverse.work.runtime.model.WorkItem — Quarkus WorkItems)*
+**WorkItem** *(io.casehub.work.runtime.model.WorkItem — Quarkus WorkItems)*
 A unit of work requiring human attention or judgment. Has lifecycle:
 PENDING → ASSIGNED → IN_PROGRESS → COMPLETED / REJECTED / SUSPENDED / CANCELLED / EXPIRED → ESCALATED.
 Persists minutes to days. Has assignee, candidate groups, priority, deadlines, delegation chain,
@@ -92,7 +92,7 @@ Optional integration modules (separate artifacts):
 ## WorkItem Model
 
 ```java
-// io.quarkiverse.work.runtime.model.WorkItem
+// io.casehub.work.runtime.model.WorkItem
 @Entity @Table(name = "work_item")
 public class WorkItem extends PanacheEntityBase {
     @Id public UUID id;
@@ -143,13 +143,13 @@ public class WorkItem extends PanacheEntityBase {
     public Instant suspendedAt;          // when SUSPENDED
 }
 
-// io.quarkiverse.work.runtime.model.DelegationState
+// io.casehub.work.runtime.model.DelegationState
 public enum DelegationState {
     PENDING,   // delegated to another; they are working it
     RESOLVED   // delegate completed; owner must confirm
 }
 
-// io.quarkiverse.work.runtime.model.AuditEntry
+// io.casehub.work.runtime.model.AuditEntry
 @Entity @Table(name = "audit_entry")
 public class AuditEntry extends PanacheEntityBase {
     @Id public UUID id;
@@ -291,7 +291,7 @@ Consuming app owns datasource config — none in the extension's `application.pr
 
 ## Storage SPI
 
-Persistence is pluggable via two CDI interfaces in `io.quarkiverse.work.runtime.repository`.
+Persistence is pluggable via two CDI interfaces in `io.casehub.work.runtime.repository`.
 The SPI uses KV-native semantics — aligned with the CNCF Serverless Workflow SDK's persistence
 module conventions — rather than SQL-shaped method-per-query patterns.
 
@@ -338,7 +338,7 @@ or Flyway migration is needed — making pure unit tests (no `@QuarkusTest`) tri
 
 ## Escalation Policy SPI
 
-Package: `io.quarkiverse.work.api` (part of `quarkus-work-api`).
+Package: `io.casehub.work.api` (part of `quarkus-work-api`).
 
 ```java
 public interface EscalationPolicy {
@@ -359,13 +359,13 @@ WorkItems emits CloudEvents for all lifecycle transitions (via Quarkus Messaging
 
 | Event type | When |
 |---|---|
-| `io.quarkiverse.work.workitem.created` | WorkItem created |
-| `io.quarkiverse.work.workitem.assigned` | WorkItem claimed or assigned |
-| `io.quarkiverse.work.workitem.completed` | WorkItem completed |
-| `io.quarkiverse.work.workitem.rejected` | WorkItem rejected |
-| `io.quarkiverse.work.workitem.delegated` | WorkItem delegated |
-| `io.quarkiverse.work.workitem.expired` | WorkItem expired |
-| `io.quarkiverse.work.workitem.escalated` | Escalation policy fired |
+| `io.casehub.work.workitem.created` | WorkItem created |
+| `io.casehub.work.workitem.assigned` | WorkItem claimed or assigned |
+| `io.casehub.work.workitem.completed` | WorkItem completed |
+| `io.casehub.work.workitem.rejected` | WorkItem rejected |
+| `io.casehub.work.workitem.delegated` | WorkItem delegated |
+| `io.casehub.work.workitem.expired` | WorkItem expired |
+| `io.casehub.work.workitem.escalated` | Escalation policy fired |
 
 ---
 

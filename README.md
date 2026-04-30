@@ -1,6 +1,6 @@
-# Quarkus WorkItems
+# casehub-work
 
-A Quarkiverse extension that gives any Quarkus application a **runtime human task layer** — units of work that wait for a human or AI agent to act on them, with expiry, delegation, escalation, priority, candidate group routing, and a full audit trail. One dependency. Zero coupling to your domain.
+A CaseHub library that gives any Quarkus application a **runtime human task layer** — units of work that wait for a human or AI agent to act on them, with expiry, delegation, escalation, priority, candidate group routing, and a full audit trail. One dependency. Zero coupling to your domain.
 
 ---
 
@@ -22,9 +22,9 @@ Beyond transactions: WorkItems fire CDI events when they expire, enforce a 10-st
 
 ```xml
 <dependency>
-  <groupId>io.quarkiverse.work</groupId>
-  <artifactId>quarkus-work</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <groupId>io.casehub</groupId>
+  <artifactId>casehub-work</artifactId>
+  <version>0.2-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -112,7 +112,7 @@ Three systems in the Quarkus ecosystem define "task":
 |---|---|---|
 | `Task` | CNCF Serverless Workflow / Quarkus-Flow | Machine-executed step — milliseconds, no assignee, no expiry |
 | `Task` | CaseHub | CMMN case work unit — assigned to any worker via capabilities |
-| `WorkItem` | Quarkus WorkItems | Asynchronous unit awaiting resolution — minutes to days, assignee, expiry, delegation, audit |
+| `WorkItem` | casehub-work | Asynchronous unit awaiting resolution — minutes to days, assignee, expiry, delegation, audit |
 
 **Rule:** a `Task` is controlled by a machine. A `WorkItem` waits for resolution.
 
@@ -122,13 +122,13 @@ Three systems in the Quarkus ecosystem define "task":
 
 | Artifact | Status | Purpose |
 |---|---|---|
-| `quarkus-work` | Core | WorkItem model, JPA storage, REST API, lifecycle engine, CDI events, labels, vocabulary |
-| `quarkus-work-testing` | Core | `InMemoryWorkItemStore` + `InMemoryAuditEntryStore` for unit tests without a datasource |
-| `quarkus-work-queues` | Optional | Label-based work queues — JEXL/JQ/Lambda filters, FilterChain, QueueView, soft assignment, queue lifecycle events (ADDED/REMOVED/CHANGED) |
-| `quarkus-work-ledger` | Optional | Accountability — command/event ledger, SHA-256/MMR hash chain, peer attestation, EigenTrust reputation scoring |
-| `quarkus-work-persistence-mongodb` | Optional | MongoDB `WorkItemStore` + `AuditEntryStore`. Drop-in replacement for JPA defaults |
-| `quarkus-work-issue-tracker` | Optional | Link WorkItems to GitHub Issues, Jira, Linear, etc. Pluggable `IssueTrackerProvider` SPI |
-| `quarkus-work-flow` | Integration | Quarkus-Flow `WorkItemsFlow` base class — `workItem()` DSL alongside `function()`, `agent()` |
+| `casehub-work` | Core | WorkItem model, JPA storage, REST API, lifecycle engine, CDI events, labels, vocabulary |
+| `casehub-work-testing` | Core | `InMemoryWorkItemStore` + `InMemoryAuditEntryStore` for unit tests without a datasource |
+| `casehub-work-queues` | Optional | Label-based work queues — JEXL/JQ/Lambda filters, FilterChain, QueueView, soft assignment, queue lifecycle events (ADDED/REMOVED/CHANGED) |
+| `casehub-work-ledger` | Optional | Accountability — command/event ledger, SHA-256/MMR hash chain, peer attestation, EigenTrust reputation scoring |
+| `casehub-work-persistence-mongodb` | Optional | MongoDB `WorkItemStore` + `AuditEntryStore`. Drop-in replacement for JPA defaults |
+| `casehub-work-issue-tracker` | Optional | Link WorkItems to GitHub Issues, Jira, Linear, etc. Pluggable `IssueTrackerProvider` SPI |
+| `casehub-work-flow` | Integration | Quarkus-Flow `WorkItemsFlow` base class — `workItem()` DSL alongside `function()`, `agent()` |
 
 ---
 
@@ -136,11 +136,11 @@ Three systems in the Quarkus ecosystem define "task":
 
 | Property | Default | Description |
 |---|---|---|
-| `quarkus.work.default-expiry-hours` | `24` | Completion deadline when none supplied at creation |
-| `quarkus.work.default-claim-hours` | `4` | Claim deadline for unclaimed WorkItems. `0` = no deadline |
-| `quarkus.work.escalation-policy` | `notify` | On `expiresAt` breach: `notify`, `reassign`, or `auto-reject` |
-| `quarkus.work.claim-escalation-policy` | `notify` | On `claimDeadline` breach: `notify` or `reassign` |
-| `quarkus.work.cleanup.expiry-check-seconds` | `60` | Polling interval for the expiry/claim-deadline job |
+| `casehub.work.default-expiry-hours` | `24` | Completion deadline when none supplied at creation |
+| `casehub.work.default-claim-hours` | `4` | Claim deadline for unclaimed WorkItems. `0` = no deadline |
+| `casehub.work.escalation-policy` | `notify` | On `expiresAt` breach: `notify`, `reassign`, or `auto-reject` |
+| `casehub.work.claim-escalation-policy` | `notify` | On `claimDeadline` breach: `notify` or `reassign` |
+| `casehub.work.cleanup.expiry-check-seconds` | `60` | Polling interval for the expiry/claim-deadline job |
 
 ---
 

@@ -11,27 +11,27 @@
 
   <name>Quarkus WorkItems - Parent</name>
   <description>Human-scale WorkItem lifecycle management — expiry, delegation, escalation, audit trail.
-Standalone Quarkiverse extension with optional integrations for Quarkus-Flow, CaseHub, and Qhorus.</description>
+CaseHub platform module — human-scale WorkItem lifecycle management with optional integrations for Quarkus-Flow, CaseHub, and Qhorus.</description>
   <url>https://github.com/casehubio/work</url>
 
   <modules>
-    <module>quarkus-work-api</module>
-    <module>quarkus-work-core</module>
+    <module>casehub-work-api</module>
+    <module>casehub-work-core</module>
     <module>runtime</module>
     <module>deployment</module>
     <module>testing</module>
     <module>work-flow</module>
-    <module>quarkus-work-ledger</module>
-    <module>quarkus-work-notifications</module>
-    <module>quarkus-work-queues</module>
-    <module>quarkus-work-queues-examples</module>
-    <module>quarkus-work-queues-dashboard</module>
-    <module>quarkus-work-examples</module>
-    <module>quarkus-work-flow-examples</module>
-    <module>quarkus-work-persistence-mongodb</module>
-    <module>quarkus-work-issue-tracker</module>
-    <module>quarkus-work-ai</module>
-    <module>quarkus-work-reports</module>
+    <module>casehub-work-ledger</module>
+    <module>casehub-work-notifications</module>
+    <module>casehub-work-queues</module>
+    <module>casehub-work-queues-examples</module>
+    <module>casehub-work-queues-dashboard</module>
+    <module>casehub-work-examples</module>
+    <module>casehub-work-flow-examples</module>
+    <module>casehub-work-persistence-mongodb</module>
+    <module>casehub-work-issue-tracker</module>
+    <module>casehub-work-ai</module>
+    <module>casehub-work-reports</module>
 
     <module>integration-tests</module>
   </modules>

@@ -13,7 +13,7 @@ an approval, a review, an override — before continuing.
 
 ```xml
 <dependency>
-  <groupId>io.quarkiverse.work</groupId>
+  <groupId>io.casehub</groupId>
   <artifactId>quarkus-work-flow</artifactId>
   <version>1.0.0-SNAPSHOT</version>
 </dependency>
