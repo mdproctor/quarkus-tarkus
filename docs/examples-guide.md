@@ -372,7 +372,7 @@ A production incident WorkItem is created with `expiresAt` set to one minute ago
 - `ExpiryCleanupJob.runCleanup()` → programmatic trigger (scheduler runs it automatically in production)
 - Audit entry: `event = "WorkItemExpired"`, `actor = "system:expiry-cleanup"`
 - `EscalationPolicy` SPI receives the `WorkLifecycleEvent` → plug in Slack, PagerDuty, email
-- `quarkus.work.cleanup.expiry-check-seconds` → controls scheduler interval
+- `casehub.work.cleanup.expiry-check-seconds` → controls scheduler interval
 
 **When to use this pattern:**
 Incident response SLAs, regulatory response deadlines, customer-facing acknowledgement targets — any situation where a missed deadline requires more than just a status update; it requires someone to act.
@@ -428,7 +428,7 @@ An AI agent processes five contract review tasks overnight. Three are classified
 **Key WorkItems features:**
 - `confidenceScore` field on `WorkItemCreateRequest` → stored on the WorkItem
 - `LowConfidenceFilterProducer` → `FilterAction` that fires when `confidenceScore < threshold`
-- `quarkus.work.ai.low-confidence-threshold` → configurable threshold (default 0.75)
+- `casehub.work.ai.low-confidence-threshold` → configurable threshold (default 0.75)
 - Applied label: `ai/low-confidence` → queryable via `GET /inbox?labelPattern=ai/low-confidence`
 - High-confidence items are untouched — no label, no interruption
 

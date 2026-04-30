@@ -37,7 +37,7 @@ Maven multi-module layout:
 | Deployment | `quarkus-work-deployment` | Build-time processor — feature registration, native config |
 | Testing | `quarkus-work-testing` | `InMemoryWorkItemStore` + `InMemoryAuditEntryStore` — no datasource needed for unit tests |
 | Flow | `quarkus-work-flow` | Quarkus-Flow integration — `WorkItemsFlow` DSL base class, `HumanTaskFlowBridge`, `WorkItemFlowEventListener` |
-| Ledger | `quarkus-work-ledger` | Optional accountability module — command/event ledger, SHA-256 hash chain, peer attestation, EigenTrust reputation. Extends `io.quarkiverse.ledger:quarkus-ledger` (shared base library — see ADR-0001). Zero core impact when absent. |
+| Ledger | `quarkus-work-ledger` | Optional accountability module — command/event ledger, SHA-256 hash chain, peer attestation, EigenTrust reputation. Extends `io.casehub:casehub-ledger` (shared base library — see ADR-0001). Zero core impact when absent. |
 | Queues | `quarkus-work-queues` | Optional label-based work queues — `WorkItemFilter` (JEXL/JQ/Lambda), `FilterChain` derivation graph with cascade delete, `QueueView` named label-pattern queries with `additionalConditions` JEXL filtering, queue pickup (`PUT /workitems/{id}/pickup`), soft assignment (`relinquishable` flag). **Queue lifecycle events**: `WorkItemQueueEvent` CDI events (ADDED/REMOVED/CHANGED) with DB-backed `QueueMembershipTracker` (V2001 migration) for restart-consistent state. See ADR-0002. Zero core impact when absent. |
 | Queue Examples | `quarkus-work-queues-examples` | Real-world queue routing scenarios — support triage cascade, legal compliance, finance approval chain, security exec-escalation, document review pipeline. Run via `POST /queue-examples/{name}/run`. |
 | Queue Dashboard | `quarkus-work-queues-dashboard` | Tamboui terminal UI dashboard running inside Quarkus via `@QuarkusMain`. Shows live 3×3 queue board (tiers × states), step-by-step scenario control, console log. Observes `WorkItemLifecycleEvent` directly — zero polling delay. |
@@ -241,7 +241,7 @@ core extension is completely unchanged whether the module is present or not.
 
 ### Dependency on quarkus-ledger (ADR-0001)
 
-`quarkus-work-ledger` depends on `io.quarkiverse.ledger:quarkus-ledger` — a domain-agnostic
+`quarkus-work-ledger` depends on `io.casehub:casehub-ledger` — a domain-agnostic
 shared library providing `LedgerEntry`, `LedgerAttestation`, `ActorTrustScore`,
 `TrustScoreComputer`, `LedgerHashChain`, and their repositories. This allows CaseHub and
 Qhorus to adopt the same ledger infrastructure without depending on WorkItems.

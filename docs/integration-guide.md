@@ -273,14 +273,14 @@ public class SlackEscalationPolicy implements EscalationPolicy {
 }
 ```
 
-`@Alternative @Priority(1)` causes CDI to select your bean over WorkItems's default implementation. No `application.properties` change is needed for the bean selection itself, but the `quarkus.work.escalation-policy` property is still read by the built-in policies — set it to `notify` (or any value) so the config validation passes if the built-in beans are still on the classpath.
+`@Alternative @Priority(1)` causes CDI to select your bean over WorkItems's default implementation. No `application.properties` change is needed for the bean selection itself, but the `casehub.work.escalation-policy` property is still read by the built-in policies — set it to `notify` (or any value) so the config validation passes if the built-in beans are still on the classpath.
 
 ```properties
-quarkus.work.escalation-policy=notify
-quarkus.work.claim-escalation-policy=notify
+casehub.work.escalation-policy=notify
+casehub.work.claim-escalation-policy=notify
 ```
 
-The expiry cleanup job (`ExpiryCleanupJob`) runs on the schedule configured by `quarkus.work.cleanup.expiry-check-seconds` (default 60s). It calls your `EscalationPolicy` bean once per breached WorkItem per scan.
+The expiry cleanup job (`ExpiryCleanupJob`) runs on the schedule configured by `casehub.work.cleanup.expiry-check-seconds` (default 60s). It calls your `EscalationPolicy` bean once per breached WorkItem per scan.
 
 ---
 
@@ -441,29 +441,29 @@ See the [Ledger API section of the API Reference](api-reference.md#ledger-api-qu
 
 ### Configuration
 
-All ledger configuration is under `quarkus.work.ledger`. Defaults when the module is present:
+All ledger configuration is under `casehub.work.ledger`. Defaults when the module is present:
 
 ```properties
 # Master switch — set false to disable all ledger writes (default: true)
-quarkus.work.ledger.enabled=true
+casehub.work.ledger.enabled=true
 
 # SHA-256 hash chain across entries for this WorkItem (default: true)
-quarkus.work.ledger.hash-chain.enabled=true
+casehub.work.ledger.hash-chain.enabled=true
 
 # JSON snapshot of WorkItem state at each transition (default: true)
-quarkus.work.ledger.decision-context.enabled=true
+casehub.work.ledger.decision-context.enabled=true
 
 # Structured evidence fields per entry (default: false — opt-in)
-quarkus.work.ledger.evidence.enabled=false
+casehub.work.ledger.evidence.enabled=false
 
 # Peer attestation endpoint active (default: true)
-quarkus.work.ledger.attestations.enabled=true
+casehub.work.ledger.attestations.enabled=true
 
 # EigenTrust reputation scoring — nightly computation (default: false — opt-in)
-quarkus.work.ledger.trust-score.enabled=false
+casehub.work.ledger.trust-score.enabled=false
 
 # Trust-score-based routing suggestions via CDI events (default: false)
-quarkus.work.ledger.trust-score.routing-enabled=false
+casehub.work.ledger.trust-score.routing-enabled=false
 ```
 
 ### Enabling trust scores
@@ -471,7 +471,7 @@ quarkus.work.ledger.trust-score.routing-enabled=false
 Trust scores require accumulated ledger history to be meaningful. Enable only after the system has been running long enough for scores to stabilise:
 
 ```properties
-quarkus.work.ledger.trust-score.enabled=true
+casehub.work.ledger.trust-score.enabled=true
 ```
 
 A nightly scheduled job then computes EigenTrust-inspired scores from ledger history. After the first computation:
@@ -603,7 +603,7 @@ If you only need the SPIs (to implement a custom strategy or registry) depend on
 <dependency>
   <groupId>io.casehub</groupId>
   <artifactId>quarkus-work-api</artifactId>
-  <version>${quarkus.work.version}</version>
+  <version>${casehub.work.version}</version>
 </dependency>
 ```
 
@@ -684,7 +684,7 @@ public class RedisWorkloadProvider implements WorkloadProvider {
 <dependency>
   <groupId>io.casehub</groupId>
   <artifactId>quarkus-work-ai</artifactId>
-  <version>${quarkus.work.version}</version>
+  <version>${casehub.work.version}</version>
 </dependency>
 ```
 
@@ -695,7 +695,7 @@ No configuration is required to activate semantic routing — the module's prese
 `SemanticWorkerSelectionStrategy` is annotated `@Alternative @Priority(1)`. Quarkus Arc auto-activates all `@Alternative @Priority` beans globally, so the strategy takes over from the config-selected built-in (claim-first or least-loaded) the moment the JAR is present.
 
 The strategy is bypassed (`noChange()` returned) in three cases:
-- `quarkus.work.ai.semantic.enabled=false`
+- `casehub.work.ai.semantic.enabled=false`
 - The candidate list is empty (no `candidateUsers` or `candidateGroups` resolved)
 - No candidate scores above the configured threshold (default 0.0 — any positive score qualifies)
 
@@ -775,10 +775,10 @@ public class KeywordSkillMatcher implements SkillMatcher {
 
 | Property | Default | Description |
 |---|---|---|
-| `quarkus.work.ai.semantic.enabled` | `true` | Enable or disable semantic routing |
-| `quarkus.work.ai.semantic.score-threshold` | `0.0` | Minimum score for a candidate to be eligible; any positive score qualifies |
-| `quarkus.work.ai.semantic.history-limit` | `50` | Max past completed WorkItems for `ResolutionHistorySkillProfileProvider` |
-| `quarkus.work.ai.confidence-threshold` | `0.7` | AI-created WorkItems below this score receive the `ai/low-confidence` label |
+| `casehub.work.ai.semantic.enabled` | `true` | Enable or disable semantic routing |
+| `casehub.work.ai.semantic.score-threshold` | `0.0` | Minimum score for a candidate to be eligible; any positive score qualifies |
+| `casehub.work.ai.semantic.history-limit` | `50` | Max past completed WorkItems for `ResolutionHistorySkillProfileProvider` |
+| `casehub.work.ai.confidence-threshold` | `0.7` | AI-created WorkItems below this score receive the `ai/low-confidence` label |
 
 ### Gotcha: use langchain4j-core, not quarkus-langchain4j-core in library modules
 
