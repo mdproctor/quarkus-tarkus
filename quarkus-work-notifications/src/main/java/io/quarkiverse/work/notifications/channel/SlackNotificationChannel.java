@@ -5,8 +5,8 @@ import java.util.logging.Logger;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import io.casehubio.connectors.ConnectorMessage;
-import io.casehubio.connectors.slack.SlackConnector;
+import io.casehub.connectors.ConnectorMessage;
+import io.casehub.connectors.slack.SlackConnector;
 import io.casehub.work.api.NotificationChannel;
 import io.casehub.work.api.NotificationPayload;
 import io.casehub.work.runtime.model.WorkItem;

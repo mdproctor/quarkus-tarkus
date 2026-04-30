@@ -4,7 +4,7 @@ import java.util.logging.Logger;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.casehubio.connectors.http.HttpHelper;
+import io.casehub.connectors.http.HttpHelper;
 import io.casehub.work.api.NotificationChannel;
 import io.casehub.work.api.NotificationPayload;
 import io.casehub.work.runtime.model.WorkItem;

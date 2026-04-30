@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
-import io.casehubio.connectors.slack.SlackConnector;
+import io.casehub.connectors.slack.SlackConnector;
 
 /**
  * Unit tests for Slack payload building — delegates to casehub-connectors SlackConnector.
