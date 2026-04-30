@@ -200,7 +200,7 @@ Add the dependency:
 
 ```xml
 <dependency>
-  <groupId>io.quarkiverse.work</groupId>
+  <groupId>io.casehub</groupId>
   <artifactId>quarkus-work-flow</artifactId>
   <version>1.0.0-SNAPSHOT</version>
 </dependency>
