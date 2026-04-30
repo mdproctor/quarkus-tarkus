@@ -1,9 +1,9 @@
-package io.quarkiverse.work.runtime.api;
+package io.casehub.work.runtime.api;
 
 import java.time.Instant;
 import java.util.List;
 
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
+import io.casehub.work.runtime.model.WorkItemPriority;
 
 public record CreateWorkItemRequest(
         String title,

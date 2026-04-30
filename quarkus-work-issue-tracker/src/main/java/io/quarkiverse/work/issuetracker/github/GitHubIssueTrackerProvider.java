@@ -1,4 +1,4 @@
-package io.quarkiverse.work.issuetracker.github;
+package io.casehub.work.issuetracker.github;
 
 import java.io.IOException;
 import java.net.URI;
@@ -17,9 +17,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import io.quarkiverse.work.issuetracker.spi.ExternalIssueRef;
-import io.quarkiverse.work.issuetracker.spi.IssueTrackerException;
-import io.quarkiverse.work.issuetracker.spi.IssueTrackerProvider;
+import io.casehub.work.issuetracker.spi.ExternalIssueRef;
+import io.casehub.work.issuetracker.spi.IssueTrackerException;
+import io.casehub.work.issuetracker.spi.IssueTrackerProvider;
 
 /**
  * Default {@link IssueTrackerProvider} for GitHub Issues.
@@ -33,7 +33,7 @@ import io.quarkiverse.work.issuetracker.spi.IssueTrackerProvider;
  *
  * <h2>Authentication</h2>
  * <p>
- * Set {@code quarkus.work.issue-tracker.github.token} to a PAT with
+ * Set {@code casehub.work.issue-tracker.github.token} to a PAT with
  * {@code repo} scope (classic) or {@code issues: write} (fine-grained).
  * Unauthenticated requests hit GitHub's 60 req/hour rate limit.
  *
@@ -135,7 +135,7 @@ public class GitHubIssueTrackerProvider implements IssueTrackerProvider {
     public Optional<String> createIssue(final UUID workItemId, final String title, final String body) {
         final String repo = config.defaultRepository()
                 .orElseThrow(() -> new IssueTrackerException(
-                        "quarkus.work.issue-tracker.github.default-repository is required for createIssue"));
+                        "casehub.work.issue-tracker.github.default-repository is required for createIssue"));
 
         final String fullBody = body + "\n\n---\n*Linked WorkItem: `" + workItemId + "`*";
         final String url = API_BASE + "/repos/" + repo + "/issues";
@@ -230,7 +230,7 @@ public class GitHubIssueTrackerProvider implements IssueTrackerProvider {
         if (response.statusCode() == 401 || response.statusCode() == 403) {
             throw new IssueTrackerException(
                     "GitHub auth failure (" + response.statusCode() + ") for " + context +
-                            ". Check quarkus.work.issue-tracker.github.token");
+                            ". Check casehub.work.issue-tracker.github.token");
         }
         if (response.statusCode() >= 400) {
             throw new IssueTrackerException(
@@ -270,7 +270,7 @@ public class GitHubIssueTrackerProvider implements IssueTrackerProvider {
         final String repo = config.defaultRepository()
                 .orElseThrow(() -> new IssueTrackerException(
                         "Cannot resolve bare issue ref '" + externalRef +
-                                "': quarkus.work.issue-tracker.github.default-repository is not set"));
+                                "': casehub.work.issue-tracker.github.default-repository is not set"));
         return new ParsedRef(repo, cleaned);
     }
 

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.api;
+package io.casehub.work.runtime.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -7,7 +7,7 @@ import java.time.temporal.ChronoUnit;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.runtime.repository.AuditQuery;
+import io.casehub.work.runtime.repository.AuditQuery;
 
 /**
  * Unit tests for AuditQuery value object — no Quarkus boot needed.

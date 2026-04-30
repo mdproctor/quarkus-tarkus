@@ -1,4 +1,4 @@
-package io.quarkiverse.work.dashboard;
+package io.casehub.work.dashboard;
 
 import jakarta.inject.Inject;
 

@@ -1,8 +1,8 @@
-package io.quarkiverse.work.examples.spawn;
+package io.casehub.work.examples.spawn;
 
 import java.util.List;
 
-import io.quarkiverse.work.examples.StepLog;
+import io.casehub.work.examples.StepLog;
 
 /**
  * Response returned by the spawn scenario endpoint.

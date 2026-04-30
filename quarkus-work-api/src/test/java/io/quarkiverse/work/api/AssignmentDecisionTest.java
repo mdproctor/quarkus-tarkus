@@ -1,4 +1,4 @@
-package io.quarkiverse.work.api;
+package io.casehub.work.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

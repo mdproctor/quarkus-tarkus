@@ -1,9 +1,9 @@
-package io.quarkiverse.work.runtime.model;
+package io.casehub.work.runtime.model;
 
 import java.time.Instant;
 import java.util.List;
 
-import io.quarkiverse.work.runtime.api.WorkItemLabelResponse;
+import io.casehub.work.runtime.api.WorkItemLabelResponse;
 
 /**
  * Immutable request object used to create a new {@link WorkItem}.

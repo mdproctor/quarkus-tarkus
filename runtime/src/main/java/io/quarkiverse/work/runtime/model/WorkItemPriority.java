@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.model;
+package io.casehub.work.runtime.model;
 
 /**
  * Priority level of a {@link WorkItem}, used to drive inbox ordering and

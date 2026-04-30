@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.model;
+package io.casehub.work.runtime.model;
 
 /**
  * Tracks whether a delegated {@link WorkItem} has been picked up by the

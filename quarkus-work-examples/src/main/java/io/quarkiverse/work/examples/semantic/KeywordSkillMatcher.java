@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.semantic;
+package io.casehub.work.examples.semantic;
 
 import java.util.Arrays;
 import java.util.Set;
@@ -9,9 +9,9 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
 
-import io.quarkiverse.work.api.SelectionContext;
-import io.quarkiverse.work.api.SkillMatcher;
-import io.quarkiverse.work.api.SkillProfile;
+import io.casehub.work.api.SelectionContext;
+import io.casehub.work.api.SkillMatcher;
+import io.casehub.work.api.SkillProfile;
 
 /**
  * Deterministic {@link SkillMatcher} for examples — scores by shared keyword count.

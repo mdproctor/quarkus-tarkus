@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ai.suggestion;
+package io.casehub.work.ai.suggestion;
 
 import java.util.Comparator;
 import java.util.List;
@@ -12,11 +12,11 @@ import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 
 import dev.langchain4j.model.chat.ChatModel;
-import io.quarkiverse.work.ai.config.WorkItemsAiConfig;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
-import io.quarkiverse.work.runtime.repository.WorkItemQuery;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
+import io.casehub.work.ai.config.WorkItemsAiConfig;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemStatus;
+import io.casehub.work.runtime.repository.WorkItemQuery;
+import io.casehub.work.runtime.repository.WorkItemStore;
 
 /**
  * Finds similar completed WorkItems and calls a {@link ChatModel} to suggest
@@ -28,7 +28,7 @@ import io.quarkiverse.work.runtime.repository.WorkItemStore;
  *
  * <p>
  * Example selection strategy: same category, most recently completed, up to
- * {@code quarkus.work.ai.suggestion.history-limit} items (default 5).
+ * {@code casehub.work.ai.suggestion.history-limit} items (default 5).
  * Falls back to all completed items when category is null or yields no results.
  */
 @ApplicationScoped

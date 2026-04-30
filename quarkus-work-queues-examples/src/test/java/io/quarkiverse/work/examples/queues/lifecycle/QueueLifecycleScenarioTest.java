@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.queues.lifecycle;
+package io.casehub.work.examples.queues.lifecycle;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -9,7 +9,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.queues.event.QueueEventType;
+import io.casehub.work.queues.event.QueueEventType;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.common.mapper.TypeRef;
 

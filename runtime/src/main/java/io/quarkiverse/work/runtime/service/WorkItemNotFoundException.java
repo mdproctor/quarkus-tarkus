@@ -1,9 +1,9 @@
-package io.quarkiverse.work.runtime.service;
+package io.casehub.work.runtime.service;
 
 import java.util.UUID;
 
 /**
- * Thrown when a requested {@link io.quarkiverse.work.runtime.model.WorkItem}
+ * Thrown when a requested {@link io.casehub.work.runtime.model.WorkItem}
  * cannot be found by its UUID primary key.
  *
  * <p>

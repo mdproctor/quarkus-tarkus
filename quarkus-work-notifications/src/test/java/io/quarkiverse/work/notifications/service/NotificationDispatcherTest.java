@@ -1,4 +1,4 @@
-package io.quarkiverse.work.notifications.service;
+package io.casehub.work.notifications.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -7,7 +7,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.notifications.model.WorkItemNotificationRule;
+import io.casehub.work.notifications.model.WorkItemNotificationRule;
 
 /**
  * Unit tests for rule matching logic — no CDI, no DB.

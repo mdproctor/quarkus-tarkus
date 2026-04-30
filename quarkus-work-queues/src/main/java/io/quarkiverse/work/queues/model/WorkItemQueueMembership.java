@@ -1,4 +1,4 @@
-package io.quarkiverse.work.queues.model;
+package io.casehub.work.queues.model;
 
 import java.util.List;
 import java.util.UUID;
@@ -17,13 +17,13 @@ import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
  *
  * <p>
  * The {@code work_item_queue_membership} table is the authoritative "before-state"
- * used by {@link io.quarkiverse.work.queues.service.QueueMembershipContext} to
+ * used by {@link io.casehub.work.queues.service.QueueMembershipContext} to
  * diff queue membership changes across JVM restarts. Without this table the tracker
  * would be in-memory only, and every restart would re-fire {@code ADDED} events for
  * all items currently in any queue.
  *
  * <p>
- * Managed exclusively by {@link io.quarkiverse.work.queues.service.QueueMembershipTracker}.
+ * Managed exclusively by {@link io.casehub.work.queues.service.QueueMembershipTracker}.
  * Never written or read by any other component.
  *
  * <h2>Lifecycle</h2>
@@ -53,7 +53,7 @@ public class WorkItemQueueMembership extends PanacheEntityBase {
 
     /**
      * The queue's display name at the time of recording.
-     * Stored to avoid a join when constructing {@link io.quarkiverse.work.queues.event.WorkItemQueueEvent}
+     * Stored to avoid a join when constructing {@link io.casehub.work.queues.event.WorkItemQueueEvent}
      * instances for REMOVED events (the QueueView may no longer exist at that point).
      */
     @Column(name = "queue_name", nullable = false, length = 255)

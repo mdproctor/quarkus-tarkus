@@ -5,12 +5,12 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.quarkiverse.work</groupId>
-    <artifactId>quarkus-work-parent</artifactId>
+    <groupId>io.casehub</groupId>
+    <artifactId>casehub-work-parent</artifactId>
     <version>0.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>quarkus-work-ledger</artifactId>
+  <artifactId>casehub-work-ledger</artifactId>
   <name>Quarkus WorkItems - Ledger</name>
   <description>Optional ledger module providing rich accountability: command/event separation,
 decision context snapshots, hash chain tamper evidence, peer attestation, and
@@ -21,8 +21,8 @@ extension is unchanged whether this module is present or not.</description>
 
     <!-- Core extension — provides WorkItemLifecycleEvent, WorkItemRepository, WorkItem -->
     <dependency>
-      <groupId>io.quarkiverse.work</groupId>
-      <artifactId>quarkus-work</artifactId>
+      <groupId>io.casehub</groupId>
+      <artifactId>casehub-work</artifactId>
       <version>${project.version}</version>
     </dependency>
 

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ai.skill;
+package io.casehub.work.ai.skill;
 
 import java.time.Instant;
 
@@ -13,7 +13,7 @@ import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 
 /**
  * Stores a free-text skill narrative for a worker.
- * Used by {@link WorkerProfileSkillProfileProvider} to build a {@link io.quarkiverse.work.api.SkillProfile}.
+ * Used by {@link WorkerProfileSkillProfileProvider} to build a {@link io.casehub.work.api.SkillProfile}.
  *
  * <p>
  * Not a FK to any user table — decoupled from identity management.

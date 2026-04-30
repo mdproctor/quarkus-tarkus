@@ -1,4 +1,4 @@
-package io.quarkiverse.work.reports.api;
+package io.casehub.work.reports.api;
 
 import java.time.Instant;
 
@@ -13,12 +13,12 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import io.quarkiverse.work.reports.service.ActorReport;
-import io.quarkiverse.work.reports.service.QueueHealthReport;
-import io.quarkiverse.work.reports.service.ReportService;
-import io.quarkiverse.work.reports.service.SlaBreachReport;
-import io.quarkiverse.work.reports.service.ThroughputReport;
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
+import io.casehub.work.reports.service.ActorReport;
+import io.casehub.work.reports.service.QueueHealthReport;
+import io.casehub.work.reports.service.ReportService;
+import io.casehub.work.reports.service.SlaBreachReport;
+import io.casehub.work.reports.service.ThroughputReport;
+import io.casehub.work.runtime.model.WorkItemPriority;
 
 @Path("/workitems/reports")
 @Produces(MediaType.APPLICATION_JSON)

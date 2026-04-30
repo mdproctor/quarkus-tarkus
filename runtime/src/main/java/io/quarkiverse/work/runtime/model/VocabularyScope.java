@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.model;
+package io.casehub.work.runtime.model;
 
 /**
  * Scope of a {@link LabelVocabulary}, forming a visibility hierarchy from broadest to narrowest.

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.notifications.channel;
+package io.casehub.work.notifications.channel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

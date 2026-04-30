@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.credit;
+package io.casehub.work.examples.credit;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;

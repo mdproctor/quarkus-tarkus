@@ -1,4 +1,4 @@
-package io.quarkiverse.work.queues.service;
+package io.casehub.work.queues.service;
 
 import java.util.HashMap;
 import java.util.List;
@@ -11,7 +11,7 @@ import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.jexl3.MapContext;
 
-import io.quarkiverse.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItem;
 
 @ApplicationScoped
 public class JexlConditionEvaluator implements WorkItemExpressionEvaluator {

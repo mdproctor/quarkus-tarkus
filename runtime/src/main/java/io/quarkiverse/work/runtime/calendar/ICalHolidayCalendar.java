@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.calendar;
+package io.casehub.work.runtime.calendar;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,7 +12,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.Set;
 
-import io.quarkiverse.work.api.HolidayCalendar;
+import io.casehub.work.api.HolidayCalendar;
 
 /**
  * {@link HolidayCalendar} backed by an iCal ({@code .ics}) feed.
@@ -25,7 +25,7 @@ import io.quarkiverse.work.api.HolidayCalendar;
  * <p>
  * This class is a plain Java implementation — it is instantiated by
  * {@link HolidayCalendarProducer} when
- * {@code quarkus.work.business-hours.holiday-ical-url} is configured.
+ * {@code casehub.work.business-hours.holiday-ical-url} is configured.
  * It is not a CDI bean itself.
  *
  * <p>

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.notifications.channel;
+package io.casehub.work.notifications.channel;
 
 import java.util.logging.Logger;
 
@@ -7,9 +7,9 @@ import jakarta.inject.Inject;
 
 import io.casehubio.connectors.ConnectorMessage;
 import io.casehubio.connectors.slack.SlackConnector;
-import io.quarkiverse.work.api.NotificationChannel;
-import io.quarkiverse.work.api.NotificationPayload;
-import io.quarkiverse.work.runtime.model.WorkItem;
+import io.casehub.work.api.NotificationChannel;
+import io.casehub.work.api.NotificationPayload;
+import io.casehub.work.runtime.model.WorkItem;
 
 /**
  * Slack {@link NotificationChannel} — delegates to {@link SlackConnector}

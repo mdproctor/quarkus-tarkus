@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.semantic;
+package io.casehub.work.examples.semantic;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -11,7 +11,7 @@ import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.ai.skill.WorkerSkillProfile;
+import io.casehub.work.ai.skill.WorkerSkillProfile;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;

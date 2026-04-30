@@ -1,4 +1,4 @@
-package io.quarkiverse.work.mongodb;
+package io.casehub.work.mongodb;
 
 import java.util.List;
 import java.util.UUID;
@@ -9,9 +9,9 @@ import jakarta.enterprise.inject.Alternative;
 
 import org.bson.Document;
 
-import io.quarkiverse.work.runtime.model.AuditEntry;
-import io.quarkiverse.work.runtime.repository.AuditEntryStore;
-import io.quarkiverse.work.runtime.repository.AuditQuery;
+import io.casehub.work.runtime.model.AuditEntry;
+import io.casehub.work.runtime.repository.AuditEntryStore;
+import io.casehub.work.runtime.repository.AuditQuery;
 
 /**
  * MongoDB implementation of {@link AuditEntryStore}.

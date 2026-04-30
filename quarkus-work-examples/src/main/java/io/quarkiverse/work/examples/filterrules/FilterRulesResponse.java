@@ -1,10 +1,10 @@
-package io.quarkiverse.work.examples.filterrules;
+package io.casehub.work.examples.filterrules;
 
 import java.util.List;
 import java.util.UUID;
 
-import io.quarkiverse.work.examples.StepLog;
-import io.quarkiverse.work.runtime.api.AuditEntryResponse;
+import io.casehub.work.examples.StepLog;
+import io.casehub.work.runtime.api.AuditEntryResponse;
 
 /**
  * Response returned by the filter rules dynamic labelling scenario.

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.service;
+package io.casehub.work.runtime.service;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -10,21 +10,21 @@ import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
-import io.quarkiverse.work.api.ChildSpec;
-import io.quarkiverse.work.api.SpawnPort;
-import io.quarkiverse.work.api.SpawnRequest;
-import io.quarkiverse.work.api.SpawnResult;
-import io.quarkiverse.work.api.SpawnedChild;
-import io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent;
-import io.quarkiverse.work.runtime.model.AuditEntry;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemCreateRequest;
-import io.quarkiverse.work.runtime.model.WorkItemRelation;
-import io.quarkiverse.work.runtime.model.WorkItemRelationType;
-import io.quarkiverse.work.runtime.model.WorkItemSpawnGroup;
-import io.quarkiverse.work.runtime.model.WorkItemTemplate;
-import io.quarkiverse.work.runtime.repository.AuditEntryStore;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
+import io.casehub.work.api.ChildSpec;
+import io.casehub.work.api.SpawnPort;
+import io.casehub.work.api.SpawnRequest;
+import io.casehub.work.api.SpawnResult;
+import io.casehub.work.api.SpawnedChild;
+import io.casehub.work.runtime.event.WorkItemLifecycleEvent;
+import io.casehub.work.runtime.model.AuditEntry;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemCreateRequest;
+import io.casehub.work.runtime.model.WorkItemRelation;
+import io.casehub.work.runtime.model.WorkItemRelationType;
+import io.casehub.work.runtime.model.WorkItemSpawnGroup;
+import io.casehub.work.runtime.model.WorkItemTemplate;
+import io.casehub.work.runtime.repository.AuditEntryStore;
+import io.casehub.work.runtime.repository.WorkItemStore;
 
 /**
  * Implements {@link SpawnPort} for the WorkItem domain.
@@ -187,7 +187,7 @@ public class WorkItemSpawnService implements SpawnPort {
                     .stream()
                     .filter(r -> createdByMarker.equals(r.createdBy))
                     .forEach(r -> workItemStore.get(r.sourceId).ifPresent(child -> {
-                        if (child.status == io.quarkiverse.work.runtime.model.WorkItemStatus.PENDING) {
+                        if (child.status == io.casehub.work.runtime.model.WorkItemStatus.PENDING) {
                             workItemService.cancel(child.id, "system:spawn",
                                     "Cancelled by spawn group cancellation");
                         }

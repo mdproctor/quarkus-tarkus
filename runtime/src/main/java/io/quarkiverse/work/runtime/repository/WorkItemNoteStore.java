@@ -1,10 +1,10 @@
-package io.quarkiverse.work.runtime.repository;
+package io.casehub.work.runtime.repository;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import io.quarkiverse.work.runtime.model.WorkItemNote;
+import io.casehub.work.runtime.model.WorkItemNote;
 
 /**
  * SPI for persisting {@link WorkItemNote} records.

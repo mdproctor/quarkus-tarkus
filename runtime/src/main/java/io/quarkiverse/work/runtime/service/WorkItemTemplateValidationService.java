@@ -1,9 +1,9 @@
-package io.quarkiverse.work.runtime.service;
+package io.casehub.work.runtime.service;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import io.quarkiverse.work.runtime.model.WorkItemTemplate;
+import io.casehub.work.runtime.model.WorkItemTemplate;
 
 /**
  * Validates {@link WorkItemTemplate} configuration for multi-instance rules.

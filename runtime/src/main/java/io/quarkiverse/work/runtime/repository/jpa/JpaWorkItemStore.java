@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.repository.jpa;
+package io.casehub.work.runtime.repository.jpa;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -10,12 +10,12 @@ import java.util.UUID;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.quarkiverse.work.api.GroupStatus;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemRootView;
-import io.quarkiverse.work.runtime.model.WorkItemSpawnGroup;
-import io.quarkiverse.work.runtime.repository.WorkItemQuery;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
+import io.casehub.work.api.GroupStatus;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemRootView;
+import io.casehub.work.runtime.model.WorkItemSpawnGroup;
+import io.casehub.work.runtime.repository.WorkItemQuery;
+import io.casehub.work.runtime.repository.WorkItemStore;
 
 /**
  * Default JPA/Panache implementation of {@link WorkItemStore}.
@@ -148,10 +148,10 @@ public class JpaWorkItemStore implements WorkItemStore {
         return WorkItem.count(
                 "parentId = ?1 AND assigneeId = ?2 AND id != ?3 AND status NOT IN (?4)",
                 parentId, assigneeId, excludeId,
-                List.of(io.quarkiverse.work.runtime.model.WorkItemStatus.COMPLETED,
-                        io.quarkiverse.work.runtime.model.WorkItemStatus.REJECTED,
-                        io.quarkiverse.work.runtime.model.WorkItemStatus.CANCELLED,
-                        io.quarkiverse.work.runtime.model.WorkItemStatus.ESCALATED));
+                List.of(io.casehub.work.runtime.model.WorkItemStatus.COMPLETED,
+                        io.casehub.work.runtime.model.WorkItemStatus.REJECTED,
+                        io.casehub.work.runtime.model.WorkItemStatus.CANCELLED,
+                        io.casehub.work.runtime.model.WorkItemStatus.ESCALATED));
     }
 
     @Override

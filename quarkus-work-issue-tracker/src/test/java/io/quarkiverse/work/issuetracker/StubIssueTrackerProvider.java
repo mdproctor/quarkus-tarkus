@@ -1,4 +1,4 @@
-package io.quarkiverse.work.issuetracker;
+package io.casehub.work.issuetracker;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,9 +12,9 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
 
-import io.quarkiverse.work.issuetracker.spi.ExternalIssueRef;
-import io.quarkiverse.work.issuetracker.spi.IssueTrackerException;
-import io.quarkiverse.work.issuetracker.spi.IssueTrackerProvider;
+import io.casehub.work.issuetracker.spi.ExternalIssueRef;
+import io.casehub.work.issuetracker.spi.IssueTrackerException;
+import io.casehub.work.issuetracker.spi.IssueTrackerProvider;
 
 /**
  * Test-only stub that replaces the real GitHub provider with an in-memory implementation.

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ai.escalation;
+package io.casehub.work.ai.escalation;
 
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -11,11 +11,11 @@ import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 
 import dev.langchain4j.model.chat.ChatModel;
-import io.quarkiverse.work.ai.config.WorkItemsAiConfig;
-import io.quarkiverse.work.runtime.model.AuditEntry;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.repository.AuditEntryStore;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
+import io.casehub.work.ai.config.WorkItemsAiConfig;
+import io.casehub.work.runtime.model.AuditEntry;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.repository.AuditEntryStore;
+import io.casehub.work.runtime.repository.WorkItemStore;
 
 /**
  * Generates and persists LLM-drafted escalation summaries.

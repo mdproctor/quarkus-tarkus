@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ledger.api;
+package io.casehub.work.ledger.api;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
@@ -20,13 +20,13 @@ import jakarta.ws.rs.core.Response;
 import io.casehub.ledger.runtime.config.LedgerConfig;
 import io.casehub.ledger.runtime.model.LedgerAttestation;
 import io.casehub.ledger.runtime.model.supplement.ProvenanceSupplement;
-import io.quarkiverse.work.ledger.api.dto.LedgerAttestationRequest;
-import io.quarkiverse.work.ledger.api.dto.LedgerEntryResponse;
-import io.quarkiverse.work.ledger.api.dto.ProvenanceRequest;
-import io.quarkiverse.work.ledger.model.WorkItemLedgerEntry;
-import io.quarkiverse.work.ledger.repository.WorkItemLedgerEntryRepository;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
-import io.quarkiverse.work.runtime.service.WorkItemNotFoundException;
+import io.casehub.work.ledger.api.dto.LedgerAttestationRequest;
+import io.casehub.work.ledger.api.dto.LedgerEntryResponse;
+import io.casehub.work.ledger.api.dto.ProvenanceRequest;
+import io.casehub.work.ledger.model.WorkItemLedgerEntry;
+import io.casehub.work.ledger.repository.WorkItemLedgerEntryRepository;
+import io.casehub.work.runtime.repository.WorkItemStore;
+import io.casehub.work.runtime.service.WorkItemNotFoundException;
 
 /**
  * REST endpoints for the WorkItem ledger.

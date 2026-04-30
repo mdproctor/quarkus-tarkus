@@ -1,11 +1,11 @@
-package io.quarkiverse.work.core.strategy;
+package io.casehub.work.core.strategy;
 
 import java.util.List;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.quarkiverse.work.api.WorkerCandidate;
-import io.quarkiverse.work.api.WorkerRegistry;
+import io.casehub.work.api.WorkerCandidate;
+import io.casehub.work.api.WorkerRegistry;
 
 /**
  * Default WorkerRegistry — returns empty list for all groups.

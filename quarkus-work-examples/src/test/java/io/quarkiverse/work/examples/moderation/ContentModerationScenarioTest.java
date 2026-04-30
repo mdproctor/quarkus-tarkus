@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.moderation;
+package io.casehub.work.examples.moderation;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.flow;
+package io.casehub.work.examples.flow;
 
 import java.util.List;
 import java.util.UUID;

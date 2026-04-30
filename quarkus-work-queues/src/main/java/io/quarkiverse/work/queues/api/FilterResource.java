@@ -1,4 +1,4 @@
-package io.quarkiverse.work.queues.api;
+package io.casehub.work.queues.api;
 
 import java.util.List;
 import java.util.Map;
@@ -17,16 +17,16 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import io.quarkiverse.work.queues.model.FilterAction;
-import io.quarkiverse.work.queues.model.FilterScope;
-import io.quarkiverse.work.queues.model.WorkItemFilter;
-import io.quarkiverse.work.queues.service.ExpressionDescriptor;
-import io.quarkiverse.work.queues.service.FilterEngine;
-import io.quarkiverse.work.queues.service.FilterEvaluatorRegistry;
-import io.quarkiverse.work.queues.service.WorkItemExpressionEvaluator;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
+import io.casehub.work.queues.model.FilterAction;
+import io.casehub.work.queues.model.FilterScope;
+import io.casehub.work.queues.model.WorkItemFilter;
+import io.casehub.work.queues.service.ExpressionDescriptor;
+import io.casehub.work.queues.service.FilterEngine;
+import io.casehub.work.queues.service.FilterEvaluatorRegistry;
+import io.casehub.work.queues.service.WorkItemExpressionEvaluator;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemPriority;
+import io.casehub.work.runtime.model.WorkItemStatus;
 
 @Path("/filters")
 @Produces(MediaType.APPLICATION_JSON)

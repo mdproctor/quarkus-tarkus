@@ -1,4 +1,4 @@
-package io.quarkiverse.work.core.strategy;
+package io.casehub.work.core.strategy;
 
 import java.util.Arrays;
 import java.util.List;
@@ -7,11 +7,11 @@ import java.util.stream.Collectors;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.quarkiverse.work.api.AssignmentDecision;
-import io.quarkiverse.work.api.AssignmentTrigger;
-import io.quarkiverse.work.api.SelectionContext;
-import io.quarkiverse.work.api.WorkerCandidate;
-import io.quarkiverse.work.api.WorkerSelectionStrategy;
+import io.casehub.work.api.AssignmentDecision;
+import io.casehub.work.api.AssignmentTrigger;
+import io.casehub.work.api.SelectionContext;
+import io.casehub.work.api.WorkerCandidate;
+import io.casehub.work.api.WorkerSelectionStrategy;
 
 /**
  * Generic work assignment broker.

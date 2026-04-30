@@ -1,4 +1,4 @@
-package io.quarkiverse.work.queues.service;
+package io.casehub.work.queues.service;
 
 import java.util.List;
 import java.util.Map;
@@ -10,10 +10,10 @@ import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
-import io.quarkiverse.work.queues.event.WorkItemQueueEvent;
-import io.quarkiverse.work.queues.model.QueueView;
-import io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
+import io.casehub.work.queues.event.WorkItemQueueEvent;
+import io.casehub.work.queues.model.QueueView;
+import io.casehub.work.runtime.event.WorkItemLifecycleEvent;
+import io.casehub.work.runtime.repository.WorkItemStore;
 
 /**
  * CDI observer: bridges {@link WorkItemLifecycleEvent} to the filter evaluation engine
@@ -95,7 +95,7 @@ public class FilterEvaluationObserver {
      * Observe a WorkItem lifecycle event, run filter evaluation, and fire queue events.
      *
      * @param event the lifecycle event fired by
-     *        {@link io.quarkiverse.work.runtime.service.WorkItemService}
+     *        {@link io.casehub.work.runtime.service.WorkItemService}
      */
     @Transactional
     public void onLifecycleEvent(@Observes final WorkItemLifecycleEvent event) {

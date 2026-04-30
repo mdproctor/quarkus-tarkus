@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ledger.api;
+package io.casehub.work.ledger.api;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
@@ -15,7 +15,7 @@ import jakarta.ws.rs.core.Response;
 import io.casehub.ledger.runtime.config.LedgerConfig;
 import io.casehub.ledger.runtime.model.ActorTrustScore;
 import io.casehub.ledger.runtime.service.TrustGateService;
-import io.quarkiverse.work.ledger.api.dto.ActorTrustScoreResponse;
+import io.casehub.work.ledger.api.dto.ActorTrustScoreResponse;
 
 /**
  * REST endpoints for actor trust scores.

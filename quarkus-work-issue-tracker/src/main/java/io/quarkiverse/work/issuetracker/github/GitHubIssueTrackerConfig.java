@@ -1,4 +1,4 @@
-package io.quarkiverse.work.issuetracker.github;
+package io.casehub.work.issuetracker.github;
 
 import java.util.Optional;
 
@@ -13,16 +13,16 @@ import io.smallrye.config.WithName;
  *
  * <pre>{@code
  * # Personal access token with repo scope (or fine-grained: issues:write)
- * quarkus.work.issue-tracker.github.token=ghp_...
+ * casehub.work.issue-tracker.github.token=ghp_...
  *
  * # Default repository when externalRef does not include owner/repo
- * quarkus.work.issue-tracker.github.default-repository=myorg/myapp
+ * casehub.work.issue-tracker.github.default-repository=myorg/myapp
  *
  * # When true, linked GitHub issues are closed when the WorkItem is COMPLETED
- * quarkus.work.issue-tracker.github.auto-close-on-complete=false
+ * casehub.work.issue-tracker.github.auto-close-on-complete=false
  * }</pre>
  */
-@ConfigMapping(prefix = "quarkus.work.issue-tracker.github")
+@ConfigMapping(prefix = "casehub.work.issue-tracker.github")
 @ConfigRoot(phase = ConfigPhase.RUN_TIME)
 public interface GitHubIssueTrackerConfig {
 
@@ -48,7 +48,7 @@ public interface GitHubIssueTrackerConfig {
 
     /**
      * When {@code true}, the linked GitHub issue is automatically closed (with a comment)
-     * when the WorkItem transitions to {@link io.quarkiverse.work.runtime.model.WorkItemStatus#COMPLETED}.
+     * when the WorkItem transitions to {@link io.casehub.work.runtime.model.WorkItemStatus#COMPLETED}.
      * Defaults to {@code false} — explicit close via the REST API or via
      * {@link GitHubIssueTrackerProvider#closeIssue} only.
      *

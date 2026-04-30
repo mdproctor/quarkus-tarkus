@@ -1,4 +1,4 @@
-package io.quarkiverse.work.queues.model;
+package io.casehub.work.queues.model;
 
 public record FilterAction(String type, String labelPath) {
     public static FilterAction applyLabel(final String labelPath) {

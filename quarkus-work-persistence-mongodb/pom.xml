@@ -5,12 +5,12 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.quarkiverse.work</groupId>
-    <artifactId>quarkus-work-parent</artifactId>
+    <groupId>io.casehub</groupId>
+    <artifactId>casehub-work-parent</artifactId>
     <version>0.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>quarkus-work-persistence-mongodb</artifactId>
+  <artifactId>casehub-work-persistence-mongodb</artifactId>
   <name>Quarkus WorkItems - MongoDB Persistence</name>
   <description>Optional MongoDB-backed WorkItemStore and AuditEntryStore. Drop-in replacement for the
 default JPA stores. Activate by adding this module to the classpath — CDI @Alternative @Priority(1)
@@ -20,8 +20,8 @@ selects it automatically. Translates WorkItemQuery to MongoDB Document filters.<
 
     <!-- Core extension -->
     <dependency>
-      <groupId>io.quarkiverse.work</groupId>
-      <artifactId>quarkus-work</artifactId>
+      <groupId>io.casehub</groupId>
+      <artifactId>casehub-work</artifactId>
       <version>${project.version}</version>
     </dependency>
 

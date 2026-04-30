@@ -1,4 +1,4 @@
-package io.quarkiverse.work.api;
+package io.casehub.work.api;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -11,11 +11,11 @@ import java.time.ZoneId;
  * Provide a CDI {@code @ApplicationScoped} bean implementing this interface to
  * plug in any holiday source: a static config list, an iCal feed, a database,
  * or an external API. The default implementation reads from
- * {@code quarkus.work.business-hours.holidays}.
+ * {@code casehub.work.business-hours.holidays}.
  *
  * <p>
  * An optional iCal-backed implementation activates automatically when
- * {@code quarkus.work.business-hours.holiday-ical-url} is configured.
+ * {@code casehub.work.business-hours.holiday-ical-url} is configured.
  */
 public interface HolidayCalendar {
 

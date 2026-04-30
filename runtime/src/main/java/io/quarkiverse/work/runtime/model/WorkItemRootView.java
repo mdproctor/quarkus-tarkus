@@ -1,6 +1,6 @@
-package io.quarkiverse.work.runtime.model;
+package io.casehub.work.runtime.model;
 
-import io.quarkiverse.work.api.GroupStatus;
+import io.casehub.work.api.GroupStatus;
 
 /**
  * Projection of a root WorkItem (parentId IS NULL) enriched with

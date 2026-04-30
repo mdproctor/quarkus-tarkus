@@ -1,4 +1,4 @@
-package io.quarkiverse.work.flow;
+package io.casehub.work.flow;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;

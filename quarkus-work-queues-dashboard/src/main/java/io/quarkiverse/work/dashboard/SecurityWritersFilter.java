@@ -1,13 +1,13 @@
-package io.quarkiverse.work.dashboard;
+package io.casehub.work.dashboard;
 
 import java.util.List;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.quarkiverse.work.queues.model.FilterAction;
-import io.quarkiverse.work.queues.model.FilterScope;
-import io.quarkiverse.work.queues.service.WorkItemFilterBean;
-import io.quarkiverse.work.runtime.model.WorkItem;
+import io.casehub.work.queues.model.FilterAction;
+import io.casehub.work.queues.model.FilterScope;
+import io.casehub.work.queues.service.WorkItemFilterBean;
+import io.casehub.work.runtime.model.WorkItem;
 
 /**
  * Lambda filter: any document submitted by the security writing team is urgent,

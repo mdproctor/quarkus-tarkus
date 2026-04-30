@@ -1,9 +1,9 @@
-package io.quarkiverse.work.queues.event;
+package io.casehub.work.queues.event;
 
 import java.util.UUID;
 
 /**
- * CDI event fired when a WorkItem's membership in a {@link io.quarkiverse.work.queues.model.QueueView}
+ * CDI event fired when a WorkItem's membership in a {@link io.casehub.work.queues.model.QueueView}
  * changes.
  *
  * <p>
@@ -16,7 +16,7 @@ import java.util.UUID;
  * If the transaction rolls back, the events are discarded.
  *
  * @param workItemId the UUID of the WorkItem whose queue membership changed
- * @param queueViewId the UUID of the affected {@link io.quarkiverse.work.queues.model.QueueView}
+ * @param queueViewId the UUID of the affected {@link io.casehub.work.queues.model.QueueView}
  * @param queueName human-readable name of the queue, for logging and display
  * @param eventType whether the WorkItem was added, removed, or changed within the queue
  */

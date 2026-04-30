@@ -5,12 +5,12 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.quarkiverse.work</groupId>
-    <artifactId>quarkus-work-parent</artifactId>
+    <groupId>io.casehub</groupId>
+    <artifactId>casehub-work-parent</artifactId>
     <version>0.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>quarkus-work-reports</artifactId>
+  <artifactId>casehub-work-reports</artifactId>
   <name>Quarkus Work - SLA Reports</name>
   <description>Optional SLA compliance reporting module. Adds /workitems/reports/* endpoints
 for breach rates, actor performance, throughput trends, and queue health.
@@ -18,8 +18,8 @@ Zero cost when absent — the core extension is unchanged.</description>
 
   <dependencies>
     <dependency>
-      <groupId>io.quarkiverse.work</groupId>
-      <artifactId>quarkus-work</artifactId>
+      <groupId>io.casehub</groupId>
+      <artifactId>casehub-work</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

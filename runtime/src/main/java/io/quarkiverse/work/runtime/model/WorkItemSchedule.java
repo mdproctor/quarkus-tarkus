@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.model;
+package io.casehub.work.runtime.model;
 
 import java.time.Instant;
 import java.util.List;
@@ -19,7 +19,7 @@ import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
  *
  * <h2>How it works</h2>
  * <p>
- * A background job ({@link io.quarkiverse.work.runtime.service.WorkItemScheduleService})
+ * A background job ({@link io.casehub.work.runtime.service.WorkItemScheduleService})
  * runs every minute, finds all active schedules where {@code nextFireAt ≤ now},
  * instantiates the linked template, updates {@code lastFiredAt}, and computes
  * the next {@code nextFireAt} from the cron expression.

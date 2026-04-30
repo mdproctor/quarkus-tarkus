@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.vocabulary;
+package io.casehub.work.examples.vocabulary;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;

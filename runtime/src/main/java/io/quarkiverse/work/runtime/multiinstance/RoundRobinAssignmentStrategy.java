@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.multiinstance;
+package io.casehub.work.runtime.multiinstance;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -10,15 +10,15 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 
-import io.quarkiverse.work.api.AssignmentDecision;
-import io.quarkiverse.work.api.InstanceAssignmentStrategy;
-import io.quarkiverse.work.api.MultiInstanceContext;
-import io.quarkiverse.work.api.SelectionContext;
-import io.quarkiverse.work.api.WorkerSelectionStrategy;
-import io.quarkiverse.work.core.strategy.ClaimFirstStrategy;
-import io.quarkiverse.work.core.strategy.LeastLoadedStrategy;
-import io.quarkiverse.work.runtime.config.WorkItemsConfig;
-import io.quarkiverse.work.runtime.model.WorkItem;
+import io.casehub.work.api.AssignmentDecision;
+import io.casehub.work.api.InstanceAssignmentStrategy;
+import io.casehub.work.api.MultiInstanceContext;
+import io.casehub.work.api.SelectionContext;
+import io.casehub.work.api.WorkerSelectionStrategy;
+import io.casehub.work.core.strategy.ClaimFirstStrategy;
+import io.casehub.work.core.strategy.LeastLoadedStrategy;
+import io.casehub.work.runtime.config.WorkItemsConfig;
+import io.casehub.work.runtime.model.WorkItem;
 
 /**
  * Distributes instances across workers using the active {@link WorkerSelectionStrategy},

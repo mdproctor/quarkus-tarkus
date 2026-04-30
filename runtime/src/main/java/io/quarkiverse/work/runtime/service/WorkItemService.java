@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.service;
+package io.casehub.work.runtime.service;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -10,23 +10,23 @@ import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
-import io.quarkiverse.work.api.AssignmentTrigger;
-import io.quarkiverse.work.api.BusinessCalendar;
-import io.quarkiverse.work.api.ClaimSlaContext;
-import io.quarkiverse.work.api.ClaimSlaPolicy;
-import io.quarkiverse.work.runtime.config.WorkItemsConfig;
-import io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent;
-import io.quarkiverse.work.runtime.model.AuditEntry;
-import io.quarkiverse.work.runtime.model.DelegationState;
-import io.quarkiverse.work.runtime.model.LabelPersistence;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemCreateRequest;
-import io.quarkiverse.work.runtime.model.WorkItemLabel;
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
-import io.quarkiverse.work.runtime.model.WorkItemSpawnGroup;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
-import io.quarkiverse.work.runtime.repository.AuditEntryStore;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
+import io.casehub.work.api.AssignmentTrigger;
+import io.casehub.work.api.BusinessCalendar;
+import io.casehub.work.api.ClaimSlaContext;
+import io.casehub.work.api.ClaimSlaPolicy;
+import io.casehub.work.runtime.config.WorkItemsConfig;
+import io.casehub.work.runtime.event.WorkItemLifecycleEvent;
+import io.casehub.work.runtime.model.AuditEntry;
+import io.casehub.work.runtime.model.DelegationState;
+import io.casehub.work.runtime.model.LabelPersistence;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemCreateRequest;
+import io.casehub.work.runtime.model.WorkItemLabel;
+import io.casehub.work.runtime.model.WorkItemPriority;
+import io.casehub.work.runtime.model.WorkItemSpawnGroup;
+import io.casehub.work.runtime.model.WorkItemStatus;
+import io.casehub.work.runtime.repository.AuditEntryStore;
+import io.casehub.work.runtime.repository.WorkItemStore;
 
 @ApplicationScoped
 public class WorkItemService {

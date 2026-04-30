@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ai.skill;
+package io.casehub.work.ai.skill;
 
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -10,9 +10,9 @@ import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 
 import dev.langchain4j.model.embedding.EmbeddingModel;
-import io.quarkiverse.work.api.SelectionContext;
-import io.quarkiverse.work.api.SkillMatcher;
-import io.quarkiverse.work.api.SkillProfile;
+import io.casehub.work.api.SelectionContext;
+import io.casehub.work.api.SkillMatcher;
+import io.casehub.work.api.SkillProfile;
 
 /**
  * Scores a worker's skill narrative against a work item using cosine similarity of embeddings.

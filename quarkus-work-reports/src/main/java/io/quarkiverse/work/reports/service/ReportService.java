@@ -1,4 +1,4 @@
-package io.quarkiverse.work.reports.service;
+package io.casehub.work.reports.service;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -12,9 +12,9 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemPriority;
+import io.casehub.work.runtime.model.WorkItemStatus;
 import io.quarkus.cache.CacheResult;
 
 @ApplicationScoped

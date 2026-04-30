@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.flow;
+package io.casehub.work.examples.flow;
 
 import static io.serverlessworkflow.fluent.func.FuncWorkflowBuilder.workflow;
 
@@ -6,8 +6,8 @@ import java.util.Map;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.quarkiverse.work.flow.WorkItemsFlow;
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
+import io.casehub.work.flow.WorkItemsFlow;
+import io.casehub.work.runtime.model.WorkItemPriority;
 import io.serverlessworkflow.api.types.Workflow;
 
 /**
@@ -29,12 +29,12 @@ import io.serverlessworkflow.api.types.Workflow;
  *
  * <h2>DSL features demonstrated</h2>
  * <ul>
- * <li>{@link io.quarkiverse.work.flow.WorkItemTaskBuilder#title(String)} — inbox display name</li>
- * <li>{@link io.quarkiverse.work.flow.WorkItemTaskBuilder#description(String)} — reviewer context</li>
- * <li>{@link io.quarkiverse.work.flow.WorkItemTaskBuilder#candidateGroups(String)} — work-queue routing</li>
- * <li>{@link io.quarkiverse.work.flow.WorkItemTaskBuilder#assigneeId(String)} — direct assignment</li>
- * <li>{@link io.quarkiverse.work.flow.WorkItemTaskBuilder#priority(WorkItemPriority)} — HIGH vs CRITICAL</li>
- * <li>{@link io.quarkiverse.work.flow.WorkItemTaskBuilder#payloadFrom} — extract JSON context from input</li>
+ * <li>{@link io.casehub.work.flow.WorkItemTaskBuilder#title(String)} — inbox display name</li>
+ * <li>{@link io.casehub.work.flow.WorkItemTaskBuilder#description(String)} — reviewer context</li>
+ * <li>{@link io.casehub.work.flow.WorkItemTaskBuilder#candidateGroups(String)} — work-queue routing</li>
+ * <li>{@link io.casehub.work.flow.WorkItemTaskBuilder#assigneeId(String)} — direct assignment</li>
+ * <li>{@link io.casehub.work.flow.WorkItemTaskBuilder#priority(WorkItemPriority)} — HIGH vs CRITICAL</li>
+ * <li>{@link io.casehub.work.flow.WorkItemTaskBuilder#payloadFrom} — extract JSON context from input</li>
  * </ul>
  *
  * <h2>Starting the workflow</h2>

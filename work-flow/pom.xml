@@ -5,12 +5,12 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.quarkiverse.work</groupId>
-    <artifactId>quarkus-work-parent</artifactId>
+    <groupId>io.casehub</groupId>
+    <artifactId>casehub-work-parent</artifactId>
     <version>0.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>quarkus-work-flow</artifactId>
+  <artifactId>casehub-work-flow</artifactId>
   <name>Quarkus WorkItems - Quarkus Flow Integration</name>
   <description>CDI bridge for suspending Quarkus-Flow workflows on WorkItems and resuming them when a human resolves the item.</description>
 
@@ -18,8 +18,8 @@
 
     <!-- WorkItems runtime: WorkItemService, WorkItemLifecycleEvent, model classes -->
     <dependency>
-      <groupId>io.quarkiverse.work</groupId>
-      <artifactId>quarkus-work</artifactId>
+      <groupId>io.casehub</groupId>
+      <artifactId>casehub-work</artifactId>
       <version>${project.version}</version>
     </dependency>
 
@@ -63,8 +63,8 @@
 
     <!-- Integration tests: WorkItems extension deployment needed for @QuarkusTest to activate WorkItemService CDI beans -->
     <dependency>
-      <groupId>io.quarkiverse.work</groupId>
-      <artifactId>quarkus-work-deployment</artifactId>
+      <groupId>io.casehub</groupId>
+      <artifactId>casehub-work-deployment</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>

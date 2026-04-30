@@ -1,12 +1,12 @@
-package io.quarkiverse.work.core.policy;
+package io.casehub.work.core.policy;
 
 import java.time.Duration;
 import java.time.Instant;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import io.quarkiverse.work.api.ClaimSlaContext;
-import io.quarkiverse.work.api.ClaimSlaPolicy;
+import io.casehub.work.api.ClaimSlaContext;
+import io.casehub.work.api.ClaimSlaPolicy;
 
 /**
  * Default {@link ClaimSlaPolicy}: remaining pool time carries forward.

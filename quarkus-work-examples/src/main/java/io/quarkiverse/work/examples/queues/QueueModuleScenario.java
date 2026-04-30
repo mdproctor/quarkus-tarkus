@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.queues;
+package io.casehub.work.examples.queues;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -15,22 +15,22 @@ import jakarta.ws.rs.core.MediaType;
 
 import org.jboss.logging.Logger;
 
-import io.quarkiverse.work.examples.StepLog;
-import io.quarkiverse.work.queues.model.FilterScope;
-import io.quarkiverse.work.queues.model.QueueView;
-import io.quarkiverse.work.queues.model.WorkItemQueueState;
-import io.quarkiverse.work.runtime.api.AuditEntryResponse;
-import io.quarkiverse.work.runtime.api.WorkItemLabelResponse;
-import io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent;
-import io.quarkiverse.work.runtime.model.AuditEntry;
-import io.quarkiverse.work.runtime.model.LabelPersistence;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemCreateRequest;
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
-import io.quarkiverse.work.runtime.repository.AuditEntryStore;
-import io.quarkiverse.work.runtime.repository.WorkItemQuery;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
-import io.quarkiverse.work.runtime.service.WorkItemService;
+import io.casehub.work.examples.StepLog;
+import io.casehub.work.queues.model.FilterScope;
+import io.casehub.work.queues.model.QueueView;
+import io.casehub.work.queues.model.WorkItemQueueState;
+import io.casehub.work.runtime.api.AuditEntryResponse;
+import io.casehub.work.runtime.api.WorkItemLabelResponse;
+import io.casehub.work.runtime.event.WorkItemLifecycleEvent;
+import io.casehub.work.runtime.model.AuditEntry;
+import io.casehub.work.runtime.model.LabelPersistence;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemCreateRequest;
+import io.casehub.work.runtime.model.WorkItemPriority;
+import io.casehub.work.runtime.repository.AuditEntryStore;
+import io.casehub.work.runtime.repository.WorkItemQuery;
+import io.casehub.work.runtime.repository.WorkItemStore;
+import io.casehub.work.runtime.service.WorkItemService;
 
 /**
  * Scenario 8 — Queue Module: Label-Based Specialist Queues with Soft-Claim Handoff.

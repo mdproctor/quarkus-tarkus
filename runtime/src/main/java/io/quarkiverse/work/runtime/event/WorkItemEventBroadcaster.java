@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.event;
+package io.casehub.work.runtime.event;
 
 import java.util.UUID;
 
@@ -46,7 +46,7 @@ public class WorkItemEventBroadcaster {
      * CDI observer: called synchronously on every WorkItem lifecycle transition.
      * Re-publishes the event onto the hot stream for all connected SSE clients.
      *
-     * @param event the lifecycle event fired by {@link io.quarkiverse.work.runtime.service.WorkItemService}
+     * @param event the lifecycle event fired by {@link io.casehub.work.runtime.service.WorkItemService}
      */
     public void onEvent(@Observes final WorkItemLifecycleEvent event) {
         processor.onNext(event);

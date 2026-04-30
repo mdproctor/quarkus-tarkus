@@ -1,4 +1,4 @@
-package io.quarkiverse.work.issuetracker.service;
+package io.casehub.work.issuetracker.service;
 
 import java.util.List;
 import java.util.UUID;
@@ -9,13 +9,13 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
-import io.quarkiverse.work.issuetracker.github.GitHubIssueTrackerConfig;
-import io.quarkiverse.work.issuetracker.model.WorkItemIssueLink;
-import io.quarkiverse.work.issuetracker.spi.ExternalIssueRef;
-import io.quarkiverse.work.issuetracker.spi.IssueTrackerException;
-import io.quarkiverse.work.issuetracker.spi.IssueTrackerProvider;
-import io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
+import io.casehub.work.issuetracker.github.GitHubIssueTrackerConfig;
+import io.casehub.work.issuetracker.model.WorkItemIssueLink;
+import io.casehub.work.issuetracker.spi.ExternalIssueRef;
+import io.casehub.work.issuetracker.spi.IssueTrackerException;
+import io.casehub.work.issuetracker.spi.IssueTrackerProvider;
+import io.casehub.work.runtime.event.WorkItemLifecycleEvent;
+import io.casehub.work.runtime.model.WorkItemStatus;
 
 /**
  * Manages links between WorkItems and external issue tracker issues.
@@ -28,7 +28,7 @@ import io.quarkiverse.work.runtime.model.WorkItemStatus;
  * <h2>Auto-close</h2>
  * <p>
  * Observes {@link WorkItemLifecycleEvent}: when a WorkItem is COMPLETED and
- * {@code quarkus.work.issue-tracker.github.auto-close-on-complete=true},
+ * {@code casehub.work.issue-tracker.github.auto-close-on-complete=true},
  * all linked issues are closed via their respective providers. Close failures
  * are logged and swallowed — they do not roll back the WorkItem completion.
  */

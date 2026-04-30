@@ -1,4 +1,4 @@
-package io.quarkiverse.work.queues.service;
+package io.casehub.work.queues.service;
 
 import java.util.List;
 import java.util.Map;
@@ -7,11 +7,11 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import io.quarkiverse.work.queues.event.QueueEventType;
-import io.quarkiverse.work.queues.event.WorkItemQueueEvent;
-import io.quarkiverse.work.queues.model.QueueView;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.service.LabelVocabularyService;
+import io.casehub.work.queues.event.QueueEventType;
+import io.casehub.work.queues.event.WorkItemQueueEvent;
+import io.casehub.work.queues.model.QueueView;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.service.LabelVocabularyService;
 
 /**
  * Short-lived per-operation context that resolves queue lifecycle events by diffing
@@ -20,7 +20,7 @@ import io.quarkiverse.work.runtime.service.LabelVocabularyService;
  *
  * <h2>Why a tracker, not a live before-snapshot?</h2>
  * <p>
- * {@link io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent} fires <em>after</em>
+ * {@link io.casehub.work.runtime.event.WorkItemLifecycleEvent} fires <em>after</em>
  * the WorkItem has already been mutated and persisted in the store. At observation time,
  * {@code workItemStore.get(id)} returns the post-mutation state — the pre-mutation state is gone.
  *

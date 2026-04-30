@@ -1,8 +1,8 @@
-package io.quarkiverse.work.queues.service;
+package io.casehub.work.queues.service;
 
 import java.util.UUID;
 
-import io.quarkiverse.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItem;
 
 public interface FilterEngine {
     void evaluate(WorkItem workItem);

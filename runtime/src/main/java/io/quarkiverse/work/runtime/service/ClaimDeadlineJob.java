@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.service;
+package io.casehub.work.runtime.service;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -9,14 +9,14 @@ import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
-import io.quarkiverse.work.api.ClaimSlaContext;
-import io.quarkiverse.work.api.ClaimSlaPolicy;
-import io.quarkiverse.work.api.EscalationPolicy;
-import io.quarkiverse.work.runtime.config.WorkItemsConfig;
-import io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.repository.WorkItemQuery;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
+import io.casehub.work.api.ClaimSlaContext;
+import io.casehub.work.api.ClaimSlaPolicy;
+import io.casehub.work.api.EscalationPolicy;
+import io.casehub.work.runtime.config.WorkItemsConfig;
+import io.casehub.work.runtime.event.WorkItemLifecycleEvent;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.repository.WorkItemQuery;
+import io.casehub.work.runtime.repository.WorkItemStore;
 import io.quarkus.scheduler.Scheduled;
 
 @ApplicationScoped
@@ -38,7 +38,7 @@ public class ClaimDeadlineJob {
     @Inject
     WorkItemsConfig config;
 
-    @Scheduled(every = "${quarkus.work.cleanup.expiry-check-seconds}s")
+    @Scheduled(every = "${casehub.work.cleanup.expiry-check-seconds}s")
     @Transactional
     public void checkUnclaimedPastDeadline() {
         final Instant now = Instant.now();

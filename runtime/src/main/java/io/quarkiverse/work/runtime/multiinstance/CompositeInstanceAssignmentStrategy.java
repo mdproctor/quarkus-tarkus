@@ -1,12 +1,12 @@
-package io.quarkiverse.work.runtime.multiinstance;
+package io.casehub.work.runtime.multiinstance;
 
 import java.util.List;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 
-import io.quarkiverse.work.api.InstanceAssignmentStrategy;
-import io.quarkiverse.work.api.MultiInstanceContext;
+import io.casehub.work.api.InstanceAssignmentStrategy;
+import io.casehub.work.api.MultiInstanceContext;
 
 /**
  * Applies multiple {@link InstanceAssignmentStrategy} delegates in order.

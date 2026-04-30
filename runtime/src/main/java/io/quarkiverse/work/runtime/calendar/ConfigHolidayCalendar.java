@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.calendar;
+package io.casehub.work.runtime.calendar;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -6,12 +6,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.quarkiverse.work.api.HolidayCalendar;
-import io.quarkiverse.work.runtime.config.WorkItemsConfig;
+import io.casehub.work.api.HolidayCalendar;
+import io.casehub.work.runtime.config.WorkItemsConfig;
 
 /**
  * {@link HolidayCalendar} backed by a static list of dates read from
- * {@code quarkus.work.business-hours.holidays} (comma-separated {@code YYYY-MM-DD}).
+ * {@code casehub.work.business-hours.holidays} (comma-separated {@code YYYY-MM-DD}).
  *
  * <p>
  * This class is a plain Java implementation — it is instantiated by
@@ -20,7 +20,7 @@ import io.quarkiverse.work.runtime.config.WorkItemsConfig;
  * <p>
  * To use a different holiday source, either:
  * <ul>
- * <li>Configure {@code quarkus.work.business-hours.holiday-ical-url} — activates
+ * <li>Configure {@code casehub.work.business-hours.holiday-ical-url} — activates
  * the iCal-backed calendar automatically.</li>
  * <li>Provide your own {@code @ApplicationScoped} CDI bean that implements
  * {@link HolidayCalendar} — it takes precedence over the default producer.</li>

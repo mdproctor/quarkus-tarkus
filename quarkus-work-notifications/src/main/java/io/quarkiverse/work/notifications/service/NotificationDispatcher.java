@@ -1,4 +1,4 @@
-package io.quarkiverse.work.notifications.service;
+package io.casehub.work.notifications.service;
 
 import java.util.List;
 import java.util.Map;
@@ -16,11 +16,11 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
-import io.quarkiverse.work.api.NotificationChannel;
-import io.quarkiverse.work.api.NotificationPayload;
-import io.quarkiverse.work.notifications.model.WorkItemNotificationRule;
-import io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent;
-import io.quarkiverse.work.runtime.model.WorkItem;
+import io.casehub.work.api.NotificationChannel;
+import io.casehub.work.api.NotificationPayload;
+import io.casehub.work.notifications.model.WorkItemNotificationRule;
+import io.casehub.work.runtime.event.WorkItemLifecycleEvent;
+import io.casehub.work.runtime.model.WorkItem;
 
 /**
  * CDI observer that dispatches outbound notifications on WorkItem lifecycle events.

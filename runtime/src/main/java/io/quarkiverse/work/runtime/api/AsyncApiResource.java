@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.api;
+package io.casehub.work.runtime.api;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,7 +19,7 @@ import jakarta.ws.rs.core.Response;
  * <p>
  * The spec documents:
  * <ul>
- * <li>{@link io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent} —
+ * <li>{@link io.casehub.work.runtime.event.WorkItemLifecycleEvent} —
  * fired on every WorkItem state transition</li>
  * <li>{@code WorkItemQueueEvent} — fired on queue membership changes
  * (requires {@code quarkus-work-queues})</li>

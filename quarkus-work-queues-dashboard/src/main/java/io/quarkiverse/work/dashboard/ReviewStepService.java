@@ -1,4 +1,4 @@
-package io.quarkiverse.work.dashboard;
+package io.casehub.work.dashboard;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,15 +11,15 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
-import io.quarkiverse.work.queues.model.FilterAction;
-import io.quarkiverse.work.queues.model.FilterScope;
-import io.quarkiverse.work.queues.model.WorkItemFilter;
-import io.quarkiverse.work.queues.service.WorkItemFilterBean;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemCreateRequest;
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
-import io.quarkiverse.work.runtime.service.WorkItemService;
+import io.casehub.work.queues.model.FilterAction;
+import io.casehub.work.queues.model.FilterScope;
+import io.casehub.work.queues.model.WorkItemFilter;
+import io.casehub.work.queues.service.WorkItemFilterBean;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemCreateRequest;
+import io.casehub.work.runtime.model.WorkItemPriority;
+import io.casehub.work.runtime.repository.WorkItemStore;
+import io.casehub.work.runtime.service.WorkItemService;
 
 /**
  * Stateful CDI bean managing the document review demo scenario step by step.

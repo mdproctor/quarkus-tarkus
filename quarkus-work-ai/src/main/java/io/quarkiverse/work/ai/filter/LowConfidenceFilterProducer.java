@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ai.filter;
+package io.casehub.work.ai.filter;
 
 import java.util.List;
 import java.util.Map;
@@ -7,17 +7,17 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 
-import io.quarkiverse.work.ai.config.WorkItemsAiConfig;
-import io.quarkiverse.work.runtime.filter.ActionDescriptor;
-import io.quarkiverse.work.runtime.filter.FilterDefinition;
+import io.casehub.work.ai.config.WorkItemsAiConfig;
+import io.casehub.work.runtime.filter.ActionDescriptor;
+import io.casehub.work.runtime.filter.FilterDefinition;
 
 /**
  * Produces the permanent {@code ai/low-confidence} filter definition.
  *
  * <p>
- * When {@code quarkus.work.ai.low-confidence-filter.enabled=true} (default),
+ * When {@code casehub.work.ai.low-confidence-filter.enabled=true} (default),
  * WorkItems created with {@code confidenceScore} strictly below
- * {@code quarkus.work.ai.confidence-threshold} (default 0.7) automatically
+ * {@code casehub.work.ai.confidence-threshold} (default 0.7) automatically
  * receive the {@code ai/low-confidence} label (INFERRED persistence).
  *
  * <p>

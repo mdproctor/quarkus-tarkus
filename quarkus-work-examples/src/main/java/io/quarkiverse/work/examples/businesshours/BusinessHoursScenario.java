@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.businesshours;
+package io.casehub.work.examples.businesshours;
 
 import java.time.Duration;
 import java.time.ZoneId;
@@ -16,12 +16,12 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import io.quarkiverse.work.api.BusinessCalendar;
-import io.quarkiverse.work.examples.StepLog;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemCreateRequest;
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
-import io.quarkiverse.work.runtime.service.WorkItemService;
+import io.casehub.work.api.BusinessCalendar;
+import io.casehub.work.examples.StepLog;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemCreateRequest;
+import io.casehub.work.runtime.model.WorkItemPriority;
+import io.casehub.work.runtime.service.WorkItemService;
 
 /**
  * Business-hours SLA example.

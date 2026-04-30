@@ -1,10 +1,10 @@
-package io.quarkiverse.work.examples.queues;
+package io.casehub.work.examples.queues;
 
 import java.util.List;
 import java.util.UUID;
 
-import io.quarkiverse.work.examples.StepLog;
-import io.quarkiverse.work.runtime.api.AuditEntryResponse;
+import io.casehub.work.examples.StepLog;
+import io.casehub.work.runtime.api.AuditEntryResponse;
 
 /**
  * Response returned by the queue module scenario.

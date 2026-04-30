@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.config;
+package io.casehub.work.runtime.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

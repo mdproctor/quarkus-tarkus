@@ -1,4 +1,4 @@
-package io.quarkiverse.work.queues.api;
+package io.casehub.work.queues.api;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.queues.lifecycle;
+package io.casehub.work.examples.queues.lifecycle;
 
 import java.util.List;
 import java.util.UUID;
@@ -7,8 +7,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 
-import io.quarkiverse.work.queues.event.QueueEventType;
-import io.quarkiverse.work.queues.event.WorkItemQueueEvent;
+import io.casehub.work.queues.event.QueueEventType;
+import io.casehub.work.queues.event.WorkItemQueueEvent;
 
 /**
  * CDI observer that records {@link WorkItemQueueEvent} instances for the queue lifecycle example.

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.model;
+package io.casehub.work.runtime.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;

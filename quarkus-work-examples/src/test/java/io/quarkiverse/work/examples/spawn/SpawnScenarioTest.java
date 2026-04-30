@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.spawn;
+package io.casehub.work.examples.spawn;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;

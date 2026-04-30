@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ai.escalation;
+package io.casehub.work.ai.escalation;
 
 import java.time.Instant;
 import java.util.List;

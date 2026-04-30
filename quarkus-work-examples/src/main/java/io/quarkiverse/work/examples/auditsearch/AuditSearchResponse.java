@@ -1,9 +1,9 @@
-package io.quarkiverse.work.examples.auditsearch;
+package io.casehub.work.examples.auditsearch;
 
 import java.util.List;
 import java.util.UUID;
 
-import io.quarkiverse.work.examples.StepLog;
+import io.casehub.work.examples.StepLog;
 
 /**
  * Response returned by the cross-WorkItem audit search scenario.

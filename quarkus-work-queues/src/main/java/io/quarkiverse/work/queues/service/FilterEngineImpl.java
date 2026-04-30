@@ -1,4 +1,4 @@
-package io.quarkiverse.work.queues.service;
+package io.casehub.work.queues.service;
 
 import java.util.List;
 import java.util.UUID;
@@ -7,13 +7,13 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
-import io.quarkiverse.work.queues.model.FilterAction;
-import io.quarkiverse.work.queues.model.FilterChain;
-import io.quarkiverse.work.queues.model.WorkItemFilter;
-import io.quarkiverse.work.runtime.model.LabelPersistence;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemLabel;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
+import io.casehub.work.queues.model.FilterAction;
+import io.casehub.work.queues.model.FilterChain;
+import io.casehub.work.queues.model.WorkItemFilter;
+import io.casehub.work.runtime.model.LabelPersistence;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemLabel;
+import io.casehub.work.runtime.repository.WorkItemStore;
 
 /**
  * Full implementation of the filter evaluation engine.
