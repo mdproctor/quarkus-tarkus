@@ -11,7 +11,7 @@
   </parent>
 
   <artifactId>casehub-work-examples</artifactId>
-  <name>Quarkus WorkItems - Examples</name>
+  <name>CaseHub Work - Examples</name>
   <description>Runnable scenario examples demonstrating every ledger, audit, and lifecycle
 capability of quarkus-work. Each scenario runs via POST /examples/{name}/run,
 logs a narrative to stdout, and returns the full ledger trail as JSON.</description>

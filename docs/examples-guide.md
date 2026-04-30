@@ -1,4 +1,4 @@
-# Quarkus WorkItems — Examples Guide
+# CaseHub Work — Examples Guide
 
 The `quarkus-work-examples` module is a runnable Quarkus application that demonstrates every significant WorkItems feature through concrete business scenarios. Each scenario is a single HTTP call that plays out a full story, logs a step-by-step narrative to stdout, and returns the resulting audit trail as JSON.
 

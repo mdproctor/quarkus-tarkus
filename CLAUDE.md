@@ -1,4 +1,4 @@
-# Quarkus WorkItems — Claude Code Project Guide
+# CaseHub Work — Claude Code Project Guide
 
 ## Platform Context
 
@@ -35,7 +35,7 @@ type: java
 
 ## What This Project Is
 
-Quarkus WorkItems is a **CaseHub platform module** providing **human-scale WorkItem lifecycle management**. It gives any Quarkus application a human task inbox with expiry, delegation, escalation, priority, and audit trail — usable independently or with optional integrations for Quarkus-Flow, CaseHub, and Qhorus. It is hosted under the CaseHub organisation (`casehubio/work`), not submitted to Quarkiverse.
+CaseHub Work is a **CaseHub platform module** providing **human-scale WorkItem lifecycle management**. It gives any Quarkus application a human task inbox with expiry, delegation, escalation, priority, and audit trail — usable independently or with optional integrations for Quarkus-Flow, CaseHub, and Qhorus. It is hosted under the CaseHub organisation (`casehubio/work`), not submitted to Quarkiverse.
 
 **The core concept — WorkItem (not Task):**
 A `WorkItem` is a unit of work requiring human attention or judgment. It is deliberately NOT called `Task` because:
@@ -74,7 +74,7 @@ CaseHub (case orchestration)   Quarkus-Flow (workflow execution)   Qhorus (agent
          │                              │                               │
          └──────────────────────────────┼───────────────────────────────┘
                                         │
-                              Quarkus WorkItems (WorkItem inbox)
+                              CaseHub Work (WorkItem inbox)
                                         │
                               casehub-work-casehub   (optional adapter)
                               casehub-work-flow      (optional adapter)
@@ -311,7 +311,7 @@ JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn install -DskipTests -f ~/claude/ca
 
 **Format check:** CI runs `mvn -Dno-format` to skip the enforced formatter. Run `mvn` locally to apply formatting.
 
-**Known extension build gotchas (from quarkus-qhorus experience):**
+**Known extension build gotchas (from casehub-qhorus experience):**
 - `quarkus-extension-processor` requires **Javadoc on every method** in `@ConfigMapping` interfaces, including group accessors — missing one causes a compile-time error
 - The `extension-descriptor` goal validates that the deployment POM declares **all transitive deployment JARs** — run `mvn install -DskipTests` first after modifying the deployment POM
 - `key` is a reserved word in H2 — avoid it as a column name in Flyway migrations
@@ -378,7 +378,8 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home
 | 2 | #103 | Notifications — Slack/Teams/webhook on lifecycle events | ✅ complete | #140 ✅ SPI+dispatcher+CRUD, #141 ✅ HTTP/Slack/Teams channels |
 | ✅ | #104 | SLA Compliance Reporting — breach rates, actor performance | ✅ complete | `casehub-work-reports` optional module; sla-breaches, actors, throughput, queue-health; 73 tests (68 H2 + 5 PostgreSQL) |
 | ✅ | #106 | Multi-Instance Tasks — M-of-N parallel completion | ✅ complete | `MultiInstanceSpawnService`, `MultiInstanceCoordinator`, `MultiInstanceGroupPolicy`; `InstanceAssignmentStrategy` SPI + 3 impls; threaded inbox via `scanRoots()`; `GET /workitems/{id}/instances`; V20+V21 migrations |
-| — | #92 | Distributed WorkItems — clustering + federation | future | #93 (SSE) implementable now |
+| — | #147 | Project Refinement — architecture and doc improvements | open | #148 DESIGN.md split, #149 WorkItemService decompose, #150 broadcaster SPI (unblocks #93), #151 Flyway convention, #152 examples split |
+| — | #92 | Distributed WorkItems — clustering + federation | future | #93 (SSE) implementable now; blocked on #150 (broadcaster SPI) |
 | — | #79 | External System Integrations | blocked | CaseHub/Qhorus not stable |
 | — | #39 | ProvenanceLink (PROV-O causal graph) | blocked | Awaiting #79 |
 | ✅ | #100 | AI-Native Features — confidence gating, semantic routing | complete | #112–#126 all done |

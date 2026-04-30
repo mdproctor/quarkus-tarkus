@@ -11,7 +11,7 @@
   </parent>
 
   <artifactId>casehub-work-persistence-mongodb</artifactId>
-  <name>Quarkus WorkItems - MongoDB Persistence</name>
+  <name>CaseHub Work - MongoDB Persistence</name>
   <description>Optional MongoDB-backed WorkItemStore and AuditEntryStore. Drop-in replacement for the
 default JPA stores. Activate by adding this module to the classpath — CDI @Alternative @Priority(1)
 selects it automatically. Translates WorkItemQuery to MongoDB Document filters.</description>

@@ -11,8 +11,8 @@
   </parent>
 
   <artifactId>casehub-work-integration-tests</artifactId>
-  <name>Quarkus WorkItems - Integration Tests</name>
-  <description>Black-box integration tests and native image validation for Quarkus WorkItems.
+  <name>CaseHub Work - Integration Tests</name>
+  <description>Black-box integration tests and native image validation for CaseHub Work.
 Contains a minimal Quarkus app embedding the extension, packaged and tested via
 @QuarkusIntegrationTest. In native mode: mvn verify -Pnative.</description>
 

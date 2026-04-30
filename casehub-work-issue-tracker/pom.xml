@@ -11,7 +11,7 @@
   </parent>
 
   <artifactId>casehub-work-issue-tracker</artifactId>
-  <name>Quarkus WorkItems - Issue Tracker Integration</name>
+  <name>CaseHub Work - Issue Tracker Integration</name>
   <description>Optional module linking WorkItems to external issue trackers (GitHub Issues, Jira, Linear, etc.).
 
 Provides a pluggable IssueTrackerProvider SPI, a REST API for managing links, and a GitHub

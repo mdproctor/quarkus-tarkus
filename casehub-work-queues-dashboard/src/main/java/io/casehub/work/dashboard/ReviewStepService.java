@@ -135,7 +135,7 @@ public class ReviewStepService {
         releaseNotesId.set(releaseNotes.id);
 
         final WorkItem tutorial = workItemService.create(new WorkItemCreateRequest(
-                "Getting started tutorial — Quarkus WorkItems quick start",
+                "Getting started tutorial — CaseHub Work quick start",
                 "Write a 10-minute getting-started guide for new users.",
                 "tutorials", "quick-start", WorkItemPriority.NORMAL,
                 null, "docs-team", null, null, "doc-system",

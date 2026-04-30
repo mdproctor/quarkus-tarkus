@@ -1,4 +1,4 @@
-# Quarkus WorkItems — REST API Reference
+# CaseHub Work — REST API Reference
 
 Base path: `/workitems`
 
@@ -810,9 +810,9 @@ curl -X PUT "http://localhost:8080/workitems/{id}/relinquishable" \
 
 ---
 
-## Ledger API (quarkus-work-ledger)
+## Ledger API (casehub-work-ledger)
 
-These endpoints are only present when `quarkus-work-ledger` is on the classpath. They activate automatically via CDI — no configuration required beyond adding the dependency.
+These endpoints are only present when `casehub-work-ledger` is on the classpath. They activate automatically via CDI — no configuration required beyond adding the dependency.
 
 ---
 

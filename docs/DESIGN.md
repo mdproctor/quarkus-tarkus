@@ -1,8 +1,8 @@
-# Quarkus WorkItems — Design Document
+# CaseHub Work — Design Document
 
 ## Overview
 
-Quarkus WorkItems provides human-scale WorkItem lifecycle management for the Quarkus
+CaseHub Work provides human-scale WorkItem lifecycle management for the Quarkus
 ecosystem. Any Quarkus application adds `quarkus-work` as a dependency and gets a
 human task inbox — WorkItems with expiry, delegation, escalation, priority, and audit
 trail — usable standalone or via optional integrations with Quarkus-Flow, CaseHub,
@@ -18,7 +18,7 @@ Primary design specification: `docs/specs/2026-04-14-tarkus-design.md`
 |---|---|---|
 | `Task` | CNCF Serverless Workflow / Quarkus-Flow | Machine-executed workflow step — milliseconds, no assignee, no expiry |
 | `Task` | CaseHub | CMMN case work unit — assigned to any worker (human or agent) via capabilities |
-| `WorkItem` | Quarkus WorkItems | Human-resolved unit of work — minutes/days, has assignee, expiry, delegation, audit |
+| `WorkItem` | CaseHub Work | Human-resolved unit of work — minutes/days, has assignee, expiry, delegation, audit |
 
 **Rule:** A `Task` is controlled by a machine. A `WorkItem` waits for a human.
 
@@ -37,7 +37,7 @@ Maven multi-module layout:
 | Deployment | `quarkus-work-deployment` | Build-time processor — feature registration, native config |
 | Testing | `quarkus-work-testing` | `InMemoryWorkItemStore` + `InMemoryAuditEntryStore` — no datasource needed for unit tests |
 | Flow | `quarkus-work-flow` | Quarkus-Flow integration — `WorkItemsFlow` DSL base class, `HumanTaskFlowBridge`, `WorkItemFlowEventListener` |
-| Ledger | `quarkus-work-ledger` | Optional accountability module — command/event ledger, SHA-256 hash chain, peer attestation, EigenTrust reputation. Extends `io.casehub:casehub-ledger` (shared base library — see ADR-0001). Zero core impact when absent. |
+| Ledger | `casehub-work-ledger` | Optional accountability module — command/event ledger, SHA-256 hash chain, peer attestation, EigenTrust reputation. Extends `io.casehub:casehub-ledger` (shared base library — see ADR-0001). Zero core impact when absent. |
 | Queues | `quarkus-work-queues` | Optional label-based work queues — `WorkItemFilter` (JEXL/JQ/Lambda), `FilterChain` derivation graph with cascade delete, `QueueView` named label-pattern queries with `additionalConditions` JEXL filtering, queue pickup (`PUT /workitems/{id}/pickup`), soft assignment (`relinquishable` flag). **Queue lifecycle events**: `WorkItemQueueEvent` CDI events (ADDED/REMOVED/CHANGED) with DB-backed `QueueMembershipTracker` (V2001 migration) for restart-consistent state. See ADR-0002. Zero core impact when absent. |
 | Queue Examples | `quarkus-work-queues-examples` | Real-world queue routing scenarios — support triage cascade, legal compliance, finance approval chain, security exec-escalation, document review pipeline. Run via `POST /queue-examples/{name}/run`. |
 | Queue Dashboard | `quarkus-work-queues-dashboard` | Tamboui terminal UI dashboard running inside Quarkus via `@QuarkusMain`. Shows live 3×3 queue board (tiers × states), step-by-step scenario control, console log. Observes `WorkItemLifecycleEvent` directly — zero polling delay. |
@@ -235,13 +235,13 @@ enabling plain unit tests without `@QuarkusTest`.
 
 ## Ledger Module
 
-The optional `quarkus-work-ledger` module records every WorkItem lifecycle transition as an
+The optional `casehub-work-ledger` module records every WorkItem lifecycle transition as an
 immutable `WorkItemLedgerEntry`. It is activated by adding the module to the classpath — the
 core extension is completely unchanged whether the module is present or not.
 
-### Dependency on quarkus-ledger (ADR-0001)
+### Dependency on casehub-ledger (ADR-0001)
 
-`quarkus-work-ledger` depends on `io.casehub:casehub-ledger` — a domain-agnostic
+`casehub-work-ledger` depends on `io.casehub:casehub-ledger` — a domain-agnostic
 shared library providing `LedgerEntry`, `LedgerAttestation`, `ActorTrustScore`,
 `TrustScoreComputer`, `LedgerHashChain`, and their repositories. This allows CaseHub and
 Qhorus to adopt the same ledger infrastructure without depending on WorkItems.
@@ -368,7 +368,7 @@ Consuming app owns all datasource config.
 | **3 — Lifecycle engine** | ✅ Complete | ExpiryCleanupJob, ClaimDeadlineJob, EscalationPolicy SPI + 3 implementations |
 | **4 — CDI events** | ✅ Complete | WorkItemLifecycleEvent on all transitions; rationale + planRef fields |
 | **5 — Quarkus-Flow integration** | ✅ Complete | `quarkus-work-flow` — WorkItemsFlow DSL, HumanTaskFlowBridge, Uni<String> suspension |
-| **6 — Ledger module** | ✅ Complete | `quarkus-work-ledger` — command/event model, hash chain, attestation, EigenTrust; optional, zero core impact |
+| **6 — Ledger module** | ✅ Complete | `casehub-work-ledger` — command/event model, hash chain, attestation, EigenTrust; optional, zero core impact |
 | **7 — Label-based queues** | ✅ Complete | `quarkus-work-queues` — label model (MANUAL/INFERRED), vocabulary (GLOBAL→PERSONAL scopes), filter engine (JEXL/JQ/Lambda, multi-pass propagation, cascade delete via FilterChain), QueueView named queries, soft assignment. See ADR-0002 and `docs/specs/2026-04-15-queues-design.md` |
 | **8 — Native image** | ✅ Complete | GraalVM 25 native build, 19 @QuarkusIntegrationTest tests, 0.084s startup |
 | **Examples** | ✅ Complete | `quarkus-work-examples` (4 ledger scenarios) + `quarkus-work-flow-examples` (WorkItemsFlow DSL showcase) + `quarkus-work-queues-examples` (5 queue scenarios: triage cascade, legal routing, finance approval, security escalation, document review pipeline) |
@@ -415,7 +415,7 @@ Three tiers:
 | quarkus-work-core | 38 |
 | runtime | 548 |
 | work-flow | 32 |
-| quarkus-work-ledger | 75 |
+| casehub-work-ledger | 75 |
 | quarkus-work-queues | 82 |
 | quarkus-work-ai | 48 |
 | quarkus-work-examples | 37 |

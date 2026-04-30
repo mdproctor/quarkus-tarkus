@@ -1,4 +1,4 @@
-# Quarkus WorkItems — Ledger, Audit, and Provenance Design
+# CaseHub Work — Ledger, Audit, and Provenance Design
 
 > *This document covers the full accountability stack: from simple audit trails to
 > causal provenance graphs, peer attestation, and EigenTrust reputation.*
@@ -7,7 +7,7 @@
 
 ## Design Principle: Complexity Must Not Leak
 
-The ledger is an **optional, separate Maven module** — `quarkus-work-ledger`.
+The ledger is an **optional, separate Maven module** — `casehub-work-ledger`.
 
 If you don't add it as a dependency, your application is identical to using
 `quarkus-work` today. No extra tables, no extra config keys, no overhead. The
@@ -28,7 +28,7 @@ quarkus-work-parent
 ├── quarkus-work-deployment       ← core deployment
 ├── quarkus-work-testing          ← InMemory impls for unit tests
 ├── quarkus-work-flow             ← Quarkus-Flow CDI bridge
-├── quarkus-work-ledger           ← NEW: fully optional ledger module
+├── casehub-work-ledger           ← NEW: fully optional ledger module
 │   └── (no separate deployment needed — pure runtime CDI)
 └── integration-tests               ← native image validation
 ```
@@ -36,7 +36,7 @@ quarkus-work-parent
 **How the separation works at runtime:**
 
 ```
-quarkus-work (core)                        quarkus-work-ledger (optional)
+quarkus-work (core)                        casehub-work-ledger (optional)
 ─────────────────────────────────────────    ─────────────────────────────────────────
 WorkItem entity                              LedgerEntry entity
 AuditEntry entity                            LedgerAttestation entity
@@ -49,7 +49,7 @@ WorkItemsConfig (stays clean)                   LedgerResource (/workitems/.../l
                                              db/ledger-migration/ (own migration path)
 ```
 
-If `quarkus-work-ledger` is absent: CDI events fire into the void. No ledger
+If `casehub-work-ledger` is absent: CDI events fire into the void. No ledger
 tables. No config. No overhead. Zero core changes required.
 
 ---
@@ -97,14 +97,14 @@ POST /workitems/{id}/ledger/provenance
 }
 ```
 
-This endpoint is on `LedgerResource` in `quarkus-work-ledger`. If the module
+This endpoint is on `LedgerResource` in `casehub-work-ledger`. If the module
 isn't present, the endpoint doesn't exist. No impact on the core API.
 
 ---
 
 ## Database Migrations
 
-`quarkus-work-ledger` registers its own Flyway migration path
+`casehub-work-ledger` registers its own Flyway migration path
 (`db/ledger-migration/`) via a Quarkus `@BuildStep` in its deployment processor.
 Core's `db/migration/` (V1__initial_schema.sql) is untouched.
 
@@ -116,7 +116,7 @@ If the ledger module is absent, the `ledger_entry`, `ledger_attestation`, and
 ## Configuration
 
 `LedgerConfig` is a `@ConfigMapping(prefix = "casehub.work.ledger")` interface
-in `quarkus-work-ledger`. These config keys are invisible unless the module is
+in `casehub-work-ledger`. These config keys are invisible unless the module is
 on the classpath.
 
 | Property | Default | Meaning |
@@ -277,7 +277,7 @@ actor_trust_score
 
 ---
 
-## REST API (in quarkus-work-ledger)
+## REST API (in casehub-work-ledger)
 
 All endpoints are on `LedgerResource`. **None of these exist if the module is absent.**
 
@@ -324,7 +324,7 @@ doesn't use them.
 Once CaseHub and Qhorus integrations ship, the lightweight `sourceEntityRef` fields
 on `LedgerEntry` can be promoted to a full `ProvenanceLink` typed-edge graph
 modelling W3C PROV-O relationships (GENERATED_BY, USED, DERIVED_FROM, INFORMED_BY).
-See issue #39. The `quarkus-work-ledger` module is the natural home for this.
+See issue #39. The `casehub-work-ledger` module is the natural home for this.
 
 ---
 

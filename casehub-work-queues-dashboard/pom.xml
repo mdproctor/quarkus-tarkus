@@ -11,7 +11,7 @@
   </parent>
 
   <artifactId>casehub-work-queues-dashboard</artifactId>
-  <name>Quarkus WorkItems - Queue Dashboard</name>
+  <name>CaseHub Work - Queue Dashboard</name>
   <description>Tamboui terminal UI dashboard running inside Quarkus via @QuarkusMain.
 Displays live queue board for the document review pipeline.
 Observes WorkItemLifecycleEvent directly — zero polling delay.</description>
