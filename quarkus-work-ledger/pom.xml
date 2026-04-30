@@ -28,8 +28,8 @@ extension is unchanged whether this module is present or not.</description>
 
     <!-- Ledger base extension — provides LedgerEntry, LedgerAttestation, repositories, services -->
     <dependency>
-      <groupId>io.quarkiverse.ledger</groupId>
-      <artifactId>quarkus-ledger</artifactId>
+      <groupId>io.casehub</groupId>
+      <artifactId>casehub-ledger</artifactId>
       <version>0.2-SNAPSHOT</version>
     </dependency>
 

@@ -12,10 +12,10 @@ import jakarta.ws.rs.core.MediaType;
 
 import org.jboss.logging.Logger;
 
-import io.quarkiverse.ledger.api.model.ActorType;
-import io.quarkiverse.ledger.api.model.AttestationVerdict;
-import io.quarkiverse.ledger.runtime.model.LedgerAttestation;
-import io.quarkiverse.ledger.runtime.model.supplement.ProvenanceSupplement;
+import io.casehub.ledger.api.model.ActorType;
+import io.casehub.ledger.api.model.AttestationVerdict;
+import io.casehub.ledger.runtime.model.LedgerAttestation;
+import io.casehub.ledger.runtime.model.supplement.ProvenanceSupplement;
 import io.quarkiverse.work.examples.ScenarioResponse;
 import io.quarkiverse.work.examples.StepLog;
 import io.quarkiverse.work.ledger.api.LedgerMapper;
@@ -157,7 +157,7 @@ public class CreditDecisionScenario {
         // Set causedByEntryId on the delegation entry — linking it to the resume entry
         final WorkItemLedgerEntry delegationEntry = ledgerRepo.findLatestByWorkItemId(wi.id)
                 .orElseThrow(() -> new IllegalStateException("No delegation ledger entry found"));
-        // causedByEntryId linking deferred — ObservabilitySupplement not yet in quarkus-ledger
+        // causedByEntryId linking deferred — ObservabilitySupplement not yet in casehub-ledger
 
         // Step 7: supervisor-bob claims the delegated WorkItem
         final String description7 = "supervisor-bob claims the delegated WorkItem";

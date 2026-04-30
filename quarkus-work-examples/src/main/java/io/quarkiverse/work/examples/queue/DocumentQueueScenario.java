@@ -12,9 +12,9 @@ import jakarta.ws.rs.core.MediaType;
 
 import org.jboss.logging.Logger;
 
-import io.quarkiverse.ledger.runtime.model.ActorTrustScore;
-import io.quarkiverse.ledger.runtime.service.TrustGateService;
-import io.quarkiverse.ledger.runtime.service.TrustScoreJob;
+import io.casehub.ledger.runtime.model.ActorTrustScore;
+import io.casehub.ledger.runtime.service.TrustGateService;
+import io.casehub.ledger.runtime.service.TrustScoreJob;
 import io.quarkiverse.work.examples.QueueScenarioResponse;
 import io.quarkiverse.work.examples.StepLog;
 import io.quarkiverse.work.ledger.api.LedgerMapper;

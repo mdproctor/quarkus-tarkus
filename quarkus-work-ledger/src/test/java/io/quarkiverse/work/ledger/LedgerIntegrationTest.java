@@ -10,11 +10,11 @@ import jakarta.inject.Inject;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.ledger.api.model.ActorType;
-import io.quarkiverse.ledger.api.model.AttestationVerdict;
-import io.quarkiverse.ledger.api.model.LedgerEntryType;
-import io.quarkiverse.ledger.runtime.model.LedgerAttestation;
-import io.quarkiverse.ledger.runtime.service.LedgerMerkleTree;
+import io.casehub.ledger.api.model.ActorType;
+import io.casehub.ledger.api.model.AttestationVerdict;
+import io.casehub.ledger.api.model.LedgerEntryType;
+import io.casehub.ledger.runtime.model.LedgerAttestation;
+import io.casehub.ledger.runtime.service.LedgerMerkleTree;
 import io.quarkiverse.work.ledger.model.WorkItemLedgerEntry;
 import io.quarkiverse.work.ledger.repository.WorkItemLedgerEntryRepository;
 import io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent;
@@ -37,7 +37,7 @@ import io.quarkus.test.junit.QuarkusTest;
  *
  * <p>
  * RED-phase: these tests will not compile until {@link WorkItemLedgerEntry} and
- * {@link WorkItemLedgerEntryRepository} are created as part of the quarkus-ledger migration.
+ * {@link WorkItemLedgerEntryRepository} are created as part of the casehub-ledger migration.
  */
 @QuarkusTest
 @TestTransaction

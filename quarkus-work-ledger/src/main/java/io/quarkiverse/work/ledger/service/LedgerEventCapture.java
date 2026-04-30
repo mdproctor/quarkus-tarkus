@@ -13,12 +13,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import io.quarkiverse.ledger.api.model.ActorTypeResolver;
-import io.quarkiverse.ledger.api.model.LedgerEntryType;
-import io.quarkiverse.ledger.runtime.config.LedgerConfig;
-import io.quarkiverse.ledger.runtime.model.LedgerMerkleFrontier;
-import io.quarkiverse.ledger.runtime.model.supplement.ComplianceSupplement;
-import io.quarkiverse.ledger.runtime.service.LedgerMerkleTree;
+import io.casehub.ledger.api.model.ActorTypeResolver;
+import io.casehub.ledger.api.model.LedgerEntryType;
+import io.casehub.ledger.runtime.config.LedgerConfig;
+import io.casehub.ledger.runtime.model.LedgerMerkleFrontier;
+import io.casehub.ledger.runtime.model.supplement.ComplianceSupplement;
+import io.casehub.ledger.runtime.service.LedgerMerkleTree;
 import io.quarkiverse.work.ledger.model.WorkItemLedgerEntry;
 import io.quarkiverse.work.ledger.repository.WorkItemLedgerEntryRepository;
 import io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent;

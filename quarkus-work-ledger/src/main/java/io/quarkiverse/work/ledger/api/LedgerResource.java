@@ -17,9 +17,9 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Response;
 
-import io.quarkiverse.ledger.runtime.config.LedgerConfig;
-import io.quarkiverse.ledger.runtime.model.LedgerAttestation;
-import io.quarkiverse.ledger.runtime.model.supplement.ProvenanceSupplement;
+import io.casehub.ledger.runtime.config.LedgerConfig;
+import io.casehub.ledger.runtime.model.LedgerAttestation;
+import io.casehub.ledger.runtime.model.supplement.ProvenanceSupplement;
 import io.quarkiverse.work.ledger.api.dto.LedgerAttestationRequest;
 import io.quarkiverse.work.ledger.api.dto.LedgerEntryResponse;
 import io.quarkiverse.work.ledger.api.dto.ProvenanceRequest;
