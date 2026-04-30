@@ -81,7 +81,7 @@ Standalone Quarkiverse extension with optional integrations for Quarkus-Flow, Ca
     <dependencies>
       <!-- casehub-parent BOM — manages all casehubio artifact versions -->
       <dependency>
-        <groupId>io.casehubio</groupId>
+        <groupId>io.casehub</groupId>
         <artifactId>casehub-parent</artifactId>
         <version>0.2-SNAPSHOT</version>
         <type>pom</type>
