@@ -34,7 +34,7 @@ Quarkus-Flow, CaseHub, Qhorus, or a plain REST call. A human resolves it.
 
 ## What WorkItems Is
 
-Quarkus WorkItems is a standalone Quarkiverse extension providing a **human task inbox** — a place for human workers to see what needs their attention, act on it, delegate it, and have it automatically escalate when it expires.
+Quarkus WorkItems is a CaseHub platform module providing a **human task inbox** — a place for human workers to see what needs their attention, act on it, delegate it, and have it automatically escalate when it expires.
 
 It is **not** a workflow engine, a case manager, or an agent communication mesh. It is the layer that sits between those systems and the human who needs to make decisions.
 

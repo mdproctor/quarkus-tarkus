@@ -1,7 +1,7 @@
 # SLA Compliance Reporting — Design Spec
 
 **Date:** 2026-04-27
-**Epic:** [#104](https://github.com/casehubio/quarkus-work/issues/104)
+**Epic:** [#104](https://github.com/casehubio/work/issues/104)
 **Status:** approved
 
 ---

@@ -62,7 +62,7 @@ CLAUDE.md
 
 - [ ] **Step 1: Create issue A**
 ```bash
-gh issue create --repo casehubio/quarkus-work \
+gh issue create --repo casehubio/work \
   --title "Scaffold quarkus-work-reports module; relocate and fix existing SLA/actor scaffold" \
   --body "Scaffold the optional quarkus-work-reports Jandex library module. Move ReportResource and test stubs from runtime/ into the new module. Fix N+1 in computeByCategory. Fix Javadoc epic refs (#99 → #104).\n\nPart of Epic #104." \
   --label "enhancement"
@@ -71,7 +71,7 @@ Note the issue number printed (referenced below as `#A`).
 
 - [ ] **Step 2: Create issue B**
 ```bash
-gh issue create --repo casehubio/quarkus-work \
+gh issue create --repo casehubio/work \
   --title "Add throughput time-series endpoint GET /workitems/reports/throughput" \
   --body "Implement throughput reporting with groupBy=day|week|month. HQL date_trunc('day') for DB-side day grouping; Java rollup to week/month. Full TDD.\n\nPart of Epic #104." \
   --label "enhancement"
@@ -79,7 +79,7 @@ gh issue create --repo casehubio/quarkus-work \
 
 - [ ] **Step 3: Create issue C**
 ```bash
-gh issue create --repo casehubio/quarkus-work \
+gh issue create --repo casehubio/work \
   --title "Add queue-health snapshot endpoint GET /workitems/reports/queue-health" \
   --body "Point-in-time queue health: overdueCount, pendingCount, avgPendingAgeSeconds, oldestUnclaimedCreatedAt, criticalOverdueCount. Full TDD.\n\nPart of Epic #104." \
   --label "enhancement"
@@ -87,7 +87,7 @@ gh issue create --repo casehubio/quarkus-work \
 
 - [ ] **Step 4: Create issue D**
 ```bash
-gh issue create --repo casehubio/quarkus-work \
+gh issue create --repo casehubio/work \
   --title "Add E2E report smoke tests and Testcontainers PostgreSQL dialect validation" \
   --body "Add WorkItemReportNativeIT to integration-tests/. Add PostgresDialectValidationTest to quarkus-work-reports using Quarkus Dev Services to verify HQL date_trunc works against real PostgreSQL.\n\nPart of Epic #104." \
   --label "enhancement"
@@ -2528,14 +2528,14 @@ Expected: BUILD SUCCESS.
 
 - [ ] **Step 3: Close child issues**
 ```bash
-gh issue close <issueA> --repo casehubio/quarkus-work --comment "Implemented in quarkus-work-reports module."
-gh issue close <issueB> --repo casehubio/quarkus-work --comment "Throughput endpoint implemented with full TDD."
-gh issue close <issueC> --repo casehubio/quarkus-work --comment "Queue-health endpoint implemented with full TDD."
-gh issue close <issueD> --repo casehubio/quarkus-work --comment "WorkItemNativeIT and PostgresDialectValidationTest added."
+gh issue close <issueA> --repo casehubio/work --comment "Implemented in quarkus-work-reports module."
+gh issue close <issueB> --repo casehubio/work --comment "Throughput endpoint implemented with full TDD."
+gh issue close <issueC> --repo casehubio/work --comment "Queue-health endpoint implemented with full TDD."
+gh issue close <issueD> --repo casehubio/work --comment "WorkItemNativeIT and PostgresDialectValidationTest added."
 ```
 
 - [ ] **Step 4: Close epic**
 ```bash
-gh issue close 104 --repo casehubio/quarkus-work \
+gh issue close 104 --repo casehubio/work \
   --comment "All reporting endpoints implemented in quarkus-work-reports optional module. Full TDD, integration tests, Testcontainers PostgreSQL dialect validation, and docs updated."
 ```

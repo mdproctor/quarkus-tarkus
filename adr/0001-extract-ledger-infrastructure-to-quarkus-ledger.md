@@ -73,4 +73,4 @@ the hash chain and trust score logic across projects.
 
 * Issue: #49 — Migrate quarkus-work-ledger to use quarkus-ledger as shared base library
 * `quarkus-ledger` source: `~/claude/casehub/ledger/`
-* `WorkItemLedgerEntry`: `quarkus-work-ledger/src/main/java/io/quarkiverse/workitems/ledger/model/WorkItemLedgerEntry.java`
+* `WorkItemLedgerEntry`: `quarkus-work-ledger/src/main/java/io/casehub/work/ledger/model/WorkItemLedgerEntry.java`
