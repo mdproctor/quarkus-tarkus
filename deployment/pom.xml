@@ -11,7 +11,7 @@
   </parent>
 
   <artifactId>casehub-work-deployment</artifactId>
-  <name>Quarkus WorkItems - Deployment</name>
+  <name>CaseHub Work - Deployment</name>
 
   <dependencies>
 

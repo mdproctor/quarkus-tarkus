@@ -9,7 +9,7 @@
     <version>0.2-SNAPSHOT</version>
   </parent>
   <artifactId>casehub-work-ai</artifactId>
-  <name>Quarkus WorkItems - AI</name>
+  <name>CaseHub Work - AI</name>
   <dependencies>
     <dependency>
       <groupId>io.casehub</groupId>

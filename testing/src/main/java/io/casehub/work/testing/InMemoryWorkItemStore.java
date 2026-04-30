@@ -17,7 +17,7 @@ import io.casehub.work.runtime.repository.WorkItemStore;
 
 /**
  * In-memory implementation of {@link WorkItemStore} for use in tests of
- * applications that embed Quarkus WorkItems. No datasource or Flyway configuration
+ * applications that embed CaseHub Work. No datasource or Flyway configuration
  * is required.
  *
  * <p>

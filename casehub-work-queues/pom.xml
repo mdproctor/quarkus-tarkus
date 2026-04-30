@@ -11,7 +11,7 @@
   </parent>
 
   <artifactId>casehub-work-queues</artifactId>
-  <name>Quarkus WorkItems - Queues</name>
+  <name>CaseHub Work - Queues</name>
   <description>Optional queues module: label-based work queues via saved filters (JEXL, JQ, Lambda),
 FilterChain derivation graph, and QueueView named queries. The core extension is unchanged when absent.</description>
 

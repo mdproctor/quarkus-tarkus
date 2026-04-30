@@ -224,7 +224,7 @@ public class DocumentReviewScenario {
         // ── Step 3: Tutorial — NORMAL priority → routine tier ──
         LOG.info("[REVIEW] Step 3/7: Tutorial — NORMAL priority → routine tier");
         final WorkItem tutorial = workItemService.create(new WorkItemCreateRequest(
-                "Getting started tutorial — Quarkus WorkItems quick start",
+                "Getting started tutorial — CaseHub Work quick start",
                 "Write a 10-minute getting-started guide for new users.",
                 "tutorials", "quick-start", WorkItemPriority.NORMAL,
                 null, "docs-team", null, null, "doc-system",

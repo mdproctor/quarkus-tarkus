@@ -92,7 +92,7 @@ public class QueueDashboard {
     /** Entry point called from {@link DashboardMain#run}. Blocks until the user quits. */
     public void start() throws Exception {
         refreshItems();
-        addLog("Quarkus WorkItems Queue Dashboard started");
+        addLog("CaseHub Work Queue Dashboard started");
         addLog("Lambda filters: " + stepService.lambdaFilterNames());
         addLog(stepService.nextAction());
 

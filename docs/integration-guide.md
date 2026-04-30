@@ -1,4 +1,4 @@
-# Quarkus WorkItems — Integration Guide
+# CaseHub Work — Integration Guide
 
 This guide covers nine integration patterns: standalone REST, Quarkus-Flow workflow suspension, CDI lifecycle event observation, custom escalation policies, unit testing without a datasource, the optional ledger module, the `WorkItemsFlow` DSL, the `quarkus-work` substrate SPI layer, and semantic skill matching via `quarkus-work-ai`.
 
@@ -400,7 +400,7 @@ This approach gives instant test execution — no Quarkus boot, no H2, no Flyway
 
 ---
 
-## Section 6: Using the Ledger Module (quarkus-work-ledger)
+## Section 6: Using the Ledger Module (casehub-work-ledger)
 
 The ledger module adds an optional accountability layer to  WorkItems.a per-WorkItem command/event ledger with a SHA-256 hash chain, decision context snapshots, peer attestations, and EigenTrust reputation scoring. The core extension is completely unchanged when the module is absent.
 
@@ -409,7 +409,7 @@ The ledger module adds an optional accountability layer to  WorkItems.a per-Work
 ```xml
 <dependency>
   <groupId>io.casehub</groupId>
-  <artifactId>quarkus-work-ledger</artifactId>
+  <artifactId>casehub-work-ledger</artifactId>
   <version>1.0.0-SNAPSHOT</version>
 </dependency>
 ```
@@ -437,7 +437,7 @@ POST /workitems/{id}/ledger/{entryId}/attestations
 GET /workitems/actors/{actorId}/trust
 ```
 
-See the [Ledger API section of the API Reference](api-reference.md#ledger-api-quarkus-work-ledger) for full schemas.
+See the [Ledger API section of the API Reference](api-reference.md#ledger-api-casehub-work-ledger) for full schemas.
 
 ### Configuration
 

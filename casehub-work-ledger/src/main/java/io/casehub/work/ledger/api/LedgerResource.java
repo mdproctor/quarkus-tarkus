@@ -33,7 +33,7 @@ import io.casehub.work.runtime.service.WorkItemNotFoundException;
  *
  * <p>
  * All endpoints are under {@code /workitems/{id}} and are only present when the
- * {@code quarkus-work-ledger} module is on the classpath. The core extension provides none
+ * {@code casehub-work-ledger} module is on the classpath. The core extension provides none
  * of these — adding the module activates them automatically via CDI.
  */
 @Path("/workitems/{id}")

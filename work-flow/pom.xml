@@ -11,7 +11,7 @@
   </parent>
 
   <artifactId>casehub-work-flow</artifactId>
-  <name>Quarkus WorkItems - Quarkus Flow Integration</name>
+  <name>CaseHub Work - Quarkus Flow Integration</name>
   <description>CDI bridge for suspending Quarkus-Flow workflows on WorkItems and resuming them when a human resolves the item.</description>
 
   <dependencies>

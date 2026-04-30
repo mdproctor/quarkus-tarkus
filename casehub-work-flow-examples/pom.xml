@@ -11,7 +11,7 @@
   </parent>
 
   <artifactId>casehub-work-flow-examples</artifactId>
-  <name>Quarkus WorkItems - Quarkus Flow Examples</name>
+  <name>CaseHub Work - Quarkus Flow Examples</name>
   <description>Runnable example showing WorkItemsFlow DSL integration: a contract review workflow
 that mixes automated function() steps with human workItem() steps, demonstrating candidateGroups,
 assigneeId, priority, payloadFrom, and the full workflow suspension/resume cycle.</description>

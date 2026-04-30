@@ -1,6 +1,6 @@
 # quarkus-work-flow
 
-Integrates Quarkus WorkItems with [Quarkus-Flow](https://github.com/quarkiverse/quarkus-flow),
+Integrates CaseHub Work with [Quarkus-Flow](https://github.com/quarkiverse/quarkus-flow),
 allowing workflow definitions to include steps that suspend until a human or AI agent
 acts on a WorkItem.
 

@@ -10,7 +10,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Response;
 
 /**
- * Serves the AsyncAPI specification for Quarkus WorkItems CDI events.
+ * Serves the AsyncAPI specification for CaseHub Work CDI events.
  *
  * <p>
  * Available at {@code GET /q/asyncapi} — mirrors the OpenAPI convention

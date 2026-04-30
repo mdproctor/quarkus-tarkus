@@ -11,8 +11,8 @@
   </parent>
 
   <artifactId>casehub-work-testing</artifactId>
-  <name>Quarkus WorkItems - Testing</name>
-  <description>In-memory repository implementations for use in unit tests of applications that embed Quarkus WorkItems. No datasource or Flyway required.</description>
+  <name>CaseHub Work - Testing</name>
+  <description>In-memory repository implementations for use in unit tests of applications that embed CaseHub Work. No datasource or Flyway required.</description>
 
   <dependencies>
     <dependency>
