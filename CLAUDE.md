@@ -35,7 +35,7 @@ type: java
 
 ## What This Project Is
 
-Quarkus WorkItems is a standalone Quarkiverse extension providing **human-scale WorkItem lifecycle management**. It gives any Quarkus application a human task inbox with expiry, delegation, escalation, priority, and audit trail — usable independently or with optional integrations for Quarkus-Flow, CaseHub, and Qhorus.
+Quarkus WorkItems is a **CaseHub platform module** providing **human-scale WorkItem lifecycle management**. It gives any Quarkus application a human task inbox with expiry, delegation, escalation, priority, and audit trail — usable independently or with optional integrations for Quarkus-Flow, CaseHub, and Qhorus. It is hosted under the CaseHub organisation (`casehubio/work`), not submitted to Quarkiverse.
 
 **The core concept — WorkItem (not Task):**
 A `WorkItem` is a unit of work requiring human attention or judgment. It is deliberately NOT called `Task` because:
@@ -309,9 +309,9 @@ scripts/mvn-compile <dependent-of-X>      # verify dependent still compiles
 JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn install -DskipTests -f ~/claude/casehub/ledger/pom.xml
 ```
 
-**Quarkiverse format check:** CI runs `mvn -Dno-format` to skip the enforced formatter. Run `mvn` locally to apply formatting.
+**Format check:** CI runs `mvn -Dno-format` to skip the enforced formatter. Run `mvn` locally to apply formatting.
 
-**Known Quarkiverse gotchas (from quarkus-qhorus experience):**
+**Known extension build gotchas (from quarkus-qhorus experience):**
 - `quarkus-extension-processor` requires **Javadoc on every method** in `@ConfigMapping` interfaces, including group accessors — missing one causes a compile-time error
 - The `extension-descriptor` goal validates that the deployment POM declares **all transitive deployment JARs** — run `mvn install -DskipTests` first after modifying the deployment POM
 - `key` is a reserved word in H2 — avoid it as a column name in Flyway migrations
