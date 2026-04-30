@@ -110,11 +110,11 @@ class QueueDashboardTest {
             final Pilot pilot = test.pilot();
 
             // Advance to step 2 first — step 1 (setup) creates filters + 3 WorkItems,
-            // which can take >200ms on first run; use a longer pause
+            // which can take longer under full-build JVM pressure; use a generous pause
             pilot.press('s');
-            pilot.pause(Duration.ofMillis(500));
+            pilot.pause(Duration.ofMillis(1000));
             pilot.press('s');
-            pilot.pause(Duration.ofMillis(500));
+            pilot.pause(Duration.ofMillis(1000));
             assertThat(stepService.currentStep()).isEqualTo(2);
 
             // Reset
