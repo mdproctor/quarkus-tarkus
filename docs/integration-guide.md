@@ -79,7 +79,7 @@ The `quarkus-work-flow` module suspends a Quarkus-Flow workflow until a human re
 
 ```xml
 <dependency>
-  <groupId>io.quarkiverse.work</groupId>
+  <groupId>io.casehub</groupId>
   <artifactId>quarkus-work-flow</artifactId>
   <version>1.0.0-SNAPSHOT</version>
 </dependency>
@@ -93,7 +93,7 @@ This pulls in `quarkus-work` transitively.
 2. The bridge creates a WorkItem via `WorkItemService` and registers a `CompletableFuture` in `PendingWorkItemRegistry`, keyed by the WorkItem's UUID.
 3. The method returns a `Uni<String>` wrapping that `CompletableFuture`; Quarkus-Flow suspends the workflow on the `Uni`.
 4. A human sees the WorkItem in `GET /inbox`, claims it, and completes it via `PUT /{id}/complete`.
-5. `WorkItemService` fires a `WorkItemLifecycleEvent` with type `io.quarkiverse.work.workitem.completed`.
+5. `WorkItemService` fires a `WorkItemLifecycleEvent` with type `io.casehub.work.workitem.completed`.
 6. `WorkItemFlowEventListener` observes the event and calls `PendingWorkItemRegistry.complete()`, resolving the `CompletableFuture` with the resolution JSON.
 7. The `Uni` completes and the flow resumes with the resolution as its output.
 
@@ -200,7 +200,7 @@ public class CompletionNotifier {
     NotificationService notifications;
 
     void onCompleted(@Observes WorkItemLifecycleEvent event) {
-        if (!"io.quarkiverse.work.workitem.completed".equals(event.type())) {
+        if (!"io.casehub.work.workitem.completed".equals(event.type())) {
             return;
         }
         notifications.send(event.actor(),
@@ -208,7 +208,7 @@ public class CompletionNotifier {
     }
 
     void onExpired(@Observes WorkItemLifecycleEvent event) {
-        if (!"io.quarkiverse.work.workitem.expired".equals(event.type())) {
+        if (!"io.casehub.work.workitem.expired".equals(event.type())) {
             return;
         }
         notifications.alertAdmin("WorkItem " + event.workItemId() + " has expired!");
@@ -218,13 +218,13 @@ public class CompletionNotifier {
 
 ### Event type reference
 
-All event types follow the pattern `io.quarkiverse.work.workitem.{action}` where `{action}` is the lowercase audit event name. See the [API Reference — Lifecycle event types](api-reference.md#lifecycle-event-types) for the full table.
+All event types follow the pattern `io.casehub.work.workitem.{action}` where `{action}` is the lowercase audit event name. See the [API Reference — Lifecycle event types](api-reference.md#lifecycle-event-types) for the full table.
 
 ### WorkItemLifecycleEvent fields
 
 | Field | Type | Description |
 |---|---|---|
-| `type` | string | Full event type string (e.g. `io.quarkiverse.work.workitem.completed`) |
+| `type` | string | Full event type string (e.g. `io.casehub.work.workitem.completed`) |
 | `source` | string | `/workitems/{workItemId}` |
 | `subject` | string | WorkItem UUID as string |
 | `workItemId` | UUID | WorkItem UUID |
@@ -292,7 +292,7 @@ The `quarkus-work-testing` module provides in-memory implementations of `WorkIte
 
 ```xml
 <dependency>
-  <groupId>io.quarkiverse.work</groupId>
+  <groupId>io.casehub</groupId>
   <artifactId>quarkus-work-testing</artifactId>
   <version>1.0.0-SNAPSHOT</version>
   <scope>test</scope>
@@ -408,7 +408,7 @@ The ledger module adds an optional accountability layer to  WorkItems.a per-Work
 
 ```xml
 <dependency>
-  <groupId>io.quarkiverse.work</groupId>
+  <groupId>io.casehub</groupId>
   <artifactId>quarkus-work-ledger</artifactId>
   <version>1.0.0-SNAPSHOT</version>
 </dependency>
@@ -591,9 +591,9 @@ WorkItems previously defined its own strategy and event interfaces inside the ru
 
 | Module | GroupId | Purpose |
 |---|---|---|
-| `quarkus-work-api` | `io.quarkiverse.work` | Pure-Java SPI interfaces and value objects — no CDI, no Quarkus, no persistence |
-| `quarkus-work-core` | `io.quarkiverse.work` | Jandex library — `WorkBroker`, built-in strategies, filter engine |
-| `quarkus-work` | `io.quarkiverse.work` | Quarkus extension — assembles everything, provides JPA entities and REST API |
+| `quarkus-work-api` | `io.casehub` | Pure-Java SPI interfaces and value objects — no CDI, no Quarkus, no persistence |
+| `quarkus-work-core` | `io.casehub` | Jandex library — `WorkBroker`, built-in strategies, filter engine |
+| `quarkus-work` | `io.casehub` | Quarkus extension — assembles everything, provides JPA entities and REST API |
 
 ### Depending on quarkus-work-api directly
 
@@ -601,7 +601,7 @@ If you only need the SPIs (to implement a custom strategy or registry) depend on
 
 ```xml
 <dependency>
-  <groupId>io.quarkiverse.work</groupId>
+  <groupId>io.casehub</groupId>
   <artifactId>quarkus-work-api</artifactId>
   <version>${quarkus.work.version}</version>
 </dependency>
@@ -682,7 +682,7 @@ public class RedisWorkloadProvider implements WorkloadProvider {
 
 ```xml
 <dependency>
-  <groupId>io.quarkiverse.work</groupId>
+  <groupId>io.casehub</groupId>
   <artifactId>quarkus-work-ai</artifactId>
   <version>${quarkus.work.version}</version>
 </dependency>

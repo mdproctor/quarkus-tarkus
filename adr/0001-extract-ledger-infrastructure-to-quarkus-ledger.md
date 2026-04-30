@@ -41,7 +41,7 @@ the hash chain and trust score logic across projects.
 
 ### Negative Consequences / Tradeoffs
 
-* `quarkus-ledger` is a separate local project (`~/claude/quarkus-ledger/`)
+* `quarkus-ledger` is a separate local project (`~/claude/casehub/ledger/`)
   that must be installed into the local Maven repo before building
   `quarkus-work-ledger` — documented in CLAUDE.md
 * Two repositories to maintain until `quarkus-ledger` is published to Maven Central
@@ -72,5 +72,5 @@ the hash chain and trust score logic across projects.
 ## Links
 
 * Issue: #49 — Migrate quarkus-work-ledger to use quarkus-ledger as shared base library
-* `quarkus-ledger` source: `~/claude/quarkus-ledger/`
+* `quarkus-ledger` source: `~/claude/casehub/ledger/`
 * `WorkItemLedgerEntry`: `quarkus-work-ledger/src/main/java/io/quarkiverse/workitems/ledger/model/WorkItemLedgerEntry.java`
