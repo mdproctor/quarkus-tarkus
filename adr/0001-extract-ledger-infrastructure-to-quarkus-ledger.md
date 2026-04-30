@@ -20,7 +20,7 @@ Keeping it inside WorkItems would force both to depend on WorkItems to get it.
 
 ## Considered Options
 
-* **Option A** — Extract generic ledger infrastructure to `io.quarkiverse.ledger:quarkus-ledger`; WorkItems provides `WorkItemLedgerEntry` as a subtype
+* **Option A** — Extract generic ledger infrastructure to `io.casehub:casehub-ledger`; WorkItems provides `WorkItemLedgerEntry` as a subtype
 * **Option B** — Copy the ledger classes into each downstream project (CaseHub, Qhorus) independently
 * **Option C** — Keep everything in `quarkus-work-ledger`; CaseHub and Qhorus depend on WorkItems to get the ledger
 
