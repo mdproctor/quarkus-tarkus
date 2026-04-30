@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.repository;
+package io.casehub.work.runtime.repository;
 
 import java.time.Instant;
 

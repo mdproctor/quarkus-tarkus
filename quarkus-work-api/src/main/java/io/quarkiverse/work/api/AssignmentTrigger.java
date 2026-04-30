@@ -1,4 +1,4 @@
-package io.quarkiverse.work.api;
+package io.casehub.work.api;
 
 /** Lifecycle events that trigger worker (re-)selection. */
 public enum AssignmentTrigger {

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.model;
+package io.casehub.work.runtime.model;
 
 /**
  * Lifecycle status of a {@link WorkItem}.

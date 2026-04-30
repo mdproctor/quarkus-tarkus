@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.service;
+package io.casehub.work.runtime.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -12,16 +12,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import io.quarkiverse.work.api.AssignmentDecision;
-import io.quarkiverse.work.api.AssignmentTrigger;
-import io.quarkiverse.work.api.SelectionContext;
-import io.quarkiverse.work.api.WorkerCandidate;
-import io.quarkiverse.work.api.WorkerRegistry;
-import io.quarkiverse.work.api.WorkerSelectionStrategy;
-import io.quarkiverse.work.api.WorkloadProvider;
-import io.quarkiverse.work.core.strategy.LeastLoadedStrategy;
-import io.quarkiverse.work.core.strategy.WorkBroker;
-import io.quarkiverse.work.runtime.model.*;
+import io.casehub.work.api.AssignmentDecision;
+import io.casehub.work.api.AssignmentTrigger;
+import io.casehub.work.api.SelectionContext;
+import io.casehub.work.api.WorkerCandidate;
+import io.casehub.work.api.WorkerRegistry;
+import io.casehub.work.api.WorkerSelectionStrategy;
+import io.casehub.work.api.WorkloadProvider;
+import io.casehub.work.core.strategy.LeastLoadedStrategy;
+import io.casehub.work.core.strategy.WorkBroker;
+import io.casehub.work.runtime.model.*;
 
 /**
  * Unit tests for WorkItemAssignmentService — no Quarkus boot.

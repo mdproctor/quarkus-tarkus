@@ -1,6 +1,6 @@
-package io.quarkiverse.work.runtime.api;
+package io.casehub.work.runtime.api;
 
-import io.quarkiverse.work.runtime.model.LabelPersistence;
+import io.casehub.work.runtime.model.LabelPersistence;
 
 public record WorkItemLabelResponse(
         String path,

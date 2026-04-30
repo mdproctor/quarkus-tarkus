@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ai.suggestion;
+package io.casehub.work.ai.suggestion;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;

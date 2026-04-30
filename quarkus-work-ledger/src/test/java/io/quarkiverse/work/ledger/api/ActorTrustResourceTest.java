@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ledger.api;
+package io.casehub.work.ledger.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -12,10 +12,10 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import io.casehub.ledger.runtime.service.TrustScoreJob;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemCreateRequest;
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
-import io.quarkiverse.work.runtime.service.WorkItemService;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemCreateRequest;
+import io.casehub.work.runtime.model.WorkItemPriority;
+import io.casehub.work.runtime.service.WorkItemService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.ValidatableResponse;

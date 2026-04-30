@@ -1,4 +1,4 @@
-package io.quarkiverse.work.mongodb;
+package io.casehub.work.mongodb;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -11,7 +11,7 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.runtime.model.AuditEntry;
+import io.casehub.work.runtime.model.AuditEntry;
 import io.quarkus.test.junit.QuarkusTest;
 
 @QuarkusTest

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.queues.model;
+package io.casehub.work.queues.model;
 
 import java.util.HashSet;
 import java.util.Set;

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.moderation;
+package io.casehub.work.examples.moderation;
 
 import jakarta.enterprise.context.ApplicationScoped;
 

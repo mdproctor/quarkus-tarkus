@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples;
+package io.casehub.work.examples;
 
 import java.util.UUID;
 

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.issuetracker.spi;
+package io.casehub.work.issuetracker.spi;
 
 /**
  * Thrown by {@link IssueTrackerProvider} implementations when a remote call fails.

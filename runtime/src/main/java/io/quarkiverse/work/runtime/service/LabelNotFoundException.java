@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.service;
+package io.casehub.work.runtime.service;
 
 import java.util.UUID;
 

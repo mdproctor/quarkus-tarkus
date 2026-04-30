@@ -1,4 +1,4 @@
-package io.quarkiverse.work.api;
+package io.casehub.work.api;
 
 /**
  * Immutable outcome of a {@link WorkerSelectionStrategy#select} call.

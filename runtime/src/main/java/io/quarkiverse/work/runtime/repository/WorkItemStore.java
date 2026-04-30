@@ -1,11 +1,11 @@
-package io.quarkiverse.work.runtime.repository;
+package io.casehub.work.runtime.repository;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemRootView;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemRootView;
 
 /**
  * KV-native store SPI for {@link WorkItem} persistence.

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.filter;
+package io.casehub.work.runtime.filter;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;

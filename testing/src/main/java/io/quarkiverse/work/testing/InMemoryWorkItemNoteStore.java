@@ -1,4 +1,4 @@
-package io.quarkiverse.work.testing;
+package io.casehub.work.testing;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -11,8 +11,8 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
 
-import io.quarkiverse.work.runtime.model.WorkItemNote;
-import io.quarkiverse.work.runtime.repository.WorkItemNoteStore;
+import io.casehub.work.runtime.model.WorkItemNote;
+import io.casehub.work.runtime.repository.WorkItemNoteStore;
 
 /**
  * In-memory implementation of {@link WorkItemNoteStore} for use in tests.

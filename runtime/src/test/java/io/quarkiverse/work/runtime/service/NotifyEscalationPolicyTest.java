@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.service;
+package io.casehub.work.runtime.service;
 
 import static org.mockito.Mockito.verify;
 
@@ -12,10 +12,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import io.quarkiverse.work.api.WorkEventType;
-import io.quarkiverse.work.api.WorkLifecycleEvent;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
+import io.casehub.work.api.WorkEventType;
+import io.casehub.work.api.WorkLifecycleEvent;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemStatus;
 
 @ExtendWith(MockitoExtension.class)
 class NotifyEscalationPolicyTest {

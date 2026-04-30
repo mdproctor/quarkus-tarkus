@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ai.skill;
+package io.casehub.work.ai.skill;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -13,8 +13,8 @@ import jakarta.enterprise.inject.Alternative;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 
-import io.quarkiverse.work.api.SkillProfile;
-import io.quarkiverse.work.api.SkillProfileProvider;
+import io.casehub.work.api.SkillProfile;
+import io.casehub.work.api.SkillProfileProvider;
 
 /**
  * Combines the output of all currently-active {@link SkillProfileProvider} beans
@@ -48,7 +48,7 @@ import io.quarkiverse.work.api.SkillProfileProvider;
  * contribution weight (e.g. {@code history: 0.6, capabilities: 0.4}). Weights are
  * applied to the embedding vectors before cosine similarity. More control, but
  * requires exposing vectors from {@link EmbeddingSkillMatcher}, making the
- * {@link io.quarkiverse.work.api.SkillMatcher} SPI stateful.</li>
+ * {@link io.casehub.work.api.SkillMatcher} SPI stateful.</li>
  * <li><strong>Per-provider embeddings, averaged vectors</strong> — each provider's
  * narrative is embedded separately; the resulting vectors are averaged before
  * scoring. Better signal isolation when narratives are semantically orthogonal

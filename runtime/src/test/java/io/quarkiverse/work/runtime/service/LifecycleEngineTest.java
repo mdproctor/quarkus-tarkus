@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.service;
+package io.casehub.work.runtime.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -11,12 +11,12 @@ import jakarta.inject.Inject;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.runtime.model.AuditEntry;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
-import io.quarkiverse.work.runtime.repository.AuditEntryStore;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
+import io.casehub.work.runtime.model.AuditEntry;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemPriority;
+import io.casehub.work.runtime.model.WorkItemStatus;
+import io.casehub.work.runtime.repository.AuditEntryStore;
+import io.casehub.work.runtime.repository.WorkItemStore;
 import io.quarkus.test.TestTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 

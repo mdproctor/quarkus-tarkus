@@ -5,12 +5,12 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.quarkiverse.work</groupId>
-    <artifactId>quarkus-work-parent</artifactId>
+    <groupId>io.casehub</groupId>
+    <artifactId>casehub-work-parent</artifactId>
     <version>0.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>quarkus-work-queues-dashboard</artifactId>
+  <artifactId>casehub-work-queues-dashboard</artifactId>
   <name>Quarkus WorkItems - Queue Dashboard</name>
   <description>Tamboui terminal UI dashboard running inside Quarkus via @QuarkusMain.
 Displays live queue board for the document review pipeline.
@@ -26,13 +26,13 @@ Observes WorkItemLifecycleEvent directly — zero polling delay.</description>
 
   <dependencies>
     <dependency>
-      <groupId>io.quarkiverse.work</groupId>
-      <artifactId>quarkus-work</artifactId>
+      <groupId>io.casehub</groupId>
+      <artifactId>casehub-work</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>io.quarkiverse.work</groupId>
-      <artifactId>quarkus-work-queues</artifactId>
+      <groupId>io.casehub</groupId>
+      <artifactId>casehub-work-queues</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

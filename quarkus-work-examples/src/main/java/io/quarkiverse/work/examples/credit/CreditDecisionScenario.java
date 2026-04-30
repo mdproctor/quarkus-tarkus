@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.credit;
+package io.casehub.work.examples.credit;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,19 +16,19 @@ import io.casehub.ledger.api.model.ActorType;
 import io.casehub.ledger.api.model.AttestationVerdict;
 import io.casehub.ledger.runtime.model.LedgerAttestation;
 import io.casehub.ledger.runtime.model.supplement.ProvenanceSupplement;
-import io.quarkiverse.work.examples.ScenarioResponse;
-import io.quarkiverse.work.examples.StepLog;
-import io.quarkiverse.work.ledger.api.LedgerMapper;
-import io.quarkiverse.work.ledger.api.dto.LedgerEntryResponse;
-import io.quarkiverse.work.ledger.model.WorkItemLedgerEntry;
-import io.quarkiverse.work.ledger.repository.WorkItemLedgerEntryRepository;
-import io.quarkiverse.work.runtime.api.AuditEntryResponse;
-import io.quarkiverse.work.runtime.model.AuditEntry;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemCreateRequest;
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
-import io.quarkiverse.work.runtime.repository.AuditEntryStore;
-import io.quarkiverse.work.runtime.service.WorkItemService;
+import io.casehub.work.examples.ScenarioResponse;
+import io.casehub.work.examples.StepLog;
+import io.casehub.work.ledger.api.LedgerMapper;
+import io.casehub.work.ledger.api.dto.LedgerEntryResponse;
+import io.casehub.work.ledger.model.WorkItemLedgerEntry;
+import io.casehub.work.ledger.repository.WorkItemLedgerEntryRepository;
+import io.casehub.work.runtime.api.AuditEntryResponse;
+import io.casehub.work.runtime.model.AuditEntry;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemCreateRequest;
+import io.casehub.work.runtime.model.WorkItemPriority;
+import io.casehub.work.runtime.repository.AuditEntryStore;
+import io.casehub.work.runtime.service.WorkItemService;
 
 /**
  * Scenario 2 — Regulated Credit Decision.

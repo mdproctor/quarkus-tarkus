@@ -1,4 +1,4 @@
-package io.quarkiverse.work.queues.service;
+package io.casehub.work.queues.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -9,12 +9,12 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.queues.event.QueueEventType;
-import io.quarkiverse.work.queues.event.WorkItemQueueEvent;
-import io.quarkiverse.work.queues.model.QueueView;
-import io.quarkiverse.work.runtime.model.LabelPersistence;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemLabel;
+import io.casehub.work.queues.event.QueueEventType;
+import io.casehub.work.queues.event.WorkItemQueueEvent;
+import io.casehub.work.queues.model.QueueView;
+import io.casehub.work.runtime.model.LabelPersistence;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemLabel;
 
 /**
  * Pure unit tests for {@link QueueMembershipContext} — no Quarkus, no CDI, no DB.

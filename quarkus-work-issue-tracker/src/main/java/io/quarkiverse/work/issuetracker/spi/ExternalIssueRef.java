@@ -1,4 +1,4 @@
-package io.quarkiverse.work.issuetracker.spi;
+package io.casehub.work.issuetracker.spi;
 
 /**
  * Snapshot of an issue's state as returned by an {@link IssueTrackerProvider}.

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.api;
+package io.casehub.work.runtime.api;
 
 import java.util.List;
 import java.util.Map;
@@ -16,9 +16,9 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import io.quarkiverse.work.runtime.model.WorkItemTemplate;
-import io.quarkiverse.work.runtime.service.WorkItemTemplateService;
-import io.quarkiverse.work.runtime.service.WorkItemTemplateValidationService;
+import io.casehub.work.runtime.model.WorkItemTemplate;
+import io.casehub.work.runtime.service.WorkItemTemplateService;
+import io.casehub.work.runtime.service.WorkItemTemplateValidationService;
 
 /**
  * REST resource for managing and instantiating {@link WorkItemTemplate} records.
@@ -119,7 +119,7 @@ public class WorkItemTemplateResource {
         t.description = request.description();
         t.category = request.category();
         t.priority = request.priority() != null
-                ? io.quarkiverse.work.runtime.model.WorkItemPriority.valueOf(request.priority())
+                ? io.casehub.work.runtime.model.WorkItemPriority.valueOf(request.priority())
                 : null;
         t.candidateGroups = request.candidateGroups();
         t.candidateUsers = request.candidateUsers();

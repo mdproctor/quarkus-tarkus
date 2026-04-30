@@ -1,4 +1,4 @@
-package io.quarkiverse.work.queues.service;
+package io.casehub.work.queues.service;
 
 /**
  * Bundles an expression language identifier and expression string together.

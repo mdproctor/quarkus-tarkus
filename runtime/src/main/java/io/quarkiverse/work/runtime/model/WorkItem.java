@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.model;
+package io.casehub.work.runtime.model;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -206,7 +206,7 @@ public class WorkItem extends PanacheEntityBase {
 
     /**
      * Total seconds this item has spent in the unclaimed pool across all previous
-     * PENDING phases. Updated when the item is claimed; used by {@link io.quarkiverse.work.api.ClaimSlaPolicy}
+     * PENDING phases. Updated when the item is claimed; used by {@link io.casehub.work.api.ClaimSlaPolicy}
      * to compute the remaining pool budget.
      */
     @Column(name = "accumulated_unclaimed_seconds", nullable = false)

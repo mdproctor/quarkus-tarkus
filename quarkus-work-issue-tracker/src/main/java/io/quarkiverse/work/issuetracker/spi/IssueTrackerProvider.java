@@ -1,4 +1,4 @@
-package io.quarkiverse.work.issuetracker.spi;
+package io.casehub.work.issuetracker.spi;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -91,7 +91,7 @@ public interface IssueTrackerProvider {
      *
      * <p>
      * Called automatically when a linked WorkItem is completed and
-     * {@code quarkus.work.issue-tracker.github.auto-close-on-complete=true}.
+     * {@code casehub.work.issue-tracker.github.auto-close-on-complete=true}.
      * No-op if the issue is already closed.
      *
      * @param externalRef the tracker-specific issue reference

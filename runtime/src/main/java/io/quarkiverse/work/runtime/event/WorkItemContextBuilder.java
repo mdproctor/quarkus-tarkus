@@ -1,9 +1,9 @@
-package io.quarkiverse.work.runtime.event;
+package io.casehub.work.runtime.event;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import io.quarkiverse.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItem;
 
 /**
  * Builds a flat {@code Map<String, Object>} context from a WorkItem entity.

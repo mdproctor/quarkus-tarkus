@@ -1,4 +1,4 @@
-package io.quarkiverse.work.notifications.api;
+package io.casehub.work.notifications.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;

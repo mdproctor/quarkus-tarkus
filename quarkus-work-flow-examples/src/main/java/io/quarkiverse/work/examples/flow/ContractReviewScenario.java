@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.flow;
+package io.casehub.work.examples.flow;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
@@ -20,11 +20,11 @@ import jakarta.ws.rs.core.Response;
 
 import org.jboss.logging.Logger;
 
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
-import io.quarkiverse.work.runtime.repository.WorkItemQuery;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
-import io.quarkiverse.work.runtime.service.WorkItemService;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemStatus;
+import io.casehub.work.runtime.repository.WorkItemQuery;
+import io.casehub.work.runtime.repository.WorkItemStore;
+import io.casehub.work.runtime.service.WorkItemService;
 
 /**
  * Scenario runner for the contract review workflow.

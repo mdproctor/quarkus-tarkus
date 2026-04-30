@@ -13,4 +13,4 @@ metadata:
     - "business-automation"
   status: "preview"
   config:
-    - "quarkus.work.*"
+    - "casehub.work.*"

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.api;
+package io.casehub.work.runtime.api;
 
 public record CancelRequest(String reason) {
 }

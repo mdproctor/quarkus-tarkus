@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.service;
+package io.casehub.work.runtime.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -7,10 +7,10 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.api.AssignmentTrigger;
-import io.quarkiverse.work.api.SelectionContext;
-import io.quarkiverse.work.api.WorkerCandidate;
-import io.quarkiverse.work.core.strategy.ClaimFirstStrategy;
+import io.casehub.work.api.AssignmentTrigger;
+import io.casehub.work.api.SelectionContext;
+import io.casehub.work.api.WorkerCandidate;
+import io.casehub.work.core.strategy.ClaimFirstStrategy;
 
 class ClaimFirstStrategyTest {
 

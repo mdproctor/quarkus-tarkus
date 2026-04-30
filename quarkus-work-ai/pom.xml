@@ -4,21 +4,21 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>io.quarkiverse.work</groupId>
-    <artifactId>quarkus-work-parent</artifactId>
+    <groupId>io.casehub</groupId>
+    <artifactId>casehub-work-parent</artifactId>
     <version>0.2-SNAPSHOT</version>
   </parent>
-  <artifactId>quarkus-work-ai</artifactId>
+  <artifactId>casehub-work-ai</artifactId>
   <name>Quarkus WorkItems - AI</name>
   <dependencies>
     <dependency>
-      <groupId>io.quarkiverse.work</groupId>
-      <artifactId>quarkus-work</artifactId>
+      <groupId>io.casehub</groupId>
+      <artifactId>casehub-work</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>io.quarkiverse.work</groupId>
-      <artifactId>quarkus-work-core</artifactId>
+      <groupId>io.casehub</groupId>
+      <artifactId>casehub-work-core</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -60,8 +60,8 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>io.quarkiverse.work</groupId>
-      <artifactId>quarkus-work-testing</artifactId>
+      <groupId>io.casehub</groupId>
+      <artifactId>casehub-work-testing</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>

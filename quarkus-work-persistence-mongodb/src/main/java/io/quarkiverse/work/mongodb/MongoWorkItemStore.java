@@ -1,4 +1,4 @@
-package io.quarkiverse.work.mongodb;
+package io.casehub.work.mongodb;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -13,9 +13,9 @@ import jakarta.enterprise.inject.Alternative;
 
 import org.bson.Document;
 
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.repository.WorkItemQuery;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.repository.WorkItemQuery;
+import io.casehub.work.runtime.repository.WorkItemStore;
 
 /**
  * MongoDB implementation of {@link WorkItemStore}.

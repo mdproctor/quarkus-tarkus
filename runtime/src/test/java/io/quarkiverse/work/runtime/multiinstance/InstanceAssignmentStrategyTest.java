@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.multiinstance;
+package io.casehub.work.runtime.multiinstance;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -7,9 +7,9 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.api.MultiInstanceConfig;
-import io.quarkiverse.work.api.MultiInstanceContext;
-import io.quarkiverse.work.runtime.model.WorkItem;
+import io.casehub.work.api.MultiInstanceConfig;
+import io.casehub.work.api.MultiInstanceContext;
+import io.casehub.work.runtime.model.WorkItem;
 
 class InstanceAssignmentStrategyTest {
 

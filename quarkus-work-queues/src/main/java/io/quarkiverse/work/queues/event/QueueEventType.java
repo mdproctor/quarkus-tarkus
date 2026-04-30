@@ -1,4 +1,4 @@
-package io.quarkiverse.work.queues.event;
+package io.casehub.work.queues.event;
 
 /**
  * Type of a {@link WorkItemQueueEvent} — describes how a WorkItem's queue membership changed.

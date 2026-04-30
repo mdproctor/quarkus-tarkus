@@ -1,13 +1,13 @@
-package io.quarkiverse.work.runtime.multiinstance;
+package io.casehub.work.runtime.multiinstance;
 
 import java.util.List;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 
-import io.quarkiverse.work.api.InstanceAssignmentStrategy;
-import io.quarkiverse.work.api.MultiInstanceContext;
-import io.quarkiverse.work.runtime.model.WorkItem;
+import io.casehub.work.api.InstanceAssignmentStrategy;
+import io.casehub.work.api.MultiInstanceContext;
+import io.casehub.work.runtime.model.WorkItem;
 
 /**
  * Copies the parent WorkItem's candidateGroups and candidateUsers to every child instance.

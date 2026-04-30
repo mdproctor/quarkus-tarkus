@@ -1,4 +1,4 @@
-package io.quarkiverse.work.api;
+package io.casehub.work.api;
 
 /**
  * Action to take when the completion threshold (M of N) is reached in a multi-instance group.

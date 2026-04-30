@@ -1,4 +1,4 @@
-package io.quarkiverse.work.testing;
+package io.casehub.work.testing;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -11,9 +11,9 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
 
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.repository.WorkItemQuery;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.repository.WorkItemQuery;
+import io.casehub.work.runtime.repository.WorkItemStore;
 
 /**
  * In-memory implementation of {@link WorkItemStore} for use in tests of
@@ -163,7 +163,7 @@ public class InMemoryWorkItemStore implements WorkItemStore {
         }
         if (q.labelPattern() != null) {
             final boolean matchesLabel = wi.labels != null && wi.labels.stream()
-                    .anyMatch(l -> io.quarkiverse.work.runtime.service.LabelVocabularyService
+                    .anyMatch(l -> io.casehub.work.runtime.service.LabelVocabularyService
                             .matchesPattern(q.labelPattern(), l.path));
             if (!matchesLabel) {
                 return false;

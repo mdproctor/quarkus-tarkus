@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ai.skill;
+package io.casehub.work.ai.skill;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -8,9 +8,9 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
-import io.quarkiverse.work.testing.InMemoryWorkItemStore;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemStatus;
+import io.casehub.work.testing.InMemoryWorkItemStore;
 
 class ResolutionHistorySkillProfileProviderTest {
 

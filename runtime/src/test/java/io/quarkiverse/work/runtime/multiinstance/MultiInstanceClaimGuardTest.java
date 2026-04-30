@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.multiinstance;
+package io.casehub.work.runtime.multiinstance;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -12,10 +12,10 @@ import jakarta.transaction.Transactional;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemTemplate;
-import io.quarkiverse.work.runtime.service.WorkItemService;
-import io.quarkiverse.work.runtime.service.WorkItemTemplateService;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemTemplate;
+import io.casehub.work.runtime.service.WorkItemService;
+import io.casehub.work.runtime.service.WorkItemTemplateService;
 import io.quarkus.test.junit.QuarkusTest;
 
 @QuarkusTest

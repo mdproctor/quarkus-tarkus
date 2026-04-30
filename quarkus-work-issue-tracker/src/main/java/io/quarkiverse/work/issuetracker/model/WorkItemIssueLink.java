@@ -1,4 +1,4 @@
-package io.quarkiverse.work.issuetracker.model;
+package io.casehub.work.issuetracker.model;
 
 import java.time.Instant;
 import java.util.List;
@@ -14,7 +14,7 @@ import jakarta.persistence.UniqueConstraint;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 
 /**
- * Persistent link between a {@link io.quarkiverse.work.runtime.model.WorkItem}
+ * Persistent link between a {@link io.casehub.work.runtime.model.WorkItem}
  * and an issue in an external issue tracker.
  *
  * <h2>externalRef format</h2>

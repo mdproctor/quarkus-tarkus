@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.filter;
+package io.casehub.work.runtime.filter;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -8,8 +8,8 @@ import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 
-import io.quarkiverse.work.api.WorkEventType;
-import io.quarkiverse.work.api.WorkLifecycleEvent;
+import io.casehub.work.api.WorkEventType;
+import io.casehub.work.api.WorkLifecycleEvent;
 
 /**
  * Observes WorkLifecycleEvent (any subtype), evaluates all enabled filter definitions,

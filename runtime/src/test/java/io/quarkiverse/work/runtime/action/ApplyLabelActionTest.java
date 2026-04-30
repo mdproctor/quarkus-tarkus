@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.action;
+package io.casehub.work.runtime.action;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -8,8 +8,8 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.runtime.model.LabelPersistence;
-import io.quarkiverse.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.LabelPersistence;
+import io.casehub.work.runtime.model.WorkItem;
 
 class ApplyLabelActionTest {
 

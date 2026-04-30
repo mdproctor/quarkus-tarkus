@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.service;
+package io.casehub.work.runtime.service;
 
 import java.time.Instant;
 import java.util.List;
@@ -12,10 +12,10 @@ import jakarta.transaction.Transactional;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
+import io.casehub.work.runtime.event.WorkItemLifecycleEvent;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemStatus;
+import io.casehub.work.runtime.repository.WorkItemStore;
 import io.quarkus.runtime.Startup;
 
 /**

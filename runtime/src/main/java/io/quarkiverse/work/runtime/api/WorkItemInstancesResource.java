@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.api;
+package io.casehub.work.runtime.api;
 
 import java.util.List;
 import java.util.UUID;
@@ -10,9 +10,9 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import io.quarkiverse.work.api.GroupStatus;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemSpawnGroup;
+import io.casehub.work.api.GroupStatus;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemSpawnGroup;
 
 /**
  * REST endpoint for accessing the parallel instances of a multi-instance WorkItem.

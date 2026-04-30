@@ -1,4 +1,4 @@
-package io.quarkiverse.work.issuetracker.service;
+package io.casehub.work.issuetracker.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -10,9 +10,9 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.issuetracker.StubIssueTrackerProvider;
-import io.quarkiverse.work.issuetracker.model.WorkItemIssueLink;
-import io.quarkiverse.work.issuetracker.spi.IssueTrackerException;
+import io.casehub.work.issuetracker.StubIssueTrackerProvider;
+import io.casehub.work.issuetracker.model.WorkItemIssueLink;
+import io.casehub.work.issuetracker.spi.IssueTrackerException;
 import io.quarkus.test.TestTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 

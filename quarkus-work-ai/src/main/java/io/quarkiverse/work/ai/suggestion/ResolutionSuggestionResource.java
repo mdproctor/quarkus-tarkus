@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ai.suggestion;
+package io.casehub.work.ai.suggestion;
 
 import java.util.UUID;
 
@@ -10,8 +10,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.repository.WorkItemStore;
 
 /**
  * REST endpoint for AI-assisted resolution suggestions.

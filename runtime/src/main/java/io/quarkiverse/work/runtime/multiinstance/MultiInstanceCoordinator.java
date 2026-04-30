@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.multiinstance;
+package io.casehub.work.runtime.multiinstance;
 
 import java.util.UUID;
 
@@ -6,10 +6,10 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.ObservesAsync;
 import jakarta.inject.Inject;
 
-import io.quarkiverse.work.api.WorkItemGroupLifecycleEvent;
-import io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
+import io.casehub.work.api.WorkItemGroupLifecycleEvent;
+import io.casehub.work.runtime.event.WorkItemLifecycleEvent;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemStatus;
 
 /**
  * Observes terminal {@link WorkItemLifecycleEvent} instances asynchronously and

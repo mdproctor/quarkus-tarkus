@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ai.skill;
+package io.casehub.work.ai.skill;
 
 import java.util.Comparator;
 import java.util.List;
@@ -10,15 +10,15 @@ import jakarta.inject.Inject;
 
 import org.jboss.logging.Logger;
 
-import io.quarkiverse.work.ai.config.WorkItemsAiConfig;
-import io.quarkiverse.work.api.AssignmentDecision;
-import io.quarkiverse.work.api.SelectionContext;
-import io.quarkiverse.work.api.SkillMatcher;
-import io.quarkiverse.work.api.SkillProfile;
-import io.quarkiverse.work.api.SkillProfileProvider;
-import io.quarkiverse.work.api.WorkerCandidate;
-import io.quarkiverse.work.api.WorkerSelectionStrategy;
-import io.quarkiverse.work.core.strategy.LeastLoadedStrategy;
+import io.casehub.work.ai.config.WorkItemsAiConfig;
+import io.casehub.work.api.AssignmentDecision;
+import io.casehub.work.api.SelectionContext;
+import io.casehub.work.api.SkillMatcher;
+import io.casehub.work.api.SkillProfile;
+import io.casehub.work.api.SkillProfileProvider;
+import io.casehub.work.api.WorkerCandidate;
+import io.casehub.work.api.WorkerSelectionStrategy;
+import io.casehub.work.core.strategy.LeastLoadedStrategy;
 
 /**
  * Assigns work to the candidate whose skill profile best matches the work item's
@@ -30,7 +30,7 @@ import io.quarkiverse.work.core.strategy.LeastLoadedStrategy;
  * without requiring a beans.xml entry.
  *
  * <p>
- * When disabled ({@code quarkus.work.ai.semantic.enabled=false}) or when
+ * When disabled ({@code casehub.work.ai.semantic.enabled=false}) or when
  * all candidates score below the threshold, falls back to {@link LeastLoadedStrategy}
  * so workload-aware routing still fires even when AI is unavailable.
  */

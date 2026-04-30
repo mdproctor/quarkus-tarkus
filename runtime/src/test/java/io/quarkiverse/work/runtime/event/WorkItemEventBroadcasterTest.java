@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.event;
+package io.casehub.work.runtime.event;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -11,8 +11,8 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemStatus;
 
 /**
  * Pure unit tests for {@link WorkItemEventBroadcaster} — no Quarkus, no CDI.

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.api;
+package io.casehub.work.runtime.api;
 
 import java.net.URI;
 import java.util.List;
@@ -18,12 +18,12 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import io.quarkiverse.work.api.ChildSpec;
-import io.quarkiverse.work.api.SpawnRequest;
-import io.quarkiverse.work.api.SpawnResult;
-import io.quarkiverse.work.runtime.model.WorkItemSpawnGroup;
-import io.quarkiverse.work.runtime.service.WorkItemNotFoundException;
-import io.quarkiverse.work.runtime.service.WorkItemSpawnService;
+import io.casehub.work.api.ChildSpec;
+import io.casehub.work.api.SpawnRequest;
+import io.casehub.work.api.SpawnResult;
+import io.casehub.work.runtime.model.WorkItemSpawnGroup;
+import io.casehub.work.runtime.service.WorkItemNotFoundException;
+import io.casehub.work.runtime.service.WorkItemSpawnService;
 
 /**
  * REST endpoints for spawning and managing child WorkItems from a parent.

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.lowconfidence;
+package io.casehub.work.examples.lowconfidence;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;

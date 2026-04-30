@@ -1,12 +1,12 @@
-package io.quarkiverse.work.runtime.multiinstance;
+package io.casehub.work.runtime.multiinstance;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.runtime.model.WorkItemTemplate;
-import io.quarkiverse.work.runtime.service.WorkItemTemplateValidationService;
+import io.casehub.work.runtime.model.WorkItemTemplate;
+import io.casehub.work.runtime.service.WorkItemTemplateValidationService;
 
 /**
  * Unit tests for {@link WorkItemTemplateValidationService}.

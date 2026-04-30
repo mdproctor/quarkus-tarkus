@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.queues;
+package io.casehub.work.examples.queues;
 
 import java.util.List;
 import java.util.UUID;

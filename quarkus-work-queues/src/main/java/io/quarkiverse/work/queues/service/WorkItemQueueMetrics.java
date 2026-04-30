@@ -1,4 +1,4 @@
-package io.quarkiverse.work.queues.service;
+package io.casehub.work.queues.service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -6,10 +6,10 @@ import jakarta.inject.Inject;
 
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.quarkiverse.work.queues.event.WorkItemQueueEvent;
-import io.quarkiverse.work.queues.model.QueueView;
-import io.quarkiverse.work.runtime.repository.WorkItemQuery;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
+import io.casehub.work.queues.event.WorkItemQueueEvent;
+import io.casehub.work.queues.model.QueueView;
+import io.casehub.work.runtime.repository.WorkItemQuery;
+import io.casehub.work.runtime.repository.WorkItemStore;
 
 /**
  * Registers per-queue depth gauges when queue membership changes.

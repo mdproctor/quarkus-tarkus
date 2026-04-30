@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.auditsearch;
+package io.casehub.work.examples.auditsearch;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;

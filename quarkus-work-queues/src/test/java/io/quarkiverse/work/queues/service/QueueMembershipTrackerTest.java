@@ -1,4 +1,4 @@
-package io.quarkiverse.work.queues.service;
+package io.casehub.work.queues.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -106,7 +106,7 @@ class QueueMembershipTrackerTest {
 
         // If state were only in-memory, a fresh-lookup would still find it in the same JVM.
         // The test proves the data is persisted to the DB by verifying the entity table directly.
-        final long count = io.quarkiverse.work.queues.model.WorkItemQueueMembership
+        final long count = io.casehub.work.queues.model.WorkItemQueueMembership
                 .count("workItemId = ?1 AND queueViewId = ?2", workItemId, q1);
         assertThat(count).isEqualTo(1);
     }

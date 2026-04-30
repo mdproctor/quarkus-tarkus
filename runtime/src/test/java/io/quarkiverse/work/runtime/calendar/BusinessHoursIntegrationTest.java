@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.calendar;
+package io.casehub.work.runtime.calendar;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;

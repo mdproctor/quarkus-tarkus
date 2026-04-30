@@ -1,10 +1,10 @@
-package io.quarkiverse.work.runtime.service;
+package io.casehub.work.runtime.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.runtime.model.VocabularyScope;
+import io.casehub.work.runtime.model.VocabularyScope;
 
 class LabelVocabularyServiceTest {
 

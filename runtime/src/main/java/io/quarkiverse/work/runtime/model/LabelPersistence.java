@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.model;
+package io.casehub.work.runtime.model;
 
 /**
  * Determines how a label was applied to a WorkItem and how it is maintained.

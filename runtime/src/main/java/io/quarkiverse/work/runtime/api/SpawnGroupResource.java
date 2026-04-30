@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.api;
+package io.casehub.work.runtime.api;
 
 import java.util.List;
 import java.util.Map;
@@ -11,9 +11,9 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import io.quarkiverse.work.runtime.model.WorkItemRelation;
-import io.quarkiverse.work.runtime.model.WorkItemRelationType;
-import io.quarkiverse.work.runtime.model.WorkItemSpawnGroup;
+import io.casehub.work.runtime.model.WorkItemRelation;
+import io.casehub.work.runtime.model.WorkItemRelationType;
+import io.casehub.work.runtime.model.WorkItemSpawnGroup;
 
 /**
  * REST endpoint for direct spawn group lookup by ID.

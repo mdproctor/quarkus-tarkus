@@ -1,10 +1,10 @@
-package io.quarkiverse.work.queues.service;
+package io.casehub.work.queues.service;
 
 import java.util.List;
 
-import io.quarkiverse.work.queues.model.FilterAction;
-import io.quarkiverse.work.queues.model.FilterScope;
-import io.quarkiverse.work.runtime.model.WorkItem;
+import io.casehub.work.queues.model.FilterAction;
+import io.casehub.work.queues.model.FilterScope;
+import io.casehub.work.runtime.model.WorkItem;
 
 public interface WorkItemFilterBean {
     boolean matches(WorkItem workItem);

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.semantic;
+package io.casehub.work.examples.semantic;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,16 +12,16 @@ import jakarta.ws.rs.core.MediaType;
 
 import org.jboss.logging.Logger;
 
-import io.quarkiverse.work.ai.skill.WorkerSkillProfile;
-import io.quarkiverse.work.examples.StepLog;
-import io.quarkiverse.work.runtime.api.AuditEntryResponse;
-import io.quarkiverse.work.runtime.model.AuditEntry;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemCreateRequest;
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
-import io.quarkiverse.work.runtime.repository.AuditEntryStore;
-import io.quarkiverse.work.runtime.service.WorkItemService;
+import io.casehub.work.ai.skill.WorkerSkillProfile;
+import io.casehub.work.examples.StepLog;
+import io.casehub.work.runtime.api.AuditEntryResponse;
+import io.casehub.work.runtime.model.AuditEntry;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemCreateRequest;
+import io.casehub.work.runtime.model.WorkItemPriority;
+import io.casehub.work.runtime.model.WorkItemStatus;
+import io.casehub.work.runtime.repository.AuditEntryStore;
+import io.casehub.work.runtime.service.WorkItemService;
 
 /**
  * Scenario 5 — Semantic Skill Routing: NDA Review.

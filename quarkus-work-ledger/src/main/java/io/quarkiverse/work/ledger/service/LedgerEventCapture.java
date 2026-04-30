@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ledger.service;
+package io.casehub.work.ledger.service;
 
 import java.util.Map;
 import java.util.Optional;
@@ -19,13 +19,13 @@ import io.casehub.ledger.runtime.config.LedgerConfig;
 import io.casehub.ledger.runtime.model.LedgerMerkleFrontier;
 import io.casehub.ledger.runtime.model.supplement.ComplianceSupplement;
 import io.casehub.ledger.runtime.service.LedgerMerkleTree;
-import io.quarkiverse.work.ledger.model.WorkItemLedgerEntry;
-import io.quarkiverse.work.ledger.repository.WorkItemLedgerEntryRepository;
-import io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemRelation;
-import io.quarkiverse.work.runtime.model.WorkItemRelationType;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
+import io.casehub.work.ledger.model.WorkItemLedgerEntry;
+import io.casehub.work.ledger.repository.WorkItemLedgerEntryRepository;
+import io.casehub.work.runtime.event.WorkItemLifecycleEvent;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemRelation;
+import io.casehub.work.runtime.model.WorkItemRelationType;
+import io.casehub.work.runtime.repository.WorkItemStore;
 import io.quarkus.logging.Log;
 
 /**

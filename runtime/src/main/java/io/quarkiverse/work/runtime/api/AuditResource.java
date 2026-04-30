@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.api;
+package io.casehub.work.runtime.api;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -13,9 +13,9 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 
-import io.quarkiverse.work.runtime.model.AuditEntry;
-import io.quarkiverse.work.runtime.repository.AuditEntryStore;
-import io.quarkiverse.work.runtime.repository.AuditQuery;
+import io.casehub.work.runtime.model.AuditEntry;
+import io.casehub.work.runtime.repository.AuditEntryStore;
+import io.casehub.work.runtime.repository.AuditQuery;
 
 /**
  * Cross-WorkItem audit history query API.

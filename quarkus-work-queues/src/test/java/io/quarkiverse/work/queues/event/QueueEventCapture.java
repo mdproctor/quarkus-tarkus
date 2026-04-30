@@ -1,4 +1,4 @@
-package io.quarkiverse.work.queues.event;
+package io.casehub.work.queues.event;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.queues.service;
+package io.casehub.work.queues.service;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,7 +11,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 
-import io.quarkiverse.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItem;
 import net.thisptr.jackson.jq.BuiltinFunctionLoader;
 import net.thisptr.jackson.jq.JsonQuery;
 import net.thisptr.jackson.jq.Scope;

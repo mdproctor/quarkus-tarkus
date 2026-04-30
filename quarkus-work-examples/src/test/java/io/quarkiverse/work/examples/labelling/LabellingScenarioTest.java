@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.labelling;
+package io.casehub.work.examples.labelling;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;

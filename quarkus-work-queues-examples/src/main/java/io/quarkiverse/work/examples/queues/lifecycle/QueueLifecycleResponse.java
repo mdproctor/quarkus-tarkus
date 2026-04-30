@@ -1,8 +1,8 @@
-package io.quarkiverse.work.examples.queues.lifecycle;
+package io.casehub.work.examples.queues.lifecycle;
 
 import java.util.List;
 
-import io.quarkiverse.work.queues.event.QueueEventType;
+import io.casehub.work.queues.event.QueueEventType;
 
 /**
  * Response returned by the {@link QueueLifecycleScenario} endpoint.

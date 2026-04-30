@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.api;
+package io.casehub.work.runtime.api;
 
 import java.util.HashSet;
 import java.util.List;
@@ -18,10 +18,10 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemRelation;
-import io.quarkiverse.work.runtime.model.WorkItemRelationType;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemRelation;
+import io.casehub.work.runtime.model.WorkItemRelationType;
+import io.casehub.work.runtime.repository.WorkItemStore;
 
 /**
  * REST resource for the WorkItem relation graph.

@@ -1,13 +1,13 @@
-package io.quarkiverse.work.ledger.api;
+package io.casehub.work.ledger.api;
 
 import java.util.List;
 
 import io.casehub.ledger.runtime.model.LedgerAttestation;
 import io.casehub.ledger.runtime.model.supplement.ComplianceSupplement;
 import io.casehub.ledger.runtime.model.supplement.ProvenanceSupplement;
-import io.quarkiverse.work.ledger.api.dto.LedgerAttestationResponse;
-import io.quarkiverse.work.ledger.api.dto.LedgerEntryResponse;
-import io.quarkiverse.work.ledger.model.WorkItemLedgerEntry;
+import io.casehub.work.ledger.api.dto.LedgerAttestationResponse;
+import io.casehub.work.ledger.api.dto.LedgerEntryResponse;
+import io.casehub.work.ledger.model.WorkItemLedgerEntry;
 
 /**
  * Static mapper between ledger JPA entities and REST response records.

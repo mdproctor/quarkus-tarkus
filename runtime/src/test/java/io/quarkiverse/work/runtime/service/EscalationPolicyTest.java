@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.service;
+package io.casehub.work.runtime.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -14,16 +14,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.api.EscalationPolicy;
-import io.quarkiverse.work.api.WorkEventType;
-import io.quarkiverse.work.api.WorkLifecycleEvent;
-import io.quarkiverse.work.runtime.model.AuditEntry;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
-import io.quarkiverse.work.runtime.repository.AuditEntryStore;
-import io.quarkiverse.work.runtime.repository.WorkItemQuery;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
+import io.casehub.work.api.EscalationPolicy;
+import io.casehub.work.api.WorkEventType;
+import io.casehub.work.api.WorkLifecycleEvent;
+import io.casehub.work.runtime.model.AuditEntry;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemPriority;
+import io.casehub.work.runtime.model.WorkItemStatus;
+import io.casehub.work.runtime.repository.AuditEntryStore;
+import io.casehub.work.runtime.repository.WorkItemQuery;
+import io.casehub.work.runtime.repository.WorkItemStore;
 
 /**
  * Pure JUnit 5 unit tests for the three EscalationPolicy implementations.
@@ -79,12 +79,12 @@ class EscalationPolicyTest {
         }
 
         @Override
-        public List<AuditEntry> query(io.quarkiverse.work.runtime.repository.AuditQuery query) {
+        public List<AuditEntry> query(io.casehub.work.runtime.repository.AuditQuery query) {
             return List.of();
         }
 
         @Override
-        public long count(io.quarkiverse.work.runtime.repository.AuditQuery query) {
+        public long count(io.casehub.work.runtime.repository.AuditQuery query) {
             return 0;
         }
     }

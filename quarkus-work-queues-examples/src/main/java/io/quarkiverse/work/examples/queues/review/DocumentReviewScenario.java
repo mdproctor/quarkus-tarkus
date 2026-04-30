@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.queues.review;
+package io.casehub.work.examples.queues.review;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,20 +15,20 @@ import jakarta.ws.rs.core.MediaType;
 
 import org.jboss.logging.Logger;
 
-import io.quarkiverse.work.examples.queues.QueueScenarioResponse;
-import io.quarkiverse.work.examples.queues.QueueScenarioStep;
-import io.quarkiverse.work.examples.queues.lifecycle.QueueEventLog;
-import io.quarkiverse.work.queues.model.FilterAction;
-import io.quarkiverse.work.queues.model.FilterScope;
-import io.quarkiverse.work.queues.model.QueueView;
-import io.quarkiverse.work.queues.model.WorkItemFilter;
-import io.quarkiverse.work.runtime.model.LabelPersistence;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemCreateRequest;
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
-import io.quarkiverse.work.runtime.repository.WorkItemQuery;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
-import io.quarkiverse.work.runtime.service.WorkItemService;
+import io.casehub.work.examples.queues.QueueScenarioResponse;
+import io.casehub.work.examples.queues.QueueScenarioStep;
+import io.casehub.work.examples.queues.lifecycle.QueueEventLog;
+import io.casehub.work.queues.model.FilterAction;
+import io.casehub.work.queues.model.FilterScope;
+import io.casehub.work.queues.model.QueueView;
+import io.casehub.work.queues.model.WorkItemFilter;
+import io.casehub.work.runtime.model.LabelPersistence;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemCreateRequest;
+import io.casehub.work.runtime.model.WorkItemPriority;
+import io.casehub.work.runtime.repository.WorkItemQuery;
+import io.casehub.work.runtime.repository.WorkItemStore;
+import io.casehub.work.runtime.service.WorkItemService;
 
 /**
  * Scenario: Document Review Pipeline — state-tracking queues.

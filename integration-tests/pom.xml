@@ -5,12 +5,12 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.quarkiverse.work</groupId>
-    <artifactId>quarkus-work-parent</artifactId>
+    <groupId>io.casehub</groupId>
+    <artifactId>casehub-work-parent</artifactId>
     <version>0.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>quarkus-work-integration-tests</artifactId>
+  <artifactId>casehub-work-integration-tests</artifactId>
   <name>Quarkus WorkItems - Integration Tests</name>
   <description>Black-box integration tests and native image validation for Quarkus WorkItems.
 Contains a minimal Quarkus app embedding the extension, packaged and tested via
@@ -19,15 +19,15 @@ Contains a minimal Quarkus app embedding the extension, packaged and tested via
   <dependencies>
     <!-- The extension under test -->
     <dependency>
-      <groupId>io.quarkiverse.work</groupId>
-      <artifactId>quarkus-work</artifactId>
+      <groupId>io.casehub</groupId>
+      <artifactId>casehub-work</artifactId>
       <version>${project.version}</version>
     </dependency>
 
     <!-- Optional reporting module -->
     <dependency>
-      <groupId>io.quarkiverse.work</groupId>
-      <artifactId>quarkus-work-reports</artifactId>
+      <groupId>io.casehub</groupId>
+      <artifactId>casehub-work-reports</artifactId>
       <version>${project.version}</version>
     </dependency>
 

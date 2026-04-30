@@ -1,4 +1,4 @@
-package io.quarkiverse.work.queues.service;
+package io.casehub.work.queues.service;
 
 import java.util.Map;
 import java.util.UUID;
@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 
-import io.quarkiverse.work.queues.model.WorkItemQueueMembership;
+import io.casehub.work.queues.model.WorkItemQueueMembership;
 
 /**
  * Persistent store of last-known queue membership per WorkItem.
@@ -15,7 +15,7 @@ import io.quarkiverse.work.queues.model.WorkItemQueueMembership;
  * <p>
  * Backed by the {@code work_item_queue_membership} DB table (Flyway migration V2001).
  * {@link FilterEvaluationObserver} writes to this tracker at the end of every
- * {@link io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent}, recording the
+ * {@link io.casehub.work.runtime.event.WorkItemLifecycleEvent}, recording the
  * resolved membership as the authoritative "before-state" for the next event.
  *
  * <h2>Why DB, not an in-memory map?</h2>
@@ -47,7 +47,7 @@ import io.quarkiverse.work.queues.model.WorkItemQueueMembership;
  *
  * <h2>Why the tracker exists at all (the root cause)</h2>
  * <p>
- * {@link io.quarkiverse.work.runtime.event.WorkItemLifecycleEvent} fires AFTER the
+ * {@link io.casehub.work.runtime.event.WorkItemLifecycleEvent} fires AFTER the
  * WorkItem mutation is persisted. When the observer fetches the entity, the pre-mutation
  * state is gone. The tracker bridges this timing gap by recording what the queue membership
  * WAS (at the end of the previous event) so it can serve as "before" for the next event.

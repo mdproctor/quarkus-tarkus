@@ -1,4 +1,4 @@
-package io.quarkiverse.work.api;
+package io.casehub.work.api;
 
 /**
  * Role of the parent WorkItem in a multi-instance group.

@@ -1,4 +1,4 @@
-package io.quarkiverse.work.examples.auditsearch;
+package io.casehub.work.examples.auditsearch;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,12 +12,12 @@ import jakarta.ws.rs.core.MediaType;
 
 import org.jboss.logging.Logger;
 
-import io.quarkiverse.work.examples.StepLog;
-import io.quarkiverse.work.runtime.model.WorkItemCreateRequest;
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
-import io.quarkiverse.work.runtime.repository.AuditEntryStore;
-import io.quarkiverse.work.runtime.repository.AuditQuery;
-import io.quarkiverse.work.runtime.service.WorkItemService;
+import io.casehub.work.examples.StepLog;
+import io.casehub.work.runtime.model.WorkItemCreateRequest;
+import io.casehub.work.runtime.model.WorkItemPriority;
+import io.casehub.work.runtime.repository.AuditEntryStore;
+import io.casehub.work.runtime.repository.AuditQuery;
+import io.casehub.work.runtime.service.WorkItemService;
 
 /**
  * Scenario 6 — Audit Search: cross-WorkItem audit trail queries.

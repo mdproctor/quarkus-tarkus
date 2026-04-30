@@ -1,11 +1,11 @@
-package io.quarkiverse.work.mongodb;
+package io.casehub.work.mongodb;
 
 import java.time.Instant;
 import java.util.UUID;
 
 import org.bson.codecs.pojo.annotations.BsonId;
 
-import io.quarkiverse.work.runtime.model.AuditEntry;
+import io.casehub.work.runtime.model.AuditEntry;
 import io.quarkus.mongodb.panache.PanacheMongoEntityBase;
 import io.quarkus.mongodb.panache.common.MongoEntity;
 

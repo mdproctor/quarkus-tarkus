@@ -1,4 +1,4 @@
-package io.quarkiverse.work.ai.escalation;
+package io.casehub.work.ai.escalation;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -6,8 +6,8 @@ import jakarta.inject.Inject;
 
 import org.jboss.logging.Logger;
 
-import io.quarkiverse.work.api.WorkEventType;
-import io.quarkiverse.work.api.WorkLifecycleEvent;
+import io.casehub.work.api.WorkEventType;
+import io.casehub.work.api.WorkLifecycleEvent;
 
 /**
  * CDI observer that generates an LLM escalation summary when a WorkItem
@@ -38,7 +38,7 @@ public class EscalationSummaryObserver {
         }
         try {
             final Object source = event.source();
-            if (source instanceof io.quarkiverse.work.runtime.model.WorkItem wi) {
+            if (source instanceof io.casehub.work.runtime.model.WorkItem wi) {
                 summaryService.buildSummary(wi.id, type.name()).persist();
             }
         } catch (final Exception e) {

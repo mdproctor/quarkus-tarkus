@@ -1,12 +1,12 @@
-package io.quarkiverse.work.runtime.api;
+package io.casehub.work.runtime.api;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import io.quarkiverse.work.runtime.model.DelegationState;
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
+import io.casehub.work.runtime.model.DelegationState;
+import io.casehub.work.runtime.model.WorkItemPriority;
+import io.casehub.work.runtime.model.WorkItemStatus;
 
 public record WorkItemWithAuditResponse(
         UUID id,

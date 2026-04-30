@@ -1,4 +1,4 @@
-package io.quarkiverse.work.runtime.multiinstance;
+package io.casehub.work.runtime.multiinstance;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -9,14 +9,14 @@ import jakarta.transaction.Transactional;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.work.api.GroupStatus;
-import io.quarkiverse.work.runtime.model.WorkItem;
-import io.quarkiverse.work.runtime.model.WorkItemPriority;
-import io.quarkiverse.work.runtime.model.WorkItemRootView;
-import io.quarkiverse.work.runtime.model.WorkItemStatus;
-import io.quarkiverse.work.runtime.model.WorkItemTemplate;
-import io.quarkiverse.work.runtime.repository.WorkItemStore;
-import io.quarkiverse.work.runtime.service.WorkItemTemplateService;
+import io.casehub.work.api.GroupStatus;
+import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemPriority;
+import io.casehub.work.runtime.model.WorkItemRootView;
+import io.casehub.work.runtime.model.WorkItemStatus;
+import io.casehub.work.runtime.model.WorkItemTemplate;
+import io.casehub.work.runtime.repository.WorkItemStore;
+import io.casehub.work.runtime.service.WorkItemTemplateService;
 import io.quarkus.test.junit.QuarkusTest;
 
 @QuarkusTest
