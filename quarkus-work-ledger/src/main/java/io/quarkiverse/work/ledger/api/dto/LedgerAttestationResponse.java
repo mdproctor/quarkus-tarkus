@@ -3,8 +3,8 @@ package io.quarkiverse.work.ledger.api.dto;
 import java.time.Instant;
 import java.util.UUID;
 
-import io.quarkiverse.ledger.api.model.ActorType;
-import io.quarkiverse.ledger.api.model.AttestationVerdict;
+import io.casehub.ledger.api.model.ActorType;
+import io.casehub.ledger.api.model.AttestationVerdict;
 
 /**
  * Response body representing a single peer attestation on a ledger entry.

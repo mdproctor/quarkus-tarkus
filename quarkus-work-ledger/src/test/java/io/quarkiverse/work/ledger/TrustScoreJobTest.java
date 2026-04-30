@@ -11,12 +11,12 @@ import jakarta.inject.Inject;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.ledger.api.model.ActorType;
-import io.quarkiverse.ledger.api.model.AttestationVerdict;
-import io.quarkiverse.ledger.runtime.model.ActorTrustScore;
-import io.quarkiverse.ledger.runtime.model.LedgerAttestation;
-import io.quarkiverse.ledger.runtime.service.TrustGateService;
-import io.quarkiverse.ledger.runtime.service.TrustScoreJob;
+import io.casehub.ledger.api.model.ActorType;
+import io.casehub.ledger.api.model.AttestationVerdict;
+import io.casehub.ledger.runtime.model.ActorTrustScore;
+import io.casehub.ledger.runtime.model.LedgerAttestation;
+import io.casehub.ledger.runtime.service.TrustGateService;
+import io.casehub.ledger.runtime.service.TrustScoreJob;
 import io.quarkiverse.work.ledger.model.WorkItemLedgerEntry;
 import io.quarkiverse.work.ledger.repository.WorkItemLedgerEntryRepository;
 import io.quarkiverse.work.runtime.model.WorkItem;

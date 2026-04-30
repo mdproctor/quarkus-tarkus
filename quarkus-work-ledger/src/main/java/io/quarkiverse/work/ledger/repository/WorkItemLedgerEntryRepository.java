@@ -6,8 +6,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-import io.quarkiverse.ledger.runtime.model.LedgerAttestation;
-import io.quarkiverse.ledger.runtime.repository.LedgerEntryRepository;
+import io.casehub.ledger.runtime.model.LedgerAttestation;
+import io.casehub.ledger.runtime.repository.LedgerEntryRepository;
 import io.quarkiverse.work.ledger.model.WorkItemLedgerEntry;
 
 /**

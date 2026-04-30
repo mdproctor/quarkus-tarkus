@@ -2,9 +2,9 @@ package io.quarkiverse.work.ledger.api;
 
 import java.util.List;
 
-import io.quarkiverse.ledger.runtime.model.LedgerAttestation;
-import io.quarkiverse.ledger.runtime.model.supplement.ComplianceSupplement;
-import io.quarkiverse.ledger.runtime.model.supplement.ProvenanceSupplement;
+import io.casehub.ledger.runtime.model.LedgerAttestation;
+import io.casehub.ledger.runtime.model.supplement.ComplianceSupplement;
+import io.casehub.ledger.runtime.model.supplement.ProvenanceSupplement;
 import io.quarkiverse.work.ledger.api.dto.LedgerAttestationResponse;
 import io.quarkiverse.work.ledger.api.dto.LedgerEntryResponse;
 import io.quarkiverse.work.ledger.model.WorkItemLedgerEntry;
@@ -53,7 +53,7 @@ public final class LedgerMapper {
                 : e.supplements.stream()
                         .filter(s -> s instanceof ComplianceSupplement).map(s -> (ComplianceSupplement) s)
                         .findFirst().orElse(null);
-        // ObservabilitySupplement not yet in this quarkus-ledger version — causedByEntryId/correlationId return null
+        // ObservabilitySupplement not yet in this casehub-ledger version — causedByEntryId/correlationId return null
         final ProvenanceSupplement prov = e.supplements == null ? null
                 : e.supplements.stream()
                         .filter(s -> s instanceof ProvenanceSupplement).map(s -> (ProvenanceSupplement) s)
@@ -73,8 +73,8 @@ public final class LedgerMapper {
                 comp != null ? comp.decisionContext : null,
                 comp != null ? comp.evidence : null,
                 comp != null ? comp.detail : null,
-                null, // causedByEntryId — ObservabilitySupplement not in this quarkus-ledger version
-                null, // correlationId — ObservabilitySupplement not in this quarkus-ledger version
+                null, // causedByEntryId — ObservabilitySupplement not in this casehub-ledger version
+                null, // correlationId — ObservabilitySupplement not in this casehub-ledger version
                 prov != null ? prov.sourceEntityId : null,
                 prov != null ? prov.sourceEntityType : null,
                 prov != null ? prov.sourceEntitySystem : null,

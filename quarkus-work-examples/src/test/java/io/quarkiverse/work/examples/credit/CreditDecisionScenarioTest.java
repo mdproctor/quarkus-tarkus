@@ -57,7 +57,7 @@ class CreditDecisionScenarioTest {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("No delegation entry found"));
         assertThat(delegateEntry.get("actorId")).isEqualTo("officer-alice");
-        // causedByEntryId deferred — ObservabilitySupplement not yet in quarkus-ledger
+        // causedByEntryId deferred — ObservabilitySupplement not yet in casehub-ledger
 
         // Completion entry: rationale and planRef
         final Map<String, Object> completionEntry = ledger.stream()
