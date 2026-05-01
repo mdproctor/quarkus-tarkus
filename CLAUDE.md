@@ -311,6 +311,24 @@ JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn install -DskipTests -f ~/claude/ca
 
 **Format check:** CI runs `mvn -Dno-format` to skip the enforced formatter. Run `mvn` locally to apply formatting.
 
+**Flyway migration version conventions:**
+
+Each module owns its own version range. Flyway enforces uniqueness across all modules loaded into the same application — a duplicate version number causes a startup failure.
+
+| Range | Module |
+|---|---|
+| V1–V999 | `runtime` (sequential, currently at V21) |
+| V2000–V2999 | `casehub-work-queues` and `casehub-work-ledger` (shared 2000s block) |
+| V3000–V3999 | `casehub-work-notifications` |
+| V4000–V4999 | `casehub-work-ai` |
+| V5000+ | next new optional module |
+
+**Rule for a new module:** take the next free thousand above the highest used — currently V5000.
+
+**Known anomaly — casehub-work-ai V14:** the AI module also has a V14 migration that falls within the runtime sequential range. This was added to fill a deliberate gap left in the runtime sequence. Do not add more optional-module migrations in the V1–V999 range.
+
+**Known conflict — casehub-work-issue-tracker V3000:** collides with `casehub-work-notifications` V3000. These modules cannot be loaded in the same application without Flyway failing. The issue-tracker module needs to be renumbered to V5000 before production use. (tracked: issue-tracker module is not yet in active use)
+
 **Known extension build gotchas (from casehub-qhorus experience):**
 - `quarkus-extension-processor` requires **Javadoc on every method** in `@ConfigMapping` interfaces, including group accessors — missing one causes a compile-time error
 - The `extension-descriptor` goal validates that the deployment POM declares **all transitive deployment JARs** — run `mvn install -DskipTests` first after modifying the deployment POM
@@ -380,7 +398,7 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home
 | 2 | #103 | Notifications — Slack/Teams/webhook on lifecycle events | ✅ complete | #140 ✅ SPI+dispatcher+CRUD, #141 ✅ HTTP/Slack/Teams channels |
 | ✅ | #104 | SLA Compliance Reporting — breach rates, actor performance | ✅ complete | `casehub-work-reports` optional module; sla-breaches, actors, throughput, queue-health; 73 tests (68 H2 + 5 PostgreSQL) |
 | ✅ | #106 | Multi-Instance Tasks — M-of-N parallel completion | ✅ complete | `MultiInstanceSpawnService`, `MultiInstanceCoordinator`, `MultiInstanceGroupPolicy`; `InstanceAssignmentStrategy` SPI + 3 impls; threaded inbox via `scanRoots()`; `GET /workitems/{id}/instances`; V20+V21 migrations |
-| — | #147 | Project Refinement — architecture and doc improvements | open | #148 DESIGN.md split, #149 WorkItemService decompose, #150 broadcaster SPI (unblocks #93), #151 Flyway convention, #152 examples split |
+| — | #147 | Project Refinement — architecture and doc improvements | open | #148 DESIGN.md split, #149 WorkItemService decompose, #150 broadcaster SPI (unblocks #93), #151 Flyway convention — #152 examples split (low priority, deferred) |
 | — | #92 | Distributed WorkItems — clustering + federation | future | #93 (SSE) implementable now; blocked on #150 (broadcaster SPI) |
 | — | #79 | External System Integrations | blocked | CaseHub/Qhorus not stable |
 | — | #39 | ProvenanceLink (PROV-O causal graph) | blocked | Awaiting #79 |
