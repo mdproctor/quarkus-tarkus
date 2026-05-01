@@ -48,11 +48,7 @@ class BusinessHoursIntegrationTest {
                 .extract().path("expiresAt");
 
         assertThat(expiresAtStr).isNotNull();
-        // expiresAt must be in the future and not more than 8 business hours away
-        final Instant expiresAt = Instant.parse(expiresAtStr);
-        assertThat(expiresAt).isAfter(before);
-        // 8 business hours ≤ 3 calendar days; +5 min buffer for minute-boundary rounding
-        assertThat(expiresAt).isBefore(before.plus(3, ChronoUnit.DAYS).plus(5, ChronoUnit.MINUTES));
+        BusinessHoursAssert.assertDeadlineInRange(Instant.parse(expiresAtStr), before, 8);
     }
 
     @Test
@@ -81,10 +77,7 @@ class BusinessHoursIntegrationTest {
                 .extract().path("claimDeadline");
 
         assertThat(claimDeadlineStr).isNotNull();
-        final Instant claimDeadline = Instant.parse(claimDeadlineStr);
-        assertThat(claimDeadline).isAfter(before);
-        // 2 business hours ≤ 4 calendar days (covers Friday after-hours → Monday + 2h)
-        assertThat(claimDeadline).isBefore(before.plus(4, ChronoUnit.DAYS).plus(5, ChronoUnit.MINUTES));
+        BusinessHoursAssert.assertDeadlineInRange(Instant.parse(claimDeadlineStr), before, 2);
     }
 
     @Test
@@ -145,10 +138,7 @@ class BusinessHoursIntegrationTest {
                 .extract().path("expiresAt");
 
         assertThat(expiresAtStr).isNotNull();
-        final Instant expiresAt = Instant.parse(expiresAtStr);
-        // 8 business hours → within 3 calendar days from before; +5 min buffer for minute-boundary rounding
-        assertThat(expiresAt).isAfter(before);
-        assertThat(expiresAt).isBefore(before.plus(3, ChronoUnit.DAYS).plus(5, ChronoUnit.MINUTES));
+        BusinessHoursAssert.assertDeadlineInRange(Instant.parse(expiresAtStr), before, 8);
     }
 
     @Test
