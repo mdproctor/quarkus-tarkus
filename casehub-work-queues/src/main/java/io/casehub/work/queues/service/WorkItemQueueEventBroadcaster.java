@@ -2,51 +2,27 @@ package io.casehub.work.queues.service;
 
 import java.util.UUID;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Observes;
-
 import io.casehub.work.queues.event.WorkItemQueueEvent;
 import io.smallrye.mutiny.Multi;
-import io.smallrye.mutiny.operators.multi.processors.BroadcastProcessor;
 
 /**
- * Application-scoped broadcaster that bridges CDI {@link WorkItemQueueEvent} to
- * a reactive hot stream for Server-Sent Events consumers.
+ * SPI: fan-out WorkItem queue events (ADDED, REMOVED, CHANGED) to SSE subscribers.
  *
  * <p>
- * Mirrors the pattern of {@code WorkItemEventBroadcaster} in the core module,
- * but for queue-level events (ADDED, REMOVED, CHANGED).
+ * The default implementation ({@link LocalWorkItemQueueEventBroadcaster}) uses an
+ * in-process Mutiny {@code BroadcastProcessor}. Alternative backends can replace it
+ * via {@code @Alternative @Priority(1)}.
  *
- * <h2>Hot stream semantics</h2>
  * <p>
- * Only events that occur after a client connects are delivered — past events are
- * not replayed. Use {@code GET /queues/{id}} to fetch the current queue contents.
+ * Mirrors the contract of {@code WorkItemEventBroadcaster} in the core runtime module.
  */
-@ApplicationScoped
-public class WorkItemQueueEventBroadcaster {
-
-    private final BroadcastProcessor<WorkItemQueueEvent> processor = BroadcastProcessor.create();
+public interface WorkItemQueueEventBroadcaster {
 
     /**
-     * CDI observer: re-publishes every {@link WorkItemQueueEvent} to all SSE clients.
-     *
-     * @param event the queue event fired by {@link FilterEvaluationObserver}
-     */
-    public void onEvent(@Observes final WorkItemQueueEvent event) {
-        processor.onNext(event);
-    }
-
-    /**
-     * Returns a hot {@link Multi} of queue events, optionally filtered to a single queue.
+     * Returns a hot stream of queue events, optionally filtered to a single queue.
      *
      * @param queueViewId if non-null, only events for this queue are emitted
-     * @return hot stream of matching {@link WorkItemQueueEvent} instances
+     * @return hot {@link Multi} of matching {@link WorkItemQueueEvent} instances
      */
-    public Multi<WorkItemQueueEvent> stream(final UUID queueViewId) {
-        Multi<WorkItemQueueEvent> source = processor.toHotStream();
-        if (queueViewId != null) {
-            source = source.filter(e -> queueViewId.equals(e.queueViewId()));
-        }
-        return source;
-    }
+    Multi<WorkItemQueueEvent> stream(UUID queueViewId);
 }
