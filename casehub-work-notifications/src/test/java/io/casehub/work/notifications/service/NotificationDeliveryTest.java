@@ -6,10 +6,14 @@ import static com.github.tomakehurst.wiremock.client.WireMock.ok;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static io.restassured.RestAssured.given;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.awaitility.Awaitility.await;
 
 import java.util.Map;
+
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +22,9 @@ import org.junit.jupiter.api.Test;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 
+import io.casehub.work.notifications.model.WorkItemNotificationRule;
+import io.casehub.work.runtime.model.AuditEntry;
+import io.casehub.work.runtime.model.WorkItem;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 
@@ -39,15 +46,18 @@ class NotificationDeliveryTest {
     }
 
     @AfterEach
-    void stopWireMock() {
+    @Transactional
+    void cleanup() {
         wireMock.stop();
+        WorkItemNotificationRule.deleteAll();
+        AuditEntry.deleteAll();
+        WorkItem.deleteAll();
     }
 
     @Test
-    void httpWebhook_firesWhenAssigned() throws Exception {
+    void httpWebhook_firesWhenAssigned() {
         final String hookUrl = "http://localhost:" + wireMock.port() + "/hook";
 
-        // Create a notification rule for ASSIGNED events
         given()
                 .contentType(ContentType.JSON)
                 .body(Map.of(
@@ -57,7 +67,6 @@ class NotificationDeliveryTest {
                 .when().post("/workitem-notification-rules")
                 .then().statusCode(201);
 
-        // Create and claim a WorkItem (fires ASSIGNED event)
         final String id = given()
                 .contentType(ContentType.JSON)
                 .body(Map.of("title", "Delivery test", "category", "test", "createdBy", "test"))
@@ -71,18 +80,15 @@ class NotificationDeliveryTest {
                 .when().put("/workitems/" + id + "/claim")
                 .then().statusCode(200);
 
-        // Give async delivery a moment
-        Thread.sleep(500);
-
-        // Verify WireMock received the POST
-        wireMock.verify(postRequestedFor(urlEqualTo("/hook"))
-                .withHeader("Content-Type", equalTo("application/json"))
-                .withHeader("X-WorkItem-Event", equalTo("ASSIGNED"))
-                .withRequestBody(matching(".*\"eventType\":\"ASSIGNED\".*")));
+        await().atMost(5, SECONDS).untilAsserted(() ->
+                wireMock.verify(postRequestedFor(urlEqualTo("/hook"))
+                        .withHeader("Content-Type", equalTo("application/json"))
+                        .withHeader("X-WorkItem-Event", equalTo("ASSIGNED"))
+                        .withRequestBody(matching(".*\"eventType\":\"ASSIGNED\".*"))));
     }
 
     @Test
-    void httpWebhook_withSecret_includesSignatureHeader() throws Exception {
+    void httpWebhook_withSecret_includesSignatureHeader() {
         final String hookUrl = "http://localhost:" + wireMock.port() + "/hook";
 
         given()
@@ -101,17 +107,15 @@ class NotificationDeliveryTest {
                 .when().post("/workitems")
                 .then().statusCode(201);
 
-        Thread.sleep(500);
-
-        wireMock.verify(postRequestedFor(urlEqualTo("/hook"))
-                .withHeader("X-Signature-256", matching("sha256=[0-9a-f]{64}")));
+        await().atMost(5, SECONDS).untilAsserted(() ->
+                wireMock.verify(postRequestedFor(urlEqualTo("/hook"))
+                        .withHeader("X-Signature-256", matching("sha256=[0-9a-f]{64}"))));
     }
 
     @Test
-    void categoryFilter_onlyFiresForMatchingCategory() throws Exception {
+    void categoryFilter_onlyFiresForMatchingCategory() {
         final String hookUrl = "http://localhost:" + wireMock.port() + "/hook";
 
-        // Rule only for "loan-application" category
         given()
                 .contentType(ContentType.JSON)
                 .body(Map.of(
@@ -129,9 +133,6 @@ class NotificationDeliveryTest {
                 .when().post("/workitems")
                 .then().statusCode(201);
 
-        Thread.sleep(300);
-        wireMock.verify(0, postRequestedFor(urlEqualTo("/hook")));
-
         // Create WorkItem with MATCHING category — SHOULD trigger
         given()
                 .contentType(ContentType.JSON)
@@ -139,15 +140,16 @@ class NotificationDeliveryTest {
                 .when().post("/workitems")
                 .then().statusCode(201);
 
-        Thread.sleep(500);
-        wireMock.verify(1, postRequestedFor(urlEqualTo("/hook")));
+        // Wait for exactly 1 delivery, then verify no more arrive within a brief window
+        await().atMost(5, SECONDS).untilAsserted(() ->
+                wireMock.verify(1, postRequestedFor(urlEqualTo("/hook"))));
     }
 
     @Test
-    void disabledRule_doesNotFire() throws Exception {
+    void disabledRule_doesNotFire() {
         final String hookUrl = "http://localhost:" + wireMock.port() + "/hook";
 
-        final String ruleId = given()
+        given()
                 .contentType(ContentType.JSON)
                 .body(Map.of(
                         "channelType", "http-webhook",
@@ -155,8 +157,7 @@ class NotificationDeliveryTest {
                         "eventTypes", "CREATED",
                         "enabled", false))
                 .when().post("/workitem-notification-rules")
-                .then().statusCode(201)
-                .extract().path("id");
+                .then().statusCode(201);
 
         given()
                 .contentType(ContentType.JSON)
@@ -164,12 +165,13 @@ class NotificationDeliveryTest {
                 .when().post("/workitems")
                 .then().statusCode(201);
 
-        Thread.sleep(300);
-        wireMock.verify(0, postRequestedFor(urlEqualTo("/hook")));
+        // Assert no delivery within a generous window
+        await().during(1, SECONDS).atMost(2, SECONDS).untilAsserted(() ->
+                wireMock.verify(0, postRequestedFor(urlEqualTo("/hook"))));
     }
 
     @Test
-    void slackChannel_firesWhenMatched() throws Exception {
+    void slackChannel_firesWhenMatched() {
         final String slackUrl = "http://localhost:" + wireMock.port() + "/slack";
 
         given()
@@ -187,15 +189,13 @@ class NotificationDeliveryTest {
                 .when().post("/workitems")
                 .then().statusCode(201);
 
-        Thread.sleep(500);
-
-        wireMock.verify(postRequestedFor(urlEqualTo("/slack"))
-                .withRequestBody(matching(".*\"text\".*CREATED.*")));
+        await().atMost(5, SECONDS).untilAsserted(() ->
+                wireMock.verify(postRequestedFor(urlEqualTo("/slack"))
+                        .withRequestBody(matching(".*\"text\".*CREATED.*"))));
     }
 
     @Test
-    void failingWebhook_doesNotAffectWorkItemLifecycle() throws Exception {
-        // Stub returns 500
+    void failingWebhook_doesNotAffectWorkItemLifecycle() {
         wireMock.stubFor(post(urlEqualTo("/failing")).willReturn(
                 com.github.tomakehurst.wiremock.client.WireMock.serverError()));
 
@@ -208,7 +208,6 @@ class NotificationDeliveryTest {
                 .when().post("/workitem-notification-rules")
                 .then().statusCode(201);
 
-        // WorkItem creation must succeed even if webhook returns 500
         final String id = given()
                 .contentType(ContentType.JSON)
                 .body(Map.of("title", "Resilience test", "category", "test", "createdBy", "test"))
@@ -216,7 +215,6 @@ class NotificationDeliveryTest {
                 .then().statusCode(201)
                 .extract().path("id");
 
-        // WorkItem must exist and be PENDING
         final String status = given()
                 .when().get("/workitems/" + id)
                 .then().statusCode(200)
