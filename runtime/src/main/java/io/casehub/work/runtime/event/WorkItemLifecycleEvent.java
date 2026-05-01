@@ -110,6 +110,25 @@ public final class WorkItemLifecycleEvent extends WorkLifecycleEvent {
                 actor, detail, rationale, planRef, workItem);
     }
 
+    /**
+     * Reconstructs a lifecycle event from wire-format fields — for use by distributed
+     * broadcaster implementations that receive serialised events from other nodes.
+     *
+     * <p>
+     * The {@code workItem} entity is {@code null} on the receiving node. This is intentional:
+     * the SSE endpoint serialises only the scalar fields (workItem is {@code @JsonIgnore}),
+     * so SSE clients receive identical output regardless of whether the event originated
+     * locally or was reconstructed from the wire. Callers must not invoke {@link #source()}
+     * or {@link #context()} on wire-reconstructed events.
+     */
+    public static WorkItemLifecycleEvent fromWire(final String type, final String sourceUri,
+            final String subject, final UUID workItemId, final WorkItemStatus status,
+            final Instant occurredAt, final String actor, final String detail,
+            final String rationale, final String planRef) {
+        return new WorkItemLifecycleEvent(type, sourceUri, subject, workItemId, status,
+                occurredAt, actor, detail, rationale, planRef, null);
+    }
+
     // ---- Existing accessors preserved (same names as old record components) ----
 
     /** The CloudEvents type string (e.g. "io.casehub.work.workitem.created"). */
