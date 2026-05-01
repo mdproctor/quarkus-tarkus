@@ -143,6 +143,11 @@ CaseHub platform module — human-scale WorkItem lifecycle management with optio
             </systemPropertyVariables>
           </configuration>
         </plugin>
+        <plugin>
+          <groupId>io.smallrye</groupId>
+          <artifactId>jandex-maven-plugin</artifactId>
+          <version>3.1.2</version>
+        </plugin>
       </plugins>
     </pluginManagement>
   </build>
