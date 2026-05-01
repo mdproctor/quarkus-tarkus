@@ -3,6 +3,8 @@ package io.casehub.work.issuetracker.spi;
 import java.util.Optional;
 import java.util.UUID;
 
+import io.casehub.work.runtime.model.WorkItem;
+
 /**
  * SPI for integrating WorkItems with an external issue tracker.
  *
@@ -85,6 +87,26 @@ public interface IssueTrackerProvider {
      * @throws IssueTrackerException if the remote call fails
      */
     Optional<String> createIssue(UUID workItemId, String title, String body);
+
+    /**
+     * Synchronise WorkItem fields to the remote issue as labels and state.
+     *
+     * <p>
+     * Called on every WorkItem lifecycle transition for all issues linked to the WorkItem.
+     * Implementations should update labels ({@code priority:X}, {@code category:X},
+     * {@code status:X}, WorkItem label paths) and issue state (open/closed). Labels should
+     * be auto-created on first use per repository so no manual setup is required.
+     *
+     * <p>
+     * Default: no-op — existing providers are unaffected until they override this method.
+     * Failures must be caught by the caller; they must not affect the WorkItem transition.
+     *
+     * @param externalRef the tracker-specific issue reference
+     * @param workItem the WorkItem in its post-transition state
+     */
+    default void syncToIssue(String externalRef, WorkItem workItem) {
+        // no-op by default
+    }
 
     /**
      * Close an issue in the remote tracker.
