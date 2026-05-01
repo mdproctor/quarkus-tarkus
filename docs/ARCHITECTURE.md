@@ -47,9 +47,9 @@ Maven multi-module layout:
 | Queue PostgreSQL Broadcaster | `casehub-work-queues-postgres-broadcaster` | Optional distributed SSE backend for queue events — `PostgresWorkItemQueueEventBroadcaster` (`@Alternative @Priority(1)`) fans `WorkItemQueueEvent` CDI events across cluster nodes via PostgreSQL LISTEN/NOTIFY (`casehub_work_queue_events` channel). `WorkItemQueueEvent` is a plain record — no separate wire DTO needed. Fires AFTER_SUCCESS only. Depends on `casehub-work-queues` + `quarkus-reactive-pg-client`. No Flyway migrations. |
 | Issue Tracker | `casehub-work-issue-tracker` | Link WorkItems to GitHub Issues, Jira, Linear. `IssueTrackerProvider` SPI. Flyway V5000. |
 | Integration Tests | `integration-tests` | Black-box `@QuarkusIntegrationTest` suite and native image validation |
+| MongoDB Persistence | `casehub-work-persistence-mongodb` | Optional MongoDB-backed `WorkItemStore` + `AuditEntryStore`. Drop-in replacement for JPA defaults — `candidateGroups`/`candidateUsers` stored as arrays; `WorkItemQuery` translated to MongoDB `Document` filters; `$regex` for label patterns. 27 tests via Dev Services. Zero core impact when absent. |
 | *(future)* | `casehub-work-casehub` | CaseHub `WorkerRegistry` adapter (blocked: CaseHub not ready) |
 | *(future)* | `casehub-work-qhorus` | Qhorus MCP tools (blocked: Qhorus not ready) |
-| *(future)* | `casehub-work-persistence-mongodb` | MongoDB-backed `WorkItemStore` + `AuditEntryStore` |
 | *(future)* | `casehub-work-persistence-redis` | Redis-backed `WorkItemStore` |
 
 ---
