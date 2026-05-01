@@ -128,6 +128,7 @@ Three systems in the Quarkus ecosystem define "task":
 | `casehub-work-ledger` | Optional | Accountability — command/event ledger, SHA-256/MMR hash chain, peer attestation, EigenTrust reputation scoring |
 | `casehub-work-persistence-mongodb` | Optional | MongoDB `WorkItemStore` + `AuditEntryStore`. Drop-in replacement for JPA defaults |
 | `casehub-work-issue-tracker` | Optional | Link WorkItems to GitHub Issues, Jira, Linear, etc. Pluggable `IssueTrackerProvider` SPI |
+| `casehub-work-postgres-broadcaster` | Optional | Distributed SSE — PostgreSQL LISTEN/NOTIFY backend for `WorkItemEventBroadcaster`. Delivers lifecycle events to SSE clients on all cluster nodes. Drop-in replacement: add the dependency, the broadcaster auto-activates via `@Alternative @Priority(1)`. |
 | `casehub-work-flow` | Integration | Quarkus-Flow `WorkItemsFlow` base class — `workItem()` DSL alongside `function()`, `agent()` |
 
 ---
