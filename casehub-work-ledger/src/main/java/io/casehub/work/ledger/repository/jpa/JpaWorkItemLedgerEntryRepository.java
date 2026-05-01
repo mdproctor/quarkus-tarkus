@@ -159,6 +159,34 @@ public class JpaWorkItemLedgerEntryRepository implements WorkItemLedgerEntryRepo
 
     /** {@inheritDoc} */
     @Override
+    public List<LedgerAttestation> findAttestationsByEntryIdAndCapabilityTag(
+            final UUID ledgerEntryId, final String capabilityTag) {
+        return em.createNamedQuery("LedgerAttestation.findByEntryIdAndCapabilityTag", LedgerAttestation.class)
+                .setParameter("entryId", ledgerEntryId)
+                .setParameter("capabilityTag", capabilityTag)
+                .getResultList();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public List<LedgerAttestation> findAttestationsByEntryIdGlobal(final UUID ledgerEntryId) {
+        return em.createNamedQuery("LedgerAttestation.findGlobalByEntryId", LedgerAttestation.class)
+                .setParameter("entryId", ledgerEntryId)
+                .getResultList();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public List<LedgerAttestation> findAttestationsByAttestorIdAndCapabilityTag(
+            final String attestorId, final String capabilityTag) {
+        return em.createNamedQuery("LedgerAttestation.findByAttestorIdAndCapabilityTag", LedgerAttestation.class)
+                .setParameter("attestorId", attestorId)
+                .setParameter("capabilityTag", capabilityTag)
+                .getResultList();
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public List<LedgerEntry> findCausedBy(final UUID causedByEntryId) {
         // ObservabilitySupplement.causedByEntryId stored in supplement JSON — not yet queryable via JPQL
         return List.of();
