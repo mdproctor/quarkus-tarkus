@@ -839,6 +839,34 @@ Deletes a QueueView. Does not affect WorkItem labels.
 
 ---
 
+### GET /queues/{id}/events
+
+Subscribe to queue membership events for a specific queue. The stream emits a `WorkItemQueueEvent` JSON object each time a WorkItem is added to, removed from, or changes position within the queue.
+
+This is a **hot stream**: only events that occur after the client connects are delivered. Past events are not replayed.
+
+**Path parameter:** `id` — UUID of the QueueView
+
+**Produces:** `text/event-stream`
+
+**Data format:** one JSON object per event:
+
+| Field | Type | Description |
+|---|---|---|
+| `type` | string | `ADDED`, `REMOVED`, or `CHANGED` |
+| `queueId` | UUID | The QueueView this event concerns |
+| `workItemId` | UUID | The WorkItem that entered, left, or changed in the queue |
+| `occurredAt` | ISO-8601 instant | When the queue membership changed |
+
+```bash
+curl -N -H "Accept: text/event-stream" \
+  http://localhost:8080/queues/a1b2c3d4-e5f6-7890-abcd-ef1234567890/events
+```
+
+**Distributed deployment:** By default, queue SSE events are in-process only — clients connected to node A do not receive events generated on node B. Add `casehub-work-queues-postgres-broadcaster` alongside `casehub-work-queues` to enable cross-cluster delivery. The module auto-activates via `@Alternative @Priority(1)` and requires no additional configuration. All nodes publish queue events to the `casehub_work_queue_events` PostgreSQL channel and receive events from all other nodes.
+
+---
+
 ### PUT /workitems/{id}/pickup
 
 Queue pickup — claims a WorkItem from a queue. Handles two cases in one call:
