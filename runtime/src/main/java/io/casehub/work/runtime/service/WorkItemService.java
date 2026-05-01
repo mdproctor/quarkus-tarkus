@@ -8,6 +8,7 @@ import java.util.UUID;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
 import io.casehub.work.api.AssignmentTrigger;
@@ -36,6 +37,9 @@ public class WorkItemService {
     private final WorkItemsConfig config;
     private final WorkItemAssignmentService assignmentService;
     private final ClaimSlaPolicy claimSlaPolicy;
+
+    @Inject
+    EntityManager em;
 
     @Inject
     Event<WorkItemLifecycleEvent> lifecycleEvent;
@@ -124,14 +128,19 @@ public class WorkItemService {
     @Transactional
     public WorkItem claim(final UUID id, final String claimantId) {
         final WorkItem item = requireWorkItem(id);
-        // Multi-instance claim guard
+        // Multi-instance claim guard — read allowSameAssignee then detach: the spawn group
+        // has @Version and would otherwise participate in persistAndFlush(), racing with
+        // the async MultiInstanceCoordinator updating the same version column.
         if (item.parentId != null) {
             final WorkItemSpawnGroup group = WorkItemSpawnGroup.findMultiInstanceByParentId(item.parentId);
-            if (group != null && !group.allowSameAssignee) {
-                final long alreadyHeld = workItemStore.countByParentAndAssignee(item.parentId, claimantId, id);
-                if (alreadyHeld > 0) {
-                    throw new IllegalStateException(
-                            "Claimant '" + claimantId + "' already hold another instance in this group");
+            if (group != null) {
+                em.detach(group);
+                if (!group.allowSameAssignee) {
+                    final long alreadyHeld = workItemStore.countByParentAndAssignee(item.parentId, claimantId, id);
+                    if (alreadyHeld > 0) {
+                        throw new IllegalStateException(
+                                "Claimant '" + claimantId + "' already hold another instance in this group");
+                    }
                 }
             }
         }
