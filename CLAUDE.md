@@ -343,6 +343,8 @@ JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn install -DskipTests -f ~/claude/ca
 - `WorkItemSpawnGroup.findMultiInstanceByParentId()` — returns the multi-instance spawn group (where `requiredCount IS NOT NULL`). A parent can have multiple spawn groups from repeated spawn calls; this method gets the multi-instance one specifically.
 - `scanRoots()` in `JpaWorkItemStore` uses a depth-1 ancestor lookup (not a recursive CTE) for H2 compatibility. Coordinator parents surface in the inbox via their children's candidateGroups/Users. The inbox always returns `parentId IS NULL` items only — children never appear directly.
 - `completeFromSystem()` and `rejectFromSystem()` in `WorkItemService` accept any non-terminal status. Use these (not `complete()`/`reject()`) when transitioning a WorkItem from system context (e.g., multi-instance coordinator completing the parent which may be PENDING).
+- `persistAndFlush()` flushes the **entire** Hibernate session, not just the target entity. Any `@Version` entity loaded read-only in the same transaction participates in dirty-checking and can cause OCC if concurrently updated. Fix: `em.detach(entity)` immediately after reading a `@Version` entity that will not be modified. Applied in `WorkItemService.claim()` for the `WorkItemSpawnGroup` allowSameAssignee guard check.
+- `BroadcastProcessor.onNext()` throws `BackPressureFailure` (not returns null) when there are no active SSE subscribers — "lack of requests" means zero consumers, not a slow consumer. Catch and discard silently in CDI observers: the hot-stream contract is fire-and-forget to whoever is listening. Applied in `WorkItemEventBroadcaster.onEvent()`.
 
 ---
 
