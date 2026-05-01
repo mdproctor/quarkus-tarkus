@@ -88,7 +88,13 @@ class WorkItemGroupLifecycleEventTest {
         final List<UUID> children = inTx(() ->
                 WorkItem.<WorkItem>list("parentId", parentId).stream().map(w -> w.id).toList());
 
-        for (final UUID c : children) {
+        // Complete only requiredCount (2) children — not all 3.
+        // onThresholdReached defaults to CANCEL: when child[1] completes and hits the
+        // threshold, the coordinator cancels child[2]. Attempting to complete child[2]
+        // after the cancel creates an OCC race (child[2] version bumped by cancel,
+        // test holds a stale reference). The threshold fires on requiredCount completions;
+        // completing the surplus child is both unnecessary and unsafe.
+        for (final UUID c : children.subList(0, 2)) {
             inTx(() -> workItemService.claim(c, "a"));
             inTx(() -> workItemService.start(c, "a"));
             inTx(() -> workItemService.complete(c, "a", "ok"));
