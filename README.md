@@ -147,8 +147,9 @@ Three systems in the Quarkus ecosystem define "task":
 ## Documentation
 
 - [**Why WorkItems vs Issue Trackers**](docs/workitems-vs-issue-trackers.md) — the case for a runtime human task layer
+- [**Architecture**](docs/ARCHITECTURE.md) — module graph, domain model, SPI contracts, ecosystem positioning
 - [**API Reference**](docs/api-reference.md) — all REST endpoints, request/response schemas, CDI event types
-- [**Implementation Tracker**](docs/DESIGN.md) — component structure, domain model, build roadmap
+- [**Implementation Tracker**](docs/DESIGN.md) — build roadmap and test totals
 
 ---
 

@@ -43,7 +43,7 @@ A `WorkItem` is a unit of work requiring human attention or judgment. It is deli
 - CaseHub has its own `Task` class — a CMMN-style case work unit
 Using `WorkItem` avoids naming conflicts and accurately describes what WorkItems manages: work that waits for a person.
 
-**See the full glossary:** `docs/DESIGN.md` § Glossary
+**See the full glossary:** `docs/ARCHITECTURE.md` § Glossary
 
 ---
 
@@ -184,7 +184,8 @@ casehub-work/
 │       ├── InMemoryWorkItemStore.java     — ConcurrentHashMap-backed, no datasource needed
 │       └── InMemoryAuditEntryStore.java   — list-backed
 ├── docs/
-│   ├── DESIGN.md                          — Implementation-tracking design document
+│   ├── ARCHITECTURE.md                    — Module graph, domain model, SPI contracts
+│   ├── DESIGN.md                          — Implementation tracker (build roadmap, Flyway history, test totals)
 │   └── specs/
 │       └── 2026-04-14-tarkus-design.md   — Primary design specification
 └── HANDOFF.md                             — Session context for resumption
@@ -381,7 +382,8 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home
 ## Design Document
 
 `docs/specs/2026-04-14-tarkus-design.md` is the primary design specification.
-`docs/DESIGN.md` is the implementation-tracking document (updated as phases complete).
+`docs/ARCHITECTURE.md` is the architectural reference — module graph, domain model, SPI contracts.
+`docs/DESIGN.md` is the implementation tracker — build roadmap, Flyway migration history, test totals.
 
 ---
 
