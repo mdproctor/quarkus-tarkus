@@ -15,7 +15,7 @@ import io.casehub.work.runtime.model.WorkItem;
 import io.casehub.work.runtime.model.WorkItemStatus;
 
 /**
- * Pure unit tests for {@link WorkItemEventBroadcaster} — no Quarkus, no CDI.
+ * Pure unit tests for {@link LocalWorkItemEventBroadcaster} — no Quarkus, no CDI.
  *
  * <p>
  * Verifies the broadcaster's filtering logic and hot-stream delivery semantics
@@ -23,11 +23,11 @@ import io.casehub.work.runtime.model.WorkItemStatus;
  */
 class WorkItemEventBroadcasterTest {
 
-    private WorkItemEventBroadcaster broadcaster;
+    private LocalWorkItemEventBroadcaster broadcaster;
 
     @BeforeEach
     void setUp() {
-        broadcaster = new WorkItemEventBroadcaster();
+        broadcaster = new LocalWorkItemEventBroadcaster();
     }
 
     // ── Basic delivery ────────────────────────────────────────────────────────
