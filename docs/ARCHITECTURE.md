@@ -242,6 +242,19 @@ Qhorus to adopt the same ledger infrastructure without depending on WorkItems.
 
 `WorkItemLedgerEntry` extends `LedgerEntry` via JPA JOINED inheritance.
 
+### Configurable persistence unit
+
+`casehub-ledger` 0.2-SNAPSHOT added a `@LedgerPersistenceUnit` CDI qualifier so the
+ledger can use a named persistence unit instead of the CDI `@Default` EntityManager.
+Needed when the consuming app has no default datasource — only a named one:
+
+```properties
+quarkus.ledger.datasource=mydb
+```
+
+Omitting the property retains the previous behaviour (CDI `@Default` EntityManager).
+See casehub-ledger issue #46 (`1f8ca69`) for the implementation.
+
 ### actorType derivation
 
 `LedgerEventCapture` derives `actorType` from the `actorId` prefix:
