@@ -25,6 +25,10 @@ class BusinessHoursIntegrationTest {
 
     @Test
     void createWithExpiresAtBusinessHours_setsAbsoluteExpiresAt() {
+        // Capture now before the REST call — business hours rounds up to next minute boundary,
+        // so the assertion upper bound must be captured before the service runs.
+        final Instant before = Instant.now();
+
         final var body = Map.of(
                 "title", "BH expiry test",
                 "category", "test",
@@ -44,11 +48,11 @@ class BusinessHoursIntegrationTest {
                 .extract().path("expiresAt");
 
         assertThat(expiresAtStr).isNotNull();
-        // expiresAt must be in the future and not more than 8 business days away
+        // expiresAt must be in the future and not more than 8 business hours away
         final Instant expiresAt = Instant.parse(expiresAtStr);
-        assertThat(expiresAt).isAfter(Instant.now());
-        // 8 business hours ≤ 3 calendar days (reasonable upper bound for any start time)
-        assertThat(expiresAt).isBefore(Instant.now().plus(3, ChronoUnit.DAYS));
+        assertThat(expiresAt).isAfter(before);
+        // 8 business hours ≤ 3 calendar days; +5 min buffer for minute-boundary rounding
+        assertThat(expiresAt).isBefore(before.plus(3, ChronoUnit.DAYS).plus(5, ChronoUnit.MINUTES));
     }
 
     @Test
@@ -107,6 +111,9 @@ class BusinessHoursIntegrationTest {
 
     @Test
     void templateWithDefaultExpiryBusinessHours_instantiate_setsAbsoluteExpiresAt() {
+        // Capture now before the REST calls — same minute-rounding consideration as above.
+        final Instant before = Instant.now();
+
         // Create template with 8 business hours expiry
         final String tmplId = given()
                 .contentType(ContentType.JSON)
@@ -134,9 +141,9 @@ class BusinessHoursIntegrationTest {
 
         assertThat(expiresAtStr).isNotNull();
         final Instant expiresAt = Instant.parse(expiresAtStr);
-        // 8 business hours → within 3 calendar days from now
-        assertThat(expiresAt).isAfter(Instant.now());
-        assertThat(expiresAt).isBefore(Instant.now().plus(3, ChronoUnit.DAYS));
+        // 8 business hours → within 3 calendar days from before; +5 min buffer for minute-boundary rounding
+        assertThat(expiresAt).isAfter(before);
+        assertThat(expiresAt).isBefore(before.plus(3, ChronoUnit.DAYS).plus(5, ChronoUnit.MINUTES));
     }
 
     @Test
