@@ -315,6 +315,12 @@ scripts/mvn-compile <dependent-of-X>      # verify dependent still compiles
 JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn install -DskipTests -f ~/claude/casehub/ledger/pom.xml
 ```
 
+**`casehub-ledger` configurable datasource:** `casehub-ledger` 0.2-SNAPSHOT introduced a `@LedgerPersistenceUnit` CDI qualifier and a `LedgerEntityManagerProducer` that lets the ledger pick a named persistence unit. If a consuming app uses only a named datasource (no CDI `@Default` EntityManager), add to `application.properties`:
+```properties
+quarkus.ledger.datasource=mydb
+```
+Omit this property when a default datasource is present — the default behaviour (using the CDI `@Default` EntityManager) is unchanged. Introduced in casehub-ledger commit `1f8ca69`, issue #46.
+
 **Format check:** CI runs `mvn -Dno-format` to skip the enforced formatter. Run `mvn` locally to apply formatting.
 
 **Flyway migration version conventions:**
