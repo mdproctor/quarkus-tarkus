@@ -29,10 +29,11 @@ Configuration properties: [`README.md`](../README.md#configuration)
 | **16 — Business-Hours Deadlines** | ✅ Complete | Epic #101: `BusinessCalendar` + `HolidayCalendar` SPIs. `DefaultBusinessCalendar`, `ICalHolidayCalendar`. V19 migration. |
 | **17 — Notifications** | ✅ Complete | Epic #103: `casehub-work-notifications` — HTTP webhook, Slack, Teams. `NotificationChannel` SPI. Flyway V3000. (#140–#141 ✅) |
 | **18 — Broadcaster SPI** | ✅ Complete | Epic #147/#150: `WorkItemEventBroadcaster` and `WorkItemQueueEventBroadcaster` extracted as interfaces. `LocalWorkItem*EventBroadcaster` default impls with `@DefaultBean`. Unblocks #93. |
+| **19 — Distributed SSE** | ✅ Complete | Epic #92/#93: `casehub-work-postgres-broadcaster` — `PostgresWorkItemEventBroadcaster` (`@Alternative @Priority(1)`) via PostgreSQL LISTEN/NOTIFY (`casehub_work_events` channel). `WorkItemEventPayload` wire DTO. `WorkItemLifecycleEvent.fromWire(...)` static factory added to runtime. AFTER_SUCCESS observer — rolled-back events not published. 22 tests. Follow-up #155 for queue broadcaster. |
 | **— CaseHub integration** | ⏸ Blocked | `casehub-work-casehub` — CaseHub WorkerRegistry adapter (awaiting CaseHub stable API) |
 | **— Qhorus integration** | ⏸ Blocked | `casehub-work-qhorus` — MCP tools (awaiting Qhorus stable API) |
 | **— ProvenanceLink** | ⏸ Blocked | Typed PROV-O causal graph — awaiting CaseHub + Qhorus integrations (#39) |
-| **— Distributed SSE** | 🔜 Next | Epic #92/#93: clustered event delivery via `WorkItemEventBroadcaster` SPI (broadcaster SPI in place) |
+| **— Queue Broadcaster** | 🔜 Next | Issue #155: `WorkItemQueueEventBroadcaster` PostgreSQL backend (parallel to #93) |
 
 ---
 
@@ -46,6 +47,7 @@ Configuration properties: [`README.md`](../README.md#configuration)
 | V3000 | casehub-work-notifications | Notification rules |
 | V4001 | casehub-work-ai | AI capability extensions |
 | V5000 | casehub-work-issue-tracker | Issue link schema |
+| *(none)* | casehub-work-postgres-broadcaster | No schema changes — uses the datasource already managed by the core extension |
 
 See CLAUDE.md **Flyway Migration Conventions** for the version-range allocation rule.
 
@@ -83,7 +85,8 @@ Three tiers:
 | casehub-work-examples | 37 |
 | casehub-work-reports | 73 |
 | casehub-work-notifications | ~30 |
+| casehub-work-postgres-broadcaster | 22 |
 | casehub-work-issue-tracker | 23 |
 | testing | 16 |
 | integration-tests | 25 |
-| **Total** | **~1132+** |
+| **Total** | **~1154+** |

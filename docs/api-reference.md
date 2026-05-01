@@ -302,6 +302,84 @@ curl -X PUT "http://localhost:8080/workitems/{id}/cancel?actor=admin" \
 
 ---
 
+## SSE Event Streams
+
+WorkItems exposes two Server-Sent Events endpoints for real-time lifecycle notifications. Both are **hot streams**: only events that occur after the client connects are delivered. Past events are not replayed — use `GET /workitems/{id}` to fetch current state.
+
+Each SSE message carries a JSON-serialised `WorkItemLifecycleEvent` as its data payload.
+
+---
+
+### GET /workitems/events
+
+Subscribe to all WorkItem lifecycle events, with optional filtering.
+
+**Query parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `workItemId` | UUID | If provided, only events for this specific WorkItem are emitted |
+| `type` | string | If provided, only events whose type suffix matches are emitted (e.g. `"completed"`, `"assigned"`; case-insensitive) |
+
+**Produces:** `text/event-stream`
+**Data format:** one JSON object per event (see [WorkItemLifecycleEvent fields](#workitemlifecycleevent-fields) below)
+
+```bash
+# All events on the bus
+curl -N -H "Accept: text/event-stream" http://localhost:8080/workitems/events
+
+# Only completion events
+curl -N -H "Accept: text/event-stream" "http://localhost:8080/workitems/events?type=completed"
+
+# All events for one WorkItem
+curl -N -H "Accept: text/event-stream" \
+  "http://localhost:8080/workitems/events?workItemId=a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+```
+
+---
+
+### GET /workitems/{id}/events
+
+Subscribe to lifecycle events scoped to a specific WorkItem. Convenience alias for `GET /workitems/events?workItemId={id}`.
+
+**Path parameter:** `id` — UUID
+
+**Produces:** `text/event-stream`
+**Data format:** one JSON object per event (same as above)
+
+```bash
+curl -N -H "Accept: text/event-stream" \
+  http://localhost:8080/workitems/a1b2c3d4-e5f6-7890-abcd-ef1234567890/events
+```
+
+---
+
+### WorkItemLifecycleEvent fields
+
+Each SSE data payload is a JSON object with the following fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `type` | string | Event type, e.g. `io.casehub.work.workitem.completed` |
+| `sourceUri` | string | CloudEvents source URI — `/workitems/{id}` |
+| `workItemId` | UUID | The WorkItem this event concerns |
+| `status` | WorkItemStatus | Status of the WorkItem after the transition |
+| `actor` | string | Who triggered the transition |
+| `detail` | string | Optional JSON or free-text detail (reason, resolution, delegation target) |
+| `occurredAt` | ISO-8601 instant | When the event was recorded |
+
+---
+
+### Distributed deployment
+
+By default, SSE events are in-process only — clients connected to node A do not receive events generated on node B.
+
+Add `casehub-work-postgres-broadcaster` to your application to enable cross-cluster delivery. The module auto-activates via `@Alternative @Priority(1)` and requires no additional configuration beyond the existing PostgreSQL datasource. All nodes publish lifecycle events to the `casehub_work_events` PostgreSQL channel and receive events from all other nodes, so every SSE subscriber receives every event regardless of which node produced it.
+
+Only events from successfully committed transactions are published — rolled-back events are not forwarded to the channel.
+
+---
+
 ## Schemas
 
 ### WorkItemResponse

@@ -43,6 +43,7 @@ Maven multi-module layout:
 | Reports | `casehub-work-reports` | Optional SLA compliance reporting — `/workitems/reports/*`: sla-breaches, actors, throughput, queue-health. Caffeine cache, 5-min TTL. Zero core impact when absent. |
 | Notifications | `casehub-work-notifications` | Optional outbound notification — HTTP webhook, Slack, Teams channels. `NotificationChannel` SPI in `casehub-work-api`. Flyway V3000. Zero core impact when absent. |
 | AI | `casehub-work-ai` | Semantic skill matching: `SemanticWorkerSelectionStrategy` (`@Alternative @Priority(1)`), `EmbeddingSkillMatcher`, `WorkerSkillProfile` entity + REST API, `LowConfidenceFilterProducer`. Flyway V14, V4001. Zero core impact when absent. |
+| PostgreSQL Broadcaster | `casehub-work-postgres-broadcaster` | Optional distributed SSE backend — `PostgresWorkItemEventBroadcaster` (`@Alternative @Priority(1)`) fans lifecycle events across cluster nodes via PostgreSQL LISTEN/NOTIFY (`casehub_work_events` channel). `WorkItemEventPayload` wire DTO. Fires AFTER_SUCCESS only. Zero extra infrastructure — reuses the datasource already required by the core extension. No Flyway migrations. |
 | Issue Tracker | `casehub-work-issue-tracker` | Link WorkItems to GitHub Issues, Jira, Linear. `IssueTrackerProvider` SPI. Flyway V5000. |
 | Integration Tests | `integration-tests` | Black-box `@QuarkusIntegrationTest` suite and native image validation |
 | *(future)* | `casehub-work-casehub` | CaseHub `WorkerRegistry` adapter (blocked: CaseHub not ready) |
@@ -260,4 +261,13 @@ between the core and the ledger module. If the module is absent, events fire int
 
 ## Event Broadcasting SPI
 
-`WorkItemEventBroadcaster` (interface in `runtime.event`) fans out CDI lifecycle events to SSE subscribers. The default `LocalWorkItemEventBroadcaster` uses an in-process Mutiny `BroadcastProcessor`. Alternative backends (Redis pub/sub, PostgreSQL LISTEN/NOTIFY) override via `@Alternative @Priority(1)`. Same pattern applies to `WorkItemQueueEventBroadcaster` in `casehub-work-queues`.
+`WorkItemEventBroadcaster` (interface in `runtime.event`) fans out CDI lifecycle events to SSE subscribers. The default `LocalWorkItemEventBroadcaster` uses an in-process Mutiny `BroadcastProcessor`. Alternative backends override via `@Alternative @Priority(1)`.
+
+**Concrete implementations:**
+
+| Implementation | Module | Description |
+|---|---|---|
+| `LocalWorkItemEventBroadcaster` | `casehub-work` (runtime) | Default — in-process `BroadcastProcessor`. Only delivers to SSE clients on the same node. |
+| `PostgresWorkItemEventBroadcaster` | `casehub-work-postgres-broadcaster` | Distributed — publishes via PostgreSQL NOTIFY (`casehub_work_events` channel) and re-broadcasts incoming LISTEN notifications to local SSE clients. All nodes receive all events. `@Alternative @Priority(1)` — auto-activates when the module is on the classpath. `WorkItemEventPayload` is the wire DTO (scalar fields only). Fires AFTER_SUCCESS: the CDI observer uses `TransactionPhase.AFTER_SUCCESS` so rolled-back events are never published. |
+
+The same SPI pattern applies to `WorkItemQueueEventBroadcaster` in `casehub-work-queues`. A PostgreSQL backend for queue events is tracked in issue #155.
