@@ -57,6 +57,11 @@ class BusinessHoursIntegrationTest {
 
     @Test
     void createWithClaimDeadlineBusinessHours_setsAbsoluteClaimDeadline() {
+        // Capture now before the REST call — 2 business hours from Friday after-hours resolves
+        // to Monday morning, which is >1 calendar day away. Use 4 days as the upper bound
+        // to cover the worst case: Friday after close → Monday 09:00 + 2h = ~3.6 days.
+        final Instant before = Instant.now();
+
         final var body = Map.of(
                 "title", "BH claim test",
                 "category", "test",
@@ -77,9 +82,9 @@ class BusinessHoursIntegrationTest {
 
         assertThat(claimDeadlineStr).isNotNull();
         final Instant claimDeadline = Instant.parse(claimDeadlineStr);
-        assertThat(claimDeadline).isAfter(Instant.now());
-        // 2 business hours ≤ 1 calendar day
-        assertThat(claimDeadline).isBefore(Instant.now().plus(1, ChronoUnit.DAYS));
+        assertThat(claimDeadline).isAfter(before);
+        // 2 business hours ≤ 4 calendar days (covers Friday after-hours → Monday + 2h)
+        assertThat(claimDeadline).isBefore(before.plus(4, ChronoUnit.DAYS).plus(5, ChronoUnit.MINUTES));
     }
 
     @Test

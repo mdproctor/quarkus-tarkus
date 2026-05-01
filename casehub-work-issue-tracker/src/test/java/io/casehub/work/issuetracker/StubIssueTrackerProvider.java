@@ -15,6 +15,7 @@ import jakarta.enterprise.inject.Alternative;
 import io.casehub.work.issuetracker.spi.ExternalIssueRef;
 import io.casehub.work.issuetracker.spi.IssueTrackerException;
 import io.casehub.work.issuetracker.spi.IssueTrackerProvider;
+import io.casehub.work.runtime.model.WorkItem;
 
 /**
  * Test-only stub that replaces the real GitHub provider with an in-memory implementation.
@@ -32,10 +33,12 @@ public class StubIssueTrackerProvider implements IssueTrackerProvider {
     private final Map<String, StubIssue> issues = new ConcurrentHashMap<>();
     private final List<String> created = new ArrayList<>();
     private final List<String> closed = new ArrayList<>();
+    private final List<SyncCall> synced = new ArrayList<>();
     private final AtomicInteger nextNumber = new AtomicInteger(100);
 
-    public record StubIssue(String ref, String title, String url, String status) {
-    }
+    public record StubIssue(String ref, String title, String url, String status) {}
+
+    public record SyncCall(String externalRef, WorkItem workItem) {}
 
     /** Pre-populate an issue that fetchIssue() will return. */
     public void seed(final String externalRef, final String title, final String status) {
@@ -48,6 +51,7 @@ public class StubIssueTrackerProvider implements IssueTrackerProvider {
         issues.clear();
         created.clear();
         closed.clear();
+        synced.clear();
     }
 
     /** Returns refs of all issues created via createIssue(). */
@@ -58,6 +62,11 @@ public class StubIssueTrackerProvider implements IssueTrackerProvider {
     /** Returns refs of all issues closed via closeIssue(). */
     public List<String> closed() {
         return List.copyOf(closed);
+    }
+
+    /** Returns all syncToIssue calls in order. */
+    public List<SyncCall> synced() {
+        return List.copyOf(synced);
     }
 
     @Override
@@ -80,6 +89,11 @@ public class StubIssueTrackerProvider implements IssueTrackerProvider {
         issues.put(ref, new StubIssue(ref, title, "https://stub/" + ref, "open"));
         created.add(ref);
         return Optional.of(ref);
+    }
+
+    @Override
+    public void syncToIssue(final String externalRef, final WorkItem workItem) {
+        synced.add(new SyncCall(externalRef, workItem));
     }
 
     @Override

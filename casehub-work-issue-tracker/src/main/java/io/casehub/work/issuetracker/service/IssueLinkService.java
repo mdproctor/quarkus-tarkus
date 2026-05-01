@@ -183,38 +183,57 @@ public class IssueLinkService {
     }
 
     /**
-     * CDI observer: closes linked issues when a WorkItem is COMPLETED and
-     * {@code auto-close-on-complete} is enabled.
+     * CDI observer: syncs WorkItem fields to all linked issues on every lifecycle transition,
+     * and auto-closes issues when a WorkItem reaches a terminal status (if configured).
      *
      * <p>
-     * Close failures are logged and swallowed — they must not roll back the WorkItem
-     * completion transaction.
+     * Sync and close failures are logged and swallowed — they must not roll back the
+     * WorkItem transition.
      */
     @Transactional
     public void onLifecycleEvent(@Observes final WorkItemLifecycleEvent event) {
-        if (event.status() != WorkItemStatus.COMPLETED) {
-            return;
-        }
-        if (!githubConfig.autoCloseOnComplete()) {
+        final List<WorkItemIssueLink> links = WorkItemIssueLink.findByWorkItemId(event.workItemId());
+        if (links.isEmpty()) {
             return;
         }
 
-        final List<WorkItemIssueLink> links = WorkItemIssueLink.findByWorkItemId(event.workItemId());
+        final io.casehub.work.runtime.model.WorkItem workItem =
+                (io.casehub.work.runtime.model.WorkItem) event.source();
+
         for (final WorkItemIssueLink link : links) {
-            if ("closed".equals(link.status)) {
-                continue; // already closed
-            }
+            final IssueTrackerProvider provider;
             try {
-                final IssueTrackerProvider provider = providerFor(link.trackerType);
-                final String resolution = event.detail() != null
-                        ? "WorkItem completed. " + event.detail()
-                        : "WorkItem completed.";
-                provider.closeIssue(link.externalRef, resolution);
-                link.status = "closed";
+                provider = providerFor(link.trackerType);
+            } catch (IllegalArgumentException e) {
+                org.jboss.logging.Logger.getLogger(IssueLinkService.class)
+                        .warnf("No provider for %s — skipping sync for link %s", link.trackerType, link.id);
+                continue;
+            }
+
+            // Sync WorkItem fields (priority, category, status, labels) to the issue
+            try {
+                provider.syncToIssue(link.externalRef, workItem);
             } catch (Exception e) {
                 org.jboss.logging.Logger.getLogger(IssueLinkService.class)
-                        .warnf("Auto-close failed for %s:%s — %s",
+                        .warnf("syncToIssue failed for %s:%s — %s",
                                 link.trackerType, link.externalRef, e.getMessage());
+            }
+
+            // Auto-close on terminal status if configured
+            if (event.status() == WorkItemStatus.COMPLETED && githubConfig.autoCloseOnComplete()) {
+                if (!"closed".equals(link.status)) {
+                    try {
+                        final String resolution = event.detail() != null
+                                ? "WorkItem completed. " + event.detail()
+                                : "WorkItem completed.";
+                        provider.closeIssue(link.externalRef, resolution);
+                        link.status = "closed";
+                    } catch (Exception e) {
+                        org.jboss.logging.Logger.getLogger(IssueLinkService.class)
+                                .warnf("Auto-close failed for %s:%s — %s",
+                                        link.trackerType, link.externalRef, e.getMessage());
+                    }
+                }
             }
         }
     }
