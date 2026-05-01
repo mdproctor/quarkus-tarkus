@@ -382,7 +382,11 @@ class WorkItemNativeIT {
         given().contentType(ContentType.JSON).body("{}")
                 .put("/workitems/" + id + "/complete?actor=it-actor").then().statusCode(200);
 
-        final int totalBreached = given().get("/workitems/reports/sla-breaches")
+        // Use a `from` param to get a distinct cache key — the unfiltered endpoint
+        // is cached at production TTL and may return a stale 0 from the smoke test above.
+        final String from = Instant.now().minus(5, ChronoUnit.MINUTES).toString();
+        final int totalBreached = given().queryParam("from", from)
+                .get("/workitems/reports/sla-breaches")
                 .then().statusCode(200).extract().path("summary.totalBreached");
         assertThat(totalBreached).isGreaterThanOrEqualTo(1);
     }
