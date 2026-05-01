@@ -184,6 +184,7 @@ casehub-work/
 │       ├── InMemoryWorkItemStore.java     — ConcurrentHashMap-backed, no datasource needed
 │       └── InMemoryAuditEntryStore.java   — list-backed
 ├── casehub-work-postgres-broadcaster/    — Optional distributed SSE module
+├── casehub-work-queues-postgres-broadcaster/ — Optional distributed SSE module for queue events
 │   └── src/main/java/io/casehub/work/postgres/broadcaster/
 │       ├── PostgresWorkItemEventBroadcaster.java — @Alternative @Priority(1); LISTEN/NOTIFY via PostgreSQL; AFTER_SUCCESS observer
 │       └── WorkItemEventPayload.java      — wire DTO (scalar fields only; no JPA entity references)
@@ -215,6 +216,7 @@ casehub-work/
   - `service/`: `ReportService` (@CacheResult Caffeine 5-min TTL), `ThroughputBucketAggregator` (pure Java day→week/month rollup), response records (`SlaBreachReport`, `ActorReport`, `ThroughputReport`, `QueueHealthReport`)
   - Query strategy: HQL `CAST(date_trunc('day', w.createdAt) AS LocalDate)` + GROUP BY for throughput; JPQL COUNT/AVG aggregates for queue-health; JPQL GROUP BY for actor byCategory (no N+1)
 - `casehub-work-postgres-broadcaster/` — optional distributed SSE module. `PostgresWorkItemEventBroadcaster` (`@Alternative @Priority(1)`) publishes `WorkItemLifecycleEvent` to PostgreSQL NOTIFY (`casehub_work_events` channel) and re-broadcasts incoming LISTEN notifications to local SSE clients. `WorkItemEventPayload` is the wire DTO. No Flyway migrations — uses the existing datasource. 22 tests.
+- `casehub-work-queues-postgres-broadcaster/` — optional distributed SSE module for queue events. `PostgresWorkItemQueueEventBroadcaster` (`@Alternative @Priority(1)`) publishes `WorkItemQueueEvent` to PostgreSQL NOTIFY (`casehub_work_queue_events` channel) and re-broadcasts incoming LISTEN notifications to local SSE clients. `WorkItemQueueEvent` is a plain record — no separate wire DTO needed. AFTER_SUCCESS observer (requires UserTransaction in tests). No Flyway migrations — reuses the datasource from `casehub-work-queues`. 13 tests (7 unit + 6 `@QuarkusTest` + Testcontainer). Depends on `casehub-work-queues` + `quarkus-reactive-pg-client`.
 - `casehub-work-examples/` — runnable scenario demos; covers ledger/audit, spawn, business-hours, each runs via `POST /examples/{name}/run`
 - `integration-tests/` — `@QuarkusIntegrationTest` suite and native image validation (25 tests including 6 report smoke tests)
 
@@ -415,7 +417,7 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home
 | ✅ | #106 | Multi-Instance Tasks — M-of-N parallel completion | ✅ complete | `MultiInstanceSpawnService`, `MultiInstanceCoordinator`, `MultiInstanceGroupPolicy`; `InstanceAssignmentStrategy` SPI + 3 impls; threaded inbox via `scanRoots()`; `GET /workitems/{id}/instances`; V20+V21 migrations |
 | — | #147 | Project Refinement — architecture and doc improvements | open | #148 DESIGN.md split, #149 WorkItemService decompose, #150 broadcaster SPI (done), #151 Flyway convention — #152 examples split (low priority, deferred) |
 | ✅ | #93 | Distributed SSE — PostgreSQL LISTEN/NOTIFY broadcaster | ✅ complete | `casehub-work-postgres-broadcaster`; follow-up #155 for queue broadcaster |
-| — | #92 | Distributed WorkItems — clustering + federation | in progress | #93 ✅ SSE done; #155 queue broadcaster next; broader federation deferred |
+| — | #92 | Distributed WorkItems — clustering + federation | in progress | #93 ✅ WorkItem SSE done; #155 ✅ queue SSE done; broader federation deferred |
 | — | #79 | External System Integrations | blocked | CaseHub/Qhorus not stable |
 | — | #39 | ProvenanceLink (PROV-O causal graph) | blocked | Awaiting #79 |
 | ✅ | #100 | AI-Native Features — confidence gating, semantic routing | complete | #112–#126 all done |

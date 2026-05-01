@@ -33,7 +33,7 @@ Configuration properties: [`README.md`](../README.md#configuration)
 | **— CaseHub integration** | ⏸ Blocked | `casehub-work-casehub` — CaseHub WorkerRegistry adapter (awaiting CaseHub stable API) |
 | **— Qhorus integration** | ⏸ Blocked | `casehub-work-qhorus` — MCP tools (awaiting Qhorus stable API) |
 | **— ProvenanceLink** | ⏸ Blocked | Typed PROV-O causal graph — awaiting CaseHub + Qhorus integrations (#39) |
-| **— Queue Broadcaster** | 🔜 Next | Issue #155: `WorkItemQueueEventBroadcaster` PostgreSQL backend (parallel to #93) |
+| **20 — Queue Broadcaster** | ✅ Complete | Epic #92/#155: `casehub-work-queues-postgres-broadcaster` — `PostgresWorkItemQueueEventBroadcaster` (`@Alternative @Priority(1)`) via PostgreSQL LISTEN/NOTIFY (`casehub_work_queue_events` channel). `WorkItemQueueEvent` plain record — no wire DTO needed. AFTER_SUCCESS observer. 13 tests (7 unit + 6 `@QuarkusTest` + Testcontainer). No Flyway migrations. |
 
 ---
 
@@ -48,6 +48,7 @@ Configuration properties: [`README.md`](../README.md#configuration)
 | V4001 | casehub-work-ai | AI capability extensions |
 | V5000 | casehub-work-issue-tracker | Issue link schema |
 | *(none)* | casehub-work-postgres-broadcaster | No schema changes — uses the datasource already managed by the core extension |
+| *(none)* | casehub-work-queues-postgres-broadcaster | No schema changes — reuses datasource from `casehub-work-queues` |
 
 See CLAUDE.md **Flyway Migration Conventions** for the version-range allocation rule.
 
@@ -86,7 +87,8 @@ Three tiers:
 | casehub-work-reports | 73 |
 | casehub-work-notifications | ~30 |
 | casehub-work-postgres-broadcaster | 22 |
+| casehub-work-queues-postgres-broadcaster | 13 |
 | casehub-work-issue-tracker | 23 |
 | testing | 16 |
 | integration-tests | 25 |
-| **Total** | **~1154+** |
+| **Total** | **~1167+** |

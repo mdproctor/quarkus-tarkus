@@ -44,6 +44,7 @@ Maven multi-module layout:
 | Notifications | `casehub-work-notifications` | Optional outbound notification — HTTP webhook, Slack, Teams channels. `NotificationChannel` SPI in `casehub-work-api`. Flyway V3000. Zero core impact when absent. |
 | AI | `casehub-work-ai` | Semantic skill matching: `SemanticWorkerSelectionStrategy` (`@Alternative @Priority(1)`), `EmbeddingSkillMatcher`, `WorkerSkillProfile` entity + REST API, `LowConfidenceFilterProducer`. Flyway V14, V4001. Zero core impact when absent. |
 | PostgreSQL Broadcaster | `casehub-work-postgres-broadcaster` | Optional distributed SSE backend — `PostgresWorkItemEventBroadcaster` (`@Alternative @Priority(1)`) fans lifecycle events across cluster nodes via PostgreSQL LISTEN/NOTIFY (`casehub_work_events` channel). `WorkItemEventPayload` wire DTO. Fires AFTER_SUCCESS only. Zero extra infrastructure — reuses the datasource already required by the core extension. No Flyway migrations. |
+| Queue PostgreSQL Broadcaster | `casehub-work-queues-postgres-broadcaster` | Optional distributed SSE backend for queue events — `PostgresWorkItemQueueEventBroadcaster` (`@Alternative @Priority(1)`) fans `WorkItemQueueEvent` CDI events across cluster nodes via PostgreSQL LISTEN/NOTIFY (`casehub_work_queue_events` channel). `WorkItemQueueEvent` is a plain record — no separate wire DTO needed. Fires AFTER_SUCCESS only. Depends on `casehub-work-queues` + `quarkus-reactive-pg-client`. No Flyway migrations. |
 | Issue Tracker | `casehub-work-issue-tracker` | Link WorkItems to GitHub Issues, Jira, Linear. `IssueTrackerProvider` SPI. Flyway V5000. |
 | Integration Tests | `integration-tests` | Black-box `@QuarkusIntegrationTest` suite and native image validation |
 | *(future)* | `casehub-work-casehub` | CaseHub `WorkerRegistry` adapter (blocked: CaseHub not ready) |
@@ -283,4 +284,9 @@ between the core and the ledger module. If the module is absent, events fire int
 | `LocalWorkItemEventBroadcaster` | `casehub-work` (runtime) | Default — in-process `BroadcastProcessor`. Only delivers to SSE clients on the same node. |
 | `PostgresWorkItemEventBroadcaster` | `casehub-work-postgres-broadcaster` | Distributed — publishes via PostgreSQL NOTIFY (`casehub_work_events` channel) and re-broadcasts incoming LISTEN notifications to local SSE clients. All nodes receive all events. `@Alternative @Priority(1)` — auto-activates when the module is on the classpath. `WorkItemEventPayload` is the wire DTO (scalar fields only). Fires AFTER_SUCCESS: the CDI observer uses `TransactionPhase.AFTER_SUCCESS` so rolled-back events are never published. |
 
-The same SPI pattern applies to `WorkItemQueueEventBroadcaster` in `casehub-work-queues`. A PostgreSQL backend for queue events is tracked in issue #155.
+**Queue event broadcaster** — `WorkItemQueueEventBroadcaster` in `casehub-work-queues` follows the same SPI pattern:
+
+| Implementation | Module | Description |
+|---|---|---|
+| `LocalWorkItemQueueEventBroadcaster` | `casehub-work-queues` | Default — in-process `BroadcastProcessor`. Only delivers to SSE clients on the same node. |
+| `PostgresWorkItemQueueEventBroadcaster` | `casehub-work-queues-postgres-broadcaster` | Distributed — publishes via PostgreSQL NOTIFY (`casehub_work_queue_events` channel) and re-broadcasts incoming LISTEN notifications to local SSE clients. `@Alternative @Priority(1)` — auto-activates when the module is on the classpath. `WorkItemQueueEvent` is a plain record; no separate wire DTO is needed. Fires AFTER_SUCCESS. Implemented in #155. |
