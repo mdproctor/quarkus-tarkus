@@ -44,7 +44,7 @@ class WorkItemGroupLifecycleEventTest {
 
     @Test
     void inProgressEventFiresOnFirstChildTerminalBeforeThreshold() {
-        UUID parentId = inTx(() -> {
+        final UUID parentId = inTx(() -> {
             WorkItemTemplate t = new WorkItemTemplate();
             t.name = "EventTest";
             t.candidateGroups = "g";
@@ -55,22 +55,26 @@ class WorkItemGroupLifecycleEventTest {
             return templateService.instantiate(t, null, null, "test").id;
         });
 
-        List<UUID> children = inTx(() -> WorkItem.<WorkItem> list("parentId", parentId).stream().map(w -> w.id).toList());
+        final List<UUID> children = inTx(() ->
+                WorkItem.<WorkItem>list("parentId", parentId).stream().map(w -> w.id).toList());
 
         inTx(() -> workItemService.claim(children.get(0), "a"));
         inTx(() -> workItemService.start(children.get(0), "a"));
         inTx(() -> workItemService.complete(children.get(0), "a", "ok"));
 
+        // Filter by this test's parentId — immune to events leaking from other tests
+        // via @ObservesAsync threads that arrive after @BeforeEach clear().
         Awaitility.await().atMost(Duration.ofSeconds(5))
-                .until(() -> capture.hasStatus(GroupStatus.IN_PROGRESS));
+                .until(() -> capture.hasStatus(parentId, GroupStatus.IN_PROGRESS));
 
-        assertThat(capture.byStatus(GroupStatus.IN_PROGRESS)).hasSize(1);
-        assertThat(capture.byStatus(GroupStatus.IN_PROGRESS).get(0).completedCount()).isEqualTo(1);
+        assertThat(capture.byStatus(parentId, GroupStatus.IN_PROGRESS)).hasSize(1);
+        assertThat(capture.byStatus(parentId, GroupStatus.IN_PROGRESS).get(0).completedCount())
+                .isEqualTo(1);
     }
 
     @Test
     void completedEventFiresExactlyOnceAtThreshold() {
-        UUID parentId = inTx(() -> {
+        final UUID parentId = inTx(() -> {
             WorkItemTemplate t = new WorkItemTemplate();
             t.name = "CompletedEventTest";
             t.candidateGroups = "g";
@@ -81,32 +85,38 @@ class WorkItemGroupLifecycleEventTest {
             return templateService.instantiate(t, null, null, "test").id;
         });
 
-        List<UUID> children = inTx(() -> WorkItem.<WorkItem> list("parentId", parentId).stream().map(w -> w.id).toList());
+        final List<UUID> children = inTx(() ->
+                WorkItem.<WorkItem>list("parentId", parentId).stream().map(w -> w.id).toList());
 
-        for (UUID c : children) {
+        for (final UUID c : children) {
             inTx(() -> workItemService.claim(c, "a"));
             inTx(() -> workItemService.start(c, "a"));
             inTx(() -> workItemService.complete(c, "a", "ok"));
         }
 
-        Awaitility.await().atMost(Duration.ofSeconds(5))
-                .until(() -> capture.hasStatus(GroupStatus.COMPLETED));
-
-        assertThat(capture.byStatus(GroupStatus.COMPLETED)).hasSize(1);
+        // Wait until COMPLETED appears AND stays at exactly 1 for a stability window.
+        // The stability window catches any duplicate events from concurrent coordinator
+        // invocations that arrive within milliseconds of the first COMPLETED event.
+        // parentId filter eliminates contamination from other tests' async events.
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(5))
+                .during(Duration.ofMillis(300))
+                .until(() -> capture.byStatus(parentId, GroupStatus.COMPLETED).size() == 1);
     }
 
     @Transactional
-    <T> T inTx(Supplier<T> s) {
+    <T> T inTx(final Supplier<T> s) {
         return s.get();
     }
 
     @Transactional
-    void inTx(Runnable r) {
+    void inTx(final Runnable r) {
         r.run();
     }
 
     @ApplicationScoped
     static class EventCapture {
+
         private final List<WorkItemGroupLifecycleEvent> events = new ArrayList<>();
 
         void onEvent(@ObservesAsync WorkItemGroupLifecycleEvent event) {
@@ -121,15 +131,18 @@ class WorkItemGroupLifecycleEventTest {
             }
         }
 
-        boolean hasStatus(GroupStatus s) {
+        boolean hasStatus(final UUID parentId, final GroupStatus s) {
             synchronized (events) {
-                return events.stream().anyMatch(e -> e.groupStatus() == s);
+                return events.stream()
+                        .anyMatch(e -> e.groupStatus() == s && parentId.equals(e.parentId()));
             }
         }
 
-        List<WorkItemGroupLifecycleEvent> byStatus(GroupStatus s) {
+        List<WorkItemGroupLifecycleEvent> byStatus(final UUID parentId, final GroupStatus s) {
             synchronized (events) {
-                return events.stream().filter(e -> e.groupStatus() == s).toList();
+                return events.stream()
+                        .filter(e -> e.groupStatus() == s && parentId.equals(e.parentId()))
+                        .toList();
             }
         }
     }
