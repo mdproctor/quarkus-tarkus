@@ -7,6 +7,7 @@ import jakarta.enterprise.event.Observes;
 
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.operators.multi.processors.BroadcastProcessor;
+import io.smallrye.mutiny.subscription.BackPressureFailure;
 
 /**
  * Application-scoped broadcaster that bridges CDI {@link WorkItemLifecycleEvent} to
@@ -49,7 +50,12 @@ public class WorkItemEventBroadcaster {
      * @param event the lifecycle event fired by {@link io.casehub.work.runtime.service.WorkItemService}
      */
     public void onEvent(@Observes final WorkItemLifecycleEvent event) {
-        processor.onNext(event);
+        try {
+            processor.onNext(event);
+        } catch (BackPressureFailure ignored) {
+            // No SSE subscribers connected — hot stream drops events with no listener.
+            // This is correct: clients only receive events that occur while connected.
+        }
     }
 
     /**
