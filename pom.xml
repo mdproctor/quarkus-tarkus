@@ -33,6 +33,7 @@ CaseHub platform module — human-scale WorkItem lifecycle management with optio
     <module>casehub-work-ai</module>
     <module>casehub-work-reports</module>
     <module>casehub-work-postgres-broadcaster</module>
+    <module>casehub-work-queues-postgres-broadcaster</module>
 
     <module>integration-tests</module>
   </modules>
