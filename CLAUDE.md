@@ -321,13 +321,13 @@ Each module owns its own version range. Flyway enforces uniqueness across all mo
 | V2000–V2999 | `casehub-work-queues` and `casehub-work-ledger` (shared 2000s block) |
 | V3000–V3999 | `casehub-work-notifications` |
 | V4000–V4999 | `casehub-work-ai` |
-| V5000+ | next new optional module |
+| V5000–V5999 | `casehub-work-issue-tracker` |
+| V6000+ | next new optional module |
 
 **Rule for a new module:** take the next free thousand above the highest used — currently V5000.
 
 **Known anomaly — casehub-work-ai V14:** the AI module also has a V14 migration that falls within the runtime sequential range. This was added to fill a deliberate gap left in the runtime sequence. Do not add more optional-module migrations in the V1–V999 range.
 
-**Known conflict — casehub-work-issue-tracker V3000:** collides with `casehub-work-notifications` V3000. These modules cannot be loaded in the same application without Flyway failing. The issue-tracker module needs to be renumbered to V5000 before production use. (tracked: issue-tracker module is not yet in active use)
 
 **Known extension build gotchas (from casehub-qhorus experience):**
 - `quarkus-extension-processor` requires **Javadoc on every method** in `@ConfigMapping` interfaces, including group accessors — missing one causes a compile-time error
