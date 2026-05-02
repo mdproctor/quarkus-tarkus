@@ -1,51 +1,44 @@
 # casehub-work — Session Handover
-**Date:** 2026-05-01
+**Date:** 2026-05-02
 
 ## Project Status
 
-~1167 tests passing across all modules. Working tree clean after commit. All pushed.
+CI green. Build passing on GitHub. Working tree clean.
 
 ## What Was Done This Session
 
-### Refinement epic (#147) — closed
-- #151 ✅ Flyway convention documented; V3000 collision fixed (issue-tracker → V5000)
-- #150 ✅ `WorkItemEventBroadcaster` + `WorkItemQueueEventBroadcaster` extracted as SPIs; `@DefaultBean` local impls; CDI wiring test
-- #149 ✅ `ExpiryLifecycleService` extracted from job classes; 11 unit tests
-- #148 ✅ DESIGN.md split → `ARCHITECTURE.md` + lean tracker
-- #152 deferred (low priority, parked)
+*Earlier work (distributed SSE, GitHub sync, refinement epic) — `git show HEAD~4:HANDOFF.md`*
 
-### Distributed SSE (#93, #155) — complete
-- `casehub-work-postgres-broadcaster` — `PostgresWorkItemEventBroadcaster` via PostgreSQL LISTEN/NOTIFY; `WorkItemEventPayload` wire DTO; `fromWire()` added to runtime; 22 tests
-- `casehub-work-queues-postgres-broadcaster` — `PostgresWorkItemQueueEventBroadcaster`; plain record serialization; UserTransaction in IT tests; 13 tests
-- **Key gotcha:** `PgPool.getConnection()` returns `Uni<SqlConnection>` (Mutiny wrapper); must `.getDelegate()` + `PgConnection.newInstance()` to access `notificationHandler()`
-- **Key gotcha:** `@Observes(during = AFTER_SUCCESS)` silently skips if no JTA transaction is active — tests need explicit `UserTransaction.begin()/commit()`
-- Epic #92 updated; #97 updated with 4 concrete blockers tracking Qhorus issues
+### Post-wrap CI fixes (commits c9ea3e0, 1b59d9a, 6b309d3)
 
-### GitHub-first experience (#156, #157) — phase 1 done
-- `IssueTrackerProvider.syncToIssue()` default no-op added to SPI
-- `GitHubIssueTrackerProvider` syncs priority/category/status labels + WorkItem labels + issue state on every lifecycle event; labels auto-created per repo
-- 46 tests (19 new label builder unit tests + 4 service sync tests)
-- Epic #156 open with phases 2 (webhooks), 3 (identity mapping), 4 (two-way labels)
+**BusinessHoursIntegrationTest** (0f62b90, c9ea3e0):
+- Root cause: May 1 is a Friday — 2 business hours from Friday 19:35 UTC resolves to Monday 11:00 (~3 calendar days). Test asserted `isBefore(Instant.now() + 1 day)` — wrong bound, also called after REST call.
+- Fix: capture `before` before REST call; use `4 DAYS` bound. Then extracted `BusinessHoursAssert.assertDeadlineInRange(deadline, before, businessHours)` helper with formula `ceil(bh/8) + 2` calendar days. Issue #158 created and closed.
 
-### Other
-- Flaky `WorkItemGroupLifecycleEventTest` fixed — inter-test `@ObservesAsync` contamination (filter by parentId) + `Awaitility.during()` stability window
-- MongoDB persistence module audited — fully implemented (27 tests); ARCHITECTURE.md corrected (was wrongly marked future)
-- `casehub-ledger` configurable datasource documented in CLAUDE.md + ARCHITECTURE.md
-- #134, #147, #148–#151, #154, #155, #157 all closed
+**WorkItemGroupLifecycleEventTest.completedEventFiresExactlyOnceAtThreshold** (1b59d9a):
+- Root cause: `onThresholdReached` defaults to CANCEL in `MultiInstanceSpawnService`. When child[1] hits the threshold, coordinator cancels child[2]. Test then tried to complete child[2] — OCC race (cancel bumped version, test held stale reference).
+- Fix: complete only `requiredCount` (2) children, not all 3. The surplus child is both unnecessary and unsafe to complete after threshold is met.
+
+**JpaWorkItemLedgerEntryRepository** (6b309d3):
+- Root cause: `casehub-ledger:0.2-SNAPSHOT` added three new abstract methods to `LedgerEntryRepository`. CI pulls latest SNAPSHOT from GitHub Packages; local build used older cached jar.
+- Fix: implemented all three using existing named queries on `LedgerAttestation`.
+
+### Also this session (Qhorus doc, not in casehub-work repo)
+
+Wrote `qhorus/docs/work-and-workitems.md` — normative layer framing of Work vs WorkItem. Core thesis: Qhorus core is complete for machines; casehub-work IS the human-agent layer (not gap-filling). Key content: speech act mapping, principled boundary (SUSPENDED, sub-delegation), extension contract, cross-channel correlation, Layer 2 example. Discussion also surfaced SUSPEND/DELEGATE as extension candidates and the two-layer design philosophy.
 
 ## Open / Next
 
 | Priority | What |
 |---|---|
-| 1 | #97 — wait for qhorus#131 (Channel abstraction) + qhorus#132 (delivery guarantees) to close, then build `casehub-work-qhorus` |
-| 2 | #156 phase 2 — incoming GitHub webhooks (WorkItem driven from GitHub) |
-| 3 | #117 — RoundRobinStrategy (small, standalone) |
-| — | #152 — examples split (deferred, low priority) |
+| 1 | #97 — wait for qhorus#131 + qhorus#132, then build `casehub-work-qhorus` |
+| 2 | #156 phase 2 — incoming GitHub webhooks |
+| 3 | #117 — RoundRobinStrategy (small) |
+| — | #152 — examples split (parked) |
 
 ## Key References
 
-- New modules: `casehub-work-postgres-broadcaster/`, `casehub-work-queues-postgres-broadcaster/`
-- Broadcaster SPI: `runtime/src/main/java/io/casehub/work/runtime/event/WorkItemEventBroadcaster.java`
-- GitHub sync: `casehub-work-issue-tracker/src/main/java/io/casehub/work/issuetracker/`
-- Blog: `blog/2026-05-01-mdp02-delegates-transactions-parallel-universe.md`
-- Previous session: `git show HEAD~25:HANDOFF.md`
+- CI: green as of `6b309d3`
+- BusinessHoursAssert: `runtime/src/test/java/io/casehub/work/runtime/calendar/BusinessHoursAssert.java`
+- Normative doc: `~/claude/casehub/qhorus/docs/work-and-workitems.md`
+- Previous full handover: `git show HEAD~4:HANDOFF.md`
