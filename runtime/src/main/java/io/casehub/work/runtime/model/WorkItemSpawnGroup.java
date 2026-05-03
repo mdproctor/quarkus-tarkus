@@ -82,7 +82,13 @@ public class WorkItemSpawnGroup extends PanacheEntityBase {
     @Column(name = "required_count")
     public Integer requiredCount;
 
-    /** What to do with remaining non-terminal children when threshold is met. */
+    /**
+     * Action to take on remaining non-terminal children when the M-of-N threshold is met.
+     * Null (the default) means {@code KEEP} — no side effects, children complete naturally.
+     * Must be set explicitly to opt in to {@code CANCEL} or {@code SUSPEND}.
+     *
+     * @see io.casehub.work.api.OnThresholdReached
+     */
     @Column(name = "on_threshold_reached", length = 10)
     public String onThresholdReached;
 

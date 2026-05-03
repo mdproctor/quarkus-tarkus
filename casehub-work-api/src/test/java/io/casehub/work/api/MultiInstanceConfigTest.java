@@ -17,7 +17,7 @@ class MultiInstanceConfigTest {
     @Test
     void defaultOnThresholdReachedIsCancel() {
         var config = new MultiInstanceConfig(5, 3, null, null, null, false, null);
-        assertThat(config.effectiveOnThresholdReached()).isEqualTo(OnThresholdReached.CANCEL);
+        assertThat(config.effectiveOnThresholdReached()).isEqualTo(OnThresholdReached.KEEP);
     }
 
     @Test

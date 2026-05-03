@@ -59,7 +59,7 @@ public class WorkItemTemplateResource {
      * @param requiredCount minimum instances that must complete; only meaningful when instanceCount is set
      * @param parentRole COORDINATOR (default) or PARTICIPANT; only meaningful when instanceCount is set
      * @param assignmentStrategy CDI bean name of InstanceAssignmentStrategy; null defaults to "pool"
-     * @param onThresholdReached CANCEL (default) or LEAVE when threshold met
+     * @param onThresholdReached action on remaining children when M-of-N threshold met: KEEP (default, no side effects), SUSPEND (pause active children), CANCEL (opt-in only, cancels all remaining). Null or omitted means KEEP.
      * @param allowSameAssignee when true, same person can claim multiple instances in group
      * @param createdBy who created this template (required)
      */
