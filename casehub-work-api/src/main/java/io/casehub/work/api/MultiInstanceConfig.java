@@ -23,7 +23,7 @@ public record MultiInstanceConfig(
     }
 
     public OnThresholdReached effectiveOnThresholdReached() {
-        return onThresholdReached != null ? onThresholdReached : OnThresholdReached.CANCEL;
+        return onThresholdReached != null ? onThresholdReached : OnThresholdReached.KEEP;
     }
 
     public String effectiveAssignmentStrategyName() {

@@ -117,12 +117,12 @@ class MultiInstanceCoordinatorTest {
     void leavePolicyDoesNotCancelRemainingChildren() {
         UUID parentId = inTx(() -> {
             WorkItemTemplate t = new WorkItemTemplate();
-            t.name = "LeaveTest";
+            t.name = "KeepTest";
             t.candidateGroups = "testers";
             t.createdBy = "test";
             t.instanceCount = 3;
             t.requiredCount = 2;
-            t.onThresholdReached = "LEAVE";
+            t.onThresholdReached = "KEEP";
             t.persist();
             return templateService.instantiate(t, null, null, "test").id;
         });
