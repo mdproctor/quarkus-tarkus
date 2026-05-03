@@ -380,6 +380,7 @@ Each module owns its own version range. Flyway enforces uniqueness across all mo
 - `BroadcastProcessor.onNext()` throws `BackPressureFailure` (not returns null) when there are no active SSE subscribers — "lack of requests" means zero consumers, not a slow consumer. Catch and discard silently in CDI observers: the hot-stream contract is fire-and-forget to whoever is listening. Applied in `WorkItemEventBroadcaster.onEvent()`.
 - `PgPool.getConnection()` returns `Uni<SqlConnection>` (Mutiny wrapper) — casting directly to `io.vertx.mutiny.pgclient.PgConnection` fails at runtime. To get the underlying Vert.x `PgConnection` for LISTEN/NOTIFY, unwrap the delegate: `(io.vertx.pgclient.PgConnection) sqlConn.getDelegate()` then re-wrap with `PgConnection.newInstance(pgDelegate)`. Applied in `PostgresWorkItemEventBroadcaster`.
 - `@Observes(during = TransactionPhase.AFTER_SUCCESS)` for the PostgreSQL broadcaster — the CDI observer fires only after the JTA transaction commits successfully. Events from rolled-back transactions are NOT published to the PostgreSQL channel. This is the correct behaviour: the published state must be consistent with the database. Applied in `PostgresWorkItemEventBroadcaster.onWorkItemEvent()`.
+- `onThresholdReached` defaults to CANCEL in `MultiInstanceSpawnService` — when `requiredCount` children complete, the coordinator asynchronously cancels the remaining children. Tests that complete all `instanceCount` children race with this cancellation and fail with OCC on `work_item`. Only complete `requiredCount` children in multi-instance tests; the surplus child is cancelled by the coordinator and must not be completed manually.
 
 ---
 
@@ -452,4 +453,12 @@ All casehubio projects align on these conventions:
 CI must use `server-id: github` + `GITHUB_TOKEN` in `actions/setup-java`.
 
 **Cross-project SNAPSHOT versions:** `casehub-ledger` and `casehub-work` modules are `0.2-SNAPSHOT` resolved from GitHub Packages. Declare in `pom.xml` properties and `<dependencyManagement>` — no hardcoded versions in submodule poms.
+
+**SNAPSHOT API drift:** CI pulls the latest `casehub-ledger:0.2-SNAPSHOT` from GitHub Packages; local builds use the cached jar. When `casehub-ledger` adds new abstract methods to `LedgerEntryRepository`, CI breaks but local passes silently. Before concluding a build is stable, refresh the local cache: `JAVA_HOME=$(/usr/libexec/java_home -v 26) mvn install -DskipTests -f ~/claude/casehub/ledger/pom.xml` and re-run the affected module tests.
+
+**Git workflow — fork and PR:** All development is done on a personal fork of this repository. Push to your fork and open pull requests targeting `casehubio/work` main. Do not push directly to the `casehubio` org remote. Recommended remote setup:
+```bash
+origin   → your fork   (git@github.com:<you>/work.git)
+upstream → casehubio   (git@github.com:casehubio/work.git)
+```
 
