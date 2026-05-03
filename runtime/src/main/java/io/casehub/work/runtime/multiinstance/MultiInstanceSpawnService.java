@@ -55,6 +55,17 @@ public class MultiInstanceSpawnService {
      * @param titleOverride optional parent title; defaults to {@code template.name}
      * @param createdBy the actor (user or system) triggering instantiation
      * @return the parent WorkItem
+     *
+     * <p>
+     * <strong>Threshold behaviour:</strong> controlled by {@code template.onThresholdReached}.
+     * When not set, the group defaults to {@link io.casehub.work.api.OnThresholdReached#KEEP}
+     * — remaining children are left active, no side effects. Set explicitly to opt in to
+     * other behaviours:
+     * <ul>
+     *   <li>{@code KEEP} — no action on remaining children (default)</li>
+     *   <li>{@code SUSPEND} — pause ASSIGNED/IN_PROGRESS children; PENDING children unchanged</li>
+     *   <li>{@code CANCEL} — cancel all remaining non-terminal children (opt-in only)</li>
+     * </ul>
      */
     @Transactional
     public WorkItem createGroup(final WorkItemTemplate template, final String titleOverride,
@@ -72,9 +83,9 @@ public class MultiInstanceSpawnService {
         group.idempotencyKey = "multi-instance:" + parent.id;
         group.instanceCount = template.instanceCount;
         group.requiredCount = template.requiredCount;
-        group.onThresholdReached = template.onThresholdReached != null
-                ? template.onThresholdReached
-                : OnThresholdReached.CANCEL.name();
+        // null → KEEP semantics (no side effects on remaining children).
+        // CANCEL must be set explicitly — it is never applied by default.
+        group.onThresholdReached = template.onThresholdReached;
         group.allowSameAssignee = Boolean.TRUE.equals(template.allowSameAssignee);
         group.parentRole = template.parentRole != null ? template.parentRole : ParentRole.COORDINATOR.name();
         group.persist();

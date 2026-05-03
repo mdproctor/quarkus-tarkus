@@ -95,9 +95,15 @@ public class MultiInstanceGroupPolicy {
                     "cannot-reach-threshold: " + group.rejectedCount + " rejections");
         }
 
-        if ("CANCEL".equals(group.onThresholdReached)) {
+        // Apply threshold action — null/KEEP: no side effects (default).
+        // CANCEL and SUSPEND must be explicitly opted in to.
+        final String action = group.onThresholdReached;
+        if ("CANCEL".equals(action)) {
             cancelRemainingChildren(group);
+        } else if ("SUSPEND".equals(action)) {
+            suspendRemainingChildren(group);
         }
+        // KEEP / null: no action on remaining children.
 
         return buildGroupEvent(group, outcome);
     }
@@ -110,6 +116,19 @@ public class MultiInstanceGroupPolicy {
                 group.parentId, terminalStatuses)
                 .forEach(child -> workItemService.cancel(child.id, "system:multi-instance",
                         "threshold-met — cancelled by group policy"));
+    }
+
+    /**
+     * Suspend ASSIGNED or IN_PROGRESS children when the threshold is reached.
+     * PENDING children are left unchanged — suspending unclaimed work is not meaningful.
+     */
+    private void suspendRemainingChildren(final WorkItemSpawnGroup group) {
+        final List<WorkItemStatus> suspendable = List.of(
+                WorkItemStatus.ASSIGNED, WorkItemStatus.IN_PROGRESS);
+        WorkItem.<WorkItem> list("parentId = ?1 AND status IN ?2",
+                group.parentId, suspendable)
+                .forEach(child -> workItemService.suspend(child.id, "system:multi-instance",
+                        "threshold-met — suspended by group policy"));
     }
 
     private WorkItemGroupLifecycleEvent buildGroupEvent(final WorkItemSpawnGroup group, final GroupStatus status) {

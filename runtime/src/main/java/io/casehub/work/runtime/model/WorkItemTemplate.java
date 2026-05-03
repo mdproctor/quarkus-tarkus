@@ -148,7 +148,7 @@ public class WorkItemTemplate extends PanacheEntityBase {
     @Column(name = "assignment_strategy", length = 255)
     public String assignmentStrategy;
 
-    /** CANCEL (default) or LEAVE — what to do with remaining instances when threshold met. */
+    /** Action on remaining children when threshold met: KEEP (default, no side effects), SUSPEND (pause active children), CANCEL (opt-in, cancels all remaining). Null means KEEP. */
     @Column(name = "on_threshold_reached", length = 10)
     public String onThresholdReached;
 
