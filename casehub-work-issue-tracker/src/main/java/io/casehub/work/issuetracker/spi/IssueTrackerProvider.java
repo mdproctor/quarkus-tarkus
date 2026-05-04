@@ -109,6 +109,26 @@ public interface IssueTrackerProvider {
     }
 
     /**
+     * Parse a raw inbound webhook payload into a normalised {@link io.casehub.work.issuetracker.webhook.WebhookEvent}.
+     *
+     * <p>Returns {@code null} if the payload represents an event type this provider
+     * does not handle (e.g. {@code action: milestoned}) — the caller should return
+     * HTTP 200 and take no action.
+     *
+     * <p>Default: throws {@link UnsupportedOperationException} — providers that do
+     * not support inbound webhooks need not implement this.
+     *
+     * @param headers the HTTP request headers
+     * @param body the raw request body as a UTF-8 string
+     * @return a normalised event, or {@code null} if the event is not handled
+     */
+    default io.casehub.work.issuetracker.webhook.WebhookEvent parseWebhookEvent(
+            java.util.Map<String, String> headers, String body) {
+        throw new UnsupportedOperationException(
+                trackerType() + " does not support inbound webhooks");
+    }
+
+    /**
      * Close an issue in the remote tracker.
      *
      * <p>
