@@ -1,0 +1,16 @@
+{
+  "action": "labeled",
+  "issue": {
+    "number": 42,
+    "title": "Fix authentication bug",
+    "body": "Description.",
+    "state": "open",
+    "state_reason": null,
+    "html_url": "https://github.com/owner/repo/issues/42",
+    "assignee": null,
+    "labels": [{ "name": "priority:high" }]
+  },
+  "label": { "name": "priority:high" },
+  "repository": { "full_name": "owner/repo" },
+  "sender": { "login": "alice" }
+}

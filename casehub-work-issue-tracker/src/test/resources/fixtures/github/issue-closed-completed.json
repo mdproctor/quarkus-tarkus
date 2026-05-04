@@ -1,0 +1,15 @@
+{
+  "action": "closed",
+  "issue": {
+    "number": 42,
+    "title": "Fix authentication bug",
+    "body": "Token expires too quickly.\n\n---\n*Linked WorkItem: `550e8400-e29b-41d4-a716-446655440000`*",
+    "state": "closed",
+    "state_reason": "completed",
+    "html_url": "https://github.com/owner/repo/issues/42",
+    "assignee": { "login": "alice" },
+    "labels": []
+  },
+  "repository": { "full_name": "owner/repo" },
+  "sender": { "login": "alice" }
+}

@@ -1,0 +1,18 @@
+{
+  "action": "edited",
+  "issue": {
+    "number": 42,
+    "title": "Updated title",
+    "body": "Description text.",
+    "state": "open",
+    "state_reason": null,
+    "html_url": "https://github.com/owner/repo/issues/42",
+    "assignee": null,
+    "labels": []
+  },
+  "changes": {
+    "title": { "from": "Original title" }
+  },
+  "repository": { "full_name": "owner/repo" },
+  "sender": { "login": "alice" }
+}
