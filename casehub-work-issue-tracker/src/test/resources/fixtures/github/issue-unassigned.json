@@ -1,0 +1,16 @@
+{
+  "action": "unassigned",
+  "issue": {
+    "number": 42,
+    "title": "Fix authentication bug",
+    "body": "Token expires too quickly.",
+    "state": "open",
+    "state_reason": null,
+    "html_url": "https://github.com/owner/repo/issues/42",
+    "assignee": null,
+    "labels": []
+  },
+  "assignee": { "login": "bob" },
+  "repository": { "full_name": "owner/repo" },
+  "sender": { "login": "alice" }
+}
