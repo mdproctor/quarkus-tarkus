@@ -64,7 +64,7 @@ public class WorkItemTemplate extends PanacheEntityBase {
     @Column(length = 255)
     public String category;
 
-    /** Default priority; null means the WorkItem will use the system default (NORMAL). */
+    /** Default priority; null means the WorkItem will use the system default (MEDIUM). */
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     public WorkItemPriority priority;

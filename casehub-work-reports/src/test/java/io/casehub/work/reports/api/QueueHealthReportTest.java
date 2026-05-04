@@ -95,8 +95,8 @@ class QueueHealthReportTest {
     void criticalOverdueCount_isSubsetOfOverdueCount() {
         final String cat = "crit-" + System.nanoTime();
         final String past = Instant.now().minus(5, ChronoUnit.MINUTES).toString();
-        createItem(cat, past, "CRITICAL");
-        createItem(cat, past, "NORMAL");
+        createItem(cat, past, "URGENT");
+        createItem(cat, past, "MEDIUM");
 
         final var resp = given().queryParam("category", cat)
                 .get("/workitems/reports/queue-health")
@@ -201,7 +201,7 @@ class QueueHealthReportTest {
         final String cat = "e2e-qh-" + System.nanoTime();
         final String past = Instant.now().minus(5, ChronoUnit.MINUTES).toString();
 
-        createItem(cat, past, "CRITICAL"); // overdue + critical overdue
+        createItem(cat, past, "URGENT"); // overdue + critical overdue
         createItem(cat, null, null); // pending, not overdue
 
         final String doneId = createItem(cat, null, null);

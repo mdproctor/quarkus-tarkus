@@ -61,7 +61,7 @@ class LifecycleEngineTest {
         WorkItem wi = new WorkItem();
         wi.title = "Expiry test";
         wi.status = status;
-        wi.priority = WorkItemPriority.NORMAL;
+        wi.priority = WorkItemPriority.MEDIUM;
         wi.createdAt = Instant.now();
         wi.updatedAt = Instant.now();
         wi.expiresAt = Instant.now().minus(2, ChronoUnit.HOURS);
@@ -75,7 +75,7 @@ class LifecycleEngineTest {
         WorkItem wi = new WorkItem();
         wi.title = "Claim deadline test";
         wi.status = WorkItemStatus.PENDING;
-        wi.priority = WorkItemPriority.NORMAL;
+        wi.priority = WorkItemPriority.MEDIUM;
         wi.createdAt = Instant.now();
         wi.updatedAt = Instant.now();
         wi.claimDeadline = Instant.now().minus(1, ChronoUnit.HOURS);
@@ -123,7 +123,7 @@ class LifecycleEngineTest {
         WorkItem completed = new WorkItem();
         completed.title = "Completed";
         completed.status = WorkItemStatus.COMPLETED;
-        completed.priority = WorkItemPriority.NORMAL;
+        completed.priority = WorkItemPriority.MEDIUM;
         completed.createdAt = Instant.now();
         completed.updatedAt = Instant.now();
         completed.expiresAt = Instant.now().minus(1, ChronoUnit.HOURS);
@@ -141,7 +141,7 @@ class LifecycleEngineTest {
         WorkItem wi = new WorkItem();
         wi.title = "Future expiry";
         wi.status = WorkItemStatus.PENDING;
-        wi.priority = WorkItemPriority.NORMAL;
+        wi.priority = WorkItemPriority.MEDIUM;
         wi.createdAt = Instant.now();
         wi.updatedAt = Instant.now();
         wi.expiresAt = Instant.now().plus(2, ChronoUnit.HOURS);
@@ -192,7 +192,7 @@ class LifecycleEngineTest {
         WorkItem wi = new WorkItem();
         wi.title = "Assigned past claim deadline";
         wi.status = WorkItemStatus.ASSIGNED;
-        wi.priority = WorkItemPriority.NORMAL;
+        wi.priority = WorkItemPriority.MEDIUM;
         wi.createdAt = Instant.now();
         wi.updatedAt = Instant.now();
         wi.claimDeadline = Instant.now().minus(1, ChronoUnit.HOURS);
@@ -216,7 +216,7 @@ class LifecycleEngineTest {
         WorkItem future = new WorkItem();
         future.title = "Future expiry";
         future.status = WorkItemStatus.PENDING;
-        future.priority = WorkItemPriority.NORMAL;
+        future.priority = WorkItemPriority.MEDIUM;
         future.createdAt = Instant.now();
         future.updatedAt = Instant.now();
         future.expiresAt = Instant.now().plus(2, ChronoUnit.HOURS);

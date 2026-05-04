@@ -33,7 +33,7 @@ import io.serverlessworkflow.api.types.Workflow;
  * <li>{@link io.casehub.work.flow.WorkItemTaskBuilder#description(String)} — reviewer context</li>
  * <li>{@link io.casehub.work.flow.WorkItemTaskBuilder#candidateGroups(String)} — work-queue routing</li>
  * <li>{@link io.casehub.work.flow.WorkItemTaskBuilder#assigneeId(String)} — direct assignment</li>
- * <li>{@link io.casehub.work.flow.WorkItemTaskBuilder#priority(WorkItemPriority)} — HIGH vs CRITICAL</li>
+ * <li>{@link io.casehub.work.flow.WorkItemTaskBuilder#priority(WorkItemPriority)} — HIGH vs URGENT</li>
  * <li>{@link io.casehub.work.flow.WorkItemTaskBuilder#payloadFrom} — extract JSON context from input</li>
  * </ul>
  *
@@ -89,7 +89,7 @@ public class ContractReviewWorkflow extends WorkItemsFlow {
                         // ── Step 3: Executive sign-off ────────────────────────────────────────
                         // Directly assigned to a named executive — not a group queue.
                         // Receives the legal team's resolution JSON as its input.
-                        // CRITICAL priority ensures it surfaces at the top of the inbox.
+                        // URGENT priority ensures it surfaces at the top of the inbox.
                         // Suspends until the executive claims and completes the WorkItem.
                         workItem("executiveSignOff")
                                 .title("Executive sign-off required")
@@ -97,7 +97,7 @@ public class ContractReviewWorkflow extends WorkItemsFlow {
                                         "Legal team has approved. Final executive sign-off before contract execution. "
                                                 + "Review the legal decision and confirm to proceed.")
                                 .assigneeId("exec-officer")
-                                .priority(WorkItemPriority.CRITICAL)
+                                .priority(WorkItemPriority.URGENT)
                                 .buildTask(String.class),
 
                         // ── Step 4: Automated countersigning ─────────────────────────────────

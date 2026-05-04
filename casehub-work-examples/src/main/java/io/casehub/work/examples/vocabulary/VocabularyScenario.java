@@ -115,7 +115,7 @@ public class VocabularyScenario {
                 "Annual leave for two weeks in July 2026",
                 "leave/annual",
                 null,
-                WorkItemPriority.NORMAL,
+                WorkItemPriority.MEDIUM,
                 null,
                 null,
                 null,

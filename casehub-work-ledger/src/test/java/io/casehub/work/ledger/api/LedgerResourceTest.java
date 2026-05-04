@@ -50,7 +50,7 @@ class LedgerResourceTest {
                 .body("""
                         {
                             "title": "Ledger test item",
-                            "priority": "NORMAL",
+                            "priority": "MEDIUM",
                             "createdBy": "system"
                         }
                         """)

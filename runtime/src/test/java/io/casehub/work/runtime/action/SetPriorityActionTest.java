@@ -23,16 +23,16 @@ class SetPriorityActionTest {
     void apply_setsPriority() {
         final var wi = new WorkItem();
         wi.id = UUID.randomUUID();
-        action.apply(wi, Map.of("priority", "CRITICAL"));
-        assertThat(wi.priority).isEqualTo(WorkItemPriority.CRITICAL);
+        action.apply(wi, Map.of("priority", "URGENT"));
+        assertThat(wi.priority).isEqualTo(WorkItemPriority.URGENT);
     }
 
     @Test
     void apply_invalidPriority_noChange() {
         final var wi = new WorkItem();
         wi.id = UUID.randomUUID();
-        wi.priority = WorkItemPriority.NORMAL;
+        wi.priority = WorkItemPriority.MEDIUM;
         action.apply(wi, Map.of("priority", "NOT_VALID"));
-        assertThat(wi.priority).isEqualTo(WorkItemPriority.NORMAL);
+        assertThat(wi.priority).isEqualTo(WorkItemPriority.MEDIUM);
     }
 }

@@ -28,7 +28,7 @@ RESPONSE=$(curl -s -X POST "$BASE" \
     "title": "Approve expense report",
     "description": "Q1 travel expenses for Alice — $1,840. Approve or reject.",
     "category": "finance",
-    "priority": "NORMAL",
+    "priority": "MEDIUM",
     "candidateGroups": "finance-team",
     "createdBy": "expense-service",
     "payload": "{\"reportId\": \"EXP-2026-0042\", \"amount\": 1840}"
@@ -145,7 +145,7 @@ humanTask.requestGroupApproval(
     "Legal review required",
     "Review contract before signing.",
     "legal-team,senior-managers",   // comma-separated candidate groups
-    WorkItemPriority.CRITICAL,
+    WorkItemPriority.URGENT,
     "{\"contractId\": \"" + contractId + "\"}"
 )
 ```
@@ -324,14 +324,14 @@ class ExpenseApprovalFlowTest {
     void createWorkItem_setsDefaultPriority() {
         WorkItemCreateRequest request = new WorkItemCreateRequest(
             "Approve expense", null, "finance", null,
-            null,           // priority — should default to NORMAL
+            null,           // priority — should default to MEDIUM
             "alice", null, null, null,
             "test", null, null, null, null
         );
 
         WorkItem created = service.create(request);
 
-        assertThat(created.priority).isEqualTo(WorkItemPriority.NORMAL);
+        assertThat(created.priority).isEqualTo(WorkItemPriority.MEDIUM);
         assertThat(created.status).isEqualTo(WorkItemStatus.PENDING);
     }
 
@@ -534,7 +534,7 @@ public class DocumentApprovalWorkflow extends WorkItemsFlow {
 | `.description(String)` | no | What the human needs to do |
 | `.assigneeId(String)` | no | Direct assignee; mutually exclusive with `candidateGroups` |
 | `.candidateGroups(String)` | no | Comma-separated groups eligible to claim |
-| `.priority(WorkItemPriority)` | no | Defaults to `NORMAL` |
+| `.priority(WorkItemPriority)` | no | Defaults to `MEDIUM` |
 | `.payloadFrom(Function<T, String>)` | no | Extracts JSON context from the step's input |
 | `.buildTask(Class<T>)` | yes | Builds the `FuncTaskConfigurer`; throws if `title` not set |
 
@@ -566,7 +566,7 @@ public class ApprovalWorkflow extends Flow {
                         "Legal review required",
                         "Review contract before signing.",
                         "legal-team,senior-managers",
-                        WorkItemPriority.CRITICAL,
+                        WorkItemPriority.URGENT,
                         input.toJson()
                     ), ContractInput.class)
             )

@@ -37,6 +37,6 @@ class TestFilterProducer {
                 "workItem.score != null && workItem.score < 0.15",
                 Map.of(),
                 List.of(ActionDescriptor.of("SET_PRIORITY",
-                        Map.of("priority", "CRITICAL"))));
+                        Map.of("priority", "URGENT"))));
     }
 }

@@ -44,9 +44,9 @@ class WorkItemContextBuilderTest {
         final WorkItem wi = new WorkItem();
         wi.id = UUID.randomUUID();
         wi.status = WorkItemStatus.IN_PROGRESS;
-        wi.priority = WorkItemPriority.CRITICAL;
+        wi.priority = WorkItemPriority.URGENT;
         final Map<String, Object> map = WorkItemContextBuilder.toMap(wi);
         assertThat(map.get("status")).isEqualTo(WorkItemStatus.IN_PROGRESS);
-        assertThat(map.get("priority")).isEqualTo(WorkItemPriority.CRITICAL);
+        assertThat(map.get("priority")).isEqualTo(WorkItemPriority.URGENT);
     }
 }

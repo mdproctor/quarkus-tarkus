@@ -43,7 +43,7 @@ public class JexlConditionEvaluator implements WorkItemExpressionEvaluator {
         // Use HashMap to support null values — MapContext.set() handles them via HashMap internally
         var map = new HashMap<String, Object>();
         map.put("status", wi.status != null ? wi.status.name() : "UNKNOWN");
-        map.put("priority", wi.priority != null ? wi.priority.name() : "NORMAL");
+        map.put("priority", wi.priority != null ? wi.priority.name() : "MEDIUM");
         map.put("assigneeId", wi.assigneeId); // intentionally null-able for null-checks in expressions
         map.put("category", wi.category);
         map.put("title", wi.title != null ? wi.title : "");

@@ -70,7 +70,7 @@ class EscalationSummaryResourceTest {
                 "Team offsite expenses Q2",
                 "finance",
                 null,
-                WorkItemPriority.NORMAL,
+                WorkItemPriority.MEDIUM,
                 null, null, null, null,
                 "test-system",
                 null,

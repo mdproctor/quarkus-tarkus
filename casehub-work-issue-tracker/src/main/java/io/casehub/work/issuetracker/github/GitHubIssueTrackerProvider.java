@@ -286,7 +286,7 @@ public class GitHubIssueTrackerProvider implements IssueTrackerProvider {
      * <p>
      * Computes three namespaced label sets from the WorkItem:
      * <ul>
-     *   <li>{@code priority:critical|high|normal|low}
+     *   <li>{@code priority:urgent|high|medium|low}
      *   <li>{@code category:<value>} — only when category is set
      *   <li>{@code status:pending|assigned|in-progress|delegated|suspended|escalated}
      *       — omitted for terminal statuses (issue is closed instead)
@@ -390,11 +390,11 @@ public class GitHubIssueTrackerProvider implements IssueTrackerProvider {
     }
 
     private String priorityLabel(final WorkItemPriority priority) {
-        if (priority == null) return "priority:normal";
+        if (priority == null) return "priority:medium";
         return switch (priority) {
-            case CRITICAL -> "priority:critical";
+            case URGENT -> "priority:urgent";
             case HIGH -> "priority:high";
-            case NORMAL -> "priority:normal";
+            case MEDIUM -> "priority:medium";
             case LOW -> "priority:low";
         };
     }
@@ -432,9 +432,9 @@ public class GitHubIssueTrackerProvider implements IssueTrackerProvider {
     }
 
     private String labelColor(final String name) {
-        if (name.startsWith("priority:critical")) return "E11D48";
+        if (name.startsWith("priority:urgent")) return "E11D48";
         if (name.startsWith("priority:high")) return "F97316";
-        if (name.startsWith("priority:normal")) return "3B82F6";
+        if (name.startsWith("priority:medium")) return "3B82F6";
         if (name.startsWith("priority:low")) return "6B7280";
         if (name.startsWith("status:in-progress")) return "34D399";
         if (name.startsWith("status:assigned")) return "60A5FA";

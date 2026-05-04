@@ -148,9 +148,9 @@ public class FilterResource {
 
     private WorkItemPriority parsePriority(final String p) {
         try {
-            return p != null ? WorkItemPriority.valueOf(p) : WorkItemPriority.NORMAL;
+            return p != null ? WorkItemPriority.valueOf(p) : WorkItemPriority.MEDIUM;
         } catch (IllegalArgumentException e) {
-            return WorkItemPriority.NORMAL;
+            return WorkItemPriority.MEDIUM;
         }
     }
 }

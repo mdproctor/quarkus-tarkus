@@ -34,7 +34,7 @@ public class WorkItemTaskBuilder {
     private String description;
     private String assigneeId;
     private String candidateGroups;
-    private WorkItemPriority priority = WorkItemPriority.NORMAL;
+    private WorkItemPriority priority = WorkItemPriority.MEDIUM;
     private Function<Object, String> payloadExtractor;
 
     WorkItemTaskBuilder(final String name, final HumanTaskFlowBridge bridge) {
@@ -89,7 +89,7 @@ public class WorkItemTaskBuilder {
     }
 
     /**
-     * Task priority. Defaults to {@link WorkItemPriority#NORMAL}.
+     * Task priority. Defaults to {@link WorkItemPriority#MEDIUM}.
      *
      * @param priority the priority level
      * @return this builder
@@ -130,7 +130,7 @@ public class WorkItemTaskBuilder {
         return candidateGroups;
     }
 
-    /** Returns the configured priority (never null; defaults to NORMAL). */
+    /** Returns the configured priority (never null; defaults to MEDIUM). */
     public WorkItemPriority getPriority() {
         return priority;
     }

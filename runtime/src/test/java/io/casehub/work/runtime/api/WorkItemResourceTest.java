@@ -49,7 +49,7 @@ class WorkItemResourceTest {
                         {
                             "title": "Test item",
                             "description": "Do something",
-                            "priority": "NORMAL",
+                            "priority": "MEDIUM",
                             "createdBy": "system"
                         }
                         """)
@@ -70,7 +70,7 @@ class WorkItemResourceTest {
                         {
                             "title": "Test item",
                             "description": "Do something",
-                            "priority": "NORMAL",
+                            "priority": "MEDIUM",
                             "createdBy": "system"
                         }
                         """)
@@ -91,7 +91,7 @@ class WorkItemResourceTest {
                         {
                             "title": "Test item",
                             "description": "Do something",
-                            "priority": "NORMAL",
+                            "priority": "MEDIUM",
                             "createdBy": "system"
                         }
                         """)
@@ -678,13 +678,13 @@ class WorkItemResourceTest {
     void inbox_filterByCategory() {
         given().contentType(ContentType.JSON)
                 .body("""
-                        {"title":"Finance task","category":"finance","priority":"NORMAL","createdBy":"system"}
+                        {"title":"Finance task","category":"finance","priority":"MEDIUM","createdBy":"system"}
                         """)
                 .when().post("/workitems")
                 .then().statusCode(201);
         String legalId = given().contentType(ContentType.JSON)
                 .body("""
-                        {"title":"Legal task","category":"legal","priority":"NORMAL","createdBy":"system"}
+                        {"title":"Legal task","category":"legal","priority":"MEDIUM","createdBy":"system"}
                         """)
                 .when().post("/workitems")
                 .then().statusCode(201)

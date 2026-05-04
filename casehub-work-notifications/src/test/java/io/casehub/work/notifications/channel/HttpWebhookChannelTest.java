@@ -57,7 +57,7 @@ class HttpWebhookChannelTest {
     @Test
     void buildPayloadJson_nullFieldsHandled() {
         assertThatCode(() -> HttpWebhookChannel.buildPayloadJson(
-                "CREATED", "Title", "cat", "PENDING", null, "NORMAL", null))
+                "CREATED", "Title", "cat", "PENDING", null, "MEDIUM", null))
                 .doesNotThrowAnyException();
     }
 

@@ -36,7 +36,7 @@ import io.casehub.work.runtime.service.WorkItemService;
  * Zendesk + PagerDuty dual-escalation patterns:
  * <ul>
  * <li>Filter A: {@code category == 'security'} → {@code security/incident}</li>
- * <li>Filter B: {@code priority == 'CRITICAL'} → {@code priority/critical}</li>
+ * <li>Filter B: {@code priority == 'URGENT'} → {@code priority/critical}</li>
  * <li>Filter C (cascade): {@code labels.contains('security/incident') && labels.contains('priority/critical')}
  * → {@code security/exec-escalate}</li>
  * </ul>
@@ -45,7 +45,7 @@ import io.casehub.work.runtime.service.WorkItemService;
  * Queue events per step:
  * <ol>
  * <li>HIGH security incident → ADDED to Security Incidents Queue only</li>
- * <li>CRITICAL breach → ADDED to Security Incidents Queue + ADDED to Priority Critical Queue +
+ * <li>URGENT breach → ADDED to Security Incidents Queue + ADDED to Priority Critical Queue +
  * ADDED to Security Exec Escalation Queue (cascade fires after both A and B labels present)</li>
  * </ol>
  *
@@ -85,7 +85,7 @@ public class SecurityEscalationScenario {
         filterB.name = "Security-B: Critical Priority Flag";
         filterB.scope = FilterScope.ORG;
         filterB.conditionLanguage = "jexl";
-        filterB.conditionExpression = "priority == 'CRITICAL'";
+        filterB.conditionExpression = "priority == 'URGENT'";
         filterB.actions = WorkItemFilter.serializeActions(List.of(
                 FilterAction.applyLabel("priority/critical")));
         filterB.active = true;
@@ -139,7 +139,7 @@ public class SecurityEscalationScenario {
         eventLog.clear();
         final List<QueueScenarioStep> steps = new ArrayList<>();
 
-        LOG.info("[SECURITY] Step 1/3: HIGH security incident — security/incident only (not CRITICAL)");
+        LOG.info("[SECURITY] Step 1/3: HIGH security incident — security/incident only (not URGENT)");
         final WorkItem highIncident = workItemService.create(new WorkItemCreateRequest(
                 "Suspicious login attempts — automated bot detected",
                 "Rate limiter flagged 2,400 failed login attempts from a single IP range over 10 minutes.",
@@ -148,37 +148,37 @@ public class SecurityEscalationScenario {
                 "{\"source_ip_range\": \"185.220.x.x\", \"attempts\": 2400, \"period_minutes\": 10}",
                 null, null, null, null, null, null, null, null));
         steps.add(new QueueScenarioStep(1,
-                "HIGH security anomaly — filter A fires: security/incident; filter B (CRITICAL) does not match; filter C (cascade) cannot fire without priority/critical",
+                "HIGH security anomaly — filter A fires: security/incident; filter B (URGENT) does not match; filter C (cascade) cannot fire without priority/critical",
                 highIncident.id, inferredPaths(highIncident), manualPaths(highIncident),
                 formatEvents(eventLog.drain())));
 
-        LOG.info("[SECURITY] Step 2/3: CRITICAL security breach — all 3 labels via cascade");
+        LOG.info("[SECURITY] Step 2/3: URGENT security breach — all 3 labels via cascade");
         final WorkItem criticalBreach = workItemService.create(new WorkItemCreateRequest(
                 "Data breach confirmed — customer PII exfiltrated",
                 "Forensic analysis confirms unauthorised exfiltration of 340,000 customer records.",
-                "security", "data-breach", WorkItemPriority.CRITICAL,
+                "security", "data-breach", WorkItemPriority.URGENT,
                 null, "security-team,legal-team,executive-team", null, null, "forensics-system",
                 "{\"records_affected\": 340000, \"data_types\": [\"name\", \"email\", \"password_hash\"], " +
                         "\"gdpr_window_hours\": 72, \"incident_id\": \"SEC-BREACH-2026-001\"}",
                 null, null, null, null, null, null, null, null));
         steps.add(new QueueScenarioStep(2,
-                "CRITICAL data breach — filter A: security/incident, filter B: priority/critical, filter C cascades: security/exec-escalate — 3 queue ADDED events",
+                "URGENT data breach — filter A: security/incident, filter B: priority/critical, filter C cascades: security/exec-escalate — 3 queue ADDED events",
                 criticalBreach.id, inferredPaths(criticalBreach), manualPaths(criticalBreach),
                 formatEvents(eventLog.drain())));
 
-        LOG.info("[SECURITY] Step 3/3: security/exec-escalate queue — CRITICAL incident only");
+        LOG.info("[SECURITY] Step 3/3: security/exec-escalate queue — URGENT incident only");
         final List<UUID> execEscalateQueue = workItemStore
                 .scan(WorkItemQuery.byLabelPattern("security/exec-escalate"))
                 .stream().map(w -> w.id).toList();
         steps.add(new QueueScenarioStep(3,
-                "security/exec-escalate queue — CRITICAL breach present; HIGH anomaly absent (did not meet cascade threshold)",
+                "security/exec-escalate queue — URGENT breach present; HIGH anomaly absent (did not meet cascade threshold)",
                 null,
                 List.of("security/exec-escalate contains " + execEscalateQueue.size() + " item(s)"),
                 List.of(), List.of()));
 
         return new QueueScenarioResponse(
                 "security-exec-escalation",
-                "Multi-label stacking cascade: security+CRITICAL→exec-escalate; impossible with single-filter logic alone",
+                "Multi-label stacking cascade: security+URGENT→exec-escalate; impossible with single-filter logic alone",
                 steps, execEscalateQueue);
     }
 

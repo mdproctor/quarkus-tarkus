@@ -34,7 +34,7 @@ class MultiInstanceInboxTest {
         WorkItem item = new WorkItem();
         item.assigneeId = "alice-inbox-test";
         item.status = WorkItemStatus.PENDING;
-        item.priority = WorkItemPriority.NORMAL;
+        item.priority = WorkItemPriority.MEDIUM;
         item.title = "Standalone";
         item.createdBy = "test";
         item.persist();

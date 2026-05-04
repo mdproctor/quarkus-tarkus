@@ -34,7 +34,7 @@ import io.casehub.work.runtime.service.WorkItemService;
  * <p>
  * Demonstrates 3-step label propagation inspired by Desk.com/Zendesk business rules:
  * <ol>
- * <li>Filter A: {@code priority == 'CRITICAL'} → labels {@code sla/critical} and {@code queue/fast-track}</li>
+ * <li>Filter A: {@code priority == 'URGENT'} → labels {@code sla/critical} and {@code queue/fast-track}</li>
  * <li>Filter B: {@code priority == 'HIGH' && assigneeId == null} → label {@code intake/triage}</li>
  * <li>Filter C: {@code labels.contains('intake/triage')} → label {@code team/support-lead} (cascade)</li>
  * </ol>
@@ -42,7 +42,7 @@ import io.casehub.work.runtime.service.WorkItemService;
  * <p>
  * Queue events per step:
  * <ol>
- * <li>CRITICAL ticket → ADDED to SLA Critical Queue + ADDED to Fast Track Queue</li>
+ * <li>URGENT ticket → ADDED to SLA Critical Queue + ADDED to Fast Track Queue</li>
  * <li>HIGH unassigned ticket → ADDED to Intake Triage Queue + ADDED to Support Lead Queue</li>
  * <li>HIGH ticket claimed → REMOVED from Intake Triage Queue + REMOVED from Support Lead Queue
  * (assigneeId != null, Filter B no longer matches)</li>
@@ -74,7 +74,7 @@ public class SupportTriageScenario {
         filterA.name = "Triage-A: Critical SLA";
         filterA.scope = FilterScope.ORG;
         filterA.conditionLanguage = "jexl";
-        filterA.conditionExpression = "priority == 'CRITICAL'";
+        filterA.conditionExpression = "priority == 'URGENT'";
         filterA.actions = WorkItemFilter.serializeActions(List.of(
                 FilterAction.applyLabel("sla/critical"),
                 FilterAction.applyLabel("queue/fast-track")));
@@ -145,16 +145,16 @@ public class SupportTriageScenario {
         eventLog.clear();
         final List<QueueScenarioStep> steps = new ArrayList<>();
 
-        LOG.info("[TRIAGE] Step 1/4: Creating CRITICAL ticket — should get sla/critical + queue/fast-track");
+        LOG.info("[TRIAGE] Step 1/4: Creating URGENT ticket — should get sla/critical + queue/fast-track");
         final WorkItem critical = workItemService.create(new WorkItemCreateRequest(
                 "Production database unreachable — all services down",
                 "Database cluster is not responding. All customer-facing APIs returning 503.",
-                "infrastructure", null, WorkItemPriority.CRITICAL,
+                "infrastructure", null, WorkItemPriority.URGENT,
                 null, "ops-team", null, null, "incident-detector",
                 "{\"affected_services\": 12, \"error\": \"Connection refused\"}",
                 null, null, null, null, null, null, null, null));
         steps.add(new QueueScenarioStep(1,
-                "CRITICAL production incident created — filter A fires: sla/critical + queue/fast-track",
+                "URGENT production incident created — filter A fires: sla/critical + queue/fast-track",
                 critical.id, inferredPaths(critical), manualPaths(critical),
                 formatEvents(eventLog.drain())));
 
@@ -179,17 +179,17 @@ public class SupportTriageScenario {
                 highAfterClaim.id, inferredPaths(highAfterClaim), manualPaths(highAfterClaim),
                 formatEvents(eventLog.drain())));
 
-        LOG.info("[TRIAGE] Step 4/4: Listing queue/fast-track contents — should contain CRITICAL ticket only");
+        LOG.info("[TRIAGE] Step 4/4: Listing queue/fast-track contents — should contain URGENT ticket only");
         final List<UUID> fastTrackQueue = workItemStore.scan(WorkItemQuery.byLabelPattern("queue/fast-track"))
                 .stream().map(w -> w.id).toList();
         steps.add(new QueueScenarioStep(4,
-                "queue/fast-track queue contents — contains CRITICAL ticket; HIGH ticket left when claimed",
+                "queue/fast-track queue contents — contains URGENT ticket; HIGH ticket left when claimed",
                 null, List.of("queue/fast-track contains " + fastTrackQueue.size() + " item(s)"),
                 List.of(), List.of()));
 
         return new QueueScenarioResponse(
                 "support-triage-cascade",
-                "Desk.com-inspired 3-step cascade: CRITICAL→fast-track, HIGH+unassigned→triage→lead-review, claimed item leaves queue",
+                "Desk.com-inspired 3-step cascade: URGENT→fast-track, HIGH+unassigned→triage→lead-review, claimed item leaves queue",
                 steps, fastTrackQueue);
     }
 

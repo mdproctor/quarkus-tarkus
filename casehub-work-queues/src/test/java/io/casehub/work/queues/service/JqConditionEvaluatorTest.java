@@ -32,31 +32,31 @@ class JqConditionEvaluatorTest {
 
     @Test
     void evaluate_priorityHigh_notNormal() {
-        var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
+        var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, null);
         assertThat(evaluator.evaluate(wi, ExpressionDescriptor.of(evaluator.language(), ".priority == \"HIGH\""))).isFalse();
     }
 
     @Test
     void evaluate_statusPending() {
-        var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
+        var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, null);
         assertThat(evaluator.evaluate(wi, ExpressionDescriptor.of(evaluator.language(), ".status == \"PENDING\""))).isTrue();
     }
 
     @Test
     void evaluate_assigneeNull() {
-        var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
+        var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, null);
         assertThat(evaluator.evaluate(wi, ExpressionDescriptor.of(evaluator.language(), ".assigneeId == null"))).isTrue();
     }
 
     @Test
     void evaluate_malformed_returnsFalse() {
-        var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
+        var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, null);
         assertThat(evaluator.evaluate(wi, ExpressionDescriptor.of(evaluator.language(), "not valid jq @@@"))).isFalse();
     }
 
     @Test
     void evaluate_labelCheck_matchesWorkItemWithLabel() {
-        var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
+        var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, null);
         wi.labels.add(new WorkItemLabel("legal/contracts", LabelPersistence.MANUAL, "alice"));
         assertThat(evaluator.evaluate(wi,
                 ExpressionDescriptor.of(evaluator.language(), ".labels | contains([\"legal/contracts\"])"))).isTrue();
