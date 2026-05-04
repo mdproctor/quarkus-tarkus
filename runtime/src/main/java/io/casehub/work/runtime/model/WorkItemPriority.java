@@ -2,19 +2,19 @@ package io.casehub.work.runtime.model;
 
 /**
  * Priority level of a {@link WorkItem}, used to drive inbox ordering and
- * escalation policy thresholds.
+ * escalation policy thresholds. Aligns with Linear's priority vocabulary.
  */
 public enum WorkItemPriority {
 
     /** Low priority — attend to when time permits. */
     LOW,
 
-    /** Normal priority — standard processing order. */
-    NORMAL,
+    /** Medium priority — standard processing order. */
+    MEDIUM,
 
-    /** High priority — handle before LOW and NORMAL items. */
+    /** High priority — handle before MEDIUM and LOW items. */
     HIGH,
 
-    /** Critical priority — requires immediate attention. */
-    CRITICAL
+    /** Urgent priority — requires immediate attention; handle before all others. */
+    URGENT
 }

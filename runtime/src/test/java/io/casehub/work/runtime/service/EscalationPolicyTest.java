@@ -156,7 +156,7 @@ class EscalationPolicyTest {
         wi.id = UUID.randomUUID();
         wi.title = "Test item";
         wi.status = status;
-        wi.priority = WorkItemPriority.NORMAL;
+        wi.priority = WorkItemPriority.MEDIUM;
         wi.createdAt = Instant.now();
         wi.updatedAt = Instant.now();
         workItemRepo.put(wi);

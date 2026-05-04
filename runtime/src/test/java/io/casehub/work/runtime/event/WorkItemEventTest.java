@@ -64,7 +64,7 @@ class WorkItemEventTest {
 
     private WorkItemCreateRequest basicRequest() {
         return new WorkItemCreateRequest(
-                "Test", null, null, null, WorkItemPriority.NORMAL,
+                "Test", null, null, null, WorkItemPriority.MEDIUM,
                 null, null, null, null, "system", null, null, null, null, null, null, null, null, null);
     }
 
@@ -235,7 +235,7 @@ class WorkItemEventTest {
         WorkItem wi = new WorkItem();
         wi.title = "Past expiry";
         wi.status = WorkItemStatus.PENDING;
-        wi.priority = WorkItemPriority.NORMAL;
+        wi.priority = WorkItemPriority.MEDIUM;
         wi.createdAt = Instant.now();
         wi.updatedAt = Instant.now();
         wi.expiresAt = Instant.now().minus(2, ChronoUnit.HOURS);
@@ -254,7 +254,7 @@ class WorkItemEventTest {
         WorkItem wi = new WorkItem();
         wi.title = "Past expiry escalate";
         wi.status = WorkItemStatus.PENDING;
-        wi.priority = WorkItemPriority.NORMAL;
+        wi.priority = WorkItemPriority.MEDIUM;
         wi.createdAt = Instant.now();
         wi.updatedAt = Instant.now();
         wi.expiresAt = Instant.now().minus(2, ChronoUnit.HOURS);
@@ -274,7 +274,7 @@ class WorkItemEventTest {
         WorkItem wi = new WorkItem();
         wi.title = "Past claim deadline";
         wi.status = WorkItemStatus.PENDING;
-        wi.priority = WorkItemPriority.NORMAL;
+        wi.priority = WorkItemPriority.MEDIUM;
         wi.createdAt = Instant.now();
         wi.updatedAt = Instant.now();
         wi.claimDeadline = Instant.now().minus(1, ChronoUnit.HOURS);

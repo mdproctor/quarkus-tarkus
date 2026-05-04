@@ -45,7 +45,7 @@ import io.casehub.work.runtime.service.WorkItemService;
  * <p>
  * Queue events per step:
  * <ol>
- * <li>NORMAL contract → ADDED to Legal Review Queue</li>
+ * <li>MEDIUM contract → ADDED to Legal Review Queue</li>
  * <li>HIGH NDA dispute → ADDED to Legal Review Queue + ADDED to Legal Urgent Queue</li>
  * </ol>
  *
@@ -123,16 +123,16 @@ public class LegalRoutingScenario {
         eventLog.clear();
         final List<QueueScenarioStep> steps = new ArrayList<>();
 
-        LOG.info("[LEGAL] Step 1/3: NORMAL priority contract review — gets legal/review only");
+        LOG.info("[LEGAL] Step 1/3: MEDIUM priority contract review — gets legal/review only");
         final WorkItem contractReview = workItemService.create(new WorkItemCreateRequest(
                 "Vendor contract review — Acme Corp SaaS agreement",
                 "Review vendor SaaS agreement for GDPR compliance. Non-urgent; renewal date in 6 weeks.",
-                "legal", "contract-review", WorkItemPriority.NORMAL,
+                "legal", "contract-review", WorkItemPriority.MEDIUM,
                 null, "legal-team", null, null, "contract-service",
                 "{\"vendor\": \"Acme Corp\", \"contract_type\": \"SaaS\", \"renewal_date\": \"2026-06-01\"}",
                 null, null, null, null, null, null, null, null));
         steps.add(new QueueScenarioStep(1,
-                "NORMAL legal contract review — JEXL filter fires: legal/review; JQ filter (legal+HIGH) does not match",
+                "MEDIUM legal contract review — JEXL filter fires: legal/review; JQ filter (legal+HIGH) does not match",
                 contractReview.id, inferredPaths(contractReview), manualPaths(contractReview),
                 formatEvents(eventLog.drain())));
 
@@ -153,7 +153,7 @@ public class LegalRoutingScenario {
         final List<UUID> urgentQueue = workItemStore.scan(WorkItemQuery.byLabelPattern("legal/urgent"))
                 .stream().map(w -> w.id).toList();
         steps.add(new QueueScenarioStep(3,
-                "legal/urgent queue — contains HIGH priority items only; NORMAL contract review is absent",
+                "legal/urgent queue — contains HIGH priority items only; MEDIUM contract review is absent",
                 null,
                 List.of("legal/urgent contains " + urgentQueue.size() + " item(s)"),
                 List.of(), List.of()));

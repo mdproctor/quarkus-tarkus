@@ -22,10 +22,10 @@ class InboxSummaryBuilderTest {
     @Test
     void byStatus_countsCorrectly() {
         final var items = List.of(
-                wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null, null),
+                wi(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, null, null),
                 wi(WorkItemStatus.PENDING, WorkItemPriority.HIGH, null, null),
-                wi(WorkItemStatus.ASSIGNED, WorkItemPriority.NORMAL, null, null),
-                wi(WorkItemStatus.IN_PROGRESS, WorkItemPriority.CRITICAL, null, null));
+                wi(WorkItemStatus.ASSIGNED, WorkItemPriority.MEDIUM, null, null),
+                wi(WorkItemStatus.IN_PROGRESS, WorkItemPriority.URGENT, null, null));
 
         final var summary = InboxSummaryBuilder.build(items, Instant.now());
 
@@ -40,16 +40,16 @@ class InboxSummaryBuilderTest {
     @Test
     void byPriority_countsCorrectly() {
         final var items = List.of(
-                wi(WorkItemStatus.PENDING, WorkItemPriority.CRITICAL, null, null),
+                wi(WorkItemStatus.PENDING, WorkItemPriority.URGENT, null, null),
                 wi(WorkItemStatus.PENDING, WorkItemPriority.HIGH, null, null),
                 wi(WorkItemStatus.PENDING, WorkItemPriority.HIGH, null, null),
-                wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null, null));
+                wi(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, null, null));
 
         final var summary = InboxSummaryBuilder.build(items, Instant.now());
 
-        assertThat(summary.byPriority()).containsEntry("CRITICAL", 1L);
+        assertThat(summary.byPriority()).containsEntry("URGENT", 1L);
         assertThat(summary.byPriority()).containsEntry("HIGH", 2L);
-        assertThat(summary.byPriority()).containsEntry("NORMAL", 1L);
+        assertThat(summary.byPriority()).containsEntry("MEDIUM", 1L);
     }
 
     // ── overdue count ─────────────────────────────────────────────────────────
@@ -58,10 +58,10 @@ class InboxSummaryBuilderTest {
     void overdue_countsItemsPastExpiresAt() {
         final Instant now = Instant.now();
         final var items = List.of(
-                wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, now.minusSeconds(3600), null), // overdue
-                wi(WorkItemStatus.IN_PROGRESS, WorkItemPriority.NORMAL, now.minusSeconds(1), null), // overdue
-                wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, now.plusSeconds(3600), null), // not overdue
-                wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null, null)); // no deadline
+                wi(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, now.minusSeconds(3600), null), // overdue
+                wi(WorkItemStatus.IN_PROGRESS, WorkItemPriority.MEDIUM, now.minusSeconds(1), null), // overdue
+                wi(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, now.plusSeconds(3600), null), // not overdue
+                wi(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, null, null)); // no deadline
 
         final var summary = InboxSummaryBuilder.build(items, now);
 
@@ -72,8 +72,8 @@ class InboxSummaryBuilderTest {
     void overdue_excludesTerminalStatuses() {
         final Instant now = Instant.now();
         final var items = List.of(
-                wi(WorkItemStatus.COMPLETED, WorkItemPriority.NORMAL, now.minusSeconds(3600), null),
-                wi(WorkItemStatus.REJECTED, WorkItemPriority.NORMAL, now.minusSeconds(3600), null));
+                wi(WorkItemStatus.COMPLETED, WorkItemPriority.MEDIUM, now.minusSeconds(3600), null),
+                wi(WorkItemStatus.REJECTED, WorkItemPriority.MEDIUM, now.minusSeconds(3600), null));
 
         final var summary = InboxSummaryBuilder.build(items, now);
 
@@ -86,10 +86,10 @@ class InboxSummaryBuilderTest {
     void claimDeadlineBreached_countsPendingItemsPastClaimDeadline() {
         final Instant now = Instant.now();
         final var items = List.of(
-                wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null, now.minusSeconds(3600)), // breached
-                wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null, now.plusSeconds(3600)), // not breached
-                wi(WorkItemStatus.ASSIGNED, WorkItemPriority.NORMAL, null, now.minusSeconds(3600)), // ASSIGNED — doesn't count
-                wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null, null)); // no deadline
+                wi(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, null, now.minusSeconds(3600)), // breached
+                wi(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, null, now.plusSeconds(3600)), // not breached
+                wi(WorkItemStatus.ASSIGNED, WorkItemPriority.MEDIUM, null, now.minusSeconds(3600)), // ASSIGNED — doesn't count
+                wi(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, null, null)); // no deadline
 
         final var summary = InboxSummaryBuilder.build(items, now);
 

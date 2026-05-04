@@ -45,9 +45,9 @@ import io.casehub.work.runtime.service.WorkItemService;
  * <ol>
  * <li><b>Lambda CDI bean ({@link SecurityWritersFilter})</b> — any document from
  * {@code security-writers} is always urgent, regardless of its priority field.</li>
- * <li><b>JEXL</b> — {@code priority == 'CRITICAL'} → {@code review/urgent}</li>
+ * <li><b>JEXL</b> — {@code priority == 'URGENT'} → {@code review/urgent}</li>
  * <li><b>JEXL</b> — {@code priority == 'HIGH'} → {@code review/standard}</li>
- * <li><b>JEXL</b> — {@code priority == 'NORMAL' || priority == 'LOW'} → {@code review/routine}</li>
+ * <li><b>JEXL</b> — {@code priority == 'MEDIUM' || priority == 'LOW'} → {@code review/routine}</li>
  * </ol>
  *
  * <h2>State sub-queues (cascade)</h2>
@@ -67,7 +67,7 @@ import io.casehub.work.runtime.service.WorkItemService;
  * <ol>
  * <li>Security advisory (Lambda override) → ADDED to Urgent Reviews</li>
  * <li>Release notes (HIGH) → ADDED to Standard Reviews</li>
- * <li>Tutorial (NORMAL) → ADDED to Routine Reviews</li>
+ * <li>Tutorial (MEDIUM) → ADDED to Routine Reviews</li>
  * <li>Claim security advisory → CHANGED to Urgent Reviews (stays in queue, state label changes)</li>
  * <li>Start security advisory → CHANGED to Urgent Reviews</li>
  * <li>Queue snapshot → no queue events</li>
@@ -101,7 +101,7 @@ public class DocumentReviewScenario {
         final String notTerminal = "status != 'COMPLETED' && status != 'REJECTED' && status != 'CANCELLED' && status != 'ESCALATED'";
 
         persist("Review: Critical → Urgent Tier", "jexl",
-                "priority == 'CRITICAL' && " + notTerminal,
+                "priority == 'URGENT' && " + notTerminal,
                 List.of(FilterAction.applyLabel("review/urgent")));
 
         persist("Review: High → Standard Tier", "jexl",
@@ -109,7 +109,7 @@ public class DocumentReviewScenario {
                 List.of(FilterAction.applyLabel("review/standard")));
 
         persist("Review: Normal/Low → Routine Tier", "jexl",
-                "(priority == 'NORMAL' || priority == 'LOW') && (candidateGroups == null || !candidateGroups.contains('security-writers')) && "
+                "(priority == 'MEDIUM' || priority == 'LOW') && (candidateGroups == null || !candidateGroups.contains('security-writers')) && "
                         + notTerminal,
                 List.of(FilterAction.applyLabel("review/routine")));
 
@@ -190,17 +190,17 @@ public class DocumentReviewScenario {
 
         final List<QueueScenarioStep> steps = new ArrayList<>();
 
-        // ── Step 1: Security advisory — NORMAL priority, overridden to urgent by Lambda ──
-        LOG.info("[REVIEW] Step 1/7: Security advisory submitted — Lambda overrides NORMAL priority to urgent tier");
+        // ── Step 1: Security advisory — MEDIUM priority, overridden to urgent by Lambda ──
+        LOG.info("[REVIEW] Step 1/7: Security advisory submitted — Lambda overrides MEDIUM priority to urgent tier");
         final WorkItem secAdvisory = workItemService.create(new WorkItemCreateRequest(
                 "Security advisory: TLS 1.0 deprecation — migration guide",
                 "Update the TLS migration guide to reflect Q2 deprecation timeline.",
-                "security-docs", "migration-guide", WorkItemPriority.NORMAL,
+                "security-docs", "migration-guide", WorkItemPriority.MEDIUM,
                 null, "security-writers,docs-team", null, null, "doc-system",
                 "{\"doc_type\": \"security-advisory\", \"publish_deadline\": \"2026-04-18\"}",
                 null, null, null, null, null, null, null, null));
         steps.add(new QueueScenarioStep(1,
-                "Security advisory — priority=NORMAL but candidateGroups contains 'security-writers'. " +
+                "Security advisory — priority=MEDIUM but candidateGroups contains 'security-writers'. " +
                         "Lambda filter overrides: review/urgent + review/urgent/unassigned",
                 secAdvisory.id, inferredPaths(secAdvisory), manualPaths(secAdvisory),
                 formatEvents(eventLog.drain())));
@@ -221,17 +221,17 @@ public class DocumentReviewScenario {
                 formatEvents(eventLog.drain())));
         sleep(delayMs);
 
-        // ── Step 3: Tutorial — NORMAL priority → routine tier ──
-        LOG.info("[REVIEW] Step 3/7: Tutorial — NORMAL priority → routine tier");
+        // ── Step 3: Tutorial — MEDIUM priority → routine tier ──
+        LOG.info("[REVIEW] Step 3/7: Tutorial — MEDIUM priority → routine tier");
         final WorkItem tutorial = workItemService.create(new WorkItemCreateRequest(
                 "Getting started tutorial — CaseHub Work quick start",
                 "Write a 10-minute getting-started guide for new users.",
-                "tutorials", "quick-start", WorkItemPriority.NORMAL,
+                "tutorials", "quick-start", WorkItemPriority.MEDIUM,
                 null, "docs-team", null, null, "doc-system",
                 "{\"estimated_reading_time_min\": 10, \"skill_level\": \"beginner\"}",
                 null, null, null, null, null, null, null, null));
         steps.add(new QueueScenarioStep(3,
-                "Tutorial — priority=NORMAL → JEXL filter: review/routine + review/routine/unassigned",
+                "Tutorial — priority=MEDIUM → JEXL filter: review/routine + review/routine/unassigned",
                 tutorial.id, inferredPaths(tutorial), manualPaths(tutorial),
                 formatEvents(eventLog.drain())));
         sleep(delayMs);
@@ -307,7 +307,7 @@ public class DocumentReviewScenario {
         return new QueueScenarioResponse(
                 "document-review-pipeline",
                 "A document flows through review/urgent/unassigned → claimed → active → (complete, REMOVED from queue). " +
-                        "Lambda overrides NORMAL-priority security docs to urgent tier. " +
+                        "Lambda overrides MEDIUM-priority security docs to urgent tier. " +
                         "Release notes and tutorial wait in their own tier queues unaffected.",
                 steps, urgentActive);
     }

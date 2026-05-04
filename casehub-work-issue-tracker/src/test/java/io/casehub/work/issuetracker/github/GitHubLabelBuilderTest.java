@@ -55,9 +55,9 @@ class GitHubLabelBuilderTest {
     // ── Correctness — priority ────────────────────────────────────────────────
 
     @Test
-    void priority_critical() {
-        assertThat(provider.labels(workItem(WorkItemStatus.PENDING, WorkItemPriority.CRITICAL, null)))
-                .contains("priority:critical");
+    void priority_urgent() {
+        assertThat(provider.labels(workItem(WorkItemStatus.PENDING, WorkItemPriority.URGENT, null)))
+                .contains("priority:urgent");
     }
 
     @Test
@@ -67,9 +67,9 @@ class GitHubLabelBuilderTest {
     }
 
     @Test
-    void priority_normal() {
-        assertThat(provider.labels(workItem(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null)))
-                .contains("priority:normal");
+    void priority_medium() {
+        assertThat(provider.labels(workItem(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, null)))
+                .contains("priority:medium");
     }
 
     @Test
@@ -79,46 +79,46 @@ class GitHubLabelBuilderTest {
     }
 
     @Test
-    void priority_null_defaultsToNormal() {
+    void priority_null_defaultsToMedium() {
         assertThat(provider.labels(workItem(WorkItemStatus.PENDING, null, null)))
-                .contains("priority:normal");
+                .contains("priority:medium");
     }
 
     // ── Correctness — status ──────────────────────────────────────────────────
 
     @Test
     void status_pending() {
-        assertThat(provider.labels(workItem(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null)))
+        assertThat(provider.labels(workItem(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, null)))
                 .contains("status:pending");
     }
 
     @Test
     void status_assigned() {
-        assertThat(provider.labels(workItem(WorkItemStatus.ASSIGNED, WorkItemPriority.NORMAL, null)))
+        assertThat(provider.labels(workItem(WorkItemStatus.ASSIGNED, WorkItemPriority.MEDIUM, null)))
                 .contains("status:assigned");
     }
 
     @Test
     void status_inProgress() {
-        assertThat(provider.labels(workItem(WorkItemStatus.IN_PROGRESS, WorkItemPriority.NORMAL, null)))
+        assertThat(provider.labels(workItem(WorkItemStatus.IN_PROGRESS, WorkItemPriority.MEDIUM, null)))
                 .contains("status:in-progress");
     }
 
     @Test
     void status_delegated() {
-        assertThat(provider.labels(workItem(WorkItemStatus.DELEGATED, WorkItemPriority.NORMAL, null)))
+        assertThat(provider.labels(workItem(WorkItemStatus.DELEGATED, WorkItemPriority.MEDIUM, null)))
                 .contains("status:delegated");
     }
 
     @Test
     void status_suspended() {
-        assertThat(provider.labels(workItem(WorkItemStatus.SUSPENDED, WorkItemPriority.NORMAL, null)))
+        assertThat(provider.labels(workItem(WorkItemStatus.SUSPENDED, WorkItemPriority.MEDIUM, null)))
                 .contains("status:suspended");
     }
 
     @Test
     void status_escalated() {
-        assertThat(provider.labels(workItem(WorkItemStatus.ESCALATED, WorkItemPriority.NORMAL, null)))
+        assertThat(provider.labels(workItem(WorkItemStatus.ESCALATED, WorkItemPriority.MEDIUM, null)))
                 .contains("status:escalated");
     }
 
@@ -127,7 +127,7 @@ class GitHubLabelBuilderTest {
         for (final WorkItemStatus terminal : List.of(
                 WorkItemStatus.COMPLETED, WorkItemStatus.REJECTED,
                 WorkItemStatus.CANCELLED, WorkItemStatus.EXPIRED)) {
-            final List<String> labels = provider.labels(workItem(terminal, WorkItemPriority.NORMAL, null));
+            final List<String> labels = provider.labels(workItem(terminal, WorkItemPriority.MEDIUM, null));
             assertThat(labels).noneMatch(l -> l.startsWith("status:"))
                     .as("terminal status %s should produce no status label", terminal);
         }
@@ -137,25 +137,25 @@ class GitHubLabelBuilderTest {
 
     @Test
     void category_producesLabel() {
-        assertThat(provider.labels(workItem(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, "legal")))
+        assertThat(provider.labels(workItem(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, "legal")))
                 .contains("category:legal");
     }
 
     @Test
     void category_isLowercased() {
-        assertThat(provider.labels(workItem(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, "Finance")))
+        assertThat(provider.labels(workItem(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, "Finance")))
                 .contains("category:finance");
     }
 
     @Test
     void category_null_noLabel() {
-        assertThat(provider.labels(workItem(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null)))
+        assertThat(provider.labels(workItem(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, null)))
                 .noneMatch(l -> l.startsWith("category:"));
     }
 
     @Test
     void category_blank_noLabel() {
-        assertThat(provider.labels(workItem(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, "  ")))
+        assertThat(provider.labels(workItem(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, "  ")))
                 .noneMatch(l -> l.startsWith("category:"));
     }
 
@@ -163,7 +163,7 @@ class GitHubLabelBuilderTest {
 
     @Test
     void workItemLabels_addedToManagedLabels() {
-        final WorkItem wi = workItem(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
+        final WorkItem wi = workItem(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, null);
         wi.labels.add(new WorkItemLabel("legal/contracts/nda",
                 io.casehub.work.runtime.model.LabelPersistence.MANUAL, "alice"));
         wi.labels.add(new WorkItemLabel("finance/approval",
@@ -176,7 +176,7 @@ class GitHubLabelBuilderTest {
 
     @Test
     void workItemLabels_null_noError() {
-        final WorkItem wi = workItem(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
+        final WorkItem wi = workItem(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, null);
         wi.labels = null;
 
         assertThat(provider.labels(wi)).isNotEmpty(); // priority label at minimum

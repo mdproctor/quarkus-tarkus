@@ -87,7 +87,7 @@ public class LabellingScenario {
                 "VIP client unable to log in since platform upgrade — urgent resolution required",
                 "support",
                 null,
-                WorkItemPriority.NORMAL,
+                WorkItemPriority.MEDIUM,
                 null,
                 null,
                 null,

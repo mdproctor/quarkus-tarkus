@@ -80,7 +80,7 @@ Maven multi-module layout:
 | `category` | String | Classification: "finance", "legal", "security-review" |
 | `formKey` | String | UI form reference — how frontends render this item |
 | `status` | WorkItemStatus enum | See lifecycle below |
-| `priority` | WorkItemPriority enum | LOW, NORMAL, HIGH, CRITICAL |
+| `priority` | WorkItemPriority enum | LOW, MEDIUM, HIGH, URGENT |
 | `assigneeId` | String | Who currently has it (actual owner) |
 | `owner` | String | Who is ultimately responsible; set on first delegation |
 | `candidateGroups` | String | Comma-separated groups who can claim |

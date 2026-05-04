@@ -204,7 +204,7 @@ class IssueLinkServiceTest {
         service.linkExistingIssue(workItemId, "github", "owner/repo#30", "alice");
         service.linkExistingIssue(workItemId, "github", "owner/repo#31", "alice");
 
-        final WorkItem wi = workItem(workItemId, WorkItemStatus.ASSIGNED, WorkItemPriority.NORMAL, null);
+        final WorkItem wi = workItem(workItemId, WorkItemStatus.ASSIGNED, WorkItemPriority.MEDIUM, null);
         lifecycleEvents.fire(WorkItemLifecycleEvent.of("ASSIGNED", wi, "alice", null));
 
         assertThat(stub.synced()).hasSize(2);
@@ -230,7 +230,7 @@ class IssueLinkServiceTest {
         stub.reset();
         stub.seed("owner/repo#40", "Will fail", "open"); // re-seed so link lookup works but sync is called
 
-        final WorkItem wi = workItem(workItemId, WorkItemStatus.COMPLETED, WorkItemPriority.NORMAL, null);
+        final WorkItem wi = workItem(workItemId, WorkItemStatus.COMPLETED, WorkItemPriority.MEDIUM, null);
         // Should not throw even if sync fails internally
         lifecycleEvents.fire(WorkItemLifecycleEvent.of("COMPLETED", wi, "alice", "done"));
 

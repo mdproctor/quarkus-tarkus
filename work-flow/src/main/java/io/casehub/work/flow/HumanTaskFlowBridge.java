@@ -47,7 +47,7 @@ public class HumanTaskFlowBridge {
      * @param title human-readable task name (required)
      * @param description what the human needs to do (nullable)
      * @param assigneeId who should act on it (nullable — use candidateGroups instead if routing)
-     * @param priority task priority (null defaults to NORMAL)
+     * @param priority task priority (null defaults to MEDIUM)
      * @param payload JSON context for the human to act on (nullable)
      * @return a Uni that completes with the resolution JSON when the human acts,
      *         or fails with {@link WorkItemResolutionException} if the WorkItem is rejected or cancelled
@@ -61,7 +61,7 @@ public class HumanTaskFlowBridge {
 
         final WorkItemCreateRequest request = new WorkItemCreateRequest(
                 title, description, null, null,
-                priority != null ? priority : WorkItemPriority.NORMAL,
+                priority != null ? priority : WorkItemPriority.MEDIUM,
                 assigneeId, null, null, null,
                 "work-flow",
                 payload, null, null, null, null, null, null, null, null);
@@ -76,7 +76,7 @@ public class HumanTaskFlowBridge {
      * @param title human-readable task name
      * @param description what the human needs to do (nullable)
      * @param candidateGroups comma-separated group names (e.g. "finance-team,managers")
-     * @param priority task priority (null defaults to NORMAL)
+     * @param priority task priority (null defaults to MEDIUM)
      * @param payload JSON context for the human (nullable)
      * @return a Uni that completes with the resolution JSON when a group member acts,
      *         or fails with {@link WorkItemResolutionException} if the WorkItem is rejected or cancelled
@@ -90,7 +90,7 @@ public class HumanTaskFlowBridge {
 
         final WorkItemCreateRequest request = new WorkItemCreateRequest(
                 title, description, null, null,
-                priority != null ? priority : WorkItemPriority.NORMAL,
+                priority != null ? priority : WorkItemPriority.MEDIUM,
                 null, candidateGroups, null, null,
                 "work-flow",
                 payload, null, null, null, null, null, null, null, null);

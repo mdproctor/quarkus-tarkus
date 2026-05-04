@@ -269,7 +269,7 @@ class InMemoryRepositoryTest {
     private WorkItem workItem(final WorkItemStatus status) {
         final WorkItem wi = new WorkItem();
         wi.status = status;
-        wi.priority = WorkItemPriority.NORMAL;
+        wi.priority = WorkItemPriority.MEDIUM;
         wi.title = "Test";
         wi.createdAt = Instant.now();
         wi.updatedAt = Instant.now();

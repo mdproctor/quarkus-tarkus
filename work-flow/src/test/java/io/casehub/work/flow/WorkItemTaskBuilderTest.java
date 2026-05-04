@@ -71,6 +71,6 @@ class WorkItemTaskBuilderTest {
         WorkItemTaskBuilder builder = new WorkItemTaskBuilder("review", bridge)
                 .title("Review")
                 .assigneeId("alice");
-        assertThat(builder.getPriority()).isEqualTo(WorkItemPriority.NORMAL);
+        assertThat(builder.getPriority()).isEqualTo(WorkItemPriority.MEDIUM);
     }
 }

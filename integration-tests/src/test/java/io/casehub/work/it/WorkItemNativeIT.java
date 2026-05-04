@@ -38,7 +38,7 @@ class WorkItemNativeIT {
                 .body("""
                         {
                           "title": "%s",
-                          "priority": "NORMAL",
+                          "priority": "MEDIUM",
                           "createdBy": "native-test"
                         }
                         """.formatted(title))
@@ -80,7 +80,7 @@ class WorkItemNativeIT {
         given()
                 .contentType(ContentType.JSON)
                 .body("""
-                        {"title":"Default expiry test","priority":"NORMAL","createdBy":"system"}
+                        {"title":"Default expiry test","priority":"MEDIUM","createdBy":"system"}
                         """)
                 .when().post("/workitems")
                 .then()
@@ -96,7 +96,7 @@ class WorkItemNativeIT {
                         {
                           "title": "Group task native",
                           "candidateGroups": "finance,leads",
-                          "priority": "NORMAL",
+                          "priority": "MEDIUM",
                           "createdBy": "system"
                         }
                         """)
@@ -258,7 +258,7 @@ class WorkItemNativeIT {
                         {
                           "title": "Inbox group native",
                           "candidateGroups": "native-team",
-                          "priority": "NORMAL",
+                          "priority": "MEDIUM",
                           "createdBy": "system"
                         }
                         """)

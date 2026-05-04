@@ -121,7 +121,7 @@ public class ReviewStepService {
         final WorkItem advisory = workItemService.create(new WorkItemCreateRequest(
                 "Security advisory: TLS 1.0 deprecation — migration guide",
                 "Update TLS guide. Must publish before customer notification Friday.",
-                "security-docs", "migration-guide", WorkItemPriority.NORMAL,
+                "security-docs", "migration-guide", WorkItemPriority.MEDIUM,
                 null, "security-writers,docs-team", null, null, "doc-system",
                 "{\"doc_type\": \"security-advisory\"}", null, null, null, null, null, null, null, null));
         advisoryId.set(advisory.id);
@@ -137,7 +137,7 @@ public class ReviewStepService {
         final WorkItem tutorial = workItemService.create(new WorkItemCreateRequest(
                 "Getting started tutorial — CaseHub Work quick start",
                 "Write a 10-minute getting-started guide for new users.",
-                "tutorials", "quick-start", WorkItemPriority.NORMAL,
+                "tutorials", "quick-start", WorkItemPriority.MEDIUM,
                 null, "docs-team", null, null, "doc-system",
                 null, null, null, null, null, null, null, null, null));
         tutorialId.set(tutorial.id);
@@ -254,13 +254,13 @@ public class ReviewStepService {
         }
         final String notTerminal = "status != 'COMPLETED' && status != 'REJECTED' && status != 'CANCELLED' && status != 'ESCALATED'";
         persist("Review: Critical \u2192 Urgent Tier", "jexl",
-                "priority == 'CRITICAL' && " + notTerminal,
+                "priority == 'URGENT' && " + notTerminal,
                 List.of(FilterAction.applyLabel("review/urgent")));
         persist("Review: High \u2192 Standard Tier", "jexl",
                 "priority == 'HIGH' && " + notTerminal,
                 List.of(FilterAction.applyLabel("review/standard")));
         persist("Review: Normal/Low \u2192 Routine Tier", "jexl",
-                "(priority == 'NORMAL' || priority == 'LOW') && (candidateGroups == null || !candidateGroups.contains('security-writers')) && "
+                "(priority == 'MEDIUM' || priority == 'LOW') && (candidateGroups == null || !candidateGroups.contains('security-writers')) && "
                         + notTerminal,
                 List.of(FilterAction.applyLabel("review/routine")));
         persist("Review: Urgent + Pending \u2192 Unassigned", "jexl",

@@ -66,7 +66,7 @@ class WorkItemInstancesResourceTest {
             WorkItem item = new WorkItem();
             item.title = "Regular";
             item.status = WorkItemStatus.PENDING;
-            item.priority = WorkItemPriority.NORMAL;
+            item.priority = WorkItemPriority.MEDIUM;
             item.createdBy = "test";
             item.persist();
             return item.id.toString();

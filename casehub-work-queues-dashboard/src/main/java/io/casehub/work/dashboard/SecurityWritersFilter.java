@@ -18,7 +18,7 @@ import io.casehub.work.runtime.model.WorkItem;
  * Java logic rather than an expression string. A document flagged as security-related
  * ({@code candidateGroups} contains {@code "security-writers"}) must always enter the
  * urgent review queue to meet compliance publication timelines, even if submitted with
- * {@code NORMAL} priority by mistake.
+ * {@code MEDIUM} priority by mistake.
  *
  * <p>
  * Lambda filters are always active while deployed. They are discovered automatically
