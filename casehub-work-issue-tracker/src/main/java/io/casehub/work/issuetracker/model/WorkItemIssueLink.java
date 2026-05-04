@@ -108,6 +108,19 @@ public class WorkItemIssueLink extends PanacheEntityBase {
     }
 
     /**
+     * Return all links for a given tracker type and external ref, across all WorkItems.
+     * Used by webhook handlers that receive the tracker ref but not the WorkItem ID.
+     *
+     * @param trackerType the tracker type string (e.g. {@code "github"})
+     * @param externalRef the tracker-specific reference (e.g. {@code "owner/repo#42"})
+     * @return list of links; may be empty if no WorkItem is linked to this ref
+     */
+    public static List<WorkItemIssueLink> findByTrackerRef(
+            final String trackerType, final String externalRef) {
+        return list("trackerType = ?1 AND externalRef = ?2", trackerType, externalRef);
+    }
+
+    /**
      * Return a specific link by WorkItem and tracker reference.
      *
      * @param workItemId the WorkItem UUID
