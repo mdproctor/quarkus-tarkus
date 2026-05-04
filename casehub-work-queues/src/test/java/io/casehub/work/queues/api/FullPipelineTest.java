@@ -42,7 +42,7 @@ class FullPipelineTest {
 
         var id = given().contentType(ContentType.JSON)
                 .body("""
-                        {"title":"Normal priority item","priority":"NORMAL","createdBy":"alice"}""")
+                        {"title":"Normal priority item","priority":"MEDIUM","createdBy":"alice"}""")
                 .post("/workitems").then().statusCode(201).extract().path("id");
 
         given().get("/workitems/" + id).then().statusCode(200)

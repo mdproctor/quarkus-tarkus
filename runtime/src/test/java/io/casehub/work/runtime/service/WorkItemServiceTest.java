@@ -244,7 +244,7 @@ class WorkItemServiceTest {
     private WorkItemCreateRequest basicRequest() {
         return new WorkItemCreateRequest(
                 "Test item", "Do something", null, null,
-                WorkItemPriority.NORMAL,
+                WorkItemPriority.MEDIUM,
                 null, null, null, null,
                 "system", null, null, null, null, null, null, null, null, null);
     }
@@ -295,7 +295,7 @@ class WorkItemServiceTest {
         Instant explicit = Instant.now().plus(48, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS);
         WorkItemCreateRequest req = new WorkItemCreateRequest(
                 "Explicit expiry", null, null, null,
-                WorkItemPriority.NORMAL,
+                WorkItemPriority.MEDIUM,
                 null, null, null, null,
                 "system", null, null, explicit, null, null, null, null, null, null);
         WorkItem wi = service.create(req);
@@ -306,7 +306,7 @@ class WorkItemServiceTest {
     void create_withCandidateGroups_storesGroups() {
         WorkItemCreateRequest req = new WorkItemCreateRequest(
                 "Group item", null, null, null,
-                WorkItemPriority.NORMAL,
+                WorkItemPriority.MEDIUM,
                 null, "team-a,team-b", null, null,
                 "system", null, null, null, null, null, null, null, null, null);
         WorkItem wi = service.create(req);
@@ -795,7 +795,7 @@ class WorkItemServiceTest {
     void inbox_findsByCandidateGroup() {
         WorkItemCreateRequest req = new WorkItemCreateRequest(
                 "Group task", null, null, null,
-                WorkItemPriority.NORMAL,
+                WorkItemPriority.MEDIUM,
                 null, "team-a,team-b", null, null,
                 "system", null, null, null, null, null, null, null, null, null);
         WorkItem wi = service.create(req);
@@ -808,7 +808,7 @@ class WorkItemServiceTest {
     void inbox_findsByCandidateUsers() {
         WorkItemCreateRequest req = new WorkItemCreateRequest(
                 "Candidate task", null, null, null,
-                WorkItemPriority.NORMAL,
+                WorkItemPriority.MEDIUM,
                 null, null, "bob", null,
                 "system", null, null, null, null, null, null, null, null, null);
         WorkItem wi = service.create(req);

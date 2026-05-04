@@ -82,7 +82,7 @@ public class CancelScenario {
                 "Individual developer licence for IntelliJ IDEA Ultimate Edition",
                 "procurement",
                 null,
-                WorkItemPriority.NORMAL,
+                WorkItemPriority.MEDIUM,
                 null,
                 null,
                 ACTOR_MANAGER,

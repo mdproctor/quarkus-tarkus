@@ -13,7 +13,7 @@ import io.casehub.work.runtime.model.WorkItemPriority;
  *
  * <p>
  * Params: {@code priority} (required) — must be a valid {@link WorkItemPriority} name
- * (e.g. {@code CRITICAL}, {@code HIGH}, {@code NORMAL}, {@code LOW}).
+ * (e.g. {@code URGENT}, {@code HIGH}, {@code MEDIUM}, {@code LOW}).
  * Skips silently if {@code priority} is null or not a recognised enum value.
  */
 @ApplicationScoped

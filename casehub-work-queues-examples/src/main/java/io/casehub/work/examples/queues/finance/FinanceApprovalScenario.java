@@ -35,17 +35,17 @@ import io.casehub.work.runtime.service.WorkItemService;
  * Demonstrates multi-tier approval queues inspired by ServiceNow change management:
  * <ul>
  * <li>Standard finance requests → {@code finance/approval} (standard queue)</li>
- * <li>CRITICAL finance requests → {@code finance/approval} + {@code finance/exec-review}
+ * <li>URGENT finance requests → {@code finance/approval} + {@code finance/exec-review}
  * (dual-queue: standard team AND executive oversight)</li>
  * </ul>
  *
  * <p>
  * Three WorkItems are created:
  * <ol>
- * <li>NORMAL expense report → standard approval only → {@link io.casehub.work.queues.event.QueueEventType#ADDED}
+ * <li>MEDIUM expense report → standard approval only → {@link io.casehub.work.queues.event.QueueEventType#ADDED}
  * to Finance Approval Queue</li>
  * <li>HIGH budget reallocation → standard approval only → ADDED to Finance Approval Queue</li>
- * <li>CRITICAL emergency spend → both queues → ADDED to Finance Approval Queue +
+ * <li>URGENT emergency spend → both queues → ADDED to Finance Approval Queue +
  * ADDED to Finance Exec Review Queue</li>
  * </ol>
  *
@@ -85,7 +85,7 @@ public class FinanceApprovalScenario {
         filterB.name = "Finance-B: Critical Spend to Executive Review";
         filterB.scope = FilterScope.ORG;
         filterB.conditionLanguage = "jexl";
-        filterB.conditionExpression = "category == 'finance' && priority == 'CRITICAL'";
+        filterB.conditionExpression = "category == 'finance' && priority == 'URGENT'";
         filterB.actions = WorkItemFilter.serializeActions(List.of(
                 FilterAction.applyLabel("finance/exec-review")));
         filterB.active = true;
@@ -123,20 +123,20 @@ public class FinanceApprovalScenario {
         eventLog.clear();
         final List<QueueScenarioStep> steps = new ArrayList<>();
 
-        LOG.info("[FINANCE] Step 1/4: NORMAL expense report → finance/approval only");
+        LOG.info("[FINANCE] Step 1/4: MEDIUM expense report → finance/approval only");
         final WorkItem expense = workItemService.create(new WorkItemCreateRequest(
                 "Q2 team training budget — approval required",
                 "Request to use £2,400 from training budget for team certification renewals.",
-                "finance", "budget-request", WorkItemPriority.NORMAL,
+                "finance", "budget-request", WorkItemPriority.MEDIUM,
                 null, "finance-team", null, null, "hr-system",
                 "{\"amount\": 2400, \"currency\": \"GBP\", \"category\": \"training\"}",
                 null, null, null, null, null, null, null, null));
         steps.add(new QueueScenarioStep(1,
-                "NORMAL expense — finance/approval only (standard team queue)",
+                "MEDIUM expense — finance/approval only (standard team queue)",
                 expense.id, inferredPaths(expense), manualPaths(expense),
                 formatEvents(eventLog.drain())));
 
-        LOG.info("[FINANCE] Step 2/4: HIGH budget reallocation → finance/approval only (HIGH != CRITICAL)");
+        LOG.info("[FINANCE] Step 2/4: HIGH budget reallocation → finance/approval only (HIGH != URGENT)");
         final WorkItem realloc = workItemService.create(new WorkItemCreateRequest(
                 "Q3 marketing budget reallocation — £15,000 to digital",
                 "Propose reallocating £15,000 from events budget to digital marketing for H2.",
@@ -145,35 +145,35 @@ public class FinanceApprovalScenario {
                 "{\"amount\": 15000, \"from\": \"events\", \"to\": \"digital\"}",
                 null, null, null, null, null, null, null, null));
         steps.add(new QueueScenarioStep(2,
-                "HIGH budget reallocation — finance/approval only (CRITICAL threshold not met for exec review)",
+                "HIGH budget reallocation — finance/approval only (URGENT threshold not met for exec review)",
                 realloc.id, inferredPaths(realloc), manualPaths(realloc),
                 formatEvents(eventLog.drain())));
 
-        LOG.info("[FINANCE] Step 3/4: CRITICAL emergency spend → finance/approval + finance/exec-review");
+        LOG.info("[FINANCE] Step 3/4: URGENT emergency spend → finance/approval + finance/exec-review");
         final WorkItem emergency = workItemService.create(new WorkItemCreateRequest(
                 "Emergency cloud spend — incident recovery infrastructure",
                 "Incident required provisioning $180,000 of additional cloud capacity.",
-                "finance", "emergency-spend", WorkItemPriority.CRITICAL,
+                "finance", "emergency-spend", WorkItemPriority.URGENT,
                 null, "finance-team,executive-team", null, null, "ops-system",
                 "{\"amount\": 180000, \"currency\": \"USD\", \"incident_id\": \"INC-9981\"}",
                 null, null, null, null, null, null, null, null));
         steps.add(new QueueScenarioStep(3,
-                "CRITICAL emergency spend — both finance/approval (standard) AND finance/exec-review (executive oversight)",
+                "URGENT emergency spend — both finance/approval (standard) AND finance/exec-review (executive oversight)",
                 emergency.id, inferredPaths(emergency), manualPaths(emergency),
                 formatEvents(eventLog.drain())));
 
-        LOG.info("[FINANCE] Step 4/4: finance/exec-review queue — only CRITICAL item");
+        LOG.info("[FINANCE] Step 4/4: finance/exec-review queue — only URGENT item");
         final List<UUID> execQueue = workItemStore.scan(WorkItemQuery.byLabelPattern("finance/exec-review"))
                 .stream().map(w -> w.id).toList();
         steps.add(new QueueScenarioStep(4,
-                "finance/exec-review queue — contains CRITICAL emergency spend only; NORMAL and HIGH items absent",
+                "finance/exec-review queue — contains URGENT emergency spend only; MEDIUM and HIGH items absent",
                 null,
                 List.of("finance/exec-review contains " + execQueue.size() + " item(s)"),
                 List.of(), List.of()));
 
         return new QueueScenarioResponse(
                 "finance-approval-chain",
-                "Multi-tier finance approval: standard queue for all, exec-review queue for CRITICAL only",
+                "Multi-tier finance approval: standard queue for all, exec-review queue for URGENT only",
                 steps, execQueue);
     }
 

@@ -109,7 +109,7 @@ public class QueueModuleScenario {
                 "Non-disclosure agreement for technology partnership — standard NDA, review for compliance with IP policy",
                 "legal",
                 null,
-                WorkItemPriority.NORMAL,
+                WorkItemPriority.MEDIUM,
                 null,
                 "legal-team",
                 null,

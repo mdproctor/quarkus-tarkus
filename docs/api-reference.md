@@ -20,7 +20,7 @@ Creates a new WorkItem in `PENDING` status. If no `expiresAt` is supplied, the e
 | `description` | string | no | What the human needs to do |
 | `category` | string | no | Classification label (e.g. `finance`, `legal`, `security-review`) |
 | `formKey` | string | no | UI form reference — how frontends render this item |
-| `priority` | WorkItemPriority | no | Defaults to `NORMAL` if omitted |
+| `priority` | WorkItemPriority | no | Defaults to `MEDIUM` if omitted |
 | `assigneeId` | string | no | Direct assignee; leave null to use candidate groups |
 | `candidateGroups` | string | no | Comma-separated group names eligible to claim (e.g. `finance-team,managers`) |
 | `candidateUsers` | string | no | Comma-separated user IDs individually invited to claim |
@@ -394,7 +394,7 @@ Returned by all lifecycle endpoints and list endpoints.
 | `category` | string | Classification label |
 | `formKey` | string | UI form reference |
 | `status` | WorkItemStatus | Current lifecycle status |
-| `priority` | WorkItemPriority | `LOW`, `NORMAL`, `HIGH`, or `CRITICAL` |
+| `priority` | WorkItemPriority | `LOW`, `MEDIUM`, `HIGH`, or `URGENT` |
 | `assigneeId` | string | Current owner (actual worker) |
 | `owner` | string | Ultimate responsible party; set on first delegation |
 | `candidateGroups` | string | Comma-separated groups eligible to claim |
@@ -495,9 +495,9 @@ Note: `REJECTED` and `EXPIRED` are not terminal by the `isTerminal()` definition
 | Value | Description |
 |---|---|
 | `LOW` | Below-normal urgency |
-| `NORMAL` | Default priority |
+| `MEDIUM` | Default priority |
 | `HIGH` | Elevated urgency |
-| `CRITICAL` | Requires immediate attention |
+| `URGENT` | Requires immediate attention |
 
 ---
 
@@ -1261,7 +1261,7 @@ Returns WorkItems that breached their `expiresAt` deadline.
 | `from` | ISO-8601 instant | No | Include only items whose `expiresAt` ≥ from |
 | `to` | ISO-8601 instant | No | Include only items whose `expiresAt` ≤ to |
 | `category` | string | No | Filter to this category |
-| `priority` | enum | No | Filter to this priority (LOW\|NORMAL\|HIGH\|CRITICAL) |
+| `priority` | enum | No | Filter to this priority (LOW\|MEDIUM\|HIGH\|URGENT) |
 
 **Breach definition:** active item past `expiresAt`, OR terminal item where `completedAt > expiresAt`. Items with no `expiresAt` are excluded.
 

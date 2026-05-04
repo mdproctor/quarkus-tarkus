@@ -69,7 +69,7 @@ class FilterResourceTest {
         given().contentType(ContentType.JSON)
                 .body("""
                         {"conditionLanguage":"jexl","conditionExpression":"priority == 'HIGH'",
-                         "workItem":{"title":"t","status":"PENDING","priority":"NORMAL"}}""")
+                         "workItem":{"title":"t","status":"PENDING","priority":"MEDIUM"}}""")
                 .post("/filters/evaluate").then().statusCode(200).body("matches", equalTo(false));
     }
 
@@ -89,7 +89,7 @@ class FilterResourceTest {
 
         given().contentType(ContentType.JSON)
                 .body("""
-                        {"name":"Update test","conditionExpression":"priority == 'NORMAL'"}""")
+                        {"name":"Update test","conditionExpression":"priority == 'MEDIUM'"}""")
                 .put("/filters/" + id)
                 .then().statusCode(200).body("name", equalTo("Update test"));
     }

@@ -90,7 +90,7 @@ public class EscalationScenario {
                         + "Revenue impact: ~£2,000/min. Immediate action required.",
                 "incident",
                 null,
-                WorkItemPriority.CRITICAL,
+                WorkItemPriority.URGENT,
                 null,
                 null,
                 "oncall-engineer",

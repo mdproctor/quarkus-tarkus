@@ -68,7 +68,7 @@ public class WorkItemService {
         item.description = request.description();
         item.category = request.category();
         item.formKey = request.formKey();
-        item.priority = request.priority() != null ? request.priority() : WorkItemPriority.NORMAL;
+        item.priority = request.priority() != null ? request.priority() : WorkItemPriority.MEDIUM;
         item.assigneeId = request.assigneeId();
         item.candidateGroups = request.candidateGroups();
         item.candidateUsers = request.candidateUsers();

@@ -66,7 +66,7 @@ class FilterEngineTest {
     @Test
     void nonMatchingFilter_doesNotApplyLabel() {
         var wi = new WorkItem();
-        wi.priority = WorkItemPriority.NORMAL;
+        wi.priority = WorkItemPriority.MEDIUM;
         evaluate(wi, List.of(new TestFilter("HIGH", List.of(FilterAction.applyLabel("priority/high")))));
         assertThat(wi.labels).extracting(l -> l.path).doesNotContain("priority/high");
     }
@@ -74,7 +74,7 @@ class FilterEngineTest {
     @Test
     void stripsExistingInferredLabels_beforeEval() {
         var wi = new WorkItem();
-        wi.priority = WorkItemPriority.NORMAL;
+        wi.priority = WorkItemPriority.MEDIUM;
         wi.labels.add(new WorkItemLabel("old/inferred", LabelPersistence.INFERRED, "old"));
         wi.labels.add(new WorkItemLabel("manual/keep", LabelPersistence.MANUAL, "alice"));
         evaluate(wi, List.of());

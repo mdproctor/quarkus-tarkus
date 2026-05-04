@@ -53,7 +53,7 @@ class JpaWorkItemRepositoryTest {
         WorkItem wi = new WorkItem();
         wi.title = "Test";
         wi.status = status;
-        wi.priority = WorkItemPriority.NORMAL;
+        wi.priority = WorkItemPriority.MEDIUM;
         wi.createdAt = Instant.now();
         wi.updatedAt = Instant.now();
         wi.expiresAt = expiresAt;
@@ -232,7 +232,7 @@ class JpaWorkItemRepositoryTest {
         var wi = new WorkItem();
         wi.title = "label-test-exact";
         wi.status = WorkItemStatus.PENDING;
-        wi.priority = WorkItemPriority.NORMAL;
+        wi.priority = WorkItemPriority.MEDIUM;
         wi.labels.add(new WorkItemLabel("legal/contracts", LabelPersistence.MANUAL, "alice"));
         workItemStore.put(wi);
 
@@ -247,7 +247,7 @@ class JpaWorkItemRepositoryTest {
         var wi = new WorkItem();
         wi.title = "label-test-wildcard";
         wi.status = WorkItemStatus.PENDING;
-        wi.priority = WorkItemPriority.NORMAL;
+        wi.priority = WorkItemPriority.MEDIUM;
         wi.labels.add(new WorkItemLabel("legal/contracts", LabelPersistence.MANUAL, "alice"));
         workItemStore.put(wi);
 
@@ -264,14 +264,14 @@ class JpaWorkItemRepositoryTest {
         var wi1 = new WorkItem();
         wi1.title = "label-test-multi-1";
         wi1.status = WorkItemStatus.PENDING;
-        wi1.priority = WorkItemPriority.NORMAL;
+        wi1.priority = WorkItemPriority.MEDIUM;
         wi1.labels.add(new WorkItemLabel("legal/contracts", LabelPersistence.MANUAL, "alice"));
         workItemStore.put(wi1);
 
         var wi2 = new WorkItem();
         wi2.title = "label-test-multi-2";
         wi2.status = WorkItemStatus.PENDING;
-        wi2.priority = WorkItemPriority.NORMAL;
+        wi2.priority = WorkItemPriority.MEDIUM;
         wi2.labels.add(new WorkItemLabel("legal/contracts/nda", LabelPersistence.MANUAL, "alice"));
         workItemStore.put(wi2);
 

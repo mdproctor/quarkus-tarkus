@@ -12,9 +12,9 @@ import io.casehub.work.runtime.api.AuditEntryResponse;
  * @param scenario identifier of the scenario
  * @param steps chronological log of each step taken
  * @param highPriorityWorkItemId UUID of the HIGH-priority WorkItem
- * @param normalPriorityWorkItemId UUID of the NORMAL-priority WorkItem
+ * @param normalPriorityWorkItemId UUID of the MEDIUM-priority WorkItem
  * @param urgentLabelOnHighPriority true if the "urgent" label was applied to the HIGH-priority item
- * @param noUrgentLabelOnNormalPriority true if the "urgent" label was NOT applied to the NORMAL-priority item
+ * @param noUrgentLabelOnNormalPriority true if the "urgent" label was NOT applied to the MEDIUM-priority item
  * @param auditTrail all audit entries for both WorkItems
  */
 public record FilterRulesResponse(

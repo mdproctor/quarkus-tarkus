@@ -149,7 +149,7 @@ casehub-work/
 │       ├── model/
 │       │   ├── WorkItem.java              — PanacheEntity (the core concept); callerRef field for spawn routing
 │       │   ├── WorkItemStatus.java        — enum: PENDING|ASSIGNED|IN_PROGRESS|...
-│       │   ├── WorkItemPriority.java      — enum: LOW|NORMAL|HIGH|CRITICAL
+│       │   ├── WorkItemPriority.java      — enum: LOW|MEDIUM|HIGH|URGENT
 │       │   ├── WorkItemSpawnGroup.java    — spawn batch tracking (idempotency + membership)
 │       │   └── AuditEntry.java            — PanacheEntity (append-only audit log)
 │       ├── repository/

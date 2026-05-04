@@ -150,7 +150,7 @@ public class AuditSearchScenario {
                 "Procurement approval required for vendor onboarding",
                 "procurement",
                 null,
-                WorkItemPriority.NORMAL,
+                WorkItemPriority.MEDIUM,
                 null,
                 null,
                 null,

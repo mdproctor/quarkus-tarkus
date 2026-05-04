@@ -14,7 +14,7 @@ import io.casehub.work.runtime.api.WorkItemLabelResponse;
  * @param description Detailed description of what needs to be done.
  * @param category Logical category or process classification (e.g. "approval", "review").
  * @param formKey Key identifying the UI form to render for this work item.
- * @param priority Priority level; defaults to {@link WorkItemPriority#NORMAL} when null.
+ * @param priority Priority level; defaults to {@link WorkItemPriority#MEDIUM} when null.
  * @param assigneeId Identity of the actor to whom the item is pre-assigned at creation.
  * @param candidateGroups Comma-separated group identifiers eligible to claim this item.
  * @param candidateUsers Comma-separated user identifiers eligible to claim this item.

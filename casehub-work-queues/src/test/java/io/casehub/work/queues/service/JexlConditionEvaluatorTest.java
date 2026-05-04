@@ -32,19 +32,19 @@ class JexlConditionEvaluatorTest {
 
     @Test
     void evaluate_priorityHigh_doesNotMatchNormal() {
-        var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
+        var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, null);
         assertThat(evaluator.evaluate(wi, ExpressionDescriptor.of(evaluator.language(), "priority == 'HIGH'"))).isFalse();
     }
 
     @Test
     void evaluate_assigneeNull_matchesNull() {
-        var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
+        var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, null);
         assertThat(evaluator.evaluate(wi, ExpressionDescriptor.of(evaluator.language(), "assigneeId == null"))).isTrue();
     }
 
     @Test
     void evaluate_statusPending() {
-        var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
+        var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, null);
         assertThat(evaluator.evaluate(wi, ExpressionDescriptor.of(evaluator.language(), "status == 'PENDING'"))).isTrue();
     }
 
@@ -57,20 +57,20 @@ class JexlConditionEvaluatorTest {
 
     @Test
     void evaluate_malformedExpression_returnsFalse() {
-        var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
+        var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, null);
         assertThat(evaluator.evaluate(wi, ExpressionDescriptor.of(evaluator.language(), "this is not jexl @@##"))).isFalse();
     }
 
     @Test
     void evaluate_category() {
-        var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
+        var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, null);
         wi.category = "legal";
         assertThat(evaluator.evaluate(wi, ExpressionDescriptor.of(evaluator.language(), "category == 'legal'"))).isTrue();
     }
 
     @Test
     void evaluate_labelContains_matchesWorkItemWithLabel() {
-        var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
+        var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, null);
         wi.labels.add(new WorkItemLabel("legal/contracts", LabelPersistence.MANUAL, "alice"));
         assertThat(evaluator.evaluate(wi, ExpressionDescriptor.of(evaluator.language(), "labels.contains('legal/contracts')")))
                 .isTrue();
@@ -78,7 +78,7 @@ class JexlConditionEvaluatorTest {
 
     @Test
     void evaluate_labelNotContains_noMatch() {
-        var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.NORMAL, null);
+        var wi = wi(WorkItemStatus.PENDING, WorkItemPriority.MEDIUM, null);
         assertThat(evaluator.evaluate(wi, ExpressionDescriptor.of(evaluator.language(), "labels.contains('legal/contracts')")))
                 .isFalse();
     }

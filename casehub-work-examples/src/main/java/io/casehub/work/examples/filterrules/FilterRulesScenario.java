@@ -27,7 +27,7 @@ import io.casehub.work.runtime.service.WorkItemService;
  *
  * <p>
  * Demonstrates the dynamic filter rule system: the procurement team configures a JEXL
- * rule that automatically applies the {@code urgent} label to any HIGH or CRITICAL priority
+ * rule that automatically applies the {@code urgent} label to any HIGH or URGENT priority
  * WorkItem at creation time. The rule is persisted in the database, survives restarts, and
  * can be disabled without a redeployment.
  *
@@ -35,9 +35,9 @@ import io.casehub.work.runtime.service.WorkItemService;
  * Steps:
  * <ol>
  * <li>Create a dynamic filter rule that applies the {@code urgent} label when priority is HIGH
- * or CRITICAL.</li>
+ * or URGENT.</li>
  * <li>Create a HIGH-priority WorkItem — the filter engine applies {@code urgent} automatically.</li>
- * <li>Create a NORMAL-priority WorkItem — no label is applied.</li>
+ * <li>Create a MEDIUM-priority WorkItem — no label is applied.</li>
  * <li>Verify labels on both WorkItems.</li>
  * <li>Delete the filter rule.</li>
  * </ol>
@@ -77,14 +77,14 @@ public class FilterRulesScenario {
         final int total = 5;
 
         // Step 1: create the dynamic filter rule
-        final String description1 = "procurement-system creates dynamic filter rule: auto-label urgent for HIGH/CRITICAL priority";
+        final String description1 = "procurement-system creates dynamic filter rule: auto-label urgent for HIGH/URGENT priority";
         LOG.infof("[SCENARIO] Step %d/%d: %s", 1, total, description1);
 
         final FilterRule rule = new FilterRule();
         rule.name = "auto-label-urgent";
-        rule.description = "Applies 'urgent' label to any HIGH or CRITICAL priority WorkItem at creation";
+        rule.description = "Applies 'urgent' label to any HIGH or URGENT priority WorkItem at creation";
         rule.enabled = true;
-        rule.condition = "workItem.priority.name() == 'HIGH' || workItem.priority.name() == 'CRITICAL'";
+        rule.condition = "workItem.priority.name() == 'HIGH' || workItem.priority.name() == 'URGENT'";
         rule.events = "ADD";
         rule.actionsJson = "[{\"type\":\"APPLY_LABEL\",\"params\":{\"path\":\"urgent\",\"appliedBy\":\"auto-label-urgent\"}}]";
         rule.persist();
@@ -116,8 +116,8 @@ public class FilterRulesScenario {
         final WorkItem highPriorityWi = workItemService.create(highPriorityRequest);
         steps.add(new StepLog(2, description2, highPriorityWi.id));
 
-        // Step 3: create a NORMAL-priority WorkItem — filter should NOT apply "urgent" label
-        final String description3 = "procurement-system creates NORMAL-priority WorkItem: Routine office supplies order";
+        // Step 3: create a MEDIUM-priority WorkItem — filter should NOT apply "urgent" label
+        final String description3 = "procurement-system creates MEDIUM-priority WorkItem: Routine office supplies order";
         LOG.infof("[SCENARIO] Step %d/%d: %s", 3, total, description3);
 
         final WorkItemCreateRequest normalPriorityRequest = new WorkItemCreateRequest(
@@ -125,7 +125,7 @@ public class FilterRulesScenario {
                 "Quarterly office supplies requisition for the procurement team",
                 "procurement",
                 null,
-                WorkItemPriority.NORMAL,
+                WorkItemPriority.MEDIUM,
                 null,
                 "procurement-team",
                 null,
@@ -143,7 +143,7 @@ public class FilterRulesScenario {
         steps.add(new StepLog(3, description3, normalPriorityWi.id));
 
         // Step 4: verify labels
-        final String description4 = "Verify: HIGH-priority item has 'urgent' label; NORMAL-priority item does not";
+        final String description4 = "Verify: HIGH-priority item has 'urgent' label; MEDIUM-priority item does not";
         LOG.infof("[SCENARIO] Step %d/%d: %s", 4, total, description4);
 
         final boolean urgentOnHigh = highPriorityWi.labels != null &&

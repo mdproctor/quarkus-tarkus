@@ -51,7 +51,7 @@ class HumanTaskIntegrationTest {
     @Test
     void requestApproval_workItemIsCreatedAndPending() {
         Uni<String> result = bridge.requestApproval(
-                "Sign off report", null, "bob", WorkItemPriority.NORMAL, null);
+                "Sign off report", null, "bob", WorkItemPriority.MEDIUM, null);
 
         assertThat(registry.pendingCount()).isGreaterThanOrEqualTo(1);
         assertThatThrownBy(() -> result.await().atMost(Duration.ofMillis(50)))
@@ -100,7 +100,7 @@ class HumanTaskIntegrationTest {
     @Test
     void cancelWorkItem_uniFailsWithException() {
         Uni<String> result = bridge.requestApproval(
-                "Cancel test", null, "dave", WorkItemPriority.NORMAL, null);
+                "Cancel test", null, "dave", WorkItemPriority.MEDIUM, null);
 
         List<WorkItem> all = WorkItem.listAll();
         WorkItem workItem = all.stream()
@@ -134,11 +134,11 @@ class HumanTaskIntegrationTest {
     @Test
     void unrelatedWorkItemCompletion_doesNotAffectPendingUni() {
         Uni<String> result = bridge.requestApproval(
-                "Unrelated test", null, "eve", WorkItemPriority.NORMAL, null);
+                "Unrelated test", null, "eve", WorkItemPriority.MEDIUM, null);
 
         // Create and complete a DIFFERENT WorkItem (not registered in registry)
         WorkItemCreateRequest req = new WorkItemCreateRequest(
-                "Other item", null, null, null, WorkItemPriority.NORMAL,
+                "Other item", null, null, null, WorkItemPriority.MEDIUM,
                 "frank", null, null, null, "test", null, null, null, null, null, null, null, null, null);
         WorkItem other = service.create(req);
         service.claim(other.id, "frank");
@@ -155,7 +155,7 @@ class HumanTaskIntegrationTest {
     @Test
     void requestApproval_returnsUniThatResolvesWithResolution() {
         Uni<String> result = bridge.requestApproval(
-                "Uni test", null, "alice", WorkItemPriority.NORMAL, null);
+                "Uni test", null, "alice", WorkItemPriority.MEDIUM, null);
 
         assertThat(result).isNotNull();
 
@@ -175,7 +175,7 @@ class HumanTaskIntegrationTest {
     @Test
     void requestApproval_rejectCausesUniFailure() {
         Uni<String> result = bridge.requestApproval(
-                "Uni reject test", null, "bob", WorkItemPriority.NORMAL, null);
+                "Uni reject test", null, "bob", WorkItemPriority.MEDIUM, null);
 
         List<WorkItem> all = WorkItem.listAll();
         WorkItem wi = all.stream()

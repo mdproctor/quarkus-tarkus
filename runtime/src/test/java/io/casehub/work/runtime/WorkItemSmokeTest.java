@@ -45,7 +45,7 @@ class WorkItemSmokeTest {
     private WorkItemCreateRequest basicRequest() {
         return new WorkItemCreateRequest(
                 "Test item", "Do something", null, null,
-                WorkItemPriority.NORMAL,
+                WorkItemPriority.MEDIUM,
                 null, null, null, null,
                 "system", null, null, null, null, null, null, null, null, null);
     }
@@ -148,7 +148,7 @@ class WorkItemSmokeTest {
     void defaultExpiryApplied() {
         WorkItemCreateRequest req = new WorkItemCreateRequest(
                 "Test item", "Do something", null, null,
-                WorkItemPriority.NORMAL,
+                WorkItemPriority.MEDIUM,
                 null, null, null, null,
                 "system", null, null, null, null, null, null, null, null, null);
         WorkItem wi = service.create(req);
@@ -164,7 +164,7 @@ class WorkItemSmokeTest {
         WorkItem wi = new WorkItem();
         wi.title = "Expired item";
         wi.status = WorkItemStatus.PENDING;
-        wi.priority = WorkItemPriority.NORMAL;
+        wi.priority = WorkItemPriority.MEDIUM;
         wi.createdAt = Instant.now();
         wi.updatedAt = Instant.now();
         wi.expiresAt = Instant.now().minus(2, ChronoUnit.HOURS);
@@ -186,7 +186,7 @@ class WorkItemSmokeTest {
         WorkItem wi = new WorkItem();
         wi.title = "Past deadline";
         wi.status = WorkItemStatus.PENDING;
-        wi.priority = WorkItemPriority.NORMAL;
+        wi.priority = WorkItemPriority.MEDIUM;
         wi.createdAt = Instant.now();
         wi.updatedAt = Instant.now();
         wi.claimDeadline = Instant.now().minus(1, ChronoUnit.HOURS);
@@ -201,7 +201,7 @@ class WorkItemSmokeTest {
         Instant deadline = Instant.now().plus(2, ChronoUnit.HOURS)
                 .truncatedTo(ChronoUnit.SECONDS);
         WorkItemCreateRequest req = new WorkItemCreateRequest(
-                "Test", null, null, null, WorkItemPriority.NORMAL,
+                "Test", null, null, null, WorkItemPriority.MEDIUM,
                 null, null, null, null, "system", null,
                 deadline, null, null, null, null, null, null, null);
         WorkItem wi = service.create(req);

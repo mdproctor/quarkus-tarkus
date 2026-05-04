@@ -74,7 +74,7 @@ produces a `FuncTaskConfigurer` that Quarkus-Flow wires into the workflow like a
 | `.description(String)` | | Longer context for the reviewer |
 | `.assigneeId(String)` | | Assign directly to a specific user |
 | `.candidateGroups(String)` | | Route to a work queue (comma-separated group names) |
-| `.priority(WorkItemPriority)` | | Defaults to `NORMAL` |
+| `.priority(WorkItemPriority)` | | Defaults to `MEDIUM` |
 | `.payloadFrom(Function<T, String>)` | | Extracts JSON context from the workflow step input |
 
 Use either `.assigneeId()` or `.candidateGroups()`, not both. `candidateGroups` enables

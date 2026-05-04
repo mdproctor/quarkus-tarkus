@@ -233,7 +233,7 @@ public class ReportService {
         final TypedQuery<Long> critQ = em.createQuery(critJpql.toString(), Long.class);
         critQ.setParameter("now", now);
         critQ.setParameter("activeStatuses", activeStatuses);
-        critQ.setParameter("critical", WorkItemPriority.CRITICAL);
+        critQ.setParameter("critical", WorkItemPriority.URGENT);
         if (category != null && !category.isBlank()) {
             critQ.setParameter("category", category);
         }
