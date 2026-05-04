@@ -1,0 +1,21 @@
+{
+  "webhookEvent": "jira:issue_updated",
+  "issue": {
+    "key": "PROJ-1234",
+    "fields": {
+      "summary": "Fix authentication bug",
+      "description": "Token expires too quickly.",
+      "status": { "name": "Done", "statusCategory": { "key": "done" } },
+      "resolution": { "name": "Cannot Reproduce" },
+      "assignee": null,
+      "priority": { "name": "Low" },
+      "labels": []
+    }
+  },
+  "changelog": {
+    "items": [
+      { "field": "resolution", "fromString": null, "toString": "Cannot Reproduce" }
+    ]
+  },
+  "user": { "displayName": "Alice", "accountId": "abc123" }
+}

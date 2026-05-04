@@ -1,0 +1,21 @@
+{
+  "webhookEvent": "jira:issue_updated",
+  "issue": {
+    "key": "PROJ-1234",
+    "fields": {
+      "summary": "Fix authentication bug",
+      "description": "Updated description text.",
+      "status": { "name": "In Progress", "statusCategory": { "key": "indeterminate" } },
+      "resolution": null,
+      "assignee": { "accountId": "abc123", "displayName": "Alice" },
+      "priority": { "name": "High" },
+      "labels": []
+    }
+  },
+  "changelog": {
+    "items": [
+      { "field": "description", "fromString": "Original description.", "toString": "Updated description text." }
+    ]
+  },
+  "user": { "displayName": "Alice", "accountId": "abc123" }
+}
