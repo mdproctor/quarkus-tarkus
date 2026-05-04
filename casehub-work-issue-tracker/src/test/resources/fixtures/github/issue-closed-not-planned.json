@@ -1,0 +1,15 @@
+{
+  "action": "closed",
+  "issue": {
+    "number": 42,
+    "title": "Fix authentication bug",
+    "body": "Token expires too quickly.",
+    "state": "closed",
+    "state_reason": "not_planned",
+    "html_url": "https://github.com/owner/repo/issues/42",
+    "assignee": null,
+    "labels": []
+  },
+  "repository": { "full_name": "owner/repo" },
+  "sender": { "login": "bob" }
+}
