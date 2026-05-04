@@ -57,4 +57,19 @@ public interface GitHubIssueTrackerConfig {
     @WithName("auto-close-on-complete")
     @WithDefault("false")
     boolean autoCloseOnComplete();
+
+    /**
+     * Shared secret for verifying GitHub webhook signatures.
+     * When present, every inbound webhook is verified via HMAC-SHA256
+     * against the {@code X-Hub-Signature-256} header. Requests with a missing
+     * or invalid signature are rejected with 401.
+     * When absent, all inbound webhooks are rejected (fail-closed).
+     *
+     * <p>Set this in {@code application.properties}:
+     * <pre>casehub.work.issue-tracker.github.webhook-secret=your-secret</pre>
+     *
+     * @return the webhook secret, or empty if not configured
+     */
+    @WithName("webhook-secret")
+    Optional<String> webhookSecret();
 }
