@@ -9,9 +9,11 @@ import jakarta.transaction.Transactional;
 
 import org.jboss.logging.Logger;
 
+import io.casehub.work.issuetracker.repository.IssueLinkStore;
 import io.casehub.work.runtime.model.WorkItem;
 import io.casehub.work.runtime.model.WorkItemLabel;
 import io.casehub.work.runtime.model.WorkItemStatus;
+import io.casehub.work.runtime.repository.WorkItemStore;
 import io.casehub.work.runtime.service.WorkItemService;
 
 /**
@@ -26,10 +28,21 @@ public class WebhookEventHandler {
     private static final String LINKED_WORKITEM_FOOTER = "\n\n---\n*Linked WorkItem:";
 
     @Inject
+    IssueLinkStore linkStore;
+
+    @Inject
+    WorkItemStore workItemStore;
+
+    @Inject
     WorkItemService workItemService;
 
-    /** Constructor for unit testing without CDI. */
-    WebhookEventHandler(final WorkItemService workItemService) {
+    /** Package-private constructor for unit testing without CDI. */
+    WebhookEventHandler(
+            final IssueLinkStore linkStore,
+            final WorkItemStore workItemStore,
+            final WorkItemService workItemService) {
+        this.linkStore = linkStore;
+        this.workItemStore = workItemStore;
         this.workItemService = workItemService;
     }
 
@@ -43,8 +56,7 @@ public class WebhookEventHandler {
      */
     @Transactional
     public void handle(final WebhookEvent event) {
-        final var links = io.casehub.work.issuetracker.model.WorkItemIssueLink
-                .findByTrackerRef(event.trackerType(), event.externalRef());
+        final var links = linkStore.findByTrackerRef(event.trackerType(), event.externalRef());
 
         if (links.isEmpty()) {
             LOG.debugf("No WorkItem linked to %s:%s — ignoring", event.trackerType(), event.externalRef());
@@ -52,9 +64,8 @@ public class WebhookEventHandler {
         }
 
         for (final var link : links) {
-            final WorkItem workItem = WorkItem.findById(link.workItemId);
-            if (workItem == null) continue;
-            handle(link.workItemId, workItem, event);
+            workItemStore.get(link.workItemId)
+                    .ifPresent(wi -> handle(link.workItemId, wi, event));
         }
     }
 
