@@ -35,7 +35,7 @@ Maven multi-module layout:
 | Core | `casehub-work-core` | Generic work management implementations — `WorkBroker` (generic assignment orchestrator), `LeastLoadedStrategy`, `ClaimFirstStrategy`, `NoOpWorkerRegistry`, claim SLA policies. No JPA entities, no REST resources. CaseHub depends on this module directly. Jandex-indexed library, groupId `io.casehub`. |
 | Runtime | `casehub-work` | Core — WorkItem model, storage SPI, JPA defaults, service, REST API, lifecycle engine, labels, vocabulary. Includes `WorkItemContextBuilder`, `JpaWorkloadProvider`, runtime actions (`ApplyLabelAction`, `OverrideCandidateGroupsAction`, `SetPriorityAction`), filter engine (`FilterAction` SPI, `FilterRegistryEngine`, `JexlConditionEvaluator`, `PermanentFilterRegistry`, `DynamicFilterRegistry`, `FilterRule`, `FilterRuleResource`). Subprocess spawning: `WorkItemSpawnService` (implements `SpawnPort`), `WorkItemSpawnGroup` entity, `WorkItemSpawnResource`, `SpawnGroupResource`. |
 | Deployment | `casehub-work-deployment` | Build-time processor — feature registration, native config |
-| Testing | `casehub-work-testing` | `InMemoryWorkItemStore` + `InMemoryAuditEntryStore` — no datasource needed for unit tests |
+| Testing | `casehub-work-testing` | `InMemoryWorkItemStore` + `InMemoryAuditEntryStore` + `InMemoryWorkItemNoteStore` + `InMemoryIssueLinkStore` — no datasource needed for unit tests |
 | Flow | `work-flow` | Quarkus-Flow integration — `HumanTaskFlowBridge`, `WorkItemFlowEventListener` |
 | Ledger | `casehub-work-ledger` | Optional accountability module — command/event ledger, SHA-256 hash chain, peer attestation, EigenTrust reputation. Extends `io.casehub:casehub-ledger`. Zero core impact when absent. |
 | Queues | `casehub-work-queues` | Optional label-based work queues — `WorkItemFilter` (JEXL/JQ/Lambda), `FilterChain`, `QueueView`, queue lifecycle events (`WorkItemQueueEvent` CDI events). Zero core impact when absent. |
@@ -45,7 +45,7 @@ Maven multi-module layout:
 | AI | `casehub-work-ai` | Semantic skill matching: `SemanticWorkerSelectionStrategy` (`@Alternative @Priority(1)`), `EmbeddingSkillMatcher`, `WorkerSkillProfile` entity + REST API, `LowConfidenceFilterProducer`. Flyway V14, V4001. Zero core impact when absent. |
 | PostgreSQL Broadcaster | `casehub-work-postgres-broadcaster` | Optional distributed SSE backend — `PostgresWorkItemEventBroadcaster` (`@Alternative @Priority(1)`) fans lifecycle events across cluster nodes via PostgreSQL LISTEN/NOTIFY (`casehub_work_events` channel). `WorkItemEventPayload` wire DTO. Fires AFTER_SUCCESS only. Zero extra infrastructure — reuses the datasource already required by the core extension. No Flyway migrations. |
 | Queue PostgreSQL Broadcaster | `casehub-work-queues-postgres-broadcaster` | Optional distributed SSE backend for queue events — `PostgresWorkItemQueueEventBroadcaster` (`@Alternative @Priority(1)`) fans `WorkItemQueueEvent` CDI events across cluster nodes via PostgreSQL LISTEN/NOTIFY (`casehub_work_queue_events` channel). `WorkItemQueueEvent` is a plain record — no separate wire DTO needed. Fires AFTER_SUCCESS only. Depends on `casehub-work-queues` + `quarkus-reactive-pg-client`. No Flyway migrations. |
-| Issue Tracker | `casehub-work-issue-tracker` | Link WorkItems to GitHub Issues, Jira, Linear. `IssueTrackerProvider` SPI. Flyway V5000. |
+| Issue Tracker | `casehub-work-issue-tracker` | Link WorkItems to GitHub Issues, Jira, Linear. `IssueTrackerProvider` SPI. `IssueLinkStore` persistence SPI with `JpaIssueLinkStore` default. `WebhookEventHandler` for inbound close/reopen events. Flyway V5000. |
 | Integration Tests | `integration-tests` | Black-box `@QuarkusIntegrationTest` suite and native image validation |
 | MongoDB Persistence | `casehub-work-persistence-mongodb` | Optional MongoDB-backed `WorkItemStore` + `AuditEntryStore`. Drop-in replacement for JPA defaults — `candidateGroups`/`candidateUsers` stored as arrays; `WorkItemQuery` translated to MongoDB `Document` filters; `$regex` for label patterns. 27 tests via Dev Services. Zero core impact when absent. |
 | *(future)* | `casehub-work-casehub` | CaseHub `WorkerRegistry` adapter (blocked: CaseHub not ready) |
@@ -208,7 +208,15 @@ Two interfaces in `runtime.repository` allow pluggable persistence:
 | `category` | null | Filters via subquery on WorkItem.category |
 | `page` / `size` | 0 / 20 | Offset pagination; size capped at 100 |
 
-Default JPA implementations are `@ApplicationScoped`. Alternatives override via `@Alternative @Priority(1)`. The `casehub-work-testing` module provides `InMemoryWorkItemStore` + `InMemoryAuditEntryStore` for unit tests without a datasource.
+Default JPA implementations are `@ApplicationScoped`. Alternatives override via `@Alternative @Priority(1)`. The `casehub-work-testing` module provides `InMemoryWorkItemStore` + `InMemoryAuditEntryStore` + `InMemoryWorkItemNoteStore` + `InMemoryIssueLinkStore` for unit tests without a datasource.
+
+**Issue Tracker SPI** (`casehub-work-issue-tracker/repository/`):
+
+| Interface | Default impl | Purpose |
+|---|---|---|
+| `IssueLinkStore` | `JpaIssueLinkStore` | `findById(UUID)`, `findByWorkItemId(UUID)`, `findByRef(UUID, String, String)`, `findByTrackerRef(String, String)`, `save(WorkItemIssueLink)`, `delete(WorkItemIssueLink)` |
+
+`InMemoryIssueLinkStore` in `casehub-work-testing` is the `@Alternative @Priority(1)` for use in tests without a datasource. The testing module declares `casehub-work-issue-tracker` as a compile-scoped dependency to host this class.
 
 ---
 

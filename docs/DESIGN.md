@@ -88,7 +88,7 @@ Three tiers:
 | casehub-work-notifications | ~30 |
 | casehub-work-postgres-broadcaster | 22 |
 | casehub-work-queues-postgres-broadcaster | 13 |
-| casehub-work-issue-tracker | 23 |
-| testing | 16 |
+| casehub-work-issue-tracker | 93 |
+| testing | 31 |
 | integration-tests | 25 |
-| **Total** | **~1167+** |
+| **Total** | **~1252+** |
