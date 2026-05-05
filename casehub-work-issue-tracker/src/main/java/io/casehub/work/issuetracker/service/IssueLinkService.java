@@ -5,12 +5,16 @@ import java.util.UUID;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.event.TransactionPhase;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
+import org.jboss.logging.Logger;
+
 import io.casehub.work.issuetracker.github.GitHubIssueTrackerConfig;
 import io.casehub.work.issuetracker.model.WorkItemIssueLink;
+import io.casehub.work.issuetracker.repository.IssueLinkStore;
 import io.casehub.work.issuetracker.spi.ExternalIssueRef;
 import io.casehub.work.issuetracker.spi.IssueTrackerException;
 import io.casehub.work.issuetracker.spi.IssueTrackerProvider;
@@ -35,11 +39,30 @@ import io.casehub.work.runtime.model.WorkItemStatus;
 @ApplicationScoped
 public class IssueLinkService {
 
+    private static final Logger LOG = Logger.getLogger(IssueLinkService.class);
+
     @Inject
     Instance<IssueTrackerProvider> providers;
 
     @Inject
     GitHubIssueTrackerConfig githubConfig;
+
+    @Inject
+    IssueLinkStore linkStore;
+
+    /** Package-private constructor for unit testing without CDI. */
+    IssueLinkService(
+            final Instance<IssueTrackerProvider> providers,
+            final GitHubIssueTrackerConfig githubConfig,
+            final IssueLinkStore linkStore) {
+        this.providers = providers;
+        this.githubConfig = githubConfig;
+        this.linkStore = linkStore;
+    }
+
+    IssueLinkService() {
+        // CDI no-arg constructor
+    }
 
     /**
      * Link an existing issue to a WorkItem.
@@ -64,7 +87,8 @@ public class IssueLinkService {
             final String externalRef,
             final String linkedBy) {
 
-        final WorkItemIssueLink existing = WorkItemIssueLink.findByRef(workItemId, trackerType, externalRef);
+        final WorkItemIssueLink existing =
+                linkStore.findByRef(workItemId, trackerType, externalRef).orElse(null);
         if (existing != null) {
             return existing;
         }
@@ -80,8 +104,7 @@ public class IssueLinkService {
         link.url = ref.url();
         link.status = ref.status();
         link.linkedBy = linkedBy;
-        link.persist();
-        return link;
+        return linkStore.save(link);
     }
 
     /**
@@ -108,7 +131,6 @@ public class IssueLinkService {
                 .orElseThrow(() -> new IssueTrackerException(
                         "Provider '" + trackerType + "' does not support issue creation"));
 
-        // Fetch the newly created issue to get its URL and canonical title
         final ExternalIssueRef ref = provider.fetchIssue(externalRef);
 
         final WorkItemIssueLink link = new WorkItemIssueLink();
@@ -119,8 +141,7 @@ public class IssueLinkService {
         link.url = ref.url();
         link.status = "open";
         link.linkedBy = linkedBy;
-        link.persist();
-        return link;
+        return linkStore.save(link);
     }
 
     /**
@@ -131,7 +152,7 @@ public class IssueLinkService {
      */
     @Transactional
     public List<WorkItemIssueLink> listLinks(final UUID workItemId) {
-        return WorkItemIssueLink.findByWorkItemId(workItemId);
+        return linkStore.findByWorkItemId(workItemId);
     }
 
     /**
@@ -143,11 +164,11 @@ public class IssueLinkService {
      */
     @Transactional
     public boolean removeLink(final UUID linkId, final UUID workItemId) {
-        final WorkItemIssueLink link = WorkItemIssueLink.findById(linkId);
+        final WorkItemIssueLink link = linkStore.findById(linkId).orElse(null);
         if (link == null || !link.workItemId.equals(workItemId)) {
             return false;
         }
-        link.delete();
+        linkStore.delete(link);
         return true;
     }
 
@@ -163,7 +184,7 @@ public class IssueLinkService {
      */
     @Transactional
     public int syncLinks(final UUID workItemId) {
-        final List<WorkItemIssueLink> links = WorkItemIssueLink.findByWorkItemId(workItemId);
+        final List<WorkItemIssueLink> links = linkStore.findByWorkItemId(workItemId);
         int synced = 0;
         for (final WorkItemIssueLink link : links) {
             try {
@@ -172,11 +193,10 @@ public class IssueLinkService {
                 link.title = ref.title();
                 link.url = ref.url();
                 link.status = ref.status();
+                linkStore.save(link);
                 synced++;
-            } catch (Exception e) {
-                // log and continue; partial sync is acceptable
-                org.jboss.logging.Logger.getLogger(IssueLinkService.class)
-                        .warnf("Sync failed for %s:%s — %s", link.trackerType, link.externalRef, e.getMessage());
+            } catch (final Exception e) {
+                LOG.warnf("Sync failed for %s:%s — %s", link.trackerType, link.externalRef, e.getMessage());
             }
         }
         return synced;
@@ -191,8 +211,8 @@ public class IssueLinkService {
      * WorkItem transition.
      */
     @Transactional
-    public void onLifecycleEvent(@Observes final WorkItemLifecycleEvent event) {
-        final List<WorkItemIssueLink> links = WorkItemIssueLink.findByWorkItemId(event.workItemId());
+    public void onLifecycleEvent(@Observes(during = TransactionPhase.AFTER_SUCCESS) final WorkItemLifecycleEvent event) {
+        final List<WorkItemIssueLink> links = linkStore.findByWorkItemId(event.workItemId());
         if (links.isEmpty()) {
             return;
         }
@@ -204,22 +224,18 @@ public class IssueLinkService {
             final IssueTrackerProvider provider;
             try {
                 provider = providerFor(link.trackerType);
-            } catch (IllegalArgumentException e) {
-                org.jboss.logging.Logger.getLogger(IssueLinkService.class)
-                        .warnf("No provider for %s — skipping sync for link %s", link.trackerType, link.id);
+            } catch (final IllegalArgumentException e) {
+                LOG.warnf("No provider for %s — skipping sync for link %s", link.trackerType, link.id);
                 continue;
             }
 
-            // Sync WorkItem fields (priority, category, status, labels) to the issue
             try {
                 provider.syncToIssue(link.externalRef, workItem);
-            } catch (Exception e) {
-                org.jboss.logging.Logger.getLogger(IssueLinkService.class)
-                        .warnf("syncToIssue failed for %s:%s — %s",
-                                link.trackerType, link.externalRef, e.getMessage());
+            } catch (final Exception e) {
+                LOG.warnf("syncToIssue failed for %s:%s — %s",
+                        link.trackerType, link.externalRef, e.getMessage());
             }
 
-            // Auto-close on terminal status if configured
             if (event.status() == WorkItemStatus.COMPLETED && githubConfig.autoCloseOnComplete()) {
                 if (!"closed".equals(link.status)) {
                     try {
@@ -228,10 +244,10 @@ public class IssueLinkService {
                                 : "WorkItem completed.";
                         provider.closeIssue(link.externalRef, resolution);
                         link.status = "closed";
-                    } catch (Exception e) {
-                        org.jboss.logging.Logger.getLogger(IssueLinkService.class)
-                                .warnf("Auto-close failed for %s:%s — %s",
-                                        link.trackerType, link.externalRef, e.getMessage());
+                        linkStore.save(link);
+                    } catch (final Exception e) {
+                        LOG.warnf("Auto-close failed for %s:%s — %s",
+                                link.trackerType, link.externalRef, e.getMessage());
                     }
                 }
             }

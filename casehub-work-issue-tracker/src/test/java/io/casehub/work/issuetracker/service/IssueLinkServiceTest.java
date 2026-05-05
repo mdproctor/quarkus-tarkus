@@ -1,83 +1,100 @@
 package io.casehub.work.issuetracker.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
-import java.util.UUID;
-
-import jakarta.enterprise.event.Event;
-import jakarta.inject.Inject;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import io.casehub.work.issuetracker.StubIssueTrackerProvider;
+import io.casehub.work.issuetracker.github.GitHubIssueTrackerConfig;
 import io.casehub.work.issuetracker.model.WorkItemIssueLink;
+import io.casehub.work.issuetracker.repository.IssueLinkStore;
+import io.casehub.work.issuetracker.spi.ExternalIssueRef;
 import io.casehub.work.issuetracker.spi.IssueTrackerException;
+import io.casehub.work.issuetracker.spi.IssueTrackerProvider;
 import io.casehub.work.runtime.event.WorkItemLifecycleEvent;
 import io.casehub.work.runtime.model.WorkItem;
 import io.casehub.work.runtime.model.WorkItemPriority;
 import io.casehub.work.runtime.model.WorkItemStatus;
-import io.quarkus.test.TestTransaction;
-import io.quarkus.test.junit.QuarkusTest;
+import jakarta.enterprise.inject.Instance;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-// @TestTransaction rolls back after each test — no deleteAll() needed, and the service's
-// own @Transactional methods join this test transaction correctly (no REST calls here).
-@QuarkusTest
-@TestTransaction
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+
 class IssueLinkServiceTest {
 
-    @Inject
-    IssueLinkService service;
-
-    @Inject
-    StubIssueTrackerProvider stub;
-
-    @Inject
-    Event<WorkItemLifecycleEvent> lifecycleEvents;
+    private IssueLinkStore linkStore;
+    private IssueTrackerProvider provider;
+    private GitHubIssueTrackerConfig githubConfig;
+    private IssueLinkService service;
 
     @BeforeEach
-    void reset() {
-        stub.reset();
+    @SuppressWarnings("unchecked")
+    void setUp() {
+        linkStore = mock(IssueLinkStore.class);
+        provider = mock(IssueTrackerProvider.class);
+        githubConfig = mock(GitHubIssueTrackerConfig.class);
+
+        when(provider.trackerType()).thenReturn("github");
+        when(githubConfig.autoCloseOnComplete()).thenReturn(false);
+        when(linkStore.save(any())).thenAnswer(inv -> {
+            final WorkItemIssueLink link = inv.getArgument(0);
+            if (link.id == null) link.id = UUID.randomUUID();
+            return link;
+        });
+
+        final Instance<IssueTrackerProvider> instances = mock(Instance.class);
+        when(instances.iterator()).thenAnswer(inv -> List.<IssueTrackerProvider>of(provider).iterator());
+        when(instances.stream()).thenAnswer(inv -> List.<IssueTrackerProvider>of(provider).stream());
+
+        service = new IssueLinkService(instances, githubConfig, linkStore);
     }
 
     // ── linkExistingIssue ─────────────────────────────────────────────────────
 
     @Test
-    void linkExisting_fetchesAndPersistsSnapshot() {
-        stub.seed("owner/repo#42", "Fix the bug", "open");
+    void linkExisting_fetchesAndSavesSnapshot() {
         final UUID workItemId = UUID.randomUUID();
+        when(linkStore.findByRef(workItemId, "github", "owner/repo#42")).thenReturn(Optional.empty());
+        when(provider.fetchIssue("owner/repo#42"))
+                .thenReturn(new ExternalIssueRef("github", "owner/repo#42", "Fix the bug", "https://gh/42", "open"));
 
-        final WorkItemIssueLink link = service.linkExistingIssue(
-                workItemId, "github", "owner/repo#42", "alice");
+        final WorkItemIssueLink result =
+                service.linkExistingIssue(workItemId, "github", "owner/repo#42", "alice");
 
-        assertThat(link.id).isNotNull();
-        assertThat(link.workItemId).isEqualTo(workItemId);
-        assertThat(link.trackerType).isEqualTo("github");
-        assertThat(link.externalRef).isEqualTo("owner/repo#42");
-        assertThat(link.title).isEqualTo("Fix the bug");
-        assertThat(link.status).isEqualTo("open");
-        assertThat(link.linkedBy).isEqualTo("alice");
-        assertThat(link.linkedAt).isNotNull();
+        assertThat(result.workItemId).isEqualTo(workItemId);
+        assertThat(result.title).isEqualTo("Fix the bug");
+        assertThat(result.status).isEqualTo("open");
+        assertThat(result.linkedBy).isEqualTo("alice");
+        verify(linkStore).save(any(WorkItemIssueLink.class));
     }
 
     @Test
-    void linkExisting_isIdempotent_returnsSameLink() {
-        stub.seed("owner/repo#10", "Duplicate link test", "open");
+    void linkExisting_isIdempotent_returnsExistingLink() {
         final UUID workItemId = UUID.randomUUID();
+        final WorkItemIssueLink existing = existingLink(workItemId, "github", "owner/repo#10");
+        when(linkStore.findByRef(workItemId, "github", "owner/repo#10")).thenReturn(Optional.of(existing));
 
-        final WorkItemIssueLink first = service.linkExistingIssue(workItemId, "github", "owner/repo#10", "alice");
-        final WorkItemIssueLink second = service.linkExistingIssue(workItemId, "github", "owner/repo#10", "bob");
+        final WorkItemIssueLink result =
+                service.linkExistingIssue(workItemId, "github", "owner/repo#10", "bob");
 
-        assertThat(second.id).isEqualTo(first.id);
-        assertThat(service.listLinks(workItemId)).hasSize(1);
+        assertThat(result.id).isEqualTo(existing.id);
+        verify(provider, never()).fetchIssue(any());
+        verify(linkStore, never()).save(any());
     }
 
     @Test
-    void linkExisting_throws_whenIssueNotFound() {
+    void linkExisting_throws_whenProviderThrowsNotFound() {
         final UUID workItemId = UUID.randomUUID();
+        when(linkStore.findByRef(any(), any(), any())).thenReturn(Optional.empty());
+        when(provider.fetchIssue("owner/repo#99999"))
+                .thenThrow(IssueTrackerException.notFound("owner/repo#99999"));
 
-        assertThatThrownBy(() -> service.linkExistingIssue(workItemId, "github", "owner/repo#99999", "alice"))
+        assertThatThrownBy(() ->
+                service.linkExistingIssue(workItemId, "github", "owner/repo#99999", "alice"))
                 .isInstanceOf(IssueTrackerException.class)
                 .matches(e -> ((IssueTrackerException) e).isNotFound());
     }
@@ -85,8 +102,10 @@ class IssueLinkServiceTest {
     @Test
     void linkExisting_throws_whenNoProviderRegistered() {
         final UUID workItemId = UUID.randomUUID();
+        when(linkStore.findByRef(any(), any(), any())).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.linkExistingIssue(workItemId, "jira", "PROJ-1", "alice"))
+        assertThatThrownBy(() ->
+                service.linkExistingIssue(workItemId, "jira", "PROJ-1", "alice"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("jira");
     }
@@ -96,177 +115,199 @@ class IssueLinkServiceTest {
     @Test
     void createAndLink_createsIssueAndReturnsLink() {
         final UUID workItemId = UUID.randomUUID();
+        when(provider.createIssue(eq(workItemId), eq("Fix it"), any()))
+                .thenReturn(Optional.of("owner/repo#99"));
+        when(provider.fetchIssue("owner/repo#99"))
+                .thenReturn(new ExternalIssueRef("github", "owner/repo#99", "Fix it", "https://gh/99", "open"));
 
-        final WorkItemIssueLink link = service.createAndLink(
-                workItemId, "github", "Security triage needed", "CVE details...", "system");
+        final WorkItemIssueLink link =
+                service.createAndLink(workItemId, "github", "Fix it", "Details", "system");
 
-        assertThat(link.externalRef).startsWith("stub/repo#");
-        assertThat(link.title).isEqualTo("Security triage needed");
-        assertThat(link.status).isEqualTo("open");
-        assertThat(stub.created()).hasSize(1).contains(link.externalRef);
+        assertThat(link.externalRef).isEqualTo("owner/repo#99");
+        assertThat(link.title).isEqualTo("Fix it");
+        verify(linkStore).save(any(WorkItemIssueLink.class));
+    }
+
+    @Test
+    void createAndLink_throws_whenProviderDoesNotSupportCreation() {
+        when(provider.createIssue(any(), any(), any())).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                service.createAndLink(UUID.randomUUID(), "github", "Title", "Body", "alice"))
+                .isInstanceOf(IssueTrackerException.class)
+                .hasMessageContaining("does not support issue creation")
+                .matches(e -> !((IssueTrackerException) e).isNotFound());
     }
 
     // ── listLinks ─────────────────────────────────────────────────────────────
 
     @Test
-    void listLinks_returnsAllForWorkItem() {
-        stub.seed("owner/repo#1", "Issue 1", "open");
-        stub.seed("owner/repo#2", "Issue 2", "closed");
+    void listLinks_delegatesToStore() {
         final UUID workItemId = UUID.randomUUID();
-
-        service.linkExistingIssue(workItemId, "github", "owner/repo#1", "alice");
-        service.linkExistingIssue(workItemId, "github", "owner/repo#2", "alice");
+        final List<WorkItemIssueLink> links = List.of(
+                existingLink(workItemId, "github", "owner/repo#1"),
+                existingLink(workItemId, "github", "owner/repo#2"));
+        when(linkStore.findByWorkItemId(workItemId)).thenReturn(links);
 
         assertThat(service.listLinks(workItemId)).hasSize(2);
-    }
-
-    @Test
-    void listLinks_isolatesAcrossWorkItems() {
-        stub.seed("owner/repo#5", "Issue 5", "open");
-        final UUID item1 = UUID.randomUUID();
-        final UUID item2 = UUID.randomUUID();
-
-        service.linkExistingIssue(item1, "github", "owner/repo#5", "alice");
-
-        assertThat(service.listLinks(item1)).hasSize(1);
-        assertThat(service.listLinks(item2)).isEmpty();
+        verify(linkStore).findByWorkItemId(workItemId);
     }
 
     // ── removeLink ────────────────────────────────────────────────────────────
 
     @Test
-    void removeLink_deletesLink() {
-        stub.seed("owner/repo#3", "Removable", "open");
+    void removeLink_found_deletesAndReturnsTrue() {
         final UUID workItemId = UUID.randomUUID();
-        final WorkItemIssueLink link = service.linkExistingIssue(workItemId, "github", "owner/repo#3", "alice");
+        final WorkItemIssueLink link = existingLink(workItemId, "github", "owner/repo#3");
+        when(linkStore.findById(link.id)).thenReturn(Optional.of(link));
 
-        final boolean removed = service.removeLink(link.id, workItemId);
-
-        assertThat(removed).isTrue();
-        assertThat(service.listLinks(workItemId)).isEmpty();
+        assertThat(service.removeLink(link.id, workItemId)).isTrue();
+        verify(linkStore).delete(link);
     }
 
     @Test
-    void removeLink_returnsFalse_whenNotFound() {
+    void removeLink_notFound_returnsFalse() {
+        when(linkStore.findById(any())).thenReturn(Optional.empty());
+
         assertThat(service.removeLink(UUID.randomUUID(), UUID.randomUUID())).isFalse();
+        verify(linkStore, never()).delete(any());
     }
 
     @Test
-    void removeLink_returnsFalse_whenWrongWorkItem() {
-        stub.seed("owner/repo#4", "Wrong owner", "open");
-        final UUID item1 = UUID.randomUUID();
-        final UUID item2 = UUID.randomUUID();
-        final WorkItemIssueLink link = service.linkExistingIssue(item1, "github", "owner/repo#4", "alice");
+    void removeLink_wrongWorkItem_returnsFalse() {
+        final UUID workItemId = UUID.randomUUID();
+        final WorkItemIssueLink link = existingLink(workItemId, "github", "owner/repo#4");
+        when(linkStore.findById(link.id)).thenReturn(Optional.of(link));
 
-        assertThat(service.removeLink(link.id, item2)).isFalse();
-        assertThat(service.listLinks(item1)).hasSize(1); // still there
+        assertThat(service.removeLink(link.id, UUID.randomUUID())).isFalse();
+        verify(linkStore, never()).delete(any());
     }
 
     // ── syncLinks ─────────────────────────────────────────────────────────────
 
     @Test
-    void syncLinks_updatesStatusFromRemote() {
-        stub.seed("owner/repo#6", "Synced issue", "open");
+    void syncLinks_updatesStatusAndSaves() {
         final UUID workItemId = UUID.randomUUID();
-        service.linkExistingIssue(workItemId, "github", "owner/repo#6", "alice");
-
-        // Change state in stub (simulating remote close)
-        stub.seed("owner/repo#6", "Synced issue", "closed");
+        final WorkItemIssueLink link = existingLink(workItemId, "github", "owner/repo#6");
+        when(linkStore.findByWorkItemId(workItemId)).thenReturn(List.of(link));
+        when(provider.fetchIssue("owner/repo#6"))
+                .thenReturn(new ExternalIssueRef("github", "owner/repo#6", "Issue", "https://gh/6", "closed"));
 
         final int synced = service.syncLinks(workItemId);
 
         assertThat(synced).isEqualTo(1);
-        final WorkItemIssueLink updated = service.listLinks(workItemId).get(0);
-        assertThat(updated.status).isEqualTo("closed");
-    }
-
-    // ── syncToIssue — called on lifecycle events ───────────────────────────────
-
-    @Test
-    void onLifecycleEvent_syncsLinkedIssues() {
-        stub.seed("owner/repo#20", "Synced issue", "open");
-        final UUID workItemId = UUID.randomUUID();
-        service.linkExistingIssue(workItemId, "github", "owner/repo#20", "alice");
-
-        final WorkItem wi = workItem(workItemId, WorkItemStatus.IN_PROGRESS, WorkItemPriority.HIGH, "finance");
-        lifecycleEvents.fire(WorkItemLifecycleEvent.of("STARTED", wi, "alice", null));
-
-        assertThat(stub.synced()).hasSize(1);
-        assertThat(stub.synced().get(0).externalRef()).isEqualTo("owner/repo#20");
-        assertThat(stub.synced().get(0).workItem().status).isEqualTo(WorkItemStatus.IN_PROGRESS);
-    }
-
-    @Test
-    void onLifecycleEvent_syncsAllLinkedIssues_whenMultipleLinks() {
-        stub.seed("owner/repo#30", "Issue A", "open");
-        stub.seed("owner/repo#31", "Issue B", "open");
-        final UUID workItemId = UUID.randomUUID();
-        service.linkExistingIssue(workItemId, "github", "owner/repo#30", "alice");
-        service.linkExistingIssue(workItemId, "github", "owner/repo#31", "alice");
-
-        final WorkItem wi = workItem(workItemId, WorkItemStatus.ASSIGNED, WorkItemPriority.MEDIUM, null);
-        lifecycleEvents.fire(WorkItemLifecycleEvent.of("ASSIGNED", wi, "alice", null));
-
-        assertThat(stub.synced()).hasSize(2);
-    }
-
-    @Test
-    void onLifecycleEvent_doesNotSync_whenNoLinksExist() {
-        final UUID workItemId = UUID.randomUUID();
-        final WorkItem wi = workItem(workItemId, WorkItemStatus.PENDING, WorkItemPriority.LOW, null);
-        lifecycleEvents.fire(WorkItemLifecycleEvent.of("CREATED", wi, "system", null));
-
-        assertThat(stub.synced()).isEmpty();
-    }
-
-    @Test
-    void onLifecycleEvent_syncsSilently_whenSyncFails() {
-        // If sync throws, the lifecycle event should not be affected (logged and swallowed)
-        stub.seed("owner/repo#40", "Will fail", "open");
-        final UUID workItemId = UUID.randomUUID();
-        service.linkExistingIssue(workItemId, "github", "owner/repo#40", "alice");
-
-        // Remove the issue from stub to simulate sync failure
-        stub.reset();
-        stub.seed("owner/repo#40", "Will fail", "open"); // re-seed so link lookup works but sync is called
-
-        final WorkItem wi = workItem(workItemId, WorkItemStatus.COMPLETED, WorkItemPriority.MEDIUM, null);
-        // Should not throw even if sync fails internally
-        lifecycleEvents.fire(WorkItemLifecycleEvent.of("COMPLETED", wi, "alice", "done"));
-
-        // sync was called despite any internal error
-        assertThat(stub.synced()).hasSize(1);
+        assertThat(link.status).isEqualTo("closed");
+        verify(linkStore).save(link);
     }
 
     @Test
     void syncLinks_continuesOnPartialFailure() {
-        stub.seed("owner/repo#7", "Good issue", "open");
         final UUID workItemId = UUID.randomUUID();
-        service.linkExistingIssue(workItemId, "github", "owner/repo#7", "alice");
+        final WorkItemIssueLink good = existingLink(workItemId, "github", "owner/repo#7");
+        final WorkItemIssueLink broken = existingLink(workItemId, "github", "owner/repo#BROKEN");
+        when(linkStore.findByWorkItemId(workItemId)).thenReturn(List.of(good, broken));
+        when(provider.fetchIssue("owner/repo#7"))
+                .thenReturn(new ExternalIssueRef("github", "owner/repo#7", "Good", "https://gh/7", "open"));
+        when(provider.fetchIssue("owner/repo#BROKEN"))
+                .thenThrow(IssueTrackerException.notFound("owner/repo#BROKEN"));
 
-        // Inject a broken link directly
-        final WorkItemIssueLink broken = new WorkItemIssueLink();
-        broken.workItemId = workItemId;
-        broken.trackerType = "github";
-        broken.externalRef = "owner/repo#BROKEN";
-        broken.status = "unknown";
-        broken.linkedBy = "test";
-        broken.persistAndFlush();
-
-        // sync — one succeeds, one fails (not found in stub)
         final int synced = service.syncLinks(workItemId);
-        assertThat(synced).isEqualTo(1); // only the good one counted
+
+        assertThat(synced).isEqualTo(1);
+        verify(linkStore).save(good);
+        verify(linkStore, never()).save(broken);
     }
 
-    // ── Helper ────────────────────────────────────────────────────────────────
+    // ── onLifecycleEvent ──────────────────────────────────────────────────────
 
-    private WorkItem workItem(final UUID id, final WorkItemStatus status,
-            final WorkItemPriority priority, final String category) {
+    @Test
+    void onLifecycleEvent_callsSyncToIssue_forEachLink() {
+        final UUID workItemId = UUID.randomUUID();
+        final WorkItemIssueLink link1 = existingLink(workItemId, "github", "owner/repo#20");
+        final WorkItemIssueLink link2 = existingLink(workItemId, "github", "owner/repo#21");
+        when(linkStore.findByWorkItemId(workItemId)).thenReturn(List.of(link1, link2));
+
+        final WorkItem wi = workItem(workItemId, WorkItemStatus.IN_PROGRESS, WorkItemPriority.HIGH);
+        service.onLifecycleEvent(WorkItemLifecycleEvent.of("STARTED", wi, "alice", null));
+
+        verify(provider).syncToIssue("owner/repo#20", wi);
+        verify(provider).syncToIssue("owner/repo#21", wi);
+    }
+
+    @Test
+    void onLifecycleEvent_noLinks_doesNotSync() {
+        final UUID workItemId = UUID.randomUUID();
+        when(linkStore.findByWorkItemId(workItemId)).thenReturn(List.of());
+
+        final WorkItem wi = workItem(workItemId, WorkItemStatus.PENDING, WorkItemPriority.MEDIUM);
+        service.onLifecycleEvent(WorkItemLifecycleEvent.of("CREATED", wi, "system", null));
+
+        verify(provider, never()).syncToIssue(any(), any());
+    }
+
+    @Test
+    void onLifecycleEvent_autoClose_closesIssueAndSavesLink() {
+        final UUID workItemId = UUID.randomUUID();
+        final WorkItemIssueLink link = existingLink(workItemId, "github", "owner/repo#30");
+        link.status = "open";
+        when(linkStore.findByWorkItemId(workItemId)).thenReturn(List.of(link));
+        when(githubConfig.autoCloseOnComplete()).thenReturn(true);
+
+        final WorkItem wi = workItem(workItemId, WorkItemStatus.COMPLETED, WorkItemPriority.MEDIUM);
+        service.onLifecycleEvent(WorkItemLifecycleEvent.of("COMPLETED", wi, "alice", "done"));
+
+        verify(provider).syncToIssue(eq("owner/repo#30"), eq(wi));
+        verify(provider).closeIssue(eq("owner/repo#30"), any());
+        assertThat(link.status).isEqualTo("closed");
+        verify(linkStore).save(link);
+    }
+
+    @Test
+    void onLifecycleEvent_unknownProvider_skipsAndContinues() {
+        final UUID workItemId = UUID.randomUUID();
+        final WorkItemIssueLink jiraLink = existingLink(workItemId, "jira", "PROJ-1");
+        final WorkItemIssueLink ghLink = existingLink(workItemId, "github", "owner/repo#40");
+        when(linkStore.findByWorkItemId(workItemId)).thenReturn(List.of(jiraLink, ghLink));
+
+        final WorkItem wi = workItem(workItemId, WorkItemStatus.ASSIGNED, WorkItemPriority.LOW);
+        service.onLifecycleEvent(WorkItemLifecycleEvent.of("ASSIGNED", wi, "alice", null));
+
+        verify(provider).syncToIssue("owner/repo#40", wi);
+        verify(provider, never()).syncToIssue(eq("PROJ-1"), any());
+    }
+
+    @Test
+    void onLifecycleEvent_syncFailure_swallowed() {
+        final UUID workItemId = UUID.randomUUID();
+        final WorkItemIssueLink link = existingLink(workItemId, "github", "owner/repo#50");
+        when(linkStore.findByWorkItemId(workItemId)).thenReturn(List.of(link));
+        doThrow(new RuntimeException("network error")).when(provider).syncToIssue(any(), any());
+
+        final WorkItem wi = workItem(workItemId, WorkItemStatus.IN_PROGRESS, WorkItemPriority.HIGH);
+
+        // Should not throw
+        service.onLifecycleEvent(WorkItemLifecycleEvent.of("STARTED", wi, "alice", null));
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private WorkItemIssueLink existingLink(
+            final UUID workItemId, final String trackerType, final String externalRef) {
+        final WorkItemIssueLink link = new WorkItemIssueLink();
+        link.id = UUID.randomUUID();
+        link.workItemId = workItemId;
+        link.trackerType = trackerType;
+        link.externalRef = externalRef;
+        link.status = "open";
+        link.linkedBy = "test";
+        return link;
+    }
+
+    private WorkItem workItem(final UUID id, final WorkItemStatus status, final WorkItemPriority priority) {
         final WorkItem wi = new WorkItem();
         wi.id = id;
         wi.status = status;
         wi.priority = priority;
-        wi.category = category;
         wi.title = "Test WorkItem";
         return wi;
     }
