@@ -182,7 +182,9 @@ casehub-work/
 ├── testing/                               — Test utilities module (casehub-work-testing)
 │   └── src/main/java/io/casehub/work/testing/
 │       ├── InMemoryWorkItemStore.java     — ConcurrentHashMap-backed, no datasource needed
-│       └── InMemoryAuditEntryStore.java   — list-backed
+│       ├── InMemoryAuditEntryStore.java   — list-backed
+│       ├── InMemoryWorkItemNoteStore.java — list-backed
+│       └── InMemoryIssueLinkStore.java    — @Alternative @Priority(1), no datasource needed; requires casehub-work-issue-tracker on classpath
 ├── casehub-work-postgres-broadcaster/    — Optional distributed SSE module
 ├── casehub-work-queues-postgres-broadcaster/ — Optional distributed SSE module for queue events
 │   └── src/main/java/io/casehub/work/postgres/broadcaster/
@@ -217,6 +219,15 @@ casehub-work/
   - Query strategy: HQL `CAST(date_trunc('day', w.createdAt) AS LocalDate)` + GROUP BY for throughput; JPQL COUNT/AVG aggregates for queue-health; JPQL GROUP BY for actor byCategory (no N+1)
 - `casehub-work-postgres-broadcaster/` — optional distributed SSE module. `PostgresWorkItemEventBroadcaster` (`@Alternative @Priority(1)`) publishes `WorkItemLifecycleEvent` to PostgreSQL NOTIFY (`casehub_work_events` channel) and re-broadcasts incoming LISTEN notifications to local SSE clients. `WorkItemEventPayload` is the wire DTO. No Flyway migrations — uses the existing datasource. 22 tests.
 - `casehub-work-queues-postgres-broadcaster/` — optional distributed SSE module for queue events. `PostgresWorkItemQueueEventBroadcaster` (`@Alternative @Priority(1)`) publishes `WorkItemQueueEvent` to PostgreSQL NOTIFY (`casehub_work_queue_events` channel) and re-broadcasts incoming LISTEN notifications to local SSE clients. `WorkItemQueueEvent` is a plain record — no separate wire DTO needed. AFTER_SUCCESS observer (requires UserTransaction in tests). No Flyway migrations — reuses the datasource from `casehub-work-queues`. 13 tests (7 unit + 6 `@QuarkusTest` + Testcontainer). Depends on `casehub-work-queues` + `quarkus-reactive-pg-client`.
+- `casehub-work-issue-tracker/` — optional issue-tracker link module. Links WorkItems to external issues (GitHub, Jira). `IssueTrackerProvider` SPI. `WebhookEventHandler` for inbound close/reopen events. Flyway V5000. 93 tests.
+  - `model/`: `WorkItemIssueLink` entity — workItemId, trackerType, externalRef, externalUrl, status, syncedAt
+  - `api/`: `IssueLinkResource` (CRUD at `/workitems/{id}/issue-links`)
+  - `repository/`: `IssueLinkStore` SPI — `findById`, `findByWorkItemId`, `findByRef`, `findByTrackerRef`, `save`, `delete`; `JpaIssueLinkStore` default Panache impl
+  - `service/`: `IssueLinkService` — link creation, deletion, sync; injects `IssueLinkStore` via CDI (not Panache statics)
+  - `spi/`: `IssueTrackerProvider`, `ExternalIssueRef`, `IssueTrackerException`
+  - `webhook/`: `WebhookEvent`, `WebhookEventHandler` (injected `IssueLinkStore`), `WebhookEventKind`
+  - `github/`: `GitHubIssueTrackerProvider`, `GitHubWebhookParser`, `GitHubWebhookResource`
+  - `jira/`: `JiraWebhookParser`, `JiraWebhookResource`
 - `casehub-work-examples/` — runnable scenario demos; covers ledger/audit, spawn, business-hours, each runs via `POST /examples/{name}/run`
 - `integration-tests/` — `@QuarkusIntegrationTest` suite and native image validation (25 tests including 6 report smoke tests)
 
@@ -381,6 +392,7 @@ Each module owns its own version range. Flyway enforces uniqueness across all mo
 - `PgPool.getConnection()` returns `Uni<SqlConnection>` (Mutiny wrapper) — casting directly to `io.vertx.mutiny.pgclient.PgConnection` fails at runtime. To get the underlying Vert.x `PgConnection` for LISTEN/NOTIFY, unwrap the delegate: `(io.vertx.pgclient.PgConnection) sqlConn.getDelegate()` then re-wrap with `PgConnection.newInstance(pgDelegate)`. Applied in `PostgresWorkItemEventBroadcaster`.
 - `@Observes(during = TransactionPhase.AFTER_SUCCESS)` for the PostgreSQL broadcaster — the CDI observer fires only after the JTA transaction commits successfully. Events from rolled-back transactions are NOT published to the PostgreSQL channel. This is the correct behaviour: the published state must be consistent with the database. Applied in `PostgresWorkItemEventBroadcaster.onWorkItemEvent()`.
 - `onThresholdReached` defaults to KEEP (`null`) in `MultiInstanceSpawnService` — when the threshold is met, remaining children are left active with no side effects. CANCEL must be set explicitly on the template; it is never applied by default. In multi-instance tests, only complete `requiredCount` children to trigger the threshold; completing surplus children is unnecessary.
+- `IssueLinkStore` is the SPI for `WorkItemIssueLink` persistence — inject it via CDI rather than calling `WorkItemIssueLink` Panache static methods directly. `JpaIssueLinkStore` is the default `@ApplicationScoped` implementation. `InMemoryIssueLinkStore` in `casehub-work-testing` is the `@Alternative @Priority(1)` for tests. The testing module depends on `casehub-work-issue-tracker` at compile scope to host this class.
 
 ---
 
