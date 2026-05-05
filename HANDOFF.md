@@ -1,45 +1,52 @@
 # casehub-work — Session Handover
-**Date:** 2026-05-02
+**Date:** 2026-05-05
 
 ## Project Status
 
-Build passing locally. Pushed to fork (`mdproctor/work`). CI run pending on latest push.
-Working tree clean.
+Build passing locally. Working tree clean. 93 tests in `casehub-work-issue-tracker`, 31 in `testing`.
 
 ## What Was Done This Session
 
-*Earlier work (distributed SSE, GitHub sync, refinement epic, normative layer doc) — `git show HEAD~5:HANDOFF.md`*
+### GitHub + Jira inbound webhooks — #156 Phase 2 (complete)
 
-### CI fixes
+Full bidirectional sync now in place. Design involved:
+- `NormativeResolution` enum (DONE/DECLINE/FAILURE) — speech-act grounded close mapping, grounded in Qhorus normative layer
+- `WorkItemPriority` renamed CRITICAL→URGENT, NORMAL→MEDIUM (Linear alignment, #160) — V5001 Flyway migration
+- Full inbound event mapping for both GitHub and Jira: close, assign/unassign, title, description, priority, labels
+- GitHub/Jira parity principle established: always design for both simultaneously
+- `WebhookEvent` record + `WebhookEventKind` enum, `GitHubWebhookParser`, `JiraWebhookParser`
+- `GitHubWebhookResource` (HMAC-SHA256), `JiraWebhookResource` (query-param secret)
+- Both fail-closed: 401 when secret not configured
 
-**BusinessHoursIntegrationTest** — May 1 is a Friday; 2 business hours from Friday evening resolves to Monday (~4 calendar days). Test used a 1-day bound called after the REST call. Fixed: `BusinessHoursAssert.assertDeadlineInRange(deadline, before, businessHours)` helper with formula `ceil(bh/8) + 2` calendar days. Issue #158.
+### IssueLinkStore SPI — #161 (complete)
 
-**WorkItemGroupLifecycleEventTest** — OCC on `work_item` caused by `onThresholdReached` defaulting to CANCEL. Coordinator cancelled child[2] async; test tried to complete it. Fixed: complete only `requiredCount` children in the test.
+- `IssueLinkStore` interface + `JpaIssueLinkStore` (thin Panache adapter)
+- `InMemoryIssueLinkStore` in `testing/` (`@Alternative @Priority(1)`)
+- `WebhookEventHandler` now injects `IssueLinkStore` + `WorkItemStore` — public `handle(WebhookEvent)` fully unit-testable
+- `IssueLinkService` injects `IssueLinkStore` — all Panache statics replaced
+- `IssueLinkService.onLifecycleEvent` now `@Observes(during = AFTER_SUCCESS)`
+- 34 new tests across modules
 
-**JpaWorkItemLedgerEntryRepository** — `casehub-ledger:0.2-SNAPSHOT` added 3 new abstract methods. CI pulls latest SNAPSHOT; local uses cached jar. Implemented all three.
+### Open issues created
 
-### onThresholdReached default changed CANCEL → KEEP (213810a)
-
-- `OnThresholdReached` enum: `LEAVE` renamed to `KEEP`, `SUSPEND` added, CANCEL documented as opt-in only
-- Default in `MultiInstanceSpawnService` is now `null` (KEEP semantics) — no side effects without explicit opt-in
-- `MultiInstanceGroupPolicy` handles CANCEL, SUSPEND (pauses ASSIGNED/IN_PROGRESS, skips PENDING), KEEP/null (no action)
-- All Javadocs, tests, and stale references updated
-
-### Workflow convention added
-
-All development on personal fork (`mdproctor/work`); PRs to `casehubio/work`. Documented in CLAUDE.md.
+- #159 — Normative alignment docs (WorkItem lifecycle → Qhorus speech acts)
+- #160 — Priority rename (closed)
+- #161 — IssueLinkStore SPI (closed)
+- #162 (implied) — Comprehensive GitHub integration doc (comment on #156)
 
 ## Open / Next
 
 | Priority | What |
 |---|---|
 | 1 | Create PR from fork to `casehubio/work` for all session changes |
-| 2 | #97 — wait for qhorus#131 + qhorus#132, then build `casehub-work-qhorus` |
-| 3 | #156 phase 2 — incoming GitHub webhooks |
+| 2 | #156 Phase 3 — identity mapping (assigneeId ↔ GitHub login / Jira accountId) |
+| 3 | #159 — normative alignment docs (low-effort docs task) |
+| 4 | #97 — `casehub-work-qhorus` (blocked on qhorus#131 + #132) |
 
 ## Key References
 
-- `BusinessHoursAssert`: `runtime/src/test/java/io/casehub/work/runtime/calendar/BusinessHoursAssert.java`
-- `OnThresholdReached` enum: `casehub-work-api/src/main/java/io/casehub/work/api/OnThresholdReached.java`
-- Blog: `blog/2026-05-02-mdp03-default-that-bit-us.md`
-- Previous full context: `git show HEAD~5:HANDOFF.md`
+- Spec: `docs/superpowers/specs/2026-05-04-github-jira-webhooks-phase2-design.md`
+- Spec: `docs/superpowers/specs/2026-05-05-issue-link-store-spi-design.md`
+- `IssueLinkStore` SPI: `casehub-work-issue-tracker/src/main/java/io/casehub/work/issuetracker/repository/IssueLinkStore.java`
+- Blog: `blog/2026-05-05-mdp01-speech-acts-and-priority.md`
+- Previous context: `git show HEAD~20:HANDOFF.md`
