@@ -194,6 +194,18 @@ public class JpaWorkItemLedgerEntryRepository implements WorkItemLedgerEntryRepo
 
     /** {@inheritDoc} */
     @Override
+    public List<LedgerEntry> findBySubjectIdAndTimeRange(final UUID subjectId, final Instant from, final Instant to) {
+        return em.createQuery(
+                "SELECT e FROM LedgerEntry e WHERE e.subjectId = :subjectId AND e.occurredAt >= :from AND e.occurredAt <= :to ORDER BY e.occurredAt ASC",
+                LedgerEntry.class)
+                .setParameter("subjectId", subjectId)
+                .setParameter("from", from)
+                .setParameter("to", to)
+                .getResultList();
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public List<LedgerEntry> findByActorId(final String actorId, final Instant from, final Instant to) {
         return em.createQuery(
                 "SELECT e FROM LedgerEntry e WHERE e.actorId = :actorId AND e.occurredAt >= :from AND e.occurredAt <= :to ORDER BY e.occurredAt ASC",
