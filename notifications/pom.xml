@@ -28,7 +28,7 @@ The core extension is unchanged whether this module is present or not.</descript
     <!-- CaseHub connectors — Slack, Teams, Twilio SMS, WhatsApp (HTTP-based, zero extra deps) -->
     <dependency>
       <groupId>io.casehub</groupId>
-      <artifactId>casehub-connectors</artifactId>
+      <artifactId>casehub-connectors-core</artifactId>
       <version>0.2-SNAPSHOT</version>
     </dependency>
 
