@@ -15,25 +15,25 @@ CaseHub platform module — human-scale WorkItem lifecycle management with optio
   <url>https://github.com/casehubio/work</url>
 
   <modules>
-    <module>casehub-work-api</module>
-    <module>casehub-work-core</module>
+    <module>api</module>
+    <module>core</module>
     <module>runtime</module>
     <module>deployment</module>
     <module>testing</module>
-    <module>work-flow</module>
-    <module>casehub-work-ledger</module>
-    <module>casehub-work-notifications</module>
-    <module>casehub-work-queues</module>
-    <module>casehub-work-queues-examples</module>
-    <module>casehub-work-queues-dashboard</module>
-    <module>casehub-work-examples</module>
-    <module>casehub-work-flow-examples</module>
-    <module>casehub-work-persistence-mongodb</module>
-    <module>casehub-work-issue-tracker</module>
-    <module>casehub-work-ai</module>
-    <module>casehub-work-reports</module>
-    <module>casehub-work-postgres-broadcaster</module>
-    <module>casehub-work-queues-postgres-broadcaster</module>
+    <module>flow</module>
+    <module>ledger</module>
+    <module>notifications</module>
+    <module>queues</module>
+    <module>queues-examples</module>
+    <module>queues-dashboard</module>
+    <module>examples</module>
+    <module>flow-examples</module>
+    <module>persistence-mongodb</module>
+    <module>issue-tracker</module>
+    <module>ai</module>
+    <module>reports</module>
+    <module>postgres-broadcaster</module>
+    <module>queues-postgres-broadcaster</module>
 
     <module>integration-tests</module>
   </modules>
