@@ -12,6 +12,7 @@ import jakarta.transaction.Transactional;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jboss.logging.Logger;
 
 import io.casehub.work.runtime.model.LabelPersistence;
 import io.casehub.work.runtime.model.WorkItem;
@@ -32,6 +33,7 @@ import io.casehub.work.runtime.multiinstance.MultiInstanceSpawnService;
 public class WorkItemTemplateService {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final Logger LOG = Logger.getLogger(WorkItemTemplateService.class);
 
     @Inject
     WorkItemService workItemService;
@@ -66,12 +68,38 @@ public class WorkItemTemplateService {
             final String titleOverride,
             final String assigneeIdOverride,
             final String createdBy) {
+        return instantiate(template, titleOverride, assigneeIdOverride, createdBy, null);
+    }
+
+    /**
+     * Instantiate a {@link WorkItemTemplate} into a new PENDING {@link WorkItem}.
+     *
+     * @param template the template to instantiate; must not be null
+     * @param titleOverride optional title; defaults to template name
+     * @param assigneeIdOverride optional direct assignee; overrides candidateGroups routing
+     * @param createdBy the actor (user or system) triggering instantiation
+     * @param callerRef opaque routing key for engine adapters; null for human-initiated creation.
+     *                  Ignored for multi-instance templates — see casehubio/work#166.
+     * @return the newly created PENDING WorkItem with all template defaults applied
+     */
+    @Transactional
+    public WorkItem instantiate(
+            final WorkItemTemplate template,
+            final String titleOverride,
+            final String assigneeIdOverride,
+            final String createdBy,
+            final String callerRef) {
 
         if (template.instanceCount != null) {
+            if (callerRef != null) {
+                LOG.warnf(
+                    "callerRef '%s' ignored for multi-instance template %s — not yet supported (see casehubio/work#166)",
+                    callerRef, template.id);
+            }
             return multiInstanceSpawnService.get().createGroup(template, titleOverride, createdBy);
         }
 
-        final WorkItemCreateRequest request = toCreateRequest(template, titleOverride, assigneeIdOverride, createdBy);
+        final WorkItemCreateRequest request = toCreateRequest(template, titleOverride, assigneeIdOverride, createdBy, callerRef);
         WorkItem workItem = workItemService.create(request);
 
         // Apply template labels as MANUAL — the filter engine may add INFERRED on top
