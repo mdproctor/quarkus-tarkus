@@ -100,6 +100,28 @@ public class WorkItemTemplateService {
             final String titleOverride,
             final String assigneeIdOverride,
             final String createdBy) {
+        return toCreateRequest(template, titleOverride, assigneeIdOverride, createdBy, null);
+    }
+
+    /**
+     * Convert a template and optional overrides into a {@link WorkItemCreateRequest}.
+     *
+     * <p>
+     * Static for unit testability — no CDI or JPA dependency.
+     *
+     * @param template the template providing defaults
+     * @param titleOverride if non-null and non-blank, used as the title; otherwise template name
+     * @param assigneeIdOverride if non-null, set as the direct assignee
+     * @param createdBy the actor triggering the instantiation
+     * @param callerRef opaque routing key set by engine adapters (null for human-initiated creation)
+     * @return the create request ready for {@link WorkItemService#create}
+     */
+    public static WorkItemCreateRequest toCreateRequest(
+            final WorkItemTemplate template,
+            final String titleOverride,
+            final String assigneeIdOverride,
+            final String createdBy,
+            final String callerRef) {
 
         final String title = (titleOverride != null && !titleOverride.isBlank())
                 ? titleOverride
@@ -122,7 +144,7 @@ public class WorkItemTemplateService {
                 null, // followUpDate
                 null, // labels — applied separately so addLabel fires LABEL_ADDED events
                 null, // confidenceScore — template-spawned items have no AI confidence
-                null, // callerRef — not set for template-spawned items
+                callerRef,
                 template.defaultClaimBusinessHours, // business hours claim deadline from template
                 template.defaultExpiryBusinessHours); // business hours expiry from template
     }

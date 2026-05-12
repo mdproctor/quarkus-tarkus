@@ -88,6 +88,23 @@ class WorkItemTemplateServiceTest {
         assertThat(req.assigneeId()).isNull();
     }
 
+    @Test
+    void toCreateRequest_setsCallerRef_whenProvided() {
+        final WorkItemTemplate t = template("IRB Review");
+        final String callerRef = "case:550e8400-e29b-41d4-a716-446655440000/pi:irb-gate";
+        final WorkItemCreateRequest req =
+            WorkItemTemplateService.toCreateRequest(t, null, null, "system", callerRef);
+        assertThat(req.callerRef()).isEqualTo(callerRef);
+    }
+
+    @Test
+    void toCreateRequest_callerRefNull_whenNotProvided() {
+        final WorkItemTemplate t = template("IRB Review");
+        final WorkItemCreateRequest req =
+            WorkItemTemplateService.toCreateRequest(t, null, null, "system");
+        assertThat(req.callerRef()).isNull();
+    }
+
     // ── parseLabels ───────────────────────────────────────────────────────────
 
     @Test
