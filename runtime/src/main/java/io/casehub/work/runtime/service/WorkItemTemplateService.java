@@ -74,6 +74,13 @@ public class WorkItemTemplateService {
     /**
      * Instantiate a {@link WorkItemTemplate} into a new PENDING {@link WorkItem}.
      *
+     * <p>
+     * When invoked via the 4-arg overload, this method runs within the caller's
+     * transaction — the 4-arg delegates via a direct Java call ({@code this.instantiate(...)})
+     * which bypasses the CDI proxy and does not apply this method's own
+     * {@code @Transactional}. The annotation is active only for direct external callers
+     * of this 5-arg overload.
+     *
      * @param template the template to instantiate; must not be null
      * @param titleOverride optional title; defaults to template name
      * @param assigneeIdOverride optional direct assignee; overrides candidateGroups routing

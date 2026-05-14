@@ -2,11 +2,14 @@ package io.casehub.work.runtime.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.casehub.work.runtime.model.AuditEntry;
 import io.casehub.work.runtime.model.WorkItem;
+import io.casehub.work.runtime.model.WorkItemSpawnGroup;
 import io.casehub.work.runtime.model.WorkItemTemplate;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -18,6 +21,15 @@ class WorkItemTemplateInstantiateTest {
 
     @Inject
     WorkItemTemplateService templateService;
+
+    @BeforeEach
+    @Transactional
+    void cleanup() {
+        AuditEntry.deleteAll();
+        WorkItemSpawnGroup.deleteAll();
+        WorkItem.deleteAll();
+        WorkItemTemplate.deleteAll();
+    }
 
     @Test
     void instantiate_setsCallerRef_onCreatedWorkItem() {
@@ -40,6 +52,16 @@ class WorkItemTemplateInstantiateTest {
 
         assertThat(parent).isNotNull();
         assertThat(parent.callerRef).isNull();
+    }
+
+    @Test
+    void instantiate_4arg_callerRefIsNull() {
+        final WorkItemTemplate template = persistedTemplate("Human Task", null);
+
+        final WorkItem workItem =
+            templateService.instantiate(template, null, null, "system");
+
+        assertThat(workItem.callerRef).isNull();
     }
 
     @Transactional
