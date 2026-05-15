@@ -43,7 +43,7 @@ class WorkItemTemplateInstantiateTest {
     }
 
     @Test
-    void instantiate_multiInstanceTemplate_ignoresCallerRef() {
+    void instantiate_multiInstanceTemplate_setsCallerRefOnParent() {
         final WorkItemTemplate template = persistedTemplate("Parallel Review", 3);
         final String callerRef = "case:550e8400-e29b-41d4-a716-446655440000/pi:review-gate";
 
@@ -51,7 +51,7 @@ class WorkItemTemplateInstantiateTest {
             templateService.instantiate(template, null, null, "system:engine", callerRef);
 
         assertThat(parent).isNotNull();
-        assertThat(parent.callerRef).isNull();
+        assertThat(parent.callerRef).isEqualTo(callerRef);
     }
 
     @Test

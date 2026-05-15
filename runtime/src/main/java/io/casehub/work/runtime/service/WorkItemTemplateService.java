@@ -12,8 +12,6 @@ import jakarta.transaction.Transactional;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.jboss.logging.Logger;
-
 import io.casehub.work.runtime.model.LabelPersistence;
 import io.casehub.work.runtime.model.WorkItem;
 import io.casehub.work.runtime.model.WorkItemCreateRequest;
@@ -33,7 +31,6 @@ import io.casehub.work.runtime.multiinstance.MultiInstanceSpawnService;
 public class WorkItemTemplateService {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final Logger LOG = Logger.getLogger(WorkItemTemplateService.class);
 
     @Inject
     WorkItemService workItemService;
@@ -86,7 +83,8 @@ public class WorkItemTemplateService {
      * @param assigneeIdOverride optional direct assignee; overrides candidateGroups routing
      * @param createdBy the actor (user or system) triggering instantiation
      * @param callerRef opaque routing key for engine adapters; null for human-initiated creation.
-     *                  Ignored for multi-instance templates — see casehubio/work#166.
+     *                  For multi-instance templates, stored on the parent WorkItem so lifecycle
+     *                  events carry the routing signal to engine adapters.
      * @return the newly created PENDING WorkItem with all template defaults applied
      */
     @Transactional
@@ -98,12 +96,7 @@ public class WorkItemTemplateService {
             final String callerRef) {
 
         if (template.instanceCount != null) {
-            if (callerRef != null) {
-                LOG.warnf(
-                    "callerRef '%s' ignored for multi-instance template %s — not yet supported (see casehubio/work#166)",
-                    callerRef, template.id);
-            }
-            return multiInstanceSpawnService.get().createGroup(template, titleOverride, createdBy);
+            return multiInstanceSpawnService.get().createGroup(template, titleOverride, createdBy, callerRef);
         }
 
         final WorkItemCreateRequest request = toCreateRequest(template, titleOverride, assigneeIdOverride, createdBy, callerRef);

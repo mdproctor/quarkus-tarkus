@@ -109,6 +109,43 @@ class WorkItemGroupLifecycleEventTest {
                 .until(() -> capture.byStatus(parentId, GroupStatus.COMPLETED).size() == 1);
     }
 
+    @Test
+    void completedGroupEvent_carriesCallerRef() {
+        final String callerRef = "case:550e8400-e29b-41d4-a716-446655440000/pi:ethics-gate";
+
+        final UUID parentId = inTx(() -> {
+            WorkItemTemplate t = new WorkItemTemplate();
+            t.name = "CallerRefEventTest";
+            t.candidateGroups = "g";
+            t.createdBy = "test";
+            t.instanceCount = 2;
+            t.requiredCount = 2;
+            t.persist();
+            return templateService.instantiate(t, null, null, "test", callerRef).id;
+        });
+
+        final List<UUID> childIds = inTx(() ->
+            WorkItem.<WorkItem>list("parentId", parentId).stream()
+                .map(w -> w.id).toList());
+
+        inTx(() -> workItemService.claim(childIds.get(0), "alice"));
+        inTx(() -> workItemService.start(childIds.get(0), "alice"));
+        inTx(() -> workItemService.complete(childIds.get(0), "alice", "approved"));
+
+        inTx(() -> workItemService.claim(childIds.get(1), "bob"));
+        inTx(() -> workItemService.start(childIds.get(1), "bob"));
+        inTx(() -> workItemService.complete(childIds.get(1), "bob", "approved"));
+
+        // Stability window guards the count — same pattern as completedEventFiresExactlyOnceAtThreshold.
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(5))
+                .during(Duration.ofMillis(300))
+                .until(() -> capture.byStatus(parentId, GroupStatus.COMPLETED).size() == 1);
+
+        assertThat(capture.byStatus(parentId, GroupStatus.COMPLETED).get(0).callerRef())
+                .isEqualTo(callerRef);
+    }
+
     @Transactional
     <T> T inTx(final Supplier<T> s) {
         return s.get();
