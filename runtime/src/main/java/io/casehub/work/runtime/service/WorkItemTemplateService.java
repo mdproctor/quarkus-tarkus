@@ -12,7 +12,6 @@ import jakarta.transaction.Transactional;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.casehub.work.runtime.model.LabelPersistence;
 import io.casehub.work.runtime.model.WorkItem;
 import io.casehub.work.runtime.model.WorkItemCreateRequest;
@@ -66,12 +65,41 @@ public class WorkItemTemplateService {
             final String titleOverride,
             final String assigneeIdOverride,
             final String createdBy) {
+        return instantiate(template, titleOverride, assigneeIdOverride, createdBy, null);
+    }
+
+    /**
+     * Instantiate a {@link WorkItemTemplate} into a new PENDING {@link WorkItem}.
+     *
+     * <p>
+     * When invoked via the 4-arg overload, this method runs within the caller's
+     * transaction — the 4-arg delegates via a direct Java call ({@code this.instantiate(...)})
+     * which bypasses the CDI proxy and does not apply this method's own
+     * {@code @Transactional}. The annotation is active only for direct external callers
+     * of this 5-arg overload.
+     *
+     * @param template the template to instantiate; must not be null
+     * @param titleOverride optional title; defaults to template name
+     * @param assigneeIdOverride optional direct assignee; overrides candidateGroups routing
+     * @param createdBy the actor (user or system) triggering instantiation
+     * @param callerRef opaque routing key for engine adapters; null for human-initiated creation.
+     *                  For multi-instance templates, stored on the parent WorkItem so lifecycle
+     *                  events carry the routing signal to engine adapters.
+     * @return the newly created PENDING WorkItem with all template defaults applied
+     */
+    @Transactional
+    public WorkItem instantiate(
+            final WorkItemTemplate template,
+            final String titleOverride,
+            final String assigneeIdOverride,
+            final String createdBy,
+            final String callerRef) {
 
         if (template.instanceCount != null) {
-            return multiInstanceSpawnService.get().createGroup(template, titleOverride, createdBy);
+            return multiInstanceSpawnService.get().createGroup(template, titleOverride, createdBy, callerRef);
         }
 
-        final WorkItemCreateRequest request = toCreateRequest(template, titleOverride, assigneeIdOverride, createdBy);
+        final WorkItemCreateRequest request = toCreateRequest(template, titleOverride, assigneeIdOverride, createdBy, callerRef);
         WorkItem workItem = workItemService.create(request);
 
         // Apply template labels as MANUAL — the filter engine may add INFERRED on top
@@ -100,6 +128,28 @@ public class WorkItemTemplateService {
             final String titleOverride,
             final String assigneeIdOverride,
             final String createdBy) {
+        return toCreateRequest(template, titleOverride, assigneeIdOverride, createdBy, null);
+    }
+
+    /**
+     * Convert a template and optional overrides into a {@link WorkItemCreateRequest}.
+     *
+     * <p>
+     * Static for unit testability — no CDI or JPA dependency.
+     *
+     * @param template the template providing defaults
+     * @param titleOverride if non-null and non-blank, used as the title; otherwise template name
+     * @param assigneeIdOverride if non-null, set as the direct assignee
+     * @param createdBy the actor triggering the instantiation
+     * @param callerRef opaque routing key set by engine adapters (null for human-initiated creation)
+     * @return the create request ready for {@link WorkItemService#create}
+     */
+    public static WorkItemCreateRequest toCreateRequest(
+            final WorkItemTemplate template,
+            final String titleOverride,
+            final String assigneeIdOverride,
+            final String createdBy,
+            final String callerRef) {
 
         final String title = (titleOverride != null && !titleOverride.isBlank())
                 ? titleOverride
@@ -122,7 +172,7 @@ public class WorkItemTemplateService {
                 null, // followUpDate
                 null, // labels — applied separately so addLabel fires LABEL_ADDED events
                 null, // confidenceScore — template-spawned items have no AI confidence
-                null, // callerRef — not set for template-spawned items
+                callerRef,
                 template.defaultClaimBusinessHours, // business hours claim deadline from template
                 template.defaultExpiryBusinessHours); // business hours expiry from template
     }

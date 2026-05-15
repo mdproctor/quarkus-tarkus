@@ -30,6 +30,9 @@ class MultiInstanceCoordinatorTest {
     @Inject
     WorkItemService workItemService;
 
+    @Inject
+    MultiInstanceSpawnService spawnService;
+
     private UUID createGroupAndGetParentId(int instanceCount, int requiredCount) {
         return inTx(() -> {
             WorkItemTemplate t = new WorkItemTemplate();
@@ -165,6 +168,31 @@ class MultiInstanceCoordinatorTest {
 
         WorkItem parent = inTx(() -> WorkItem.findById(parentId));
         assertThat(parent.status).isEqualTo(WorkItemStatus.COMPLETED);
+    }
+
+    @Test
+    void createGroup_withCallerRef_setsOnParentOnly() {
+        final String callerRef = "case:550e8400-e29b-41d4-a716-446655440000/pi:plan-gate";
+
+        final UUID parentId = inTx(() -> {
+            WorkItemTemplate t = new WorkItemTemplate();
+            t.name = "CallerRefTest";
+            t.candidateGroups = "testers";
+            t.createdBy = "test";
+            t.instanceCount = 3;
+            t.requiredCount = 2;
+            t.persist();
+            return spawnService.createGroup(t, null, "test", callerRef).id;
+        });
+
+        final WorkItem parent = inTx(() -> WorkItem.findById(parentId));
+        assertThat(parent.callerRef).isEqualTo(callerRef);
+
+        final List<WorkItem> children = inTx(() ->
+            WorkItem.<WorkItem>list("parentId", parentId));
+        assertThat(children).hasSize(3);
+        assertThat(children).allSatisfy(child ->
+            assertThat(child.callerRef).isNull());
     }
 
     @Transactional

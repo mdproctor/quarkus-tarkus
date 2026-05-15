@@ -69,12 +69,12 @@ public class MultiInstanceSpawnService {
      */
     @Transactional
     public WorkItem createGroup(final WorkItemTemplate template, final String titleOverride,
-            final String createdBy) {
+            final String createdBy, final String callerRef) {
         final boolean isCoordinator = template.parentRole == null
                 || ParentRole.COORDINATOR.name().equals(template.parentRole);
 
         // 1. Create parent
-        final WorkItemCreateRequest parentReq = buildParentRequest(template, titleOverride, createdBy, isCoordinator);
+        final WorkItemCreateRequest parentReq = buildParentRequest(template, titleOverride, createdBy, isCoordinator, callerRef);
         final WorkItem parent = workItemService.create(parentReq);
 
         // 2. Create WorkItemSpawnGroup with M-of-N policy
@@ -123,7 +123,8 @@ public class MultiInstanceSpawnService {
     }
 
     private WorkItemCreateRequest buildParentRequest(final WorkItemTemplate template,
-            final String titleOverride, final String createdBy, final boolean isCoordinator) {
+            final String titleOverride, final String createdBy, final boolean isCoordinator,
+            final String callerRef) {
         final String title = (titleOverride != null && !titleOverride.isBlank())
                 ? titleOverride
                 : template.name;
@@ -144,7 +145,7 @@ public class MultiInstanceSpawnService {
                 null, // followUpDate
                 null, // labels — applied separately if needed
                 null, // confidenceScore
-                null, // callerRef
+                callerRef,
                 null, // defaultClaimBusinessHours — coordinator has no deadline
                 isCoordinator ? null : template.defaultExpiryBusinessHours);
     }

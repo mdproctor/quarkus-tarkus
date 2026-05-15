@@ -31,6 +31,17 @@ Run `add-dir /Users/mdproctor/claude/casehub/work` before any other work.
 - `blog/` — project diary entries with INDEX.md
 - `design/` — epic journal (created by `epic` at branch start)
 
+## Git Discipline
+
+Two git repositories are active in every session:
+- **Workspace** (`/Users/mdproctor/claude/public/casehub/work`) — methodology artifacts: handover, blog, specs, plans, ADRs
+- **Project repo** (`/Users/mdproctor/claude/casehub/work`) — source code
+
+Before any git operation, run `git rev-parse --show-toplevel` to confirm which repo is currently active. Do not assume — the session may have opened in either. cd to the correct repo before staging:
+- Source code commits → project repo
+- Methodology artifacts → workspace
+
+
 ## Rules
 
 - All methodology artifacts go here, not in the project repo
@@ -41,11 +52,12 @@ Run `add-dir /Users/mdproctor/claude/casehub/work` before any other work.
 
 | Artifact   | Destination | Notes |
 |------------|-------------|-------|
-| adr        | workspace   | |
-| blog       | workspace   | |
-| design     | workspace   | |
-| snapshots  | workspace   | |
-| specs      | workspace   | |
+| adr        | project     | lands in `docs/adr/` — promoted at epic close |
+| specs      | project     | lands in `docs/specs/` — promoted at epic close |
+| blog       | workspace   | staged here; published to mdproctor.github.io via publish-blog |
+| plans      | workspace   | stay in workspace permanently |
+| design     | workspace   | epic journal stays in workspace |
+| snapshots  | workspace   | stay in workspace permanently |
 | handover   | workspace   | |
 
 ---
@@ -56,26 +68,26 @@ Run `add-dir /Users/mdproctor/claude/casehub/work` before any other work.
 
 This repo is one component of the casehubio multi-repo platform. **Before implementing anything — any feature, SPI, data model, or abstraction — run the Platform Coherence Protocol.**
 
-> **Platform docs:** Local paths use `~/claude/casehub/parent/docs/` as root. If a path doesn't exist, the parent repo isn't cloned locally — fetch from `https://raw.githubusercontent.com/casehubio/parent/main/docs/<path>` instead.
+> **Platform docs:** Local paths use `../parent/docs/` as root. If a path doesn't exist, the parent repo isn't cloned locally — fetch from `https://raw.githubusercontent.com/casehubio/parent/main/docs/<path>` instead.
 
 The protocol asks: Does this already exist elsewhere? Is this the right repo for it? Does this create a consolidation opportunity? Is this consistent with how the platform handles the same concern in other repos?
 
 **Platform architecture (fetch before any implementation decision):**
 ```
-~/claude/casehub/parent/docs/PLATFORM.md
+../parent/docs/PLATFORM.md
 ```
 
 **This repo's deep-dive:**
 ```
-~/claude/casehub/parent/docs/repos/casehub-work.md
+../parent/docs/repos/casehub-work.md
 ```
 
 **Other repo deep-dives** (fetch the relevant ones when your implementation touches their domain):
-- casehub-ledger: `~/claude/casehub/parent/docs/repos/casehub-ledger.md`
-- casehub-qhorus: `~/claude/casehub/parent/docs/repos/casehub-qhorus.md`
-- casehub-engine: `~/claude/casehub/parent/docs/repos/casehub-engine.md`
-- claudony: `~/claude/casehub/parent/docs/repos/claudony.md`
-- casehub-connectors: `~/claude/casehub/parent/docs/repos/casehub-connectors.md`
+- casehub-ledger: `../parent/docs/repos/casehub-ledger.md`
+- casehub-qhorus: `../parent/docs/repos/casehub-qhorus.md`
+- casehub-engine: `../parent/docs/repos/casehub-engine.md`
+- claudony: `../parent/docs/repos/claudony.md`
+- casehub-connectors: `../parent/docs/repos/casehub-connectors.md`
 
 ---
 
@@ -435,6 +447,7 @@ Each module owns its own version range. Flyway enforces uniqueness across all mo
 - `PostgresDialectValidationTest` runs against a real PostgreSQL Testcontainer via a dedicated Surefire execution (`postgres-dialect-test`) that: (1) sets `quarkus.datasource.db-kind=postgresql` as a **system property** before augmentation (test resource overrides don't reach the augmentation cache check), (2) uses `reuseForks=false` for a clean JVM so the fresh augmentation uses PostgreSQL, (3) runs **first** before H2 tests so no cached H2 artifact exists yet. `PostgresTestResource` starts the container and injects the JDBC URL. Flyway is disabled in the PostgreSQL test and replaced with `hibernate-orm.database.generation=drop-and-create` because the Flyway migrations use H2-permissive SQL (e.g. bare `DOUBLE` type) that PostgreSQL rejects — this is a known production compatibility issue to address separately.
 - `CAST(date_trunc('day', w.createdAt) AS LocalDate)` in HQL — the explicit `CAST AS LocalDate` ensures Hibernate 6 returns `java.time.LocalDate` in the result set regardless of dialect, avoiding type ambiguity between H2 and PostgreSQL.
 - `@ObservesAsync` event captures in `@QuarkusTest` are not isolated by `@BeforeEach clear()` — events from test N can arrive after test N+1's `@BeforeEach clear()` runs, because delivery is asynchronous on a thread pool. Filter captured events by an entity ID created in the current test rather than relying on `clear()` for isolation. Applied in `WorkItemGroupLifecycleEventTest`.
+- `@Transactional` on a CDI bean method is bypassed when called via `this.method()` — CDI intercepts only external calls through the proxy, not internal `this`-calls. When adding a delegating overload (e.g. 4-arg delegates to 5-arg), the inner method's `@Transactional` annotation is silently ignored; only the outer method's annotation fires. Annotate only the outermost entry point, or inject `self` (inject the bean into itself) to force proxy interception for the inner call. Applied in `WorkItemTemplateService.instantiate()` (#165, tracked in #167). Exception: `@BeforeEach @Transactional` in `@QuarkusTest` DOES work — Quarkus registers test instances as CDI beans and gives JUnit the CDI proxy, so lifecycle methods are intercepted normally.
 - `@ObservesAsync` CDI observers with `@Transactional` logic should delegate to a separate injected `@ApplicationScoped @Transactional` bean rather than annotating the observer method itself. In Quarkus, calling a `@Transactional` method from a non-transactional context (the `@ObservesAsync` method) correctly starts a new transaction per call — enabling clean OCC retry. If the observer itself were `@Transactional`, self-invocation issues and rollback semantics would be much harder to manage. See `MultiInstanceCoordinator` + `MultiInstanceGroupPolicy`.
 - When JTA commit fails with OCC (`OptimisticLockException`), Quarkus/Narayana may propagate it wrapped as a `RollbackException` rather than as the raw `jakarta.persistence.OptimisticLockException`. Catching only `OptimisticLockException` in retry loops will miss these cases — catch `Exception` broadly and handle accordingly.
 - `fireAsync()` inside a `@Transactional` method dispatches the event immediately to the thread pool — it does NOT wait for the transaction to commit. If the transaction later rolls back (e.g. OCC), the event has already been delivered. Keep `fireAsync()` outside the transaction boundary (call it after the transactional method returns) when the event should only fire on successful commit.
@@ -446,6 +459,7 @@ Each module owns its own version range. Flyway enforces uniqueness across all mo
 - `PgPool.getConnection()` returns `Uni<SqlConnection>` (Mutiny wrapper) — casting directly to `io.vertx.mutiny.pgclient.PgConnection` fails at runtime. To get the underlying Vert.x `PgConnection` for LISTEN/NOTIFY, unwrap the delegate: `(io.vertx.pgclient.PgConnection) sqlConn.getDelegate()` then re-wrap with `PgConnection.newInstance(pgDelegate)`. Applied in `PostgresWorkItemEventBroadcaster`.
 - `@Observes(during = TransactionPhase.AFTER_SUCCESS)` — CDI observers that call remote APIs or persist dependent state must use this phase so they only fire after the primary JTA transaction commits. Without it, rolled-back transactions still trigger remote calls (e.g. `closeIssue()`, `syncToIssue()`), causing remote state to diverge. Applied in `PostgresWorkItemEventBroadcaster.onWorkItemEvent()` and `IssueLinkService.onLifecycleEvent()`.
 - `onThresholdReached` defaults to KEEP (`null`) in `MultiInstanceSpawnService` — when the threshold is met, remaining children are left active with no side effects. CANCEL must be set explicitly on the template; it is never applied by default. In multi-instance tests, only complete `requiredCount` children to trigger the threshold; completing surplus children is unnecessary.
+- `callerRef` in multi-instance groups is stored on the **parent** WorkItem only; children have null. `MultiInstanceGroupPolicy.buildGroupEvent()` reads `parent.callerRef` and echoes it in `WorkItemGroupLifecycleEvent` for engine routing. Do not propagate callerRef to children — `WorkItemLifecycleAdapter` in the engine would attempt a PlanItem transition for each child completion (N transitions instead of one).
 - `IssueLinkStore` is the SPI for `WorkItemIssueLink` persistence — inject it via CDI rather than calling `WorkItemIssueLink` Panache static methods directly. `JpaIssueLinkStore` is the default `@ApplicationScoped` implementation. `InMemoryIssueLinkStore` in `casehub-work-testing` is the `@Alternative @Priority(1)` for tests. The testing module depends on `casehub-work-issue-tracker` at compile scope to host this class.
 - Mocking `Instance<T>` in Mockito: use `thenAnswer(inv -> List.of(bean).stream())` not `thenReturn(List.of(bean).stream())`. Streams are single-use — `thenReturn` caches and returns the same exhausted stream on every call after the first. Any service that calls `providerFor()` or `availableTypes()` twice in one test (e.g. `onLifecycleEvent` with multiple links) will silently get zero results on the second call. Same applies to `iterator()`.
 
